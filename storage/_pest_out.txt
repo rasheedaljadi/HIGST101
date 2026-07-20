@@ -1,0 +1,17 @@
+
+   WARN  Tests\Unit\AliExpress\AliExpressProductMapperTest
+  ! it maps textual content aظخ 1.26s  
+  ! it falls back to the titlظخ 0.34s  
+  ! it derives a short descriظخ 0.25s  
+  ! it resolves two distinctظخ  0.25s  
+  ! it maps one variant per Sظخ 0.42s  
+  ! it parses the gallery imaظخ 0.22s  
+  ! it flags the multi-SKU muظخ 0.25s  
+  ! it maps the single-SKU fiظخ 0.23s  
+  ! it parses gallery imagesظخ  0.47s  
+  ! it throws when the body cظخ 0.27s  
+  ! it throws when the resultظخ 0.23s  
+
+  Tests:    11 risky (43 assertions)
+  Duration: 7.68s
+

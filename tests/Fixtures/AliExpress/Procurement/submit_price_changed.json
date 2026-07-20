@@ -1,0 +1,8 @@
+{
+  "code": "PRICE_CHANGED",
+  "msg": "Supplier price has changed",
+  "error_response": {
+    "code": 10003,
+    "msg": "Price changed"
+  }
+}

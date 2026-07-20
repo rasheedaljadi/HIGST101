@@ -1,0 +1,11 @@
+{
+    "event_id": "ae-evt-10024",
+    "event_name": "order_status_changed",
+    "order_id": "ae-ext-9921",
+    "status": "STOCK_OUT",
+    "timestamp": "2026-07-09T22:15:00Z",
+    "error_message": "Item is out of stock in seller warehouse.",
+    "schema_version": "1.0",
+    "correlation_id": "corr-test-123",
+    "causation_id": "caus-test-456"
+}

@@ -1,0 +1,12 @@
+{
+    "event_id": "ae-evt-10022",
+    "event_name": "order_status_changed",
+    "order_id": "ae-ext-9921",
+    "status": "SELLER_SEND_GOODS",
+    "timestamp": "2026-07-09T22:05:00Z",
+    "tracking_number": "TRK987654321",
+    "carrier_code": "aliexpress_standard",
+    "schema_version": "1.0",
+    "correlation_id": "corr-test-123",
+    "causation_id": "caus-test-456"
+}

@@ -1,0 +1,21 @@
+{
+    "result": {
+        "ae_item_base_info_dto": {
+            "subject": "Stainless Steel Insulated Water Bottle 500ml",
+            "detail": "<p>Double-walled vacuum insulated bottle that keeps drinks cold for 24h and hot for 12h.</p>",
+            "short_description": "Vacuum insulated 500ml water bottle",
+            "meta_keywords": "water bottle, insulated, stainless steel",
+            "meta_description": "Buy a double-walled vacuum insulated stainless steel water bottle."
+        },
+        "ae_multimedia_info_dto": {
+            "image_urls": "https://img.example.com/bottle1.jpg;https://img.example.com/bottle2.jpg;"
+        },
+        "ae_item_sku_info_dtos": {
+            "ae_item_sku_info_d_t_o": {
+                "sku_id": "sku-single-001",
+                "offer_sale_price": "19.99",
+                "sku_available_stock": 25
+            }
+        }
+    }
+}

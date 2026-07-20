@@ -1,0 +1,25 @@
+{
+    "name": "bagisto/fulfillment",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Higesto",
+            "email": "dev@higesto.local"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Webkul\\Fulfillment\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\Fulfillment\\Providers\\FulfillmentServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}

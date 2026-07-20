@@ -1,0 +1,90 @@
+{
+    "result": {
+        "ae_item_base_info_dto": {
+            "subject": "Wireless Bluetooth Headphones Premium",
+            "detail": "<p>Premium wireless headphones with active noise cancelling and 40h battery.</p>",
+            "short_description": "Premium wireless headphones with noise cancelling",
+            "meta_keywords": "headphones, wireless, bluetooth",
+            "meta_description": "Buy premium wireless bluetooth headphones with noise cancelling."
+        },
+        "ae_multimedia_info_dto": {
+            "image_urls": "https://img.example.com/g1.jpg;https://img.example.com/g2.jpg;https://img.example.com/g3.jpg;"
+        },
+        "ae_item_sku_info_dtos": {
+            "ae_item_sku_info_d_t_o": [
+                {
+                    "sku_id": "sku-red-s",
+                    "offer_sale_price": "29.99",
+                    "sku_available_stock": 10,
+                    "ae_sku_property_dtos": {
+                        "ae_sku_property_d_t_o": [
+                            {
+                                "sku_property_name": "Color",
+                                "property_value_definition_name": "Red",
+                                "sku_image": "https://img.example.com/red.jpg"
+                            },
+                            {
+                                "sku_property_name": "Size",
+                                "property_value_definition_name": "S"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "sku_id": "sku-red-m",
+                    "offer_sale_price": "31.99",
+                    "sku_available_stock": 5,
+                    "ae_sku_property_dtos": {
+                        "ae_sku_property_d_t_o": [
+                            {
+                                "sku_property_name": "Color",
+                                "property_value_definition_name": "Red",
+                                "sku_image": "https://img.example.com/red.jpg"
+                            },
+                            {
+                                "sku_property_name": "Size",
+                                "property_value_definition_name": "M"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "sku_id": "sku-blue-s",
+                    "offer_sale_price": "30.50",
+                    "sku_available_stock": 0,
+                    "ae_sku_property_dtos": {
+                        "ae_sku_property_d_t_o": [
+                            {
+                                "sku_property_name": "Color",
+                                "property_value_definition_name": "Blue",
+                                "sku_image": "https://img.example.com/blue.jpg"
+                            },
+                            {
+                                "sku_property_name": "Size",
+                                "property_value_definition_name": "S"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "sku_id": "sku-blue-m",
+                    "offer_sale_price": "32.00",
+                    "sku_available_stock": 8,
+                    "ae_sku_property_dtos": {
+                        "ae_sku_property_d_t_o": [
+                            {
+                                "sku_property_name": "Color",
+                                "property_value_definition_name": "Blue",
+                                "sku_image": "https://img.example.com/blue.jpg"
+                            },
+                            {
+                                "sku_property_name": "Size",
+                                "property_value_definition_name": "M"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}

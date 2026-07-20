@@ -1,0 +1,8 @@
+{
+  "code": "STOCKOUT",
+  "msg": "Items are out of stock",
+  "error_response": {
+    "code": 10002,
+    "msg": "Stockout"
+  }
+}
