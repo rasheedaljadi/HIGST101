@@ -13,4 +13,3 @@
 ### بيئة التشغيل والتطوير المحلّي:
 * **Laravel version**: 11.x
 * **PHP version**: >= 8.3
-* **eCommerce Core**: Bagisto 2.4.x
