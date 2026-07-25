@@ -1,25 +1,60 @@
-@props([
+<?php $attributes ??= new \Illuminate\View\ComponentAttributeBag;
+
+$__newAttributes = [];
+$__propNames = \Illuminate\View\ComponentAttributeBag::extractPropNames(([
     'isActive' => false,
     'position' => 'right',
     'width'    => '500px',
-])
+]));
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (in_array($__key, $__propNames)) {
+        $$__key = $$__key ?? $__value;
+    } else {
+        $__newAttributes[$__key] = $__value;
+    }
+}
+
+$attributes = new \Illuminate\View\ComponentAttributeBag($__newAttributes);
+
+unset($__propNames);
+unset($__newAttributes);
+
+foreach (array_filter(([
+    'isActive' => false,
+    'position' => 'right',
+    'width'    => '500px',
+]), 'is_string', ARRAY_FILTER_USE_KEY) as $__key => $__value) {
+    $$__key = $$__key ?? $__value;
+}
+
+$__defined_vars = get_defined_vars();
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (array_key_exists($__key, $__defined_vars)) unset($$__key);
+}
+
+unset($__defined_vars, $__key, $__value); ?>
 
 <v-drawer
-    {{ $attributes }}
-    is-active="{{ $isActive }}"
-    position="{{ $position }}"
-    width="{{ $width }}"
->
-    @isset($toggle)
-        <template v-slot:toggle>
-            {{ $toggle }}
-        </template>
-    @endisset
+    <?php echo e($attributes); ?>
 
-    @isset($header)
+    is-active="<?php echo e($isActive); ?>"
+    position="<?php echo e($position); ?>"
+    width="<?php echo e($width); ?>"
+>
+    <?php if(isset($toggle)): ?>
+        <template v-slot:toggle>
+            <?php echo e($toggle); ?>
+
+        </template>
+    <?php endif; ?>
+
+    <?php if(isset($header)): ?>
         <template v-slot:header="{ close }">
-            <div {{ $header->attributes->merge(['class' => 'grid gap-y-2.5 p-6 pb-5 max-md:gap-y-1.5 max-md:border-b max-md:border-zinc-200 max-md:p-4 max-md:gap-y-1 max-md:font-semibold']) }}>
-                {{ $header }}
+            <div <?php echo e($header->attributes->merge(['class' => 'grid gap-y-2.5 p-6 pb-5 max-md:gap-y-1.5 max-md:border-b max-md:border-zinc-200 max-md:p-4 max-md:gap-y-1 max-md:font-semibold'])); ?>>
+                <?php echo e($header); ?>
+
 
                 <div class="absolute top-5 max-sm:top-4 ltr:right-5 rtl:left-5">
                     <span
@@ -30,26 +65,29 @@
                 </div>
             </div>
         </template>
-    @endisset
+    <?php endif; ?>
 
-    @isset($content)
+    <?php if(isset($content)): ?>
         <template v-slot:content>
-            <div {{ $content->attributes->merge(['class' => 'flex-1 overflow-auto px-6 max-md:px-4']) }}>
-                {{ $content }}
-            </div>
-        </template>
-    @endisset
+            <div <?php echo e($content->attributes->merge(['class' => 'flex-1 overflow-auto px-6 max-md:px-4'])); ?>>
+                <?php echo e($content); ?>
 
-    @isset($footer)
-        <template v-slot:footer>
-            <div {{ $footer->attributes->merge(['class' => 'pb-8 max-md:pb-2']) }}>
-                {{ $footer }}
             </div>
         </template>
-    @endisset
+    <?php endif; ?>
+
+    <?php if(isset($footer)): ?>
+        <template v-slot:footer>
+            <div <?php echo e($footer->attributes->merge(['class' => 'pb-8 max-md:pb-2'])); ?>>
+                <?php echo e($footer); ?>
+
+            </div>
+        </template>
+    <?php endif; ?>
 </v-drawer>
 
-@pushOnce('scripts')
+<?php if (! $__env->hasRenderedOnce('406be115-6fcf-42ed-9127-b196503c157d')): $__env->markAsRenderedOnce('406be115-6fcf-42ed-9127-b196503c157d');
+$__env->startPush('scripts'); ?>
     <script
         type="text/x-template"
         id="v-drawer-template"
@@ -201,4 +239,5 @@
             },
         });
     </script>
-@endPushOnce
+<?php $__env->stopPush(); endif; ?>
+<?php /**PATH E:\HIGESTO NEW1\higest\higest101\packages\Webkul\Shop\src/resources/views/components/drawer/index.blade.php ENDPATH**/ ?>

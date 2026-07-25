@@ -60,7 +60,8 @@ $PHP_BIN artisan storage:link --force
 chmod -R 775 storage public/storage 2>/dev/null || true
 
 echo ""
-echo "=== 5. Clearing View & Application Cache ==="
+echo "=== 5. Clearing View & Application Cache & Recovering Sync Runs ==="
+$PHP_BIN artisan fulfillment:recover-sync-runs
 $PHP_BIN artisan view:clear
 $PHP_BIN artisan config:clear
 $PHP_BIN artisan cache:clear
