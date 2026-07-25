@@ -298,9 +298,9 @@
                                     <td class="p-4 text-xs font-mono text-gray-500 dark:text-gray-400">
                                         @if($run->statistics)
                                             <div class="flex flex-col gap-0.5">
-                                                <span>إجمالي العناصر: {{ $run->statistics['total_items'] ?? 0 }}</span>
-                                                <span>تمت المزامنة: {{ $run->statistics['synced_items'] ?? 0 }}</span>
-                                                <span>فشل: {{ $run->statistics['failed_items'] ?? 0 }}</span>
+                                                <span>إجمالي العناصر: {{ $run->statistics['total_items'] ?? $run->statistics['scanned'] ?? 0 }}</span>
+                                                <span>تمت المزامنة: {{ $run->statistics['synced_items'] ?? $run->statistics['published'] ?? $run->statistics['changed'] ?? 0 }}</span>
+                                                <span>فشل: {{ $run->statistics['failed_items'] ?? $run->statistics['errors_count'] ?? 0 }}</span>
                                             </div>
                                         @else
                                             -

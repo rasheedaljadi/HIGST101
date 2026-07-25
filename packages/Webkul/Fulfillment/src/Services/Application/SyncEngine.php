@@ -64,6 +64,9 @@ class SyncEngine
                 'errors_count'        => 0,
                 'warnings_count'      => 0,
                 'chunks_processed'    => 0,
+                'total_items'         => 0,
+                'synced_items'        => 0,
+                'failed_items'        => 0,
             ],
         ]);
 
@@ -128,6 +131,8 @@ class SyncEngine
                 $stats['changed'] += $result->changedCount;
                 $stats['published'] += $published;
                 $stats['chunks_processed']++;
+                $stats['total_items'] = $stats['scanned'];
+                $stats['synced_items'] = $stats['published'] ?: $stats['changed'];
 
                 if (!empty($result->errors)) {
                     $hasErrors = true;
@@ -136,6 +141,8 @@ class SyncEngine
                 if (!empty($result->warnings)) {
                     $stats['warnings_count'] += count($result->warnings);
                 }
+
+                $stats['failed_items'] = $stats['errors_count'];
 
                 $run->statistics = $stats;
                 $run->cursor = $cursor->toArray();

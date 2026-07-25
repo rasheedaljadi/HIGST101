@@ -56,6 +56,8 @@ class FulfillmentServiceProvider extends ServiceProvider
         }
 
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+            $schedule->command('fulfillment:recover-sync-runs')->everyFifteenMinutes();
+
             if (config('fulfillment.poll.enabled', true)) {
                 $schedule->job(new \Webkul\Fulfillment\Jobs\PollSupplierOrdersJob)->everyFifteenMinutes();
             }
