@@ -125,7 +125,7 @@
                                     @endfor
                                 </div>
 
-                                <div class="mb-8 relative z-10 text-right">
+                                <div class="mb-8 relative z-[1] text-right">
                                     <h2 class="text-3xl font-extrabold text-[#002060] dark:text-white mb-2">
                                         تسوق حسب الفئة
                                     </h2>
@@ -135,7 +135,7 @@
                                     <div class="h-1 w-14 bg-[#FFC000] mt-3 mr-0 ml-auto"></div>
                                 </div>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 relative z-10">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 relative z-[1]">
                                     @foreach ($customCategories as $cat)
                                         <a href="{{ $cat['link'] }}" class="bg-white dark:bg-gray-900 rounded-2xl shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_35px_rgba(0,0,0,0.07)] transition-all duration-300 p-4 flex items-center justify-between border border-gray-100 dark:border-gray-800 relative group overflow-hidden">
                                             
@@ -160,7 +160,7 @@
                                 </div>
 
                                 <!-- View All Button -->
-                                <div class="mt-8 text-center sm:text-right relative z-10">
+                                <div class="mt-8 text-center sm:text-right relative z-[1]">
                                     <a href="{{ route('shop.home.index') }}" class="inline-flex items-center justify-center gap-2.5 bg-[#002060] hover:bg-[#001040] text-white px-8 py-3.5 rounded-full hover:shadow-lg transition-all duration-300 font-bold">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>

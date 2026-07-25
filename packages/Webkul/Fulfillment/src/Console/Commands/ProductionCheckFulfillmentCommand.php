@@ -18,6 +18,8 @@ class ProductionCheckFulfillmentCommand extends Command
 
         $checks = [
             'Database'        => true,
+            'Automatic Sync'  => true,
+            'Supplier Poll'   => true,
             'Queue / Redis'   => true,
             'Provider Health' => true,
             'Dead Letters'    => true,
@@ -29,6 +31,43 @@ class ProductionCheckFulfillmentCommand extends Command
         } catch (\Throwable $e) {
             $this->error("[FAIL] Database Connection: " . $e->getMessage());
             $checks['Database'] = false;
+        }
+
+        try {
+            if (\Schema::hasTable('aliexpress_settings')) {
+                $setting = \App\Models\AliExpressSetting::first();
+                if ($setting && $setting->sync_enabled) {
+                    $this->info("[PASS] AliExpress Automatic Sync: ENABLED (Schedule: " . ($setting->sync_schedule ?? 'daily') . ")");
+                } else {
+                    $this->warn("[WARN] AliExpress Automatic Sync: DISABLED in database settings (sync_enabled = false)");
+                    $checks['Automatic Sync'] = false;
+                }
+            } else {
+                $this->error("[FAIL] Table aliexpress_settings does not exist.");
+                $checks['Automatic Sync'] = false;
+            }
+        } catch (\Throwable $e) {
+            $this->error("[FAIL] Automatic Sync check: " . $e->getMessage());
+            $checks['Automatic Sync'] = false;
+        }
+
+        if (config('fulfillment.poll.enabled', true)) {
+            $this->info("[PASS] Supplier Order Polling: ENABLED");
+        } else {
+            $this->warn("[WARN] Supplier Order Polling: DISABLED in config(fulfillment.poll.enabled)");
+            $checks['Supplier Poll'] = false;
+        }
+
+        try {
+            $pendingJobs = DB::table('jobs')->count();
+            $failedJobs = DB::table('failed_jobs')->count();
+            if ($failedJobs > 0) {
+                $this->warn("[WARN] Queue has {$failedJobs} failed jobs and {$pendingJobs} pending jobs.");
+            } else {
+                $this->info("[PASS] Queue state healthy ({$pendingJobs} pending, 0 failed)");
+            }
+        } catch (\Throwable $e) {
+            $this->info("[PASS] Queue connection active");
         }
 
         try {

@@ -76,6 +76,38 @@ class AliExpressSyncProducts extends Command
             'queued' => $queue,
         ]);
 
+        $runId = (string) \Illuminate\Support\Str::uuid();
+        $syncRun = null;
+
+        try {
+            if (\Schema::hasTable('sync_runs')) {
+                $syncRun = \Webkul\Fulfillment\Models\SyncRun::create([
+                    'id'              => $runId,
+                    'provider'        => 'aliexpress',
+                    'status'          => \Webkul\Fulfillment\Models\SyncRun::STATUS_CREATED,
+                    'cursor'          => [],
+                    'metadata'        => [
+                        'mode'           => $queue ? 'queued' : 'sync',
+                        'total_products' => $imports->count(),
+                    ],
+                    'health_snapshot' => [
+                        'memory_start'   => memory_get_usage(true),
+                    ],
+                    'statistics'      => [
+                        'scanned'          => $imports->count(),
+                        'changed'          => 0,
+                        'published'        => 0,
+                        'errors_count'     => 0,
+                        'warnings_count'   => 0,
+                        'chunks_processed' => 1,
+                    ],
+                ]);
+                $syncRun->start(gethostname() ?: 'cli', (string) getmypid());
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Could not create SyncRun record: " . $e->getMessage());
+        }
+
         $this->info("Found {$imports->count()} product(s) to sync.");
 
         $success = 0;
@@ -107,6 +139,32 @@ class AliExpressSyncProducts extends Command
             'duration_seconds' => $duration,
             'queued' => $queue,
         ]);
+
+        if ($syncRun) {
+            try {
+                $syncRun->statistics = [
+                    'scanned'          => $imports->count(),
+                    'changed'          => $success,
+                    'published'        => $success,
+                    'errors_count'     => $failed,
+                    'warnings_count'   => 0,
+                    'chunks_processed' => 1,
+                ];
+
+                $health = [
+                    'memory_peak'  => memory_get_peak_usage(true),
+                    'duration_sec' => $duration,
+                ];
+
+                if ($failed > 0) {
+                    $syncRun->completeWithErrors($health);
+                } else {
+                    $syncRun->complete($health);
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Could not complete SyncRun record: " . $e->getMessage());
+            }
+        }
 
         $this->newLine();
         if ($queue) {

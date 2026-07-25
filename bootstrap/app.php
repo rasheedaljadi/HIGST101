@@ -50,7 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule) {
         try {
             if (\Schema::hasTable('aliexpress_settings')) {
-                $settings = \App\Models\AliExpressSetting::first();
+                $settings = \App\Models\AliExpressSetting::current();
                 if ($settings && $settings->sync_enabled) {
                     $frequency = $settings->sync_schedule ?? 'daily';
 
@@ -69,12 +69,12 @@ return Application::configure(basePath: dirname(__DIR__))
                             break;
                     }
                 }
-                
+
                 // Process deferred indexes every 10 minutes
                 $schedule->command('aliexpress:sync-products --process-deferred-index')->everyTenMinutes();
             }
         } catch (\Throwable $e) {
-            // Ignore during migrations or early boot phases
+            \Illuminate\Support\Facades\Log::warning('Schedule registration skipped or failed: ' . $e->getMessage());
         }
     })
     ->withExceptions(function (Exceptions $exceptions) {
