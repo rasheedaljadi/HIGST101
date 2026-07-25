@@ -8,12 +8,12 @@ Write-Host "====================================================" -ForegroundCol
 Write-Host " 1. Force Adding & Pushing AliExpress Views to GitHub " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 
-# Force track all blade views in resources/views/aliexpress
+# Force track all blade views in resources/views/aliexpress and all project modifications
 git add -f resources/views/aliexpress/import.blade.php 2>$null
 git add -f resources/views/aliexpress/keys.blade.php 2>$null
 git add -f resources/views/aliexpress/sync.blade.php 2>$null
 git add -A
-git commit -m "Force track and push resources/views/aliexpress blade views" 2>$null
+git commit -m "Update shop copyright text to Hayest, sync fixes, and project views"
 git push origin main
 
 if ($LASTEXITCODE -ne 0) {
