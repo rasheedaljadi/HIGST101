@@ -1,15 +1,19 @@
-# Complete End-to-End Pipeline: Push to GitHub -> Force Reset & Sync on Production Server
+# Complete End-to-End Pipeline: Force Track Views -> Push to GitHub -> Deploy to Server
 $HostIP = "76.13.79.242"
 $User = "highest-ye"
 $Pass = "YoK2PBV1fo82yujX2tDq"
 $RepoUrl = "git@github.com:rasheedaljadi/HIGST101.git"
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " 1. Pushing Local Fixes to GitHub " -ForegroundColor Cyan
+Write-Host " 1. Force Adding & Pushing AliExpress Views to GitHub " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 
+# Force track all blade views in resources/views/aliexpress
+git add -f resources/views/aliexpress/import.blade.php 2>$null
+git add -f resources/views/aliexpress/keys.blade.php 2>$null
+git add -f resources/views/aliexpress/sync.blade.php 2>$null
 git add -A
-git commit -m "Fix view directory tracking and ensure resources/views/aliexpress is fully synced" 2>$null
+git commit -m "Force track and push resources/views/aliexpress blade views" 2>$null
 git push origin main
 
 if ($LASTEXITCODE -ne 0) {
@@ -41,9 +45,8 @@ git fetch origin main
 git reset --hard origin/main
 
 echo ""
-echo "=== 2. Checking resources/views/aliexpress Directory on Server ==="
-ls -la resources/views/
-ls -la resources/views/aliexpress/ 2>/dev/null || echo "Directory resources/views/aliexpress does not exist!"
+echo "=== 2. Verifying resources/views/aliexpress Directory on Server ==="
+ls -la resources/views/aliexpress/ 2>/dev/null || echo "Directory resources/views/aliexpress still missing!"
 
 echo ""
 echo "=== 3. Creating Framework Storage Directories & Setting Permissions ==="
@@ -72,7 +75,7 @@ echo "=== 7. Running Production Readiness Check ==="
 $PHP_BIN artisan fulfillment:production-check
 
 echo ""
-echo "=== VIEW DIAGNOSTIC & DEPLOYMENT COMPLETED ==="
+echo "=== VIEWS FORCE PUSH & DEPLOYMENT COMPLETED SUCCESSFULLY ==="
 '@
 
 if (Get-Command plink -ErrorAction SilentlyContinue) {
