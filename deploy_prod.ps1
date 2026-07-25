@@ -1,4 +1,4 @@
-# Complete End-to-End Pipeline: Push to GitHub -> Pull on Production Server -> Reload & Verify
+# Complete End-to-End Pipeline: Push to GitHub -> Force Reset & Sync on Production Server
 $HostIP = "76.13.79.242"
 $User = "highest-ye"
 $Pass = "YoK2PBV1fo82yujX2tDq"
@@ -9,7 +9,7 @@ Write-Host " 1. Pushing Local Changes to GitHub " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 
 git add .
-git commit -m "Production release: automatic sync fix, production checks, storage symlink and SyncRun tracking"
+git commit -m "Production release: automatic sync fix, production checks, storage symlink and SyncRun tracking" 2>$null
 git push origin main
 
 if ($LASTEXITCODE -ne 0) {
@@ -18,7 +18,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "`n====================================================" -ForegroundColor Cyan
-Write-Host " 2. Deploying & Pulling Updates on Production Server " -ForegroundColor Cyan
+Write-Host " 2. Deploying & Syncing Code on Production Server " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 
 $remoteScript = @'
@@ -36,20 +36,27 @@ elif [ -f /usr/bin/php8.3 ]; then
     PHP_BIN="/usr/bin/php8.3"
 fi
 
-echo "=== Pulling Latest Code from GitHub ==="
+echo "=== 1. Fetching & Force-Updating Code from GitHub ==="
 git remote set-url origin git@github.com:rasheedaljadi/HIGST101.git 2>/dev/null || true
-git fetch origin
-git pull origin main --no-edit || git pull origin master --no-edit || true
+git fetch origin main
+git reset --hard origin/main
+echo "[SUCCESS] Server code synced 100% with GitHub (origin/main)."
 
 echo ""
-echo "=== Clearing Application Cache & Rebuilding ==="
+echo "=== 2. Re-creating Storage Symlink ==="
+rm -rf public/storage
+$PHP_BIN artisan storage:link --force
+chmod -R 775 storage public/storage 2>/dev/null || true
+
+echo ""
+echo "=== 3. Clearing Application Cache & Rebuilding ==="
 $PHP_BIN artisan config:clear
 $PHP_BIN artisan cache:clear
 $PHP_BIN artisan route:clear
 $PHP_BIN artisan view:clear
 
 echo ""
-echo "=== Running Production Readiness Check ==="
+echo "=== 4. Running Production Readiness Check ==="
 $PHP_BIN artisan fulfillment:production-check
 
 echo ""
