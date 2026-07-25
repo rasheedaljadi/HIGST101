@@ -5,11 +5,11 @@ $Pass = "YoK2PBV1fo82yujX2tDq"
 $RepoUrl = "git@github.com:rasheedaljadi/HIGST101.git"
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " 1. Pushing Local Changes to GitHub " -ForegroundColor Cyan
+Write-Host " 1. Pushing Local Fixes to GitHub " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 
 git add .
-git commit -m "Fix view compiled path in config/view.php and ensure framework directories exist" 2>$null
+git commit -m "Fix view compiled path and verify all aliexpress views" 2>$null
 git push origin main
 
 if ($LASTEXITCODE -ne 0) {
@@ -59,15 +59,15 @@ $PHP_BIN artisan cache:clear
 $PHP_BIN artisan route:clear
 
 echo ""
-echo "=== 5. Testing View Existence ==="
-$PHP_BIN artisan tinker --execute="echo 'View aliexpress.sync exists: ' . (view()->exists('aliexpress.sync') ? 'YES' : 'NO') . '\n';"
+echo "=== 5. Testing AliExpress Views Existence ==="
+$PHP_BIN artisan tinker --execute="echo 'aliexpress.import: ' . (view()->exists('aliexpress.import') ? 'YES' : 'NO') . '\n'; echo 'aliexpress.sync: ' . (view()->exists('aliexpress.sync') ? 'YES' : 'NO') . '\n'; echo 'aliexpress.keys: ' . (view()->exists('aliexpress.keys') ? 'YES' : 'NO') . '\n';"
 
 echo ""
 echo "=== 6. Running Production Readiness Check ==="
 $PHP_BIN artisan fulfillment:production-check
 
 echo ""
-echo "=== VIEW FIX & DEPLOYMENT COMPLETED SUCCESSFULLY ==="
+echo "=== ALL VIEWS FIX & DEPLOYMENT COMPLETED SUCCESSFULLY ==="
 '@
 
 if (Get-Command plink -ErrorAction SilentlyContinue) {
