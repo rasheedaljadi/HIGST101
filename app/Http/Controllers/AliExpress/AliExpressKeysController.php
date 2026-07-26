@@ -7,6 +7,7 @@ use App\Models\AliExpressSetting;
 use App\Services\AliExpress\AliExpressOAuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Throwable;
@@ -38,7 +39,7 @@ class AliExpressKeysController extends Controller
 
         $token = $this->safeLatestToken();
 
-        $warehouse = \Illuminate\Support\Facades\DB::table('inventory_sources')
+        $warehouse = DB::table('inventory_sources')
             ->where('code', 'default')
             ->first();
 
@@ -81,14 +82,14 @@ class AliExpressKeysController extends Controller
             ];
         } elseif ($section === 'warehouse') {
             $rules = [
-                'warehouse_contact_name'   => ['required', 'string', 'max:255'],
+                'warehouse_contact_name' => ['required', 'string', 'max:255'],
                 'warehouse_contact_number' => ['required', 'string', 'max:255'],
-                'warehouse_contact_email'  => ['required', 'email', 'max:255'],
-                'warehouse_street'         => ['required', 'string', 'max:255'],
-                'warehouse_city'           => ['required', 'string', 'max:255'],
-                'warehouse_state'          => ['required', 'string', 'max:255'],
-                'warehouse_country'        => ['required', 'string', 'size:2'],
-                'warehouse_postcode'       => ['required', 'string', 'max:255'],
+                'warehouse_contact_email' => ['required', 'email', 'max:255'],
+                'warehouse_street' => ['required', 'string', 'max:255'],
+                'warehouse_city' => ['required', 'string', 'max:255'],
+                'warehouse_state' => ['required', 'string', 'max:255'],
+                'warehouse_country' => ['required', 'string', 'size:2'],
+                'warehouse_postcode' => ['required', 'string', 'max:255'],
             ];
         } else {
             return redirect()->back()->with('error', 'القسم غير صالح.');
@@ -101,14 +102,14 @@ class AliExpressKeysController extends Controller
             'shipping_margin' => 'هامش الشحن',
             'shipping_extra_days' => 'أيام التوصيل الإضافية',
 
-            'warehouse_contact_name'   => 'اسم مسؤول المستودع',
+            'warehouse_contact_name' => 'اسم مسؤول المستودع',
             'warehouse_contact_number' => 'رقم هاتف المستودع',
-            'warehouse_contact_email'  => 'البريد الإلكتروني للمستودع',
-            'warehouse_street'         => 'عنوان المستودع (Street)',
-            'warehouse_city'           => 'مدينة المستودع',
-            'warehouse_state'          => 'منطقة المستودع',
-            'warehouse_country'        => 'دولة المستودع',
-            'warehouse_postcode'       => 'الرمز البريدي للمستودع',
+            'warehouse_contact_email' => 'البريد الإلكتروني للمستودع',
+            'warehouse_street' => 'عنوان المستودع (Street)',
+            'warehouse_city' => 'مدينة المستودع',
+            'warehouse_state' => 'منطقة المستودع',
+            'warehouse_country' => 'دولة المستودع',
+            'warehouse_postcode' => 'الرمز البريدي للمستودع',
         ]);
 
         $settings = AliExpressSetting::current();
@@ -137,21 +138,21 @@ class AliExpressKeysController extends Controller
             $settings->save();
         } elseif ($section === 'warehouse') {
             // Update default inventory source warehouse address details directly
-            \Illuminate\Support\Facades\DB::table('inventory_sources')
+            DB::table('inventory_sources')
                 ->where('code', 'default')
                 ->update([
-                    'contact_name'   => $validated['warehouse_contact_name'],
+                    'contact_name' => $validated['warehouse_contact_name'],
                     'contact_number' => $validated['warehouse_contact_number'],
-                    'contact_email'  => $validated['warehouse_contact_email'],
-                    'street'         => $validated['warehouse_street'],
-                    'city'           => $validated['warehouse_city'],
-                    'state'          => $validated['warehouse_state'],
-                    'country'        => $validated['warehouse_country'],
-                    'postcode'       => $validated['warehouse_postcode'],
+                    'contact_email' => $validated['warehouse_contact_email'],
+                    'street' => $validated['warehouse_street'],
+                    'city' => $validated['warehouse_city'],
+                    'state' => $validated['warehouse_state'],
+                    'country' => $validated['warehouse_country'],
+                    'postcode' => $validated['warehouse_postcode'],
                 ]);
         }
 
-        Log::channel('aliexpress')->info('AliExpress settings updated from admin for section: ' . $section, [
+        Log::channel('aliexpress')->info('AliExpress settings updated from admin for section: '.$section, [
             'has_secret' => ! empty($settings->app_secret),
             'sync_enabled' => $settings->sync_enabled,
             'sync_schedule' => $settings->sync_schedule,

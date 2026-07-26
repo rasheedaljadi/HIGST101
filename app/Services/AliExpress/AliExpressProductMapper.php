@@ -6,6 +6,7 @@ use App\Exceptions\AliExpress\AliExpressImportException;
 use App\Services\AliExpress\DTO\NormalizedProduct;
 use App\Services\AliExpress\DTO\NormalizedVariant;
 use App\Services\AliExpress\DTO\NormalizedVariantAxis;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -102,7 +103,7 @@ class AliExpressProductMapper
         $updatedAtRaw = $this->firstOf($base, ['gmt_modified', 'modified_time', 'update_time']);
         if ($updatedAtRaw) {
             try {
-                $providerUpdatedAt = \Illuminate\Support\Carbon::parse($updatedAtRaw);
+                $providerUpdatedAt = Carbon::parse($updatedAtRaw);
             } catch (\Throwable $e) {
                 // Ignore
             }

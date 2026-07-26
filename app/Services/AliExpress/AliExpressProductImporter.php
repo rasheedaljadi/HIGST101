@@ -5,6 +5,7 @@ namespace App\Services\AliExpress;
 use App\Exceptions\AliExpress\AliExpressImportException;
 use App\Models\AliExpressProductImport;
 use App\Models\AliExpressToken;
+use App\Models\ExternalVariantProjection;
 use App\Services\AliExpress\DTO\NormalizedProduct;
 use App\Services\AliExpress\DTO\NormalizedVariant;
 use App\Services\AliExpress\DTO\ResolvedAxes;
@@ -1593,7 +1594,7 @@ class AliExpressProductImporter
      */
     protected function applyVariantSkuIdsAndProjections(Product $product, ResolvedAxes $resolved, NormalizedProduct $dto): void
     {
-        $attributeId = (int) (\Webkul\Attribute\Models\Attribute::where('code', 'aliexpress_sku_id')->value('id') ?? 0);
+        $attributeId = (int) (Attribute::where('code', 'aliexpress_sku_id')->value('id') ?? 0);
         if ($attributeId === 0) {
             return;
         }
@@ -1624,29 +1625,29 @@ class AliExpressProductImporter
 
                 ProductAttributeValue::updateOrCreate(
                     [
-                        'product_id'   => (int) $variant->id,
+                        'product_id' => (int) $variant->id,
                         'attribute_id' => $attributeId,
-                        'channel'      => null,
-                        'locale'       => null,
+                        'channel' => null,
+                        'locale' => null,
                     ],
                     [
-                        'text_value'   => $matchedSku->skuId,
-                        'unique_id'    => $uniqueId,
+                        'text_value' => $matchedSku->skuId,
+                        'unique_id' => $uniqueId,
                     ]
                 );
 
-                \App\Models\ExternalVariantProjection::updateOrCreate(
+                ExternalVariantProjection::updateOrCreate(
                     [
                         'variant_product_id' => $variant->id,
                     ],
                     [
-                        'product_id'               => $product->id,
-                        'provider'                 => 'aliexpress',
-                        'external_sku_id'          => $matchedSku->skuId,
-                        'external_product_id'      => $dto->aliexpressProductId,
+                        'product_id' => $product->id,
+                        'provider' => 'aliexpress',
+                        'external_sku_id' => $matchedSku->skuId,
+                        'external_product_id' => $dto->aliexpressProductId,
                         'external_variant_version' => null,
-                        'projection_version'       => 1,
-                        'provider_updated_at'      => null,
+                        'projection_version' => 1,
+                        'provider_updated_at' => null,
                     ]
                 );
             }
@@ -1658,7 +1659,7 @@ class AliExpressProductImporter
      */
     protected function applySimpleSkuIdAndProjection(Product $product, NormalizedProduct $dto): void
     {
-        $attributeId = (int) (\Webkul\Attribute\Models\Attribute::where('code', 'aliexpress_sku_id')->value('id') ?? 0);
+        $attributeId = (int) (Attribute::where('code', 'aliexpress_sku_id')->value('id') ?? 0);
         if ($attributeId === 0) {
             return;
         }
@@ -1674,29 +1675,29 @@ class AliExpressProductImporter
 
         ProductAttributeValue::updateOrCreate(
             [
-                'product_id'   => (int) $product->id,
+                'product_id' => (int) $product->id,
                 'attribute_id' => $attributeId,
-                'channel'      => null,
-                'locale'       => null,
-                    ],
-                    [
-                'text_value'   => $aeVariant->skuId,
-                'unique_id'    => $uniqueId,
+                'channel' => null,
+                'locale' => null,
+            ],
+            [
+                'text_value' => $aeVariant->skuId,
+                'unique_id' => $uniqueId,
             ]
         );
 
-        \App\Models\ExternalVariantProjection::updateOrCreate(
+        ExternalVariantProjection::updateOrCreate(
             [
                 'variant_product_id' => $product->id,
             ],
             [
-                'product_id'               => $product->id,
-                'provider'                 => 'aliexpress',
-                'external_sku_id'          => $aeVariant->skuId,
-                'external_product_id'      => $dto->aliexpressProductId,
+                'product_id' => $product->id,
+                'provider' => 'aliexpress',
+                'external_sku_id' => $aeVariant->skuId,
+                'external_product_id' => $dto->aliexpressProductId,
                 'external_variant_version' => null,
-                'projection_version'       => 1,
-                'provider_updated_at'      => null,
+                'projection_version' => 1,
+                'provider_updated_at' => null,
             ]
         );
     }

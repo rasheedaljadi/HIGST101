@@ -126,7 +126,7 @@ class AliExpressExploreShipping extends Command
             ],
         ];
 
-        $this->info("Probing shipping & return APIs for app_key=".config('aliexpress.app_key')." (product {$productId}, ship-to {$country})");
+        $this->info('Probing shipping & return APIs for app_key='.config('aliexpress.app_key')." (product {$productId}, ship-to {$country})");
         $this->newLine();
 
         $rows = [];

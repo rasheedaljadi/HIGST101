@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Webkul\Product\Models\Product;
 
 /**
  * Source reference linking a Bagisto product to the AliExpress product it was
@@ -82,8 +84,8 @@ class AliExpressProductImport extends Model
     /**
      * Get the associated local product.
      */
-    public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Product\Models\Product::class, 'product_id');
+        return $this->belongsTo(Product::class, 'product_id');
     }
 }

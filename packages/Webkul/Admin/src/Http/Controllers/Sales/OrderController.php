@@ -15,6 +15,7 @@ use Webkul\Admin\Http\Resources\CartResource;
 use Webkul\Checkout\Facades\Cart;
 use Webkul\Checkout\Repositories\CartRepository;
 use Webkul\Customer\Repositories\CustomerGroupRepository;
+use Webkul\Sales\Models\Order;
 use Webkul\Sales\Repositories\OrderCommentRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 use Webkul\Sales\Transformers\OrderResource;
@@ -187,12 +188,12 @@ class OrderController extends Controller
         if (! $order->canAccept()) {
             session()->flash('error', trans('admin::app.sales.orders.view.accept-error'));
         } else {
-            $this->orderRepository->update(['status' => \Webkul\Sales\Models\Order::STATUS_ACCEPTED], $id);
+            $this->orderRepository->update(['status' => Order::STATUS_ACCEPTED], $id);
 
             $this->orderCommentRepository->create([
-                'comment'           => 'Order accepted by administrator.',
+                'comment' => 'Order accepted by administrator.',
                 'customer_notified' => 0,
-                'order_id'          => $id,
+                'order_id' => $id,
             ]);
 
             session()->flash('success', trans('admin::app.sales.orders.view.accept-success'));

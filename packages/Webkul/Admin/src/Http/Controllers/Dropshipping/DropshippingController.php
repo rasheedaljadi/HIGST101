@@ -2,7 +2,7 @@
 
 namespace Webkul\Admin\Http\Controllers\Dropshipping;
 
-use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
 use Webkul\Admin\Http\Controllers\Controller;
 
 class DropshippingController extends Controller
@@ -13,7 +13,8 @@ class DropshippingController extends Controller
     public function imports()
     {
         if (config('dropshipping.admin_v2', true)) {
-            \Illuminate\Support\Facades\Log::channel('aliexpress')->warning('Deprecated route accessed: admin.dropshipping.imports.index. Redirecting to admin.dropshipping.import.index.');
+            Log::channel('aliexpress')->warning('Deprecated route accessed: admin.dropshipping.imports.index. Redirecting to admin.dropshipping.import.index.');
+
             return redirect()->route('admin.dropshipping.import.index');
         }
 
@@ -28,7 +29,8 @@ class DropshippingController extends Controller
     public function fulfillment()
     {
         if (config('dropshipping.admin_v2', true)) {
-            \Illuminate\Support\Facades\Log::channel('aliexpress')->warning('Deprecated route accessed: admin.dropshipping.fulfillment.index. Redirecting to actual fulfillment.');
+            Log::channel('aliexpress')->warning('Deprecated route accessed: admin.dropshipping.fulfillment.index. Redirecting to actual fulfillment.');
+
             return redirect()->route('admin.dropshipping.fulfillment.index');
         }
 
@@ -43,7 +45,8 @@ class DropshippingController extends Controller
     public function apiKeys()
     {
         if (config('dropshipping.admin_v2', true)) {
-            \Illuminate\Support\Facades\Log::channel('aliexpress')->warning('Deprecated route accessed: admin.dropshipping.api-keys.index. Redirecting to admin.dropshipping.keys.index.');
+            Log::channel('aliexpress')->warning('Deprecated route accessed: admin.dropshipping.api-keys.index. Redirecting to admin.dropshipping.keys.index.');
+
             return redirect()->route('admin.dropshipping.keys.index');
         }
 
@@ -52,4 +55,3 @@ class DropshippingController extends Controller
         ]);
     }
 }
-

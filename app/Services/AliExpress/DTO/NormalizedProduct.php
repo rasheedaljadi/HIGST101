@@ -2,6 +2,8 @@
 
 namespace App\Services\AliExpress\DTO;
 
+use Illuminate\Support\Carbon;
+
 /**
  * Normalized representation of an AliExpress product, decoupled from the
  * raw `ds.product.get` payload shape. Produced by the mapper and consumed
@@ -41,7 +43,7 @@ final class NormalizedProduct
         public ?int $aliexpressCategoryId = null,
         public array $localizedText = [],
         public ?string $externalProductVersion = null,
-        public ?\Illuminate\Support\Carbon $providerUpdatedAt = null,
+        public ?Carbon $providerUpdatedAt = null,
     ) {}
 
     /**

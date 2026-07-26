@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EncryptCookies;
+use App\Models\AliExpressSetting;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Cookie\Middleware\EncryptCookies as BaseEncryptCookies;
 use Illuminate\Foundation\Application;
@@ -8,6 +9,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
+use Illuminate\Support\Facades\Log;
 use Webkul\Core\Http\Middleware\SecureHeaders;
 use Webkul\Installer\Http\Middleware\CanInstall;
 
@@ -49,8 +51,8 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (Schedule $schedule) {
         try {
-            if (\Schema::hasTable('aliexpress_settings')) {
-                $settings = \App\Models\AliExpressSetting::current();
+            if (Schema::hasTable('aliexpress_settings')) {
+                $settings = AliExpressSetting::current();
                 if ($settings && $settings->sync_enabled) {
                     $frequency = $settings->sync_schedule ?? 'daily';
 
@@ -73,8 +75,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 // Process deferred indexes every 10 minutes
                 $schedule->command('aliexpress:sync-products --process-deferred-index')->everyTenMinutes();
             }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Schedule registration skipped or failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Log::warning('Schedule registration skipped or failed: '.$e->getMessage());
         }
     })
     ->withExceptions(function (Exceptions $exceptions) {

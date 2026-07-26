@@ -24,7 +24,7 @@ class SyncAllProductsJob implements ShouldQueue
             ->whereNotNull('product_id')
             ->get();
 
-        Log::channel('aliexpress')->info("SyncAllProductsJob dispatched " . $imports->count() . " products for synchronization.");
+        Log::channel('aliexpress')->info('SyncAllProductsJob dispatched '.$imports->count().' products for synchronization.');
 
         foreach ($imports as $import) {
             SyncProductJob::dispatch($import);

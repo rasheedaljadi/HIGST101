@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -25,11 +24,11 @@ return new class extends Migration
         ];
 
         foreach ($attributes as $attr) {
-            if (Illuminate\Support\Facades\DB::table('attributes')->where('code', $attr['code'])->exists()) {
+            if (DB::table('attributes')->where('code', $attr['code'])->exists()) {
                 continue;
             }
 
-            $attributeId = Illuminate\Support\Facades\DB::table('attributes')->insertGetId([
+            $attributeId = DB::table('attributes')->insertGetId([
                 'code' => $attr['code'],
                 'admin_name' => $attr['admin_name'],
                 'type' => $attr['type'],
@@ -50,33 +49,33 @@ return new class extends Migration
                 'updated_at' => now(),
             ]);
 
-            Illuminate\Support\Facades\DB::table('attribute_translations')->insert([
+            DB::table('attribute_translations')->insert([
                 'attribute_id' => $attributeId,
                 'locale' => 'en',
                 'name' => $attr['admin_name'],
             ]);
 
-            $families = Illuminate\Support\Facades\DB::table('attribute_families')->get();
+            $families = DB::table('attribute_families')->get();
             foreach ($families as $family) {
-                $group = Illuminate\Support\Facades\DB::table('attribute_groups')
+                $group = DB::table('attribute_groups')
                     ->where('attribute_family_id', $family->id)
                     ->where(function ($q) {
                         $q->where('name', 'General')
-                          ->orWhere('code', 'general');
+                            ->orWhere('code', 'general');
                     })
-                    ->first() ?? Illuminate\Support\Facades\DB::table('attribute_groups')
+                    ->first() ?? DB::table('attribute_groups')
                     ->where('attribute_family_id', $family->id)
                     ->orderBy('position', 'asc')
                     ->first();
 
                 if ($group) {
-                    $groupMappingExists = Illuminate\Support\Facades\DB::table('attribute_group_mappings')
+                    $groupMappingExists = DB::table('attribute_group_mappings')
                         ->where('attribute_id', $attributeId)
                         ->where('attribute_group_id', $group->id)
                         ->exists();
 
-                    if (!$groupMappingExists) {
-                        Illuminate\Support\Facades\DB::table('attribute_group_mappings')->insert([
+                    if (! $groupMappingExists) {
+                        DB::table('attribute_group_mappings')->insert([
                             'attribute_id' => $attributeId,
                             'attribute_group_id' => $group->id,
                             'position' => 99,
@@ -93,10 +92,10 @@ return new class extends Migration
     public function down(): void
     {
         $codes = ['aliexpress_sku_id', 'needs_review'];
-        $attributeIds = Illuminate\Support\Facades\DB::table('attributes')->whereIn('code', $codes)->pluck('id');
-        
-        Illuminate\Support\Facades\DB::table('attribute_group_mappings')->whereIn('attribute_id', $attributeIds)->delete();
-        Illuminate\Support\Facades\DB::table('attribute_translations')->whereIn('attribute_id', $attributeIds)->delete();
-        Illuminate\Support\Facades\DB::table('attributes')->whereIn('id', $attributeIds)->delete();
+        $attributeIds = DB::table('attributes')->whereIn('code', $codes)->pluck('id');
+
+        DB::table('attribute_group_mappings')->whereIn('attribute_id', $attributeIds)->delete();
+        DB::table('attribute_translations')->whereIn('attribute_id', $attributeIds)->delete();
+        DB::table('attributes')->whereIn('id', $attributeIds)->delete();
     }
 };

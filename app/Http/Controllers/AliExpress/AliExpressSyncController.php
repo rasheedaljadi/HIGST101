@@ -31,8 +31,8 @@ class AliExpressSyncController extends Controller
         if (! empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('aliexpress_product_id', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%")
-                  ->orWhere('product_id', $search);
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('product_id', $search);
             });
         }
 
@@ -88,15 +88,15 @@ class AliExpressSyncController extends Controller
             ->withQueryString();
 
         return view('aliexpress.sync', [
-            'imports'      => $imports,
-            'search'       => $search,
-            'totalCount'   => $totalCount,
+            'imports' => $imports,
+            'search' => $search,
+            'totalCount' => $totalCount,
             'successCount' => $successCount,
-            'failedCount'  => $failedCount,
-            'syncRuns'     => $syncRuns,
+            'failedCount' => $failedCount,
+            'syncRuns' => $syncRuns,
             'outboxEvents' => $outboxEvents,
             'outboxErrors' => $outboxErrors,
-            'inboxEvents'  => $inboxEvents,
+            'inboxEvents' => $inboxEvents,
         ]);
     }
 
@@ -131,7 +131,7 @@ class AliExpressSyncController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'فشلت المزامنة: ' . $errorMessage,
+                'message' => 'فشلت المزامنة: '.$errorMessage,
                 'status' => 'failed',
                 'updated_at' => $import ? $import->updated_at->diffForHumans() : 'الآن',
                 'error' => $errorMessage,
@@ -163,7 +163,7 @@ class AliExpressSyncController extends Controller
                 DB::table('domain_outbox_events')
                     ->where('id', $id)
                     ->update([
-                        'status'   => 'pending',
+                        'status' => 'pending',
                         'attempts' => 0,
                     ]);
             });
@@ -177,17 +177,17 @@ class AliExpressSyncController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'تمت إعادة تشغيل حدث الصادر بنجاح.',
-                'status'  => $event ? $event->status : 'unknown',
+                'status' => $event ? $event->status : 'unknown',
             ]);
         } catch (Throwable $e) {
             Log::channel('aliexpress')->error('AliExpress outbox event manual replay failed', [
-                'id'    => $id,
+                'id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'فشلت إعادة تشغيل الحدث: ' . $e->getMessage(),
+                'message' => 'فشلت إعادة تشغيل الحدث: '.$e->getMessage(),
             ], 422);
         }
     }
@@ -202,7 +202,7 @@ class AliExpressSyncController extends Controller
                 DB::table('external_inbox_events')
                     ->where('id', $id)
                     ->update([
-                        'status'   => 'pending',
+                        'status' => 'pending',
                         'attempts' => 0,
                     ]);
             });
@@ -216,17 +216,17 @@ class AliExpressSyncController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'تمت إعادة معالجة حدث الوارد بنجاح.',
-                'status'  => $event ? $event->status : 'unknown',
+                'status' => $event ? $event->status : 'unknown',
             ]);
         } catch (Throwable $e) {
             Log::channel('aliexpress')->error('AliExpress inbox event manual replay failed', [
-                'id'    => $id,
+                'id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'فشلت إعادة معالجة الحدث: ' . $e->getMessage(),
+                'message' => 'فشلت إعادة معالجة الحدث: '.$e->getMessage(),
             ], 422);
         }
     }

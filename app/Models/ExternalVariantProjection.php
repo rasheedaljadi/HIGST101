@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+use Webkul\Product\Models\Product;
 
 /**
  * Read model projection mapping an external supplier's SKU ID to a local variant.
@@ -16,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $external_product_id
  * @property string|null $external_variant_version
  * @property int $projection_version
- * @property \Illuminate\Support\Carbon|null $provider_updated_at
+ * @property Carbon|null $provider_updated_at
  */
 class ExternalVariantProjection extends Model
 {
@@ -45,7 +47,7 @@ class ExternalVariantProjection extends Model
      */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Product\Models\Product::class, 'product_id');
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
     /**
@@ -53,6 +55,6 @@ class ExternalVariantProjection extends Model
      */
     public function variantProduct(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Product\Models\Product::class, 'variant_product_id');
+        return $this->belongsTo(Product::class, 'variant_product_id');
     }
 }

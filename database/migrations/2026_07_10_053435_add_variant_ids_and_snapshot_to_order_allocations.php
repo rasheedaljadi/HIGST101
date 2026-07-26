@@ -34,7 +34,7 @@ return new class extends Migration
             $table->dropForeign(['product_id']);
             $table->dropForeign(['variant_product_id']);
             $table->dropIndex('alloc_variant_state_idx');
-            
+
             $table->dropColumn(['product_id', 'variant_product_id', 'supplier_snapshot']);
         });
     }

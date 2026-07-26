@@ -207,11 +207,11 @@
 
 
         <p class="text-sm text-zinc-600 max-md:text-center">
-            <?php if(core()->getConfigData('general.content.footer.copyright_content')): ?>
+            <?php if(core()->getConfigData('general.content.footer.copyright_content') && !str_contains(core()->getConfigData('general.content.footer.copyright_content'), 'Webkul')): ?>
                 <?php echo core()->getConfigData('general.content.footer.copyright_content'); ?>
 
             <?php else: ?>
-                <?php echo app('translator')->get('shop::app.components.layouts.footer.footer-text', ['current_year'=> date('Y') ]); ?>
+                جميع الحقوق محفوظة لـ هايست
             <?php endif; ?>
         </p>
 

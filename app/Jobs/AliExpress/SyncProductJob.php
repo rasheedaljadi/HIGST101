@@ -51,6 +51,6 @@ class SyncProductJob implements ShouldQueue
      */
     public function failed(Throwable $exception): void
     {
-        Log::channel('aliexpress')->error("SyncProductJob failed for import ID: {$this->import->id}. Error: " . $exception->getMessage());
+        Log::channel('aliexpress')->error("SyncProductJob failed for import ID: {$this->import->id}. Error: ".$exception->getMessage());
     }
 }

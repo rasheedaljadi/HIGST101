@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Webkul\Fulfillment\Services\FulfillmentAlertService;
 
 /**
  * Handles the AliExpress Open Platform OAuth 2.0 authorization-code flow.
@@ -187,9 +188,9 @@ class AliExpressOAuthService
                 ]);
 
                 // Dispatch critical alert notification
-                \Webkul\Fulfillment\Services\FulfillmentAlertService::sendAlert(
+                FulfillmentAlertService::sendAlert(
                     'critical',
-                    "AliExpress token auto-refresh failed: " . $e->getMessage()
+                    'AliExpress token auto-refresh failed: '.$e->getMessage()
                 );
             }
         }
@@ -215,14 +216,14 @@ class AliExpressOAuthService
                 return $this->storeToken($refreshed);
             } catch (\Throwable $e) {
                 Log::channel('aliexpress')->error('AliExpress token auto-refresh failed', [
-                    'id'      => $id,
+                    'id' => $id,
                     'message' => $e->getMessage(),
                 ]);
 
                 // Dispatch critical alert notification
-                \Webkul\Fulfillment\Services\FulfillmentAlertService::sendAlert(
+                FulfillmentAlertService::sendAlert(
                     'critical',
-                    "AliExpress token auto-refresh failed for Token ID {$id}: " . $e->getMessage()
+                    "AliExpress token auto-refresh failed for Token ID {$id}: ".$e->getMessage()
                 );
             }
         }
