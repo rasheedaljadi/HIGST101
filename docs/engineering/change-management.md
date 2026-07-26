@@ -5,24 +5,45 @@ This document defines the mandatory engineering change management process for sy
 
 ---
 
+## 🏁 Definition of Done (DoD)
+
+No feature, bug fix, or refactoring task is considered **DONE** until all of the following criteria are verified:
+
+- [ ] **RCA Identified**: Root Cause Analysis documented (for bug fixes/incidents).
+- [ ] **Engineering Review Completed**: Scoped implementation plan reviewed and approved.
+- [ ] **Tests Passing**: 100% passage of relevant unit, integration, and feature test suites.
+- [ ] **Documentation Updated**: Architecture, operational runbooks, or API docs updated.
+- [ ] **Deployment & Rollback Plans Defined**: Step-by-step rollout sequence and release tag rollback strategy documented.
+- [ ] **Post-Deployment Metrics Defined**: SLOs and monitoring indicators established for post-release verification.
+
+---
+
 ## 🏗️ Repository Documentation Structure
 
 ```text
 docs/
+├── README.md                   <-- Master Documentation Index
 ├── engineering/
 │   ├── change-management.md    <-- (This Policy Document)
 │   ├── architecture.md         <-- System Architecture Boundaries
+│   ├── service-level-objectives.md <-- SLO/SLA Metric Targets
 │   ├── deployment.md           <-- Sequential Deployment Procedures
 │   ├── rollback.md             <-- Incident Rollback Protocols
 │   ├── monitoring.md           <-- Post-Deployment Metric SLAs
 │   └── incident-response.md    <-- Outage & Failover Guidelines
+├── adr/                        <-- Architecture Decision Records
+│   ├── ADR-001-Payload-Snapshot-Source-of-Truth.md
+│   └── ...
+├── runbooks/                   <-- Operational Execution Manuals
+│   ├── runbook-rebuild-projections.md
+│   ├── runbook-queue-dead-letters.md
+│   └── ...
 ├── rcas/                       <-- Root Cause Analysis Forensic Reports
-│   ├── RCA-001.md
-│   ├── RCA-002.md
+│   ├── RCA-001-SyncRun-Lifecycle.md
+│   ├── RCA-002-Missing-Projections.md
 │   └── ...
 └── releases/                   <-- Release Readiness Audit Reports & Logs
     ├── v2.4.1.md
-    ├── v2.4.2.md
     └── ...
 ```
 
