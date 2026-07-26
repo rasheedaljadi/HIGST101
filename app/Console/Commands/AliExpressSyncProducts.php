@@ -2,10 +2,19 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\AliExpress\SyncProductJob;
 use App\Models\AliExpressProductImport;
 use App\Services\AliExpress\AliExpressProductSyncer;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
+use Webkul\Fulfillment\Models\SyncRun;
+use Webkul\Product\Helpers\Indexers\Flat;
+use Webkul\Product\Helpers\Indexers\Inventory;
+use Webkul\Product\Helpers\Indexers\Price;
+use Webkul\Product\Models\Product;
 
 class AliExpressSyncProducts extends Command
 {
@@ -20,29 +29,31 @@ class AliExpressSyncProducts extends Command
     public function handle(AliExpressProductSyncer $syncer): int
     {
         if ($this->option('process-deferred-index')) {
-            $deferredIds = \Illuminate\Support\Facades\Cache::pull('aliexpress-deferred-index-ids', []);
+            $deferredIds = Cache::pull('aliexpress-deferred-index-ids', []);
             if (empty($deferredIds)) {
-                $this->info("No deferred indexes found to process.");
+                $this->info('No deferred indexes found to process.');
+
                 return self::SUCCESS;
             }
-            
-            $this->info("Processing deferred indexes for " . count($deferredIds) . " products/variants...");
-            
-            $products = \Webkul\Product\Models\Product::whereIn('id', $deferredIds)->get();
+
+            $this->info('Processing deferred indexes for '.count($deferredIds).' products/variants...');
+
+            $products = Product::whereIn('id', $deferredIds)->get();
             if ($products->isNotEmpty()) {
-                $inventoryIndexer = app(\Webkul\Product\Helpers\Indexers\Inventory::class);
-                $priceIndexer = app(\Webkul\Product\Helpers\Indexers\Price::class);
-                $flatIndexer = app(\Webkul\Product\Helpers\Indexers\Flat::class);
-                
+                $inventoryIndexer = app(Inventory::class);
+                $priceIndexer = app(Price::class);
+                $flatIndexer = app(Flat::class);
+
                 $inventoryIndexer->reindexBatch($products->all());
                 $priceIndexer->reindexBatch($products->all());
                 foreach ($products as $product) {
                     $flatIndexer->refresh($product);
                 }
             }
-            
-            \Illuminate\Support\Facades\Log::channel('aliexpress')->info("Successfully reindexed " . count($deferredIds) . " deferred items.");
-            $this->info("✓ Successfully reindexed all deferred items.");
+
+            Log::channel('aliexpress')->info('Successfully reindexed '.count($deferredIds).' deferred items.');
+            $this->info('✓ Successfully reindexed all deferred items.');
+
             return self::SUCCESS;
         }
 
@@ -52,6 +63,7 @@ class AliExpressSyncProducts extends Command
 
         if (! $id && ! $all) {
             $this->error('Please specify either --id=PRODUCT_ID or --all option.');
+
             return self::FAILURE;
         }
 
@@ -67,45 +79,46 @@ class AliExpressSyncProducts extends Command
 
         if ($imports->isEmpty()) {
             $this->warn('No imported products found matching the criteria.');
+
             return self::SUCCESS;
         }
 
         $startTime = microtime(true);
-        \Illuminate\Support\Facades\Log::channel('aliexpress')->info("AliExpress bulk sync session started", [
+        Log::channel('aliexpress')->info('AliExpress bulk sync session started', [
             'total_products' => $imports->count(),
             'queued' => $queue,
         ]);
 
-        $runId = (string) \Illuminate\Support\Str::uuid();
+        $runId = (string) Str::uuid();
         $syncRun = null;
 
         try {
             if (\Schema::hasTable('sync_runs')) {
-                $syncRun = \Webkul\Fulfillment\Models\SyncRun::create([
-                    'id'              => $runId,
-                    'provider'        => 'aliexpress',
-                    'status'          => \Webkul\Fulfillment\Models\SyncRun::STATUS_CREATED,
-                    'cursor'          => [],
-                    'metadata'        => [
-                        'mode'           => $queue ? 'queued' : 'sync',
+                $syncRun = SyncRun::create([
+                    'id' => $runId,
+                    'provider' => 'aliexpress',
+                    'status' => SyncRun::STATUS_CREATED,
+                    'cursor' => [],
+                    'metadata' => [
+                        'mode' => $queue ? 'queued' : 'sync',
                         'total_products' => $imports->count(),
                     ],
                     'health_snapshot' => [
-                        'memory_start'   => memory_get_usage(true),
+                        'memory_start' => memory_get_usage(true),
                     ],
-                    'statistics'      => [
-                        'scanned'          => $imports->count(),
-                        'changed'          => 0,
-                        'published'        => 0,
-                        'errors_count'     => 0,
-                        'warnings_count'   => 0,
+                    'statistics' => [
+                        'scanned' => $imports->count(),
+                        'changed' => 0,
+                        'published' => 0,
+                        'errors_count' => 0,
+                        'warnings_count' => 0,
                         'chunks_processed' => 1,
                     ],
                 ]);
                 $syncRun->start(gethostname() ?: 'cli', (string) getmypid());
             }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning("Could not create SyncRun record: " . $e->getMessage());
+        } catch (Throwable $e) {
+            Log::warning('Could not create SyncRun record: '.$e->getMessage());
         }
 
         $this->info("Found {$imports->count()} product(s) to sync.");
@@ -113,26 +126,45 @@ class AliExpressSyncProducts extends Command
         $success = 0;
         $failed = 0;
 
-        foreach ($imports as $import) {
-            if ($queue) {
-                \App\Jobs\AliExpress\SyncProductJob::dispatch($import);
-                $this->info("  ✓ Dispatched SyncProductJob for AliExpress ID: {$import->aliexpress_product_id} (Local ID: {$import->product_id})");
-                $success++;
-            } else {
-                $this->comment("Syncing AliExpress ID: {$import->aliexpress_product_id} (Local ID: {$import->product_id})...");
-                try {
-                    $syncer->sync($import);
-                    $this->info("  ✓ Successfully synced!");
+        try {
+            foreach ($imports as $import) {
+                if ($syncRun) {
+                    try {
+                        $syncRun->heartbeat();
+                    } catch (Throwable $e) {
+                        Log::warning('Could not update SyncRun heartbeat: '.$e->getMessage());
+                    }
+                }
+
+                if ($queue) {
+                    SyncProductJob::dispatch($import);
+                    $this->info("  ✓ Dispatched SyncProductJob for AliExpress ID: {$import->aliexpress_product_id} (Local ID: {$import->product_id})");
                     $success++;
-                } catch (Throwable $e) {
-                    $this->error("  ✖ Failed: " . $e->getMessage());
-                    $failed++;
+                } else {
+                    $this->comment("Syncing AliExpress ID: {$import->aliexpress_product_id} (Local ID: {$import->product_id})...");
+                    try {
+                        $syncer->sync($import);
+                        $this->info('  ✓ Successfully synced!');
+                        $success++;
+                    } catch (Throwable $e) {
+                        $this->error('  ✖ Failed: '.$e->getMessage());
+                        $failed++;
+                    }
                 }
             }
+        } catch (Throwable $fatal) {
+            if ($syncRun) {
+                try {
+                    $syncRun->fail($fatal->getMessage());
+                } catch (Throwable $e) {
+                    Log::warning('Could not fail SyncRun record: '.$e->getMessage());
+                }
+            }
+            throw $fatal;
         }
 
         $duration = round(microtime(true) - $startTime, 2);
-        \Illuminate\Support\Facades\Log::channel('aliexpress')->info("AliExpress bulk sync session completed", [
+        Log::channel('aliexpress')->info('AliExpress bulk sync session completed', [
             'total_products' => $imports->count(),
             'succeeded' => $success,
             'failed' => $failed,
@@ -142,17 +174,19 @@ class AliExpressSyncProducts extends Command
 
         if ($syncRun) {
             try {
+                $syncRun->drain();
+
                 $syncRun->statistics = [
-                    'scanned'          => $imports->count(),
-                    'changed'          => $success,
-                    'published'        => $success,
-                    'errors_count'     => $failed,
-                    'warnings_count'   => 0,
+                    'scanned' => $imports->count(),
+                    'changed' => $success,
+                    'published' => $success,
+                    'errors_count' => $failed,
+                    'warnings_count' => 0,
                     'chunks_processed' => 1,
                 ];
 
                 $health = [
-                    'memory_peak'  => memory_get_peak_usage(true),
+                    'memory_peak' => memory_get_peak_usage(true),
                     'duration_sec' => $duration,
                 ];
 
@@ -161,8 +195,8 @@ class AliExpressSyncProducts extends Command
                 } else {
                     $syncRun->complete($health);
                 }
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning("Could not complete SyncRun record: " . $e->getMessage());
+            } catch (Throwable $e) {
+                Log::warning('Could not complete SyncRun record: '.$e->getMessage());
             }
         }
 
