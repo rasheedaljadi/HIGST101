@@ -5,6 +5,39 @@ This document defines the mandatory engineering change management process for sy
 
 ---
 
+## 🏗️ Repository Documentation Structure
+
+```text
+docs/
+├── engineering/
+│   ├── change-management.md    <-- (This Policy Document)
+│   ├── architecture.md         <-- System Architecture Boundaries
+│   ├── deployment.md           <-- Sequential Deployment Procedures
+│   ├── rollback.md             <-- Incident Rollback Protocols
+│   ├── monitoring.md           <-- Post-Deployment Metric SLAs
+│   └── incident-response.md    <-- Outage & Failover Guidelines
+├── rcas/                       <-- Root Cause Analysis Forensic Reports
+│   ├── RCA-001.md
+│   ├── RCA-002.md
+│   └── ...
+└── releases/                   <-- Release Readiness Audit Reports & Logs
+    ├── v2.4.1.md
+    ├── v2.4.2.md
+    └── ...
+```
+
+---
+
+## 📊 Change Classification Matrix
+
+| Change Type | Impact & Examples | Mandatory Requirements & Governance |
+|-------------|-------------------|--------------------------------------|
+| **Patch** | Bug fixes, minor logic corrections, hotfixes | Code review, unit/integration test coverage, Pint formatting |
+| **Minor** | New features, secondary API integrations | RFC/Plan, integration tests, Release Readiness Review, Staged Deployment |
+| **Major** | Architectural refactoring, breaking schema changes | Formal RFC, Architecture Review, extensive Rollback & Failover Plan |
+
+---
+
 ## 🔁 Standard Change Lifecycle
 
 ```
@@ -25,6 +58,47 @@ This document defines the mandatory engineering change management process for sy
 6. **Pull Request Review**: Code review focusing on regression risks, concurrency safety, edge-case coverage, and performance SLAs.
 7. **Staged Deployment**: Perform step-by-step production rollout (Backup → Deploy → Migration/Rebuild → Worker Restart → Smoke Test → Monitoring).
 8. **Post-Deployment Review**: Verify post-deployment metrics (`failed_jobs`, latency, outbox processing) and document lessons learned.
+
+---
+
+## ✅ Mandatory Merge Criteria Checklist
+
+Before merging any Pull Request into `main`, the following criteria MUST be verified:
+
+- [ ] **Test Coverage**: All unit, integration, and feature test suites pass (100% PASS).
+- [ ] **Cleanliness**: 0 debug statements (`dd()`, `dump()`, `var_dump()`), 0 temporary TODOs, 0 scratch files in Git history.
+- [ ] **Security**: 0 hardcoded secrets, API keys, or credentials in commits.
+- [ ] **Rollback**: Explicit rollback steps and tag checkpoints documented.
+- [ ] **Documentation**: System architecture or operational docs updated if behavior changed.
+
+---
+
+## 🏷️ Release Tagging & Changelog Policy
+
+1. **Semantic Version Tags**: Every production deployment MUST create an annotated Git tag (e.g., `git tag -a v2.4.1 -m "Release v2.4.1: Sync engine stabilization"`).
+2. **CHANGELOG Linkage**: Every release entry in `docs/releases/` must link directly to the corresponding PR and RCA documents.
+3. **Traceability**: All production hotfixes must be traceable to a specific Git commit and tag.
+
+---
+
+## ⏱️ Post-Deployment Monitoring & Decision Ownership
+
+1. **Monitoring Window**: A mandatory **30–60 minute post-deployment monitoring window** must be observed following any production deployment.
+2. **Monitored Metrics**:
+   - Application error logs (`storage/logs/laravel.log`) for unhandled fatal crashes.
+   - Dead-letter queue count (`failed_jobs` table).
+   - Oldest pending queue job age (`jobs` table latency).
+   - Outbox processing status (`domain_outbox_events` table).
+3. **Rollback Decision Owner**: The **Lead Software Architect** holds sole authority and responsibility for triggering a rollback if error thresholds are exceeded during the monitoring window.
+
+---
+
+## 🔄 Lessons Learned & Continuous Improvement
+
+Following the post-deployment monitoring window, the team must complete a brief **Post-Deployment Review**:
+- **What went as expected?** (Features, performance, stability).
+- **What could be improved?** (Deployment speed, test coverage gaps).
+- **Policy Updates Required?** (Adjust change management rules if new risks were identified).
 
 ---
 
