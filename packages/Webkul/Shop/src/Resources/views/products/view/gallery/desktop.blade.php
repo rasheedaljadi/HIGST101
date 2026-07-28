@@ -43,7 +43,7 @@
                     decoding="async"
                     tabindex="0"
                     @click="change(media, index)"
-                    @error="$event.target.src = media.original_image_url || media.fallback_url"
+                    v-on:error="$event.target.src = media.original_image_url || media.fallback_url"
                 />
             </template>
         </div>
@@ -85,7 +85,7 @@
             tabindex="0"
             @click="isImageZooming = !isImageZooming"
             @load="onMediaLoad()"
-            @error="onMediaLoad(); $event.target.src = baseFile.fallback_path || media.images[activeIndex]?.original_image_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
+            v-on:error="onMediaLoad(); $event.target.src = baseFile.fallback_path || media.images[activeIndex]?.original_image_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
         />
 
         <div
