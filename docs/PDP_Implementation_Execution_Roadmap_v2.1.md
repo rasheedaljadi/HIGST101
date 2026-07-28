@@ -307,14 +307,15 @@
 * **Acceptance Criteria:** 100% of Pest feature tests pass; 100% of Playwright E2E scenarios pass.
 * **Test Method:** Run `php artisan test --compact` and `npx playwright test`.
 
-### Task 7.3: Production Release Certification Sign-off
-* **Description:** Compile production Vite assets, clear Laravel application caches, and generate signed release approval document.
+### Task 7.3: Production Release Certification Sign-off & Blade Compilation Gate
+* **Description:** Compile production Vite assets, run mandatory Blade compilation gate (`php artisan view:cache`) to prevent Laravel Directive vs Vue event shorthand collisions (e.g. `@error` vs `v-on:error`), clear application caches, and generate signed release approval document.
 * **Affected Files:** Production Build Manifest (`public/themes/shop/build/`)
 * **Type of Work:** `CONFIG`
 * **Risk Level:** `LOW`
 * **Dependencies:** Task 7.2
-* **Acceptance Criteria:** Production assets compiled cleanly; zero test failures; release sign-off certified by project lead.
-* **Test Method:** Inspection of release manifest and test logs.
+* **Acceptance Criteria:** Production assets compiled cleanly; `php artisan view:cache` passes with zero parse errors; zero test failures; release sign-off certified by project lead.
+* **Test Method:** Inspection of release manifest, `php artisan view:cache` execution logs, and test suite logs.
+* **Lesson Learned (PDP v3.0 Hotfix):** *إضافة Blade Compilation Gate قبل Production Release لمنع تعارض Laravel Directives مع Vue Event Shorthand.*
 
 ---
 
