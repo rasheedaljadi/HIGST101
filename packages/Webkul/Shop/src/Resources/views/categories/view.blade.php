@@ -15,7 +15,7 @@
             {!! app('Webkul\Product\Helpers\SEO')->getCategoryJsonLd($category) !!}
         </script>
     @endif
-@endPush
+@endpush
 
 <x-shop::layouts>
     <!-- Page Title -->
@@ -332,5 +332,5 @@
                 },
             });
         </script>
-    @endPushOnce
+    @endpushonce
 </x-shop::layouts>

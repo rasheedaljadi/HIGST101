@@ -3,7 +3,7 @@
     <meta name="description" content="@lang('shop::app.compare.title')"/>
 
     <meta name="keywords" content="@lang('shop::app.compare.title')"/>
-@endPush
+@endpush
 
 <x-shop::layouts>
     <!-- Page Title -->

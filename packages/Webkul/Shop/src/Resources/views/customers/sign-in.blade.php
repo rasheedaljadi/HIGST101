@@ -2,7 +2,7 @@
 @push('meta')
     <meta name="description" content="@lang('shop::app.customers.login-form.page-title')"/>
     <meta name="keywords" content="@lang('shop::app.customers.login-form.page-title')"/>
-@endPush
+@endpush
 
 <!-- Google Fonts -->
 @push('styles')
@@ -333,7 +333,7 @@
             text-decoration: underline;
         }
     </style>
-@endPush
+@endpush
 
 <x-shop::layouts
     :has-header="false"

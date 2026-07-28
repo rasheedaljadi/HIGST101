@@ -120,4 +120,4 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce

@@ -1,6 +1,6 @@
 <v-rental-slots :bookingProduct = "{{ $bookingProduct }}"></v-rental-slots>
 
-@pushOnce('scripts')
+@pushonce('scripts')
     <script
         type="text/x-template"
         id="v-rental-slots-template"
@@ -298,4 +298,4 @@
             },
         });
     </script>
-@endpushOnce
+@endpushonce

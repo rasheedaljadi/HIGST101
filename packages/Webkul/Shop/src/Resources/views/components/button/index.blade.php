@@ -60,4 +60,4 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce

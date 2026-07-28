@@ -39,7 +39,7 @@
     @include ('shop::products.view.types.booking.slots', ['bookingProduct' => $bookingProduct])
 </div>
 
-@pushOnce('scripts')
+@pushonce('scripts')
     <script
         type="text/x-template"
         id="v-toggler-template"
@@ -101,4 +101,4 @@
             },
         })
     </script>
-@endpushOnce
+@endpushonce

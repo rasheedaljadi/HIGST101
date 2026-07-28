@@ -606,5 +606,5 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce
 {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.after') !!}

@@ -419,5 +419,5 @@
                 },
             });
         </script>
-    @endPushOnce
+    @endpushonce
 </x-admin::layouts>

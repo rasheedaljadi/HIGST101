@@ -3,7 +3,7 @@
     <meta name="description" content="@lang('shop::app.checkout.onepage.index.checkout')"/>
 
     <meta name="keywords" content="@lang('shop::app.checkout.onepage.index.checkout')"/>
-@endPush
+@endpush
 
 <x-shop::layouts
     :has-header="false"
@@ -240,5 +240,5 @@
                 },
             });
         </script>
-    @endPushOnce
+    @endpushonce
 </x-shop::layouts>

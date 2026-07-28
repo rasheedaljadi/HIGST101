@@ -117,4 +117,4 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce

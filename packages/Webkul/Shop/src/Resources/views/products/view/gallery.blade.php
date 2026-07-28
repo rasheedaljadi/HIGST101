@@ -2,7 +2,7 @@
     <x-shop::shimmer.products.gallery />
 </v-product-gallery>
 
-@pushOnce('scripts')
+@pushonce('scripts')
     <script
         type="text/x-template"
         id="v-product-gallery-template"
@@ -142,4 +142,4 @@
             },
         });
     </script>
-@endpushOnce
+@endpushonce

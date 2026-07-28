@@ -15,22 +15,22 @@ class DatabaseManager
     /**
      * Admin User ID for which the admin user will be created during installation.
      */
-    const int USER_ID = 1;
+    public const USER_ID = 1;
 
     /**
      * Default admin name for which the admin user will be created during installation.
      */
-    const string DEFAULT_ADMIN_NAME = 'Admin';
+    const DEFAULT_ADMIN_NAME = 'Admin';
 
     /**
      * Default admin email for which the admin user will be created during installation.
      */
-    const string DEFAULT_ADMIN_EMAIL = 'admin@example.com';
+    const DEFAULT_ADMIN_EMAIL = 'admin@example.com';
 
     /**
      * Default admin password for which the admin user will be created during installation.
      */
-    const string DEFAULT_ADMIN_PASSWORD = 'admin123';
+    const DEFAULT_ADMIN_PASSWORD = 'admin123';
 
     /**
      * Check if the application is installed.

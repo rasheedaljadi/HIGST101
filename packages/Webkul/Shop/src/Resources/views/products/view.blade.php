@@ -84,7 +84,7 @@
     <meta property="og:description" content="{!! htmlspecialchars(trim(strip_tags($product->description))) !!}" />
 
     <meta property="og:url" content="{{ route('shop.product_or_category.index', $product->url_key) }}" />
-@endPush
+@endpush
 
 <!-- Page Layout -->
 <x-shop::layouts>
@@ -305,7 +305,7 @@
 
     {!! view_render_event('bagisto.shop.products.view.after', ['product' => $product]) !!}
 
-    @pushOnce('scripts')
+    @pushonce('scripts')
         <script
             type="text/x-template"
             id="v-product-template"
@@ -904,5 +904,5 @@
         @if (core()->getConfigData('customer.captcha.credentials.status'))
             {!! \Webkul\Customer\Facades\Captcha::renderJS() !!}
         @endif
-    @endPushOnce
+    @endpushonce
 </x-shop::layouts>

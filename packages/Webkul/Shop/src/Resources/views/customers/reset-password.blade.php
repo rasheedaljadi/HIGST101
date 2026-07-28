@@ -9,7 +9,7 @@
         name="keywords" 
         content="@lang('shop::app.customers.reset-password.title')"
     />
-@endPush
+@endpush
 
 <x-shop::layouts
     :has-header="false"

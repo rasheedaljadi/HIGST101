@@ -188,4 +188,4 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce

@@ -11,7 +11,7 @@
 >
 </v-product-ratings>
 
-@pushOnce("scripts")
+@pushonce('scripts')
     <script
         type="text/x-template"
         id="v-product-ratings-template"
@@ -78,4 +78,4 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce

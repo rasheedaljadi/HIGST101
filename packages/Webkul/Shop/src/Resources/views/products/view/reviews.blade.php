@@ -8,7 +8,7 @@
 
 {!! view_render_event('bagisto.shop.products.view.reviews.after', ['product' => $product]) !!}
 
-@pushOnce('scripts')
+@pushonce('scripts')
     <!-- Product Review Template -->
     <script
         type="text/x-template"
@@ -655,4 +655,4 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce

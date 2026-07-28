@@ -141,4 +141,4 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce

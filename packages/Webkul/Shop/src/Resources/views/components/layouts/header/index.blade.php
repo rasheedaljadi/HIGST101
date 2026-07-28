@@ -198,4 +198,4 @@
     >
         <x-shop::layouts.header.mobile />
     </script>
-@endPushOnce
+@endpushonce

@@ -108,5 +108,5 @@
                 },
             });
         </script>
-    @endPushOnce
+    @endpushonce
 @endif

@@ -4,7 +4,7 @@
 >
 </v-product-card>
 
-@pushOnce('scripts')
+@pushonce('scripts')
     <script
         type="text/x-template"
         id="v-product-card-template"
@@ -458,4 +458,4 @@
             },
         });
     </script>
-@endpushOnce
+@endpushonce

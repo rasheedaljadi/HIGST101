@@ -10,12 +10,12 @@ class Captcha implements CaptchaContract
     /**
      * Client endpoint.
      */
-    const string CLIENT_ENDPOINT = 'https://www.google.com/recaptcha/enterprise.js';
+    const CLIENT_ENDPOINT = 'https://www.google.com/recaptcha/enterprise.js';
 
     /**
      * Site verify endpoint.
      */
-    const string SITE_VERIFY_ENDPOINT = 'https://recaptchaenterprise.googleapis.com/v1/projects/{project_id}/assessments';
+    const SITE_VERIFY_ENDPOINT = 'https://recaptchaenterprise.googleapis.com/v1/projects/{project_id}/assessments';
 
     /**
      * Project Id.

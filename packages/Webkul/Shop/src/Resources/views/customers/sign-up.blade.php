@@ -2,7 +2,7 @@
 @push('meta')
     <meta name="description" content="@lang('shop::app.customers.signup-form.page-title')"/>
     <meta name="keywords" content="@lang('shop::app.customers.signup-form.page-title')"/>
-@endPush
+@endpush
 
 <!-- Google Fonts -->
 @push('styles')
@@ -431,7 +431,7 @@
             }
         }
     </style>
-@endPush
+@endpush
 
 <x-shop::layouts
     :has-header="false"

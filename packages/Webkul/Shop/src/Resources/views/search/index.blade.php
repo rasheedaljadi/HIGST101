@@ -14,7 +14,7 @@
         name="keywords"
         content="{{ $title }}"
     />
-@endPush
+@endpush
 
 <x-shop::layouts :has-feature="false">
     <!-- Page Title -->
@@ -312,5 +312,5 @@
                 },
             });
         </script>
-    @endPushOnce
+    @endpushonce
 </x-shop::layouts>

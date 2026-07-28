@@ -175,5 +175,5 @@
                 }
             });
         </script>
-    @endPushOnce
+    @endpushonce
 </x-shop::layouts>

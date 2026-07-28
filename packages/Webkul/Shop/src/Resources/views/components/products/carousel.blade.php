@@ -6,7 +6,7 @@
     <x-shop::shimmer.products.carousel :navigation-link="$navigationLink ?? false" />
 </v-products-carousel>
 
-@pushOnce('scripts')
+@pushonce('scripts')
     <script
         type="text/x-template"
         id="v-products-carousel-template"
@@ -154,4 +154,4 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce

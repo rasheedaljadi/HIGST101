@@ -3,7 +3,7 @@
     <meta name="description" content="@lang('shop::app.customers.forgot-password.title')"/>
 
     <meta name="keywords" content="@lang('shop::app.customers.forgot-password.title')"/>
-@endPush
+@endpush
 
 <x-shop::layouts
     :has-header="false"

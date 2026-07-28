@@ -10,7 +10,7 @@
 
     {!! view_render_event('bagisto.shop.products.view.booking.before', ['product' => $product]) !!}
 
-    @pushOnce('scripts')
+    @pushonce('scripts')
         <script
             type="text/x-template"
             id="v-booking-information-template"
@@ -57,5 +57,5 @@
 
             });
         </script>
-    @endpushOnce
+    @endpushonce
 @endif

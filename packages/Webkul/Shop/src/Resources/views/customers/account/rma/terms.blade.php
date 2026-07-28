@@ -84,4 +84,4 @@
             template: '#v-customer-rma-return-policy-template',
         })
     </script>
-@endPushOnce
+@endpushonce

@@ -6,7 +6,7 @@
 >
 </v-mobile-sticky-bar>
 
-@pushOnce('scripts')
+@pushonce('scripts')
     <script
         type="text/x-template"
         id="v-mobile-sticky-bar-template"
@@ -153,4 +153,4 @@
             },
         });
     </script>
-@endpushOnce
+@endpushonce

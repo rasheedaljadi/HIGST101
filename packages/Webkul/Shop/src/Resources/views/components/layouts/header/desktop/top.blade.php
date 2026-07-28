@@ -240,4 +240,4 @@
             }
         });
     </script>
-@endPushOnce
+@endpushonce

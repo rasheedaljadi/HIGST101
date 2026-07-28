@@ -58,7 +58,7 @@
     </x-shop::form.control-group>
 </div>
 
-@pushOnce('scripts')
+@pushonce('scripts')
     <script
         type="text/x-template"
         id="v-toggler-template"
@@ -118,4 +118,4 @@
             },
         })
     </script>
-@endpushOnce
+@endpushonce

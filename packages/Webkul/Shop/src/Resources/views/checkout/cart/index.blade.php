@@ -3,7 +3,7 @@
     <meta name="description" content="@lang('shop::app.checkout.cart.index.cart')"/>
 
     <meta name="keywords" content="@lang('shop::app.checkout.cart.index.cart')"/>
-@endPush
+@endpush
 
 <x-shop::layouts
     :has-header="false"

@@ -85,4 +85,4 @@
             },
         });
     </script>
-@endPushOnce
+@endpushonce

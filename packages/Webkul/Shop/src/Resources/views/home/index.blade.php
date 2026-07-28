@@ -18,7 +18,7 @@
         name="keywords"
         content="{{ $channel->home_seo['meta_keywords'] ?? '' }}"
     />
-@endPush
+@endpush
 
 @push('scripts')
     @if(! empty($categories))

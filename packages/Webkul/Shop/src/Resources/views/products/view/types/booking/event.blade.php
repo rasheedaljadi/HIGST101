@@ -19,7 +19,7 @@
     <v-event-tickets></v-event-tickets>
 </div>
 
-@pushOnce('scripts')
+@pushonce('scripts')
     <script
         type="text/x-template"
         id="v-event-tickets-template"
@@ -94,4 +94,4 @@
             }
         });
     </script>
-@endpushOnce
+@endpushonce

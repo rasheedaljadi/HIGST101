@@ -5,7 +5,7 @@
 
     {!! view_render_event('bagisto.shop.products.view.bundle-options.after', ['product' => $product]) !!}
 
-    @pushOnce('scripts')
+    @pushonce('scripts')
         <script
             type="text/x-template"
             id="v-product-bundle-options-template"
@@ -391,5 +391,5 @@
                 }
             });
         </script>
-    @endPushOnce
+    @endpushonce
 @endif
