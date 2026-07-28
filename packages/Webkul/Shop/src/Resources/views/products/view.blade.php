@@ -299,16 +299,15 @@
         </x-shop::accordion>
     </div>
 
-    <v-product-associations />
-
     @include('shop::products.view.mobile-sticky-bar')
 
     {!! view_render_event('bagisto.shop.products.view.after', ['product' => $product]) !!}
+</x-shop::layouts>
 
-    @pushonce('scripts')
-        <script
-            type="text/x-template"
-            id="v-product-template"
+@pushonce('scripts')
+    <script
+        type="text/x-template"
+        id="v-product-template"
         >
             <x-shop::form
                 v-slot="{ meta, errors, handleSubmit }"
@@ -905,4 +904,3 @@
             {!! \Webkul\Customer\Facades\Captcha::renderJS() !!}
         @endif
     @endpushonce
-</x-shop::layouts>
