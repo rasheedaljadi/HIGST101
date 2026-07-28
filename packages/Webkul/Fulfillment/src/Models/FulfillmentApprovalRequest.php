@@ -5,6 +5,7 @@ namespace Webkul\Fulfillment\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Webkul\Fulfillment\Contracts\FulfillmentApprovalRequest as FulfillmentApprovalRequestContract;
+use Webkul\User\Models\AdminProxy;
 
 class FulfillmentApprovalRequest extends Model implements FulfillmentApprovalRequestContract
 {
@@ -44,7 +45,7 @@ class FulfillmentApprovalRequest extends Model implements FulfillmentApprovalReq
      */
     public function requestedBy(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\User\Models\AdminProxy::modelClass(), 'requested_by');
+        return $this->belongsTo(AdminProxy::modelClass(), 'requested_by');
     }
 
     /**
@@ -52,6 +53,6 @@ class FulfillmentApprovalRequest extends Model implements FulfillmentApprovalReq
      */
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\User\Models\AdminProxy::modelClass(), 'approved_by');
+        return $this->belongsTo(AdminProxy::modelClass(), 'approved_by');
     }
 }

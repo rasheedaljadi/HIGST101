@@ -16,12 +16,12 @@ class ProviderSyncCapabilities
     public function toArray(): array
     {
         return [
-            'version'                  => $this->version,
-            'supports_incremental'     => $this->supportsIncremental,
-            'supports_full_sync'       => $this->supportsFullSync,
-            'supports_updated_since'   => $this->supportsUpdatedSince,
-            'supports_page_token'      => $this->supportsPageToken,
-            'supports_cursor'          => $this->supportsCursor,
+            'version' => $this->version,
+            'supports_incremental' => $this->supportsIncremental,
+            'supports_full_sync' => $this->supportsFullSync,
+            'supports_updated_since' => $this->supportsUpdatedSince,
+            'supports_page_token' => $this->supportsPageToken,
+            'supports_cursor' => $this->supportsCursor,
         ];
     }
 }

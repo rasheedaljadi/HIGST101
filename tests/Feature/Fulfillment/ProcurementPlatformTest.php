@@ -4,25 +4,24 @@ namespace Tests\Feature\Fulfillment;
 
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
-use Webkul\Sales\Models\Order;
-use Webkul\Sales\Models\OrderItem;
-use Webkul\Fulfillment\Models\OrderAllocation;
-use Webkul\Fulfillment\Models\ProviderAccount;
-use Webkul\Fulfillment\Models\ProcurementSession;
-use Webkul\Fulfillment\Models\ExternalOrder;
 use Webkul\Fulfillment\Commands\CreateProcurementSessionCommand;
-use Webkul\Fulfillment\Commands\ValidateSupplierAvailabilityCommand;
 use Webkul\Fulfillment\Commands\SubmitSupplierOrderCommand;
 use Webkul\Fulfillment\Commands\SyncSupplierOrderStatusCommand;
+use Webkul\Fulfillment\Commands\ValidateSupplierAvailabilityCommand;
+use Webkul\Fulfillment\Exceptions\InvalidProcurementTransitionException;
 use Webkul\Fulfillment\Handlers\Procurement\CreateProcurementSessionHandler;
-use Webkul\Fulfillment\Handlers\Procurement\ValidateSupplierAvailabilityHandler;
 use Webkul\Fulfillment\Handlers\Procurement\SubmitSupplierOrderHandler;
 use Webkul\Fulfillment\Handlers\Procurement\SyncSupplierOrderStatusHandler;
+use Webkul\Fulfillment\Handlers\Procurement\ValidateSupplierAvailabilityHandler;
+use Webkul\Fulfillment\Models\ExternalOrder;
+use Webkul\Fulfillment\Models\OrderAllocation;
+use Webkul\Fulfillment\Models\ProcurementSession;
 use Webkul\Fulfillment\Providers\AliExpress\FakeProviderSimulator;
-use Webkul\Fulfillment\Services\Application\ReconciliationEngine;
 use Webkul\Fulfillment\Services\Application\ProcurementInboxService;
-use Webkul\Fulfillment\Services\Domain\SupplierFailureCompensationService;
 use Webkul\Fulfillment\Services\Domain\ProviderHealthService;
+use Webkul\Fulfillment\Services\Domain\SupplierFailureCompensationService;
+use Webkul\Sales\Models\Order;
+use Webkul\Sales\Models\OrderItem;
 
 class ProcurementPlatformTest extends TestCase
 {
@@ -64,19 +63,19 @@ class ProcurementPlatformTest extends TestCase
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
 
         $allocation = OrderAllocation::create([
-            'order_id'          => $order->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 1,
-            'source_type'       => 'supplier',
-            'source_code'       => 'aliexpress',
-            'state'             => 'reserved',
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
+            'qty' => 1,
+            'source_type' => 'supplier',
+            'source_code' => 'aliexpress',
+            'state' => 'reserved',
             'supplier_snapshot' => json_encode([
                 'supplier_product_id' => '100200300',
-                'supplier_sku_id'     => 'sku-abc',
-                'requested_qty'       => 1,
-                'available_qty'       => 1,
-                'supplier_cost'       => 10.00
-            ])
+                'supplier_sku_id' => 'sku-abc',
+                'requested_qty' => 1,
+                'available_qty' => 1,
+                'supplier_cost' => 10.00,
+            ]),
         ]);
 
         $corrId = 'corr-id-123';
@@ -149,19 +148,19 @@ class ProcurementPlatformTest extends TestCase
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
 
         $allocation = OrderAllocation::create([
-            'order_id'          => $order->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 1,
-            'source_type'       => 'supplier',
-            'source_code'       => 'aliexpress',
-            'state'             => 'reserved',
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
+            'qty' => 1,
+            'source_type' => 'supplier',
+            'source_code' => 'aliexpress',
+            'state' => 'reserved',
             'supplier_snapshot' => json_encode([
                 'supplier_product_id' => '100200300',
-                'supplier_sku_id'     => 'sku-abc',
-                'requested_qty'       => 1,
-                'available_qty'       => 1,
-                'supplier_cost'       => 10.00
-            ])
+                'supplier_sku_id' => 'sku-abc',
+                'requested_qty' => 1,
+                'available_qty' => 1,
+                'supplier_cost' => 10.00,
+            ]),
         ]);
 
         $corrId = 'corr-id-123';
@@ -196,19 +195,19 @@ class ProcurementPlatformTest extends TestCase
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
 
         $allocation = OrderAllocation::create([
-            'order_id'          => $order->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 1,
-            'source_type'       => 'supplier',
-            'source_code'       => 'aliexpress',
-            'state'             => 'reserved',
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
+            'qty' => 1,
+            'source_type' => 'supplier',
+            'source_code' => 'aliexpress',
+            'state' => 'reserved',
             'supplier_snapshot' => json_encode([
                 'supplier_product_id' => '100200300',
-                'supplier_sku_id'     => 'sku-abc',
-                'requested_qty'       => 1,
-                'available_qty'       => 0,
-                'supplier_cost'       => 10.00
-            ])
+                'supplier_sku_id' => 'sku-abc',
+                'requested_qty' => 1,
+                'available_qty' => 0,
+                'supplier_cost' => 10.00,
+            ]),
         ]);
 
         $corrId = 'corr-id-123';
@@ -245,7 +244,7 @@ class ProcurementPlatformTest extends TestCase
 
         $payload = [
             'aliexpress_order_id' => 'ae-ext-9921',
-            'status'              => 'shipped',
+            'status' => 'shipped',
         ];
 
         $processorCalled = 0;
@@ -268,22 +267,22 @@ class ProcurementPlatformTest extends TestCase
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
 
         $allocation = OrderAllocation::create([
-            'order_id'          => $order->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 1,
-            'source_type'       => 'supplier',
-            'source_code'       => 'aliexpress',
-            'state'             => 'reserved',
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
+            'qty' => 1,
+            'source_type' => 'supplier',
+            'source_code' => 'aliexpress',
+            'state' => 'reserved',
         ]);
 
         $session = ProcurementSession::create([
             'order_allocation_id' => $allocation->id,
-            'state'               => 'CREATED',
-            'correlation_id'      => 'corr',
-            'causation_id'        => 'caus',
+            'state' => 'CREATED',
+            'correlation_id' => 'corr',
+            'causation_id' => 'caus',
         ]);
 
-        $this->expectException(\Webkul\Fulfillment\Exceptions\InvalidProcurementTransitionException::class);
+        $this->expectException(InvalidProcurementTransitionException::class);
         $session->transitionTo('COMPLETED');
     }
 

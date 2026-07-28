@@ -4,6 +4,12 @@ namespace Webkul\Fulfillment\Services\Application;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Webkul\Fulfillment\Listeners\AliExpressStockListener;
+use Webkul\Fulfillment\Listeners\AliExpressSyncReviewListener;
+use Webkul\Fulfillment\Listeners\CatalogProjectionListener;
+use Webkul\Fulfillment\Listeners\LedgerListener;
+use Webkul\Fulfillment\Listeners\NotificationListener;
+use Webkul\Fulfillment\Listeners\TimelineListener;
 
 class OutboxEventProcessor
 {
@@ -14,49 +20,48 @@ class OutboxEventProcessor
      */
     protected array $listenerMap = [
         'OrderAllocationReserved' => [
-            \Webkul\Fulfillment\Listeners\LedgerListener::class,
-            \Webkul\Fulfillment\Listeners\TimelineListener::class,
+            LedgerListener::class,
+            TimelineListener::class,
         ],
         'OrderAllocationReleased' => [
-            \Webkul\Fulfillment\Listeners\LedgerListener::class,
-            \Webkul\Fulfillment\Listeners\TimelineListener::class,
+            LedgerListener::class,
+            TimelineListener::class,
         ],
         'PurchaseOrderCreated' => [
-            \Webkul\Fulfillment\Listeners\TimelineListener::class,
+            TimelineListener::class,
         ],
         'SupplierOrderSubmitted' => [
-            \Webkul\Fulfillment\Listeners\TimelineListener::class,
-            \Webkul\Fulfillment\Listeners\LedgerListener::class,
+            TimelineListener::class,
+            LedgerListener::class,
         ],
         'SupplierOrderPaid' => [
-            \Webkul\Fulfillment\Listeners\LedgerListener::class,
+            LedgerListener::class,
         ],
         'SupplierOrderRefunded' => [
-            \Webkul\Fulfillment\Listeners\LedgerListener::class,
+            LedgerListener::class,
         ],
         'SupplierOrderFailed' => [
-            \Webkul\Fulfillment\Listeners\TimelineListener::class,
-            \Webkul\Fulfillment\Listeners\NotificationListener::class,
+            TimelineListener::class,
+            NotificationListener::class,
         ],
         'CustomerOrderFlagged' => [
-            \Webkul\Fulfillment\Listeners\NotificationListener::class,
+            NotificationListener::class,
         ],
         'VariantIdentityChanged' => [
-            \Webkul\Fulfillment\Listeners\AliExpressSyncReviewListener::class,
+            AliExpressSyncReviewListener::class,
         ],
         'SupplierPriceChanged' => [
-            \Webkul\Fulfillment\Listeners\AliExpressSyncReviewListener::class,
-            \Webkul\Fulfillment\Listeners\CatalogProjectionListener::class,
+            AliExpressSyncReviewListener::class,
+            CatalogProjectionListener::class,
         ],
         'SupplierStockChanged' => [
-            \Webkul\Fulfillment\Listeners\AliExpressStockListener::class,
+            AliExpressStockListener::class,
         ],
     ];
 
     /**
      * Process all pending outbox events.
      *
-     * @param  int  $maxAttempts
      * @return int Number of processed events
      */
     public function processPending(int $maxAttempts = 3): int
@@ -95,27 +100,27 @@ class OutboxEventProcessor
             $eventName = $event->event_name;
             $payload = json_decode($event->payload, true);
             $listeners = $this->listenerMap[$eventName] ?? [];
-            
+
             $allOk = true;
 
             foreach ($listeners as $listenerClass) {
                 try {
                     $listener = app($listenerClass);
-                    
+
                     // Call the listener handle method with stable outbox event_id
                     $listener->handle($eventName, $payload, $event->correlation_id, $event->causation_id, $event->event_id);
                 } catch (\Exception $e) {
                     $allOk = false;
-                    Log::error("Outbox listener failed: " . $listenerClass . " - " . $e->getMessage());
+                    Log::error('Outbox listener failed: '.$listenerClass.' - '.$e->getMessage());
 
                     // Log failed attempt details to domain_outbox_event_attempts
                     DB::table('domain_outbox_event_attempts')->insert([
                         'outbox_event_id' => $event->id,
-                        'listener'        => $listenerClass,
-                        'attempt_number'  => $event->attempts + 1,
-                        'error_message'   => $e->getMessage() . "\n" . $e->getTraceAsString(),
-                        'created_at'      => now(),
-                        'updated_at'      => now(),
+                        'listener' => $listenerClass,
+                        'attempt_number' => $event->attempts + 1,
+                        'error_message' => $e->getMessage()."\n".$e->getTraceAsString(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
             }
@@ -124,7 +129,7 @@ class OutboxEventProcessor
                 DB::table('domain_outbox_events')
                     ->where('id', $event->id)
                     ->update([
-                        'status'   => 'processed',
+                        'status' => 'processed',
                         'attempts' => $event->attempts + 1,
                     ]);
                 $processedCount++;
@@ -135,7 +140,7 @@ class OutboxEventProcessor
                 DB::table('domain_outbox_events')
                     ->where('id', $event->id)
                     ->update([
-                        'status'   => $newStatus,
+                        'status' => $newStatus,
                         'attempts' => $newAttempts,
                     ]);
             }

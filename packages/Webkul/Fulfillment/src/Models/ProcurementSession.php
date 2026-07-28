@@ -34,11 +34,11 @@ class ProcurementSession extends Model implements ProcurementSessionContract
     ];
 
     protected $casts = [
-        'policy_snapshot'       => 'array',
-        'supplier_snapshot'     => 'array',
-        'shipping_snapshot'     => 'array',
-        'price_snapshot'        => 'array',
-        'metrics'               => 'array',
+        'policy_snapshot' => 'array',
+        'supplier_snapshot' => 'array',
+        'shipping_snapshot' => 'array',
+        'price_snapshot' => 'array',
+        'metrics' => 'array',
         'snapshot_finalized_at' => 'datetime',
     ];
 
@@ -68,42 +68,42 @@ class ProcurementSession extends Model implements ProcurementSessionContract
             'CREATED' => [
                 'VALIDATING',
                 'FAILED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'VALIDATING' => [
                 'VALIDATED',
                 'READY_TO_SUBMIT',
                 'FAILED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'VALIDATED' => [
                 'SHIPPING_SELECTED',
                 'READY_TO_SUBMIT',
                 'FAILED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'READY_TO_SUBMIT' => [
                 'SUBMITTING',
                 'FAILED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'SUBMITTING' => [
                 'SUBMITTED',
                 'FAILED',
                 'MANUAL_REVIEW',
-                'SUBMIT_RETRY'
+                'SUBMIT_RETRY',
             ],
             'SUBMIT_RETRY' => [
                 'SUBMITTING',
                 'FAILED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'SUBMITTED' => [
                 'WAITING_PAYMENT',
                 'PROCESSING',
                 'FAILED',
                 'CANCEL_REQUESTED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'WAITING_PAYMENT' => [
                 'PAYMENT_CONFIRMED',
@@ -111,44 +111,44 @@ class ProcurementSession extends Model implements ProcurementSessionContract
                 'PROCESSING',
                 'FAILED',
                 'CANCEL_REQUESTED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'PAYMENT_CONFIRMED' => [
                 'WAITING_SUPPLIER',
                 'PROCESSING',
                 'FAILED',
                 'CANCEL_REQUESTED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'WAITING_SUPPLIER' => [
                 'PROCESSING',
                 'FAILED',
                 'CANCEL_REQUESTED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'PROCESSING' => [
                 'SHIPPED',
                 'FAILED',
                 'CANCEL_REQUESTED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'SHIPPED' => [
                 'COMPLETED',
                 'FAILED',
                 'CANCEL_REQUESTED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'COMPLETED' => [], // Terminal state
             'FAILED' => [
                 'CREATED',
                 'VALIDATING',
                 'READY_TO_SUBMIT',
-                'SUBMITTING'
+                'SUBMITTING',
             ],
             'CANCEL_REQUESTED' => [
                 'CANCELLED',
                 'FAILED',
-                'MANUAL_REVIEW'
+                'MANUAL_REVIEW',
             ],
             'CANCELLED' => [], // Terminal state
             'MANUAL_REVIEW' => [
@@ -158,7 +158,7 @@ class ProcurementSession extends Model implements ProcurementSessionContract
                 'SUBMITTING',
                 'FAILED',
                 'CANCEL_REQUESTED',
-                'CANCELLED'
+                'CANCELLED',
             ],
         ];
 

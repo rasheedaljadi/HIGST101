@@ -47,31 +47,51 @@ class ImageCacheController extends Controller
 
         $path = $this->getImagePath($filename);
 
+        // Fallback Step 1: Check original storage path if cache path is missing
         if (! file_exists($path)) {
-            abort(404, 'Image not found.');
-        }
-
-        try {
-            $image = image_manager()->read($path);
-
-            if (is_object($templateConfig) && method_exists($templateConfig, 'applyFilter')) {
-                $image = $templateConfig->applyFilter($image);
-            } elseif (class_exists($templateConfig)) {
-                $filter = new $templateConfig;
-
-                if (method_exists($filter, 'applyFilter')) {
-                    $image = $filter->applyFilter($image);
-                }
-            } elseif ($templateConfig instanceof Closure) {
-                $image = $templateConfig($image);
+            $originalStoragePath = storage_path('app/public/' . $filename);
+            if (file_exists($originalStoragePath)) {
+                $path = $originalStoragePath;
             }
-
-            $content = (string) $image->encodeByMediaType();
-
-            return $this->buildResponse($content);
-        } catch (Exception) {
-            abort(404, 'Unable to process image.');
         }
+
+        // Fallback Step 2: On-the-fly generation from found path
+        if (file_exists($path)) {
+            try {
+                $image = image_manager()->read($path);
+
+                if (is_object($templateConfig) && method_exists($templateConfig, 'applyFilter')) {
+                    $image = $templateConfig->applyFilter($image);
+                } elseif (class_exists($templateConfig)) {
+                    $filter = new $templateConfig;
+
+                    if (method_exists($filter, 'applyFilter')) {
+                        $image = $filter->applyFilter($image);
+                    }
+                } elseif ($templateConfig instanceof Closure) {
+                    $image = $templateConfig($image);
+                }
+
+                $content = (string) $image->encodeByMediaType();
+
+                return $this->buildResponse($content);
+            } catch (Exception) {
+                // If filter processing fails, fall through to raw file or placeholder
+                if (file_exists($path)) {
+                    return $this->buildResponse(file_get_contents($path));
+                }
+            }
+        }
+
+        // Fallback Step 3: Theme placeholder asset
+        $fallbackPlaceholder = public_path('themes/shop/default/build/assets/medium-product-placeholder.webp');
+        if (file_exists($fallbackPlaceholder)) {
+            return $this->buildResponse(file_get_contents($fallbackPlaceholder));
+        }
+
+        // Fallback Step 4: Transparent 1x1 WebP pixel stream (Guarantees zero 404 broken image UI)
+        $transparentWebp = base64_decode('UklGRdhAAAAvAAAAAAfQ//73v/+BiOh/AAA=');
+        return response($transparentWebp, 200, ['Content-Type' => 'image/webp']);
     }
 
     /**

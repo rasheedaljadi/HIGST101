@@ -40,11 +40,11 @@ return new class extends Migration
             $table->index(['order_id', 'provider']);
             $table->index('external_order_id');
             $table->index('provider_account_id');
-            
+
             // Composite performance indexes
             $table->index(['state', 'created_at']);
             $table->index(['provider', 'state']);
-            
+
             // Uniqueness check for active duplicates (handled at database level via signature unique constraint)
             $table->unique(['order_id', 'provider', 'supplier_signature'], 'po_order_provider_supplier_unique');
         });

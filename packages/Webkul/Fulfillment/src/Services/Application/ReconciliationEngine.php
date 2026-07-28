@@ -31,10 +31,10 @@ class ReconciliationEngine
                     $report[] = [
                         'external_order_id' => $extOrder->external_order_id,
                         'purchase_order_id' => $extOrder->purchase_order_id,
-                        'provider'          => $extOrder->provider,
-                        'field'             => 'status',
-                        'internal_value'    => $extOrder->status,
-                        'external_value'    => $status->mappedState,
+                        'provider' => $extOrder->provider,
+                        'field' => 'status',
+                        'internal_value' => $extOrder->status,
+                        'external_value' => $status->mappedState,
                     ];
 
                     $extOrder->update(['status' => $status->mappedState]);
@@ -42,20 +42,20 @@ class ReconciliationEngine
                     DB::table('external_order_projections')
                         ->where('external_order_id', $extOrder->external_order_id)
                         ->update([
-                            'status'          => $status->mappedState,
+                            'status' => $status->mappedState,
                             'tracking_number' => $status->trackingNumber,
-                            'carrier'         => $status->trackingCompany,
-                            'updated_at'      => now(),
+                            'carrier' => $status->trackingCompany,
+                            'updated_at' => now(),
                         ]);
                 }
             } catch (\Throwable $e) {
                 $report[] = [
                     'external_order_id' => $extOrder->external_order_id,
                     'purchase_order_id' => $extOrder->purchase_order_id,
-                    'provider'          => $extOrder->provider,
-                    'field'             => 'error',
-                    'internal_value'    => 'sync',
-                    'external_value'    => $e->getMessage(),
+                    'provider' => $extOrder->provider,
+                    'field' => 'error',
+                    'internal_value' => 'sync',
+                    'external_value' => $e->getMessage(),
                 ];
             }
         }

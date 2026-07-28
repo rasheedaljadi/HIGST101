@@ -14,13 +14,13 @@ class ExternalIdentityMapper
         if (preg_match('/EXT-PO-(\d+)-AL-(\d+)/', $externalOrderId, $matches)) {
             return [
                 'purchase_order_id' => (int) $matches[1],
-                'allocation_id'     => (int) $matches[2],
+                'allocation_id' => (int) $matches[2],
             ];
         }
 
         return [
             'purchase_order_id' => null,
-            'allocation_id'     => null,
+            'allocation_id' => null,
         ];
     }
 }

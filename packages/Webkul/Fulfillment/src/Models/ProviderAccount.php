@@ -27,8 +27,8 @@ class ProviderAccount extends Model implements ProviderAccountContract
     protected function casts(): array
     {
         return [
-            'app_secret'    => 'encrypted',
-            'access_token'  => 'encrypted',
+            'app_secret' => 'encrypted',
+            'access_token' => 'encrypted',
             'refresh_token' => 'encrypted',
         ];
     }

@@ -17,9 +17,6 @@ class FulfillmentApprovalRequestRepository extends Repository
     /**
      * Validate data before creation or update.
      *
-     * @param  array  $data
-     * @param  int|null  $id
-     * @return void
      *
      * @throws \InvalidArgumentException
      */
@@ -42,7 +39,6 @@ class FulfillmentApprovalRequestRepository extends Repository
     /**
      * Create a new approval request.
      *
-     * @param  array  $attributes
      * @return mixed
      *
      * @throws \InvalidArgumentException
@@ -57,7 +53,6 @@ class FulfillmentApprovalRequestRepository extends Repository
     /**
      * Update an existing approval request.
      *
-     * @param  array  $attributes
      * @param  int  $id
      * @return mixed
      *

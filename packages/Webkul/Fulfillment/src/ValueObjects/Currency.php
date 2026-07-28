@@ -8,7 +8,7 @@ class Currency
     {
         $this->code = strtoupper(trim($code));
         if (strlen($this->code) !== 3) {
-            throw new \InvalidArgumentException("Currency code must be exactly 3 characters.");
+            throw new \InvalidArgumentException('Currency code must be exactly 3 characters.');
         }
     }
 

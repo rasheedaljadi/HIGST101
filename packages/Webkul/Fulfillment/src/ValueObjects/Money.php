@@ -22,7 +22,7 @@ class Money
     public function add(Money $other): Money
     {
         if (! $this->currency->equals($other->currency())) {
-            throw new \InvalidArgumentException("Cannot add money of different currencies.");
+            throw new \InvalidArgumentException('Cannot add money of different currencies.');
         }
 
         return new self($this->amount + $other->amount(), $this->currency);
@@ -31,7 +31,7 @@ class Money
     public function subtract(Money $other): Money
     {
         if (! $this->currency->equals($other->currency())) {
-            throw new \InvalidArgumentException("Cannot subtract money of different currencies.");
+            throw new \InvalidArgumentException('Cannot subtract money of different currencies.');
         }
 
         return new self($this->amount - $other->amount(), $this->currency);
@@ -50,7 +50,7 @@ class Money
     public function toArray(): array
     {
         return [
-            'amount'   => $this->amount,
+            'amount' => $this->amount,
             'currency' => $this->currency->code(),
         ];
     }

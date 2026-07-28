@@ -4,22 +4,21 @@ namespace Tests\Feature\Fulfillment;
 
 use App\Models\AliExpressProductImport;
 use App\Models\AliExpressToken;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
-use Webkul\Faker\Helpers\Product as ProductFaker;
+use Webkul\Attribute\Models\AttributeFamily;
+use Webkul\Core\Models\Channel;
 use Webkul\Fulfillment\Contracts\FulfillmentProviderInterface;
-use Webkul\Fulfillment\DataObjects\SupplierOrderResult;
-use Webkul\Fulfillment\DataObjects\SupplierOrderStatus;
 use Webkul\Fulfillment\Jobs\CreatePurchaseOrderJob;
-use Webkul\Fulfillment\Listeners\InitiateFulfillmentListener;
 use Webkul\Fulfillment\Models\PurchaseOrder;
 use Webkul\Fulfillment\Models\PurchaseOrderItem;
 use Webkul\Fulfillment\Services\FulfillmentProviderRegistry;
 use Webkul\Fulfillment\Services\FulfillmentService;
-use Webkul\Fulfillment\Services\SecretRedactor;
+use Webkul\Product\Models\Product;
 use Webkul\Sales\Models\Invoice;
 use Webkul\Sales\Models\Order;
 use Webkul\Sales\Models\OrderAddress;
@@ -31,16 +30,16 @@ class FulfillmentBridgeTest extends TestCase
     {
         parent::setUp();
 
-        if (! \Webkul\Core\Models\Channel::find(1)) {
-            \Webkul\Core\Models\Channel::factory()->create(['id' => 1]);
+        if (! Channel::find(1)) {
+            Channel::factory()->create(['id' => 1]);
         }
 
-        if (! \Webkul\Attribute\Models\AttributeFamily::find(1)) {
-            \Webkul\Attribute\Models\AttributeFamily::create([
-                'id'              => 1,
-                'code'            => 'default',
-                'name'            => 'Default',
-                'status'          => 1,
+        if (! AttributeFamily::find(1)) {
+            AttributeFamily::create([
+                'id' => 1,
+                'code' => 'default',
+                'name' => 'Default',
+                'status' => 1,
                 'is_user_defined' => 0,
             ]);
         }
@@ -51,11 +50,11 @@ class FulfillmentBridgeTest extends TestCase
 
         // Seed a valid AliExpress token so client requests don't fail OAuth check
         AliExpressToken::create([
-            'account'                 => 'test-account',
-            'access_token'            => 'valid-test-access-token',
-            'refresh_token'           => 'valid-test-refresh-token',
+            'account' => 'test-account',
+            'access_token' => 'valid-test-access-token',
+            'refresh_token' => 'valid-test-refresh-token',
             'access_token_expires_at' => now()->addDays(7),
-            'refresh_token_expires_at'=> now()->addDays(30),
+            'refresh_token_expires_at' => now()->addDays(30),
         ]);
 
         Cache::flush();
@@ -65,37 +64,37 @@ class FulfillmentBridgeTest extends TestCase
     protected function createCustomerOrder(): Order
     {
         $order = Order::factory()->create([
-            'status'              => 'pending',
-            'customer_email'      => 'customer@example.com',
+            'status' => 'pending',
+            'customer_email' => 'customer@example.com',
             'customer_first_name' => 'John',
-            'customer_last_name'  => 'Doe',
+            'customer_last_name' => 'Doe',
             'order_currency_code' => 'USD',
         ]);
 
         OrderAddress::factory()->create([
-            'order_id'     => $order->id,
+            'order_id' => $order->id,
             'address_type' => OrderAddress::ADDRESS_TYPE_SHIPPING,
-            'first_name'   => 'John',
-            'last_name'    => 'Doe',
-            'address'      => '123 Test St',
-            'city'         => 'Test City',
-            'state'        => 'NY',
-            'postcode'     => '10001',
-            'country'      => 'US',
-            'phone'        => '1234567890',
-            'email'        => 'customer@example.com',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'address' => '123 Test St',
+            'city' => 'Test City',
+            'state' => 'NY',
+            'postcode' => '10001',
+            'country' => 'US',
+            'phone' => '1234567890',
+            'email' => 'customer@example.com',
         ]);
 
         return $order;
     }
 
     /** Helper to create a real product in database. */
-    protected function createRealProduct(): \Webkul\Product\Models\Product
+    protected function createRealProduct(): Product
     {
-        return \Webkul\Product\Models\Product::create([
-            'type'                => 'simple',
+        return Product::create([
+            'type' => 'simple',
             'attribute_family_id' => 1,
-            'sku'                 => 'sku-' . uniqid(),
+            'sku' => 'sku-'.uniqid(),
         ]);
     }
 
@@ -103,13 +102,13 @@ class FulfillmentBridgeTest extends TestCase
     protected function createOrderItem(Order $order, $product, float $price = 10.0, int $qty = 1): OrderItem
     {
         return OrderItem::factory()->create([
-            'order_id'    => $order->id,
-            'product_id'  => $product->id,
+            'order_id' => $order->id,
+            'product_id' => $product->id,
             'qty_ordered' => $qty,
-            'price'       => $price,
-            'sku'         => $product->sku,
-            'name'        => $product->name,
-            'type'        => $product->type,
+            'price' => $price,
+            'sku' => $product->sku,
+            'name' => $product->name,
+            'type' => $product->type,
         ]);
     }
 
@@ -132,34 +131,34 @@ class FulfillmentBridgeTest extends TestCase
         // Setup product imports
         AliExpressProductImport::create([
             'aliexpress_product_id' => 'ae-p1',
-            'product_id'            => $product1->id,
-            'status'                => 'success',
-            'payload_snapshot'      => [
+            'product_id' => $product1->id,
+            'status' => 'success',
+            'payload_snapshot' => [
                 'aliexpress_product_id' => 'ae-p1',
-                'is_configurable'       => false,
-                'variants'              => [['sku_id' => 'ae-sku-1', 'price' => 10.0]],
+                'is_configurable' => false,
+                'variants' => [['sku_id' => 'ae-sku-1', 'price' => 10.0]],
             ],
         ]);
 
         AliExpressProductImport::create([
             'aliexpress_product_id' => 'ae-p2',
-            'product_id'            => $product2->id,
-            'status'                => 'success',
-            'payload_snapshot'      => [
+            'product_id' => $product2->id,
+            'status' => 'success',
+            'payload_snapshot' => [
                 'aliexpress_product_id' => 'ae-p2',
-                'is_configurable'       => false,
-                'variants'              => [['sku_id' => 'ae-sku-2', 'price' => 20.0]],
+                'is_configurable' => false,
+                'variants' => [['sku_id' => 'ae-sku-2', 'price' => 20.0]],
             ],
         ]);
 
         AliExpressProductImport::create([
             'aliexpress_product_id' => 'ae-p3',
-            'product_id'            => $product3->id,
-            'status'                => 'success',
-            'payload_snapshot'      => [
+            'product_id' => $product3->id,
+            'status' => 'success',
+            'payload_snapshot' => [
                 'aliexpress_product_id' => 'ae-p3',
-                'is_configurable'       => false,
-                'variants'              => [['sku_id' => 'ae-sku-3', 'price' => 45.0]],
+                'is_configurable' => false,
+                'variants' => [['sku_id' => 'ae-sku-3', 'price' => 45.0]],
             ],
         ]);
 
@@ -210,12 +209,12 @@ class FulfillmentBridgeTest extends TestCase
     {
         $order = $this->createCustomerOrder();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'aliexpress_default',
-            'idempotency_key'    => hash('sha256', 'lock-test-key'),
+            'idempotency_key' => hash('sha256', 'lock-test-key'),
             'internal_reference' => 'ref-lock-1',
-            'state'              => PurchaseOrder::STATE_PENDING,
+            'state' => PurchaseOrder::STATE_PENDING,
         ]);
 
         // Manually lock the PO in cache
@@ -237,19 +236,19 @@ class FulfillmentBridgeTest extends TestCase
     {
         $order = $this->createCustomerOrder();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'aliexpress_default',
-            'idempotency_key'    => hash('sha256', 'retry-test-key'),
+            'idempotency_key' => hash('sha256', 'retry-test-key'),
             'internal_reference' => 'ref-retry-1',
-            'state'              => PurchaseOrder::STATE_PENDING,
+            'state' => PurchaseOrder::STATE_PENDING,
         ]);
 
         PurchaseOrderItem::create([
-            'purchase_order_id'     => $po->id,
-            'order_item_id'         => 1,
+            'purchase_order_id' => $po->id,
+            'order_item_id' => 1,
             'aliexpress_product_id' => 'ae-p1',
-            'qty'                   => 1,
+            'qty' => 1,
         ]);
 
         $businessUrl = config('aliexpress.business_url', 'https://api-sg.aliexpress.com/sync');
@@ -257,13 +256,13 @@ class FulfillmentBridgeTest extends TestCase
         Http::fake([
             $businessUrl => Http::sequence()
                 ->push([
-                    'code'    => 'isp.system-error',
+                    'code' => 'isp.system-error',
                     'message' => 'Internal server error occurred.',
                 ], 200)
                 ->push([
-                    'code'    => 'param-error',
+                    'code' => 'param-error',
                     'message' => 'The product ID is invalid.',
-                ], 200)
+                ], 200),
         ]);
 
         $service = app(FulfillmentService::class);
@@ -297,21 +296,21 @@ class FulfillmentBridgeTest extends TestCase
         $order = $this->createCustomerOrder();
 
         $po1 = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'sig-1',
-            'idempotency_key'    => hash('sha256', 'm-test-key-1'),
+            'idempotency_key' => hash('sha256', 'm-test-key-1'),
             'internal_reference' => 'ref-m-1',
-            'state'              => PurchaseOrder::STATE_SUBMITTED,
+            'state' => PurchaseOrder::STATE_SUBMITTED,
         ]);
 
         $po2 = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'sig-2',
-            'idempotency_key'    => hash('sha256', 'm-test-key-2'),
+            'idempotency_key' => hash('sha256', 'm-test-key-2'),
             'internal_reference' => 'ref-m-2',
-            'state'              => PurchaseOrder::STATE_SUBMITTED,
+            'state' => PurchaseOrder::STATE_SUBMITTED,
         ]);
 
         $service = app(FulfillmentService::class);
@@ -340,8 +339,8 @@ class FulfillmentBridgeTest extends TestCase
         $order = $this->createCustomerOrder();
 
         $invoice = Invoice::create([
-            'order_id'    => $order->id,
-            'state'       => 'paid',
+            'order_id' => $order->id,
+            'state' => 'paid',
             'grand_total' => 100.0,
         ]);
 
@@ -353,10 +352,10 @@ class FulfillmentBridgeTest extends TestCase
     /** Property 7: Polling job is scheduled correctly to run every 15 minutes. */
     public function test_polling_job_is_scheduled_correctly(): void
     {
-        $schedule = app(\Illuminate\Console\Scheduling\Schedule::class);
+        $schedule = app(Schedule::class);
 
         $events = collect($schedule->events())->filter(function ($event) {
-            return str_contains($event->description, 'PollSupplierOrdersJob') 
+            return str_contains($event->description, 'PollSupplierOrdersJob')
                 || str_contains($event->command, 'PollSupplierOrdersJob');
         });
 
@@ -369,29 +368,29 @@ class FulfillmentBridgeTest extends TestCase
     {
         $order = $this->createCustomerOrder();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'aliexpress_default',
-            'idempotency_key'    => hash('sha256', 'retry-reconciliation-key'),
+            'idempotency_key' => hash('sha256', 'retry-reconciliation-key'),
             'internal_reference' => 'ref-retry-rec-1',
-            'state'              => PurchaseOrder::STATE_PENDING,
-            'attempts'           => 1, // simulated previous failure/timeout
+            'state' => PurchaseOrder::STATE_PENDING,
+            'attempts' => 1, // simulated previous failure/timeout
         ]);
 
         PurchaseOrderItem::create([
-            'purchase_order_id'     => $po->id,
-            'order_item_id'         => 1,
+            'purchase_order_id' => $po->id,
+            'order_item_id' => 1,
             'aliexpress_product_id' => 'ae-p1',
-            'qty'                   => 1,
+            'qty' => 1,
         ]);
 
         // Create a mock provider
         $mockProvider = $this->createMock(FulfillmentProviderInterface::class);
         $mockProvider->method('code')->willReturn('aliexpress');
-        
+
         // Assert that createSupplierOrder is NEVER called, preventing duplicates!
         $mockProvider->expects($this->never())->method('createSupplierOrder');
-        
+
         // Assert findByReference is called once and successfully reconciles the order
         $mockProvider->expects($this->once())
             ->method('findByReference')
@@ -399,7 +398,7 @@ class FulfillmentBridgeTest extends TestCase
             ->willReturn('external-id-timeout-success');
 
         // Bind mock provider in registry and register registry in container
-        $registry = new FulfillmentProviderRegistry();
+        $registry = new FulfillmentProviderRegistry;
         $instancesProp = new \ReflectionProperty(FulfillmentProviderRegistry::class, 'instances');
         $instancesProp->setAccessible(true);
         $instancesProp->setValue($registry, ['aliexpress' => $mockProvider]);
@@ -418,35 +417,35 @@ class FulfillmentBridgeTest extends TestCase
     {
         $order = $this->createCustomerOrder();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'aliexpress_default',
-            'idempotency_key'    => hash('sha256', 'crash-reconciliation-key'),
+            'idempotency_key' => hash('sha256', 'crash-reconciliation-key'),
             'internal_reference' => 'ref-crash-rec-1',
-            'state'              => PurchaseOrder::STATE_SUBMITTING, // simulated worker crash state
-            'attempts'           => 0,
+            'state' => PurchaseOrder::STATE_SUBMITTING, // simulated worker crash state
+            'attempts' => 0,
         ]);
 
         PurchaseOrderItem::create([
-            'purchase_order_id'     => $po->id,
-            'order_item_id'         => 1,
+            'purchase_order_id' => $po->id,
+            'order_item_id' => 1,
             'aliexpress_product_id' => 'ae-p1',
-            'qty'                   => 1,
+            'qty' => 1,
         ]);
 
         $mockProvider = $this->createMock(FulfillmentProviderInterface::class);
         $mockProvider->method('code')->willReturn('aliexpress');
-        
+
         // Assert that createSupplierOrder is NEVER called, preventing duplicates!
         $mockProvider->expects($this->never())->method('createSupplierOrder');
-        
+
         // Assert findByReference is called once and successfully reconciles the order
         $mockProvider->expects($this->once())
             ->method('findByReference')
             ->with('ref-crash-rec-1')
             ->willReturn('external-id-crash-success');
 
-        $registry = new FulfillmentProviderRegistry();
+        $registry = new FulfillmentProviderRegistry;
         $instancesProp = new \ReflectionProperty(FulfillmentProviderRegistry::class, 'instances');
         $instancesProp->setAccessible(true);
         $instancesProp->setValue($registry, ['aliexpress' => $mockProvider]);
@@ -465,31 +464,31 @@ class FulfillmentBridgeTest extends TestCase
     {
         $order = $this->createCustomerOrder();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'aliexpress_default',
-            'idempotency_key'    => hash('sha256', 'existing-id-reconciliation-key'),
+            'idempotency_key' => hash('sha256', 'existing-id-reconciliation-key'),
             'internal_reference' => 'ref-existing-rec-1',
-            'state'              => PurchaseOrder::STATE_PENDING,
-            'attempts'           => 1,
-            'external_order_id'  => 'already-saved-id-999',
+            'state' => PurchaseOrder::STATE_PENDING,
+            'attempts' => 1,
+            'external_order_id' => 'already-saved-id-999',
         ]);
 
         PurchaseOrderItem::create([
-            'purchase_order_id'     => $po->id,
-            'order_item_id'         => 1,
+            'purchase_order_id' => $po->id,
+            'order_item_id' => 1,
             'aliexpress_product_id' => 'ae-p1',
-            'qty'                   => 1,
+            'qty' => 1,
         ]);
 
         $mockProvider = $this->createMock(FulfillmentProviderInterface::class);
         $mockProvider->method('code')->willReturn('aliexpress');
-        
+
         // Assert that both createSupplierOrder and findByReference are NEVER called!
         $mockProvider->expects($this->never())->method('createSupplierOrder');
         $mockProvider->expects($this->never())->method('findByReference');
 
-        $registry = new FulfillmentProviderRegistry();
+        $registry = new FulfillmentProviderRegistry;
         $instancesProp = new \ReflectionProperty(FulfillmentProviderRegistry::class, 'instances');
         $instancesProp->setAccessible(true);
         $instancesProp->setValue($registry, ['aliexpress' => $mockProvider]);
@@ -515,27 +514,27 @@ class FulfillmentBridgeTest extends TestCase
         $item = $this->createOrderItem($order, $product, 15.0, 1);
 
         AliExpressProductImport::create([
-            'product_id'             => $product->id,
-            'aliexpress_product_id'  => 'ae-p123',
-            'status'                 => 'success',
+            'product_id' => $product->id,
+            'aliexpress_product_id' => 'ae-p123',
+            'status' => 'success',
         ]);
 
         // Manually create an existing active purchase order and link it to this item
         $existingPo = PurchaseOrder::create([
-            'order_id'            => $order->id,
-            'provider'            => 'aliexpress',
-            'supplier_signature'  => 'aliexpress_default',
-            'idempotency_key'     => hash('sha256', 'existing-active-po-key'),
-            'internal_reference'  => 'ref-existing-active-1',
-            'state'               => PurchaseOrder::STATE_PENDING,
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
+            'supplier_signature' => 'aliexpress_default',
+            'idempotency_key' => hash('sha256', 'existing-active-po-key'),
+            'internal_reference' => 'ref-existing-active-1',
+            'state' => PurchaseOrder::STATE_PENDING,
         ]);
 
         PurchaseOrderItem::create([
-            'purchase_order_id'     => $existingPo->id,
-            'order_item_id'         => $item->id,
+            'purchase_order_id' => $existingPo->id,
+            'order_item_id' => $item->id,
             'aliexpress_product_id' => 'ae-p123',
-            'qty'                   => 1,
-            'supplier_unit_cost'    => 15.0,
+            'qty' => 1,
+            'supplier_unit_cost' => 15.0,
         ]);
 
         // Run planning
@@ -551,4 +550,3 @@ class FulfillmentBridgeTest extends TestCase
         $this->assertEquals(1, PurchaseOrderItem::count());
     }
 }
-

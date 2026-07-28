@@ -5,7 +5,6 @@ namespace Tests\Feature\Fulfillment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
-use Webkul\Fulfillment\DataObjects\NormalizedExternalEvent;
 use Webkul\Fulfillment\Models\PurchaseOrder;
 use Webkul\Fulfillment\Providers\AliExpress\AliExpressEventNormalizer;
 use Webkul\Fulfillment\Providers\AliExpress\AliExpressWebhookVerifier;
@@ -13,7 +12,6 @@ use Webkul\Fulfillment\Providers\CJ\CJEventNormalizer;
 use Webkul\Fulfillment\Services\Application\ExternalInboxService;
 use Webkul\Fulfillment\Services\Application\InboxEventProcessor;
 use Webkul\Fulfillment\Services\Domain\ExternalStateMapper;
-use Webkul\Sales\Models\Order;
 
 class ProviderContractTest extends TestCase
 {
@@ -43,20 +41,20 @@ class ProviderContractTest extends TestCase
         $processor = app(InboxEventProcessor::class);
 
         $payload = [
-            'event_id'   => 'evt-uniq-100',
-            'order_id'   => 'PO-TEST-1',
-            'status'     => 'ORDER_CREATED',
-            'timestamp'  => now()->toIso8601String(),
+            'event_id' => 'evt-uniq-100',
+            'order_id' => 'PO-TEST-1',
+            'status' => 'ORDER_CREATED',
+            'timestamp' => now()->toIso8601String(),
         ];
 
         // 1. Success on first ingest (Signed request)
         config(['fulfillment.aliexpress.webhook_secret' => 'super-secret-key-1122']);
         $body = json_encode($payload);
         $timestamp = time();
-        $sig = hash_hmac('sha256', $timestamp . '.' . $body, 'super-secret-key-1122');
+        $sig = hash_hmac('sha256', $timestamp.'.'.$body, 'super-secret-key-1122');
 
         $request = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_Signature'   => $sig,
+            'HTTP_Signature' => $sig,
             'HTTP_X-Timestamp' => $timestamp,
         ], $body);
 
@@ -70,11 +68,11 @@ class ProviderContractTest extends TestCase
 
         // Create the PO aggregate referenced in the inbox payload to avoid "PO not found" failure
         PurchaseOrder::create([
-            'id'                 => 9999,
+            'id' => 9999,
             'internal_reference' => 'PO-TEST-1',
-            'order_id'           => 1,
-            'provider'           => 'aliexpress',
-            'state'              => 'pending',
+            'order_id' => 1,
+            'provider' => 'aliexpress',
+            'state' => 'pending',
         ]);
 
         // 3. Process inbox event successfully
@@ -89,7 +87,7 @@ class ProviderContractTest extends TestCase
         // Reset to pending, delete PO to force processing error "PO not found"
         PurchaseOrder::truncate();
         DB::table('external_inbox_events')->where('event_id', 'evt-uniq-100')->update([
-            'status'   => 'pending',
+            'status' => 'pending',
             'attempts' => 2, // Set to 2, so the next fail hits 3 (maxAttempts)
         ]);
 
@@ -106,17 +104,17 @@ class ProviderContractTest extends TestCase
      */
     public function test_aliexpress_webhook_signature_and_timestamp_validation(): void
     {
-        $verifier = new AliExpressWebhookVerifier();
+        $verifier = new AliExpressWebhookVerifier;
         $body = json_encode(['foo' => 'bar']);
         $timestamp = time();
 
         config(['fulfillment.aliexpress.webhook_secret' => 'super-secret-key-1122']);
 
         // Generate correct signature
-        $sig = hash_hmac('sha256', $timestamp . '.' . $body, 'super-secret-key-1122');
+        $sig = hash_hmac('sha256', $timestamp.'.'.$body, 'super-secret-key-1122');
 
         $request = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_Signature'   => $sig,
+            'HTTP_Signature' => $sig,
             'HTTP_X-Timestamp' => $timestamp,
         ], $body);
 
@@ -124,16 +122,16 @@ class ProviderContractTest extends TestCase
 
         // Invalid signature
         $badRequest = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_Signature'   => 'invalid-signature-here',
+            'HTTP_Signature' => 'invalid-signature-here',
             'HTTP_X-Timestamp' => $timestamp,
         ], $body);
         $this->assertFalse($verifier->verify($badRequest));
 
         // Stale timestamp (replay protection)
         $staleTimestamp = time() - 400; // > 300 seconds
-        $staleSig = hash_hmac('sha256', $staleTimestamp . '.' . $body, 'super-secret-key-1122');
+        $staleSig = hash_hmac('sha256', $staleTimestamp.'.'.$body, 'super-secret-key-1122');
         $staleRequest = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_Signature'   => $staleSig,
+            'HTTP_Signature' => $staleSig,
             'HTTP_X-Timestamp' => $staleTimestamp,
         ], $body);
         $this->assertFalse($verifier->verify($staleRequest));
@@ -144,7 +142,7 @@ class ProviderContractTest extends TestCase
      */
     public function test_aliexpress_webhook_payload_normalization_from_fixtures(): void
     {
-        $normalizer = new AliExpressEventNormalizer();
+        $normalizer = new AliExpressEventNormalizer;
 
         // 1. Load order_created.json
         $createdJson = file_get_contents(base_path('tests/Fixtures/AliExpress/order_created.json'));
@@ -174,22 +172,22 @@ class ProviderContractTest extends TestCase
      */
     public function test_purchase_order_state_machine_transitions_via_mapper(): void
     {
-        $normalizer = new AliExpressEventNormalizer();
-        $mapper = new ExternalStateMapper();
+        $normalizer = new AliExpressEventNormalizer;
+        $mapper = new ExternalStateMapper;
 
         // Create PO in draft/pending status
         $po = PurchaseOrder::create([
-            'id'                 => 101,
+            'id' => 101,
             'internal_reference' => 'PO-101',
-            'order_id'           => 1,
-            'provider'           => 'aliexpress',
-            'state'              => 'pending',
+            'order_id' => 1,
+            'provider' => 'aliexpress',
+            'state' => 'pending',
         ]);
 
         // Load shipped JSON, normalize, and map to action DTO
         $shippedJson = file_get_contents(base_path('tests/Fixtures/AliExpress/order_shipped.json'));
         $payload = json_decode($shippedJson, true);
-        
+
         $normalizedEvent = $normalizer->normalize($payload);
         $actionDto = $mapper->map($normalizedEvent);
 
@@ -219,16 +217,16 @@ class ProviderContractTest extends TestCase
 
         // Insert stuck processing event in inbox
         DB::table('external_inbox_events')->insert([
-            'provider'              => 'aliexpress',
-            'event_id'              => 'evt-stuck-1',
-            'event_type'            => 'order_status_changed',
-            'payload'               => json_encode(['foo' => 'bar']),
-            'status'                => 'processing',
-            'processing_lock_id'    => 'lock-abc-123',
+            'provider' => 'aliexpress',
+            'event_id' => 'evt-stuck-1',
+            'event_type' => 'order_status_changed',
+            'payload' => json_encode(['foo' => 'bar']),
+            'status' => 'processing',
+            'processing_lock_id' => 'lock-abc-123',
             'processing_started_at' => now()->subMinutes(10), // Stale lock
-            'received_at'           => now(),
-            'created_at'            => now(),
-            'updated_at'            => now(),
+            'received_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         // Recover stale locks
@@ -245,27 +243,27 @@ class ProviderContractTest extends TestCase
      */
     public function test_external_event_is_provider_independent(): void
     {
-        $aeNormalizer = new AliExpressEventNormalizer();
-        $cjNormalizer = new CJEventNormalizer();
-        $mapper = new ExternalStateMapper();
+        $aeNormalizer = new AliExpressEventNormalizer;
+        $cjNormalizer = new CJEventNormalizer;
+        $mapper = new ExternalStateMapper;
 
         // 1. AliExpress Shipped Event
         $aePayload = [
-            'event_id'        => 'ae-1',
-            'status'          => 'SELLER_SEND_GOODS',
-            'order_id'        => 'ae-ext-9921',
+            'event_id' => 'ae-1',
+            'status' => 'SELLER_SEND_GOODS',
+            'order_id' => 'ae-ext-9921',
             'tracking_number' => 'TRK-AE-11',
-            'carrier_code'    => 'ae_standard',
+            'carrier_code' => 'ae_standard',
         ];
         $aeNormalized = $aeNormalizer->normalize($aePayload);
         $aeAction = $mapper->map($aeNormalized);
 
         // 2. CJ Shipped Event
         $cjPayload = [
-            'cj_event_id'      => 'cj-1',
-            'cj_status'        => 'SHIPPED',
-            'orderNo'          => 'cj-ext-9921',
-            'trackingNumber'   => 'TRK-CJ-22',
+            'cj_event_id' => 'cj-1',
+            'cj_status' => 'SHIPPED',
+            'orderNo' => 'cj-ext-9921',
+            'trackingNumber' => 'TRK-CJ-22',
             'logisticsCompany' => 'cj_logistics',
         ];
         $cjNormalized = $cjNormalizer->normalize($cjPayload);

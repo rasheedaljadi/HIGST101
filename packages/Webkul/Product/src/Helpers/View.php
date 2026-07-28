@@ -67,4 +67,29 @@ class View
 
         return $data;
     }
+
+    /**
+     * Get dropshipping fulfillment transparency metadata.
+     *
+     * @param  Product  $product
+     * @return array
+     */
+    public function getDropshippingMetadata($product): array
+    {
+        $originCountry = core()->getConfigData('catalog.products.dropshipping.default_origin')
+            ?: ($product->country_of_origin ?? 'International Overseas Warehouse (Express Freight)');
+
+        $leadTimeDays = (int) (core()->getConfigData('catalog.products.dropshipping.dispatch_lead_time') ?: 2);
+        $minDays = $leadTimeDays + 3;
+        $maxDays = $leadTimeDays + 6;
+
+        return [
+            'origin_country' => $originCountry,
+            'dispatch_lead_time_days' => $leadTimeDays,
+            'estimated_delivery_window' => "{$minDays} - {$maxDays} Business Days",
+            'tracking_available' => true,
+            'local_rma_days' => (int) (core()->getConfigData('sales.shipping.rma.default_return_days') ?: 14),
+            'return_center_location' => core()->getConfigData('sales.shipping.rma.return_center_address') ?: 'Local HIGEST Return Hub Processing',
+        ];
+    }
 }

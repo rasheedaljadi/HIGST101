@@ -4,13 +4,12 @@ namespace Tests\Feature\Fulfillment;
 
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
-use Webkul\Sales\Models\Order;
-use Webkul\Sales\Models\OrderItem;
-use Webkul\Fulfillment\Models\OrderAllocation;
-use Webkul\Fulfillment\Models\ProcurementSession;
-use Webkul\Fulfillment\Models\PurchaseOrder;
 use Webkul\Fulfillment\Commands\CreateProcurementSessionCommand;
 use Webkul\Fulfillment\Handlers\Procurement\CreateProcurementSessionHandler;
+use Webkul\Fulfillment\Models\OrderAllocation;
+use Webkul\Fulfillment\Models\ProcurementSession;
+use Webkul\Sales\Models\Order;
+use Webkul\Sales\Models\OrderItem;
 
 class SnapshotIntegrityTest extends TestCase
 {
@@ -39,21 +38,21 @@ class SnapshotIntegrityTest extends TestCase
 
         $snapData = [
             'supplier_product_id' => '100200300',
-            'supplier_sku_id'     => 'sku-abc',
-            'requested_qty'       => 1,
-            'available_qty'       => 1,
-            'supplier_cost'       => 10.00,
+            'supplier_sku_id' => 'sku-abc',
+            'requested_qty' => 1,
+            'available_qty' => 1,
+            'supplier_cost' => 10.00,
         ];
 
         // 1. Create OrderAllocation with a snapshot cost of 10.00
         $allocation = OrderAllocation::create([
-            'order_id'          => $order->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 1,
-            'source_type'       => 'supplier',
-            'source_code'       => 'aliexpress',
-            'state'             => 'reserved',
-            'supplier_snapshot' => json_encode($snapData)
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
+            'qty' => 1,
+            'source_type' => 'supplier',
+            'source_code' => 'aliexpress',
+            'state' => 'reserved',
+            'supplier_snapshot' => json_encode($snapData),
         ]);
 
         // 2. Start ProcurementSession
@@ -70,7 +69,7 @@ class SnapshotIntegrityTest extends TestCase
         $session->update([
             'policy_snapshot' => ['markup' => 0.05, 'shipping_rule' => 'standard'],
             'supplier_snapshot' => $snapData,
-            'price_snapshot' => ['base_price' => 10.00, 'final_price' => 10.50]
+            'price_snapshot' => ['base_price' => 10.00, 'final_price' => 10.50],
         ]);
 
         $this->assertEquals(10.00, $session->supplier_snapshot['supplier_cost']);
@@ -81,11 +80,11 @@ class SnapshotIntegrityTest extends TestCase
         $allocation->update([
             'supplier_snapshot' => json_encode([
                 'supplier_product_id' => '100200300',
-                'supplier_sku_id'     => 'sku-abc',
-                'requested_qty'       => 1,
-                'available_qty'       => 1,
-                'supplier_cost'       => 20.00, // Modified database cost
-            ])
+                'supplier_sku_id' => 'sku-abc',
+                'requested_qty' => 1,
+                'available_qty' => 1,
+                'supplier_cost' => 20.00, // Modified database cost
+            ]),
         ]);
 
         // 4. Reload session and assert snapshots remain absolutely unmodified

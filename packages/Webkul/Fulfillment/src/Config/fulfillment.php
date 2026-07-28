@@ -1,6 +1,13 @@
 <?php
 
+use Webkul\Fulfillment\Providers\AliExpress\AliExpressCapabilities;
+use Webkul\Fulfillment\Providers\AliExpress\AliExpressEventNormalizer;
 use Webkul\Fulfillment\Providers\AliExpress\AliExpressFulfillmentProvider;
+use Webkul\Fulfillment\Providers\AliExpress\AliExpressRetryPolicy;
+use Webkul\Fulfillment\Providers\AliExpress\AliExpressWebhookVerifier;
+use Webkul\Fulfillment\Providers\CJ\CJCapabilities;
+use Webkul\Fulfillment\Providers\CJ\CJEventNormalizer;
+use Webkul\Fulfillment\Providers\CJ\CJRetryPolicy;
 
 return [
 
@@ -41,23 +48,23 @@ return [
     */
 
     'verifiers' => [
-        'aliexpress' => \Webkul\Fulfillment\Providers\AliExpress\AliExpressWebhookVerifier::class,
-        'cj'         => \Webkul\Fulfillment\Providers\CJ\CJCapabilities::class, // Simple mock verifier
+        'aliexpress' => AliExpressWebhookVerifier::class,
+        'cj' => CJCapabilities::class, // Simple mock verifier
     ],
 
     'normalizers' => [
-        'aliexpress' => \Webkul\Fulfillment\Providers\AliExpress\AliExpressEventNormalizer::class,
-        'cj'         => \Webkul\Fulfillment\Providers\CJ\CJEventNormalizer::class,
+        'aliexpress' => AliExpressEventNormalizer::class,
+        'cj' => CJEventNormalizer::class,
     ],
 
     'retry_policies' => [
-        'aliexpress' => \Webkul\Fulfillment\Providers\AliExpress\AliExpressRetryPolicy::class,
-        'cj'         => \Webkul\Fulfillment\Providers\CJ\CJRetryPolicy::class,
+        'aliexpress' => AliExpressRetryPolicy::class,
+        'cj' => CJRetryPolicy::class,
     ],
 
     'capabilities' => [
-        'aliexpress' => \Webkul\Fulfillment\Providers\AliExpress\AliExpressCapabilities::class,
-        'cj'         => \Webkul\Fulfillment\Providers\CJ\CJCapabilities::class,
+        'aliexpress' => AliExpressCapabilities::class,
+        'cj' => CJCapabilities::class,
     ],
 
     /*
@@ -145,7 +152,7 @@ return [
     |
     */
     'admin_ui_enabled' => (bool) env('FULFILLMENT_ADMIN_UI_ENABLED', true),
-    'retry_enabled'    => (bool) env('FULFILLMENT_RETRY_ENABLED', true),
+    'retry_enabled' => (bool) env('FULFILLMENT_RETRY_ENABLED', true),
     'manual_cancel_enabled' => (bool) env('FULFILLMENT_MANUAL_CANCEL_ENABLED', true),
 
     /*
@@ -153,7 +160,7 @@ return [
     | Approval Workflow Settings
     |--------------------------------------------------------------------------
     |
-    | Controls whether high-risk administrative operations (cancellation, edit, 
+    | Controls whether high-risk administrative operations (cancellation, edit,
     | state override) require approval from a Manager or Super Admin before execution.
     |
     */
@@ -164,10 +171,9 @@ return [
     'operations_email' => env('FULFILLMENT_OPERATIONS_EMAIL', 'ops@hayest.com'),
 
     'commission_rates' => [
-        'stripe'         => 0.029,
-        'paypal'         => 0.039,
+        'stripe' => 0.029,
+        'paypal' => 0.039,
         'cashondelivery' => 0.00,
-        'default'        => 0.03,
+        'default' => 0.03,
     ],
 ];
-

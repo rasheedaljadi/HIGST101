@@ -26,20 +26,23 @@ class SyncProductBatchJob implements ShouldQueue
         $providers = config('sync.providers', []);
         $providerClass = $providers[$this->providerName] ?? null;
 
-        if (!$providerClass) {
+        if (! $providerClass) {
             Log::error("Fulfillment sync provider [{$this->providerName}] is not configured.");
+
             return;
         }
 
-        if (!class_exists($providerClass)) {
+        if (! class_exists($providerClass)) {
             Log::error("Fulfillment sync provider class [{$providerClass}] does not exist.");
+
             return;
         }
 
         $provider = app($providerClass);
 
-        if (!$provider instanceof SyncProviderInterface) {
+        if (! $provider instanceof SyncProviderInterface) {
             Log::error("Fulfillment sync provider class [{$providerClass}] must implement SyncProviderInterface.");
+
             return;
         }
 
@@ -47,10 +50,10 @@ class SyncProductBatchJob implements ShouldQueue
             $engine->execute($this->providerName, $provider, $this->batchSize);
         } catch (RateLimitExceededException $e) {
             // Requeue the job with delay to prevent blocking workers
-            Log::warning("Fulfillment sync job rate limited. Releasing job back to queue. Details: " . $e->getMessage());
+            Log::warning('Fulfillment sync job rate limited. Releasing job back to queue. Details: '.$e->getMessage());
             $this->release($e->getRetryAfter());
         } catch (\Throwable $e) {
-            Log::error("Fulfillment sync job failed: " . $e->getMessage());
+            Log::error('Fulfillment sync job failed: '.$e->getMessage());
             throw $e;
         }
     }

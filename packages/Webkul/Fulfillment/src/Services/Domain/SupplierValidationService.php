@@ -12,7 +12,7 @@ class SupplierValidationService
     {
         $supplierSnap = $session->supplier_snapshot ?? [];
         $originalCost = (float) ($session->price_snapshot['original_cost'] ?? 0.00);
-        $currentCost  = (float) ($session->price_snapshot['current_cost'] ?? 0.00);
+        $currentCost = (float) ($session->price_snapshot['current_cost'] ?? 0.00);
 
         $requestedQty = (int) ($supplierSnap['requested_qty'] ?? 1);
         $availableQty = (int) ($supplierSnap['available_qty'] ?? 1);
@@ -30,8 +30,8 @@ class SupplierValidationService
         }
 
         return [
-            'ok'             => $ok,
-            'status'         => $status,
+            'ok' => $ok,
+            'status' => $status,
             'price_decision' => $priceDecision,
             'stock_decision' => $stockDecision,
         ];

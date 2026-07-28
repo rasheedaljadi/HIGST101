@@ -2,6 +2,4 @@
 
 namespace Webkul\Fulfillment\Contracts;
 
-interface OrderProcess
-{
-}
+interface OrderProcess {}

@@ -1,8 +1,9 @@
 <?php
 
-uses(\Tests\TestCase::class);
+uses(TestCase::class);
 
 use Illuminate\Support\Facades\Route;
+use Tests\TestCase;
 
 test('all dropshipping and fulfillment routes must exist', function () {
     $expectedRoutes = [
@@ -48,14 +49,14 @@ test('there must be no duplicate route names across the entire registered route 
             // but dropshipping routes must never have name collisions.
             if (str_starts_with($name, 'admin.dropshipping.')) {
                 // If there are duplicate definitions for admin.dropshipping routes, throw failure.
-                $collisions = array_filter($routes, fn($r) => $r->getName() === $name);
-                $uris = array_map(fn($r) => $r->uri() . ' (' . $r->getActionName() . ')', $collisions);
-                fail("Duplicate dropshipping route name collision detected for: {$name}. Routes: " . implode(', ', $uris));
+                $collisions = array_filter($routes, fn ($r) => $r->getName() === $name);
+                $uris = array_map(fn ($r) => $r->uri().' ('.$r->getActionName().')', $collisions);
+                fail("Duplicate dropshipping route name collision detected for: {$name}. Routes: ".implode(', ', $uris));
             }
         }
         $names[] = $name;
     }
-    
+
     expect(true)->toBeTrue();
 });
 
@@ -90,7 +91,7 @@ test('all dropshipping route controller actions must resolve to existing control
         expect($route)->not->toBeNull("Route {$name} does not exist.");
 
         $action = $route->getAction();
-        
+
         expect(isset($action['controller']))->toBeTrue("Route {$name} has no controller class mapped.");
 
         $parts = explode('@', $action['controller']);

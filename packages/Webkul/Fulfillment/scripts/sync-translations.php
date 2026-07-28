@@ -1,12 +1,12 @@
 <?php
 
 // Paths
-$langDir = dirname(__DIR__) . '/src/Resources/lang';
-$enFile = $langDir . '/en/app.php';
-$arFile = $langDir . '/ar/app.php';
+$langDir = dirname(__DIR__).'/src/Resources/lang';
+$enFile = $langDir.'/en/app.php';
+$arFile = $langDir.'/ar/app.php';
 
-if (!file_exists($enFile)) {
-    die("English translation file not found!\n");
+if (! file_exists($enFile)) {
+    exit("English translation file not found!\n");
 }
 
 $enTrans = include $enFile;
@@ -19,11 +19,12 @@ function flattenArray(array $array, string $prefix = ''): array
     $result = [];
     foreach ($array as $key => $value) {
         if (is_array($value)) {
-            $result = array_merge($result, flattenArray($value, $prefix . $key . '.'));
+            $result = array_merge($result, flattenArray($value, $prefix.$key.'.'));
         } else {
-            $result[$prefix . $key] = $value;
+            $result[$prefix.$key] = $value;
         }
     }
+
     return $result;
 }
 
@@ -96,8 +97,8 @@ $arTransRaw = [
             'approval-submitted' => 'تم تعليق العملية وتقديم طلب موافقة للمشرفين.',
             'approval-approved' => 'تمت الموافقة على الطلب وتنفيذه بنجاح.',
             'approval-rejected' => 'تم رفض طلب الموافقة.',
-        ]
-    ]
+        ],
+    ],
 ];
 
 /**
@@ -117,6 +118,7 @@ function writeLocaleFile(string $enPath, string $targetPath, array $translations
         if (preg_match('/^[\'"]([^\'"]+)[\'"]\s*=>\s*[\[]/', $trimmed, $matches)) {
             $stack[] = $matches[1];
             $targetLines[] = $line;
+
             continue;
         }
 
@@ -124,6 +126,7 @@ function writeLocaleFile(string $enPath, string $targetPath, array $translations
         if ($trimmed === '],' || $trimmed === ']') {
             array_pop($stack);
             $targetLines[] = $line;
+
             continue;
         }
 
@@ -142,14 +145,15 @@ function writeLocaleFile(string $enPath, string $targetPath, array $translations
                     $escapedValue = str_replace('"', '\"', $translatedValue);
                     $escapedValue = str_replace('\\\\"', '\"', $escapedValue); // Prevent double escaping
                 }
-                
+
                 // Reconstruct the line preserving original indentation and formatting
                 $indentation = str_repeat(' ', strlen($line) - strlen(ltrim($line)));
-                $targetLines[] = $indentation . $matches[1] . $key . $matches[3] . $matches[4] . $escapedValue . $matches[6] . "\n";
+                $targetLines[] = $indentation.$matches[1].$key.$matches[3].$matches[4].$escapedValue.$matches[6]."\n";
             } else {
                 // If translation not found, keep the line as is
                 $targetLines[] = $line;
             }
+
             continue;
         }
 
@@ -159,7 +163,7 @@ function writeLocaleFile(string $enPath, string $targetPath, array $translations
 
     // Ensure directory exists
     $dir = dirname($targetPath);
-    if (!is_dir($dir)) {
+    if (! is_dir($dir)) {
         mkdir($dir, 0755, true);
     }
 
@@ -172,14 +176,14 @@ writeLocaleFile($enFile, $arFile, $arTransRaw);
 echo "Saved Arabic translations.\n";
 
 // Loop through all directories under Resources/lang
-$directories = glob($langDir . '/*' , GLOB_ONLYDIR);
+$directories = glob($langDir.'/*', GLOB_ONLYDIR);
 foreach ($directories as $dir) {
     $locale = basename($dir);
     if ($locale === 'en' || $locale === 'ar') {
         continue;
     }
 
-    $targetFile = $dir . '/app.php';
+    $targetFile = $dir.'/app.php';
     $existingTrans = [];
     if (file_exists($targetFile)) {
         $existingTrans = include $targetFile;

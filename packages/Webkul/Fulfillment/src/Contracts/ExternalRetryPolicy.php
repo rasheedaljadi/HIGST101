@@ -13,16 +13,11 @@ interface ExternalRetryPolicy
 
     /**
      * Get maximum retry limit.
-     *
-     * @return int
      */
     public function maxAttempts(): int;
 
     /**
      * Determine if processing should retry for the given exception.
-     *
-     * @param  \Exception  $exception
-     * @return bool
      */
     public function shouldRetry(\Exception $exception): bool;
 }

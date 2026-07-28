@@ -2,16 +2,13 @@
 
 namespace Tests\Feature\Fulfillment;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
-use Webkul\Sales\Models\Order;
-use Webkul\Sales\Models\OrderItem;
-use Webkul\Fulfillment\Models\OrderProcess;
-use Webkul\Fulfillment\Models\PurchaseOrder;
 use Webkul\Fulfillment\Models\ProcurementSession;
+use Webkul\Fulfillment\Models\PurchaseOrder;
 use Webkul\Fulfillment\Services\Application\ExternalInboxService;
 use Webkul\Fulfillment\Services\Application\InboxEventProcessor;
-use Illuminate\Http\Request;
 
 class ReplayAuditTest extends TestCase
 {
@@ -43,29 +40,29 @@ class ReplayAuditTest extends TestCase
 
         // Setup base PO aggregate
         $po = PurchaseOrder::create([
-            'id'                 => 9999,
+            'id' => 9999,
             'internal_reference' => 'PO-REPLAY-1',
-            'order_id'           => 1,
-            'provider'           => 'aliexpress',
-            'state'              => 'pending',
-            'idempotency_key'    => 'replay-idemp-1',
+            'order_id' => 1,
+            'provider' => 'aliexpress',
+            'state' => 'pending',
+            'idempotency_key' => 'replay-idemp-1',
         ]);
 
         $payload = [
-            'event_id'   => 'evt-replay-100',
-            'order_id'   => 'PO-REPLAY-1',
-            'status'     => 'ORDER_CREATED',
-            'timestamp'  => now()->toIso8601String(),
+            'event_id' => 'evt-replay-100',
+            'order_id' => 'PO-REPLAY-1',
+            'status' => 'ORDER_CREATED',
+            'timestamp' => now()->toIso8601String(),
         ];
 
         // 1. Ingest first webhook (success)
         config(['fulfillment.aliexpress.webhook_secret' => 'super-secret-key-1122']);
         $body = json_encode($payload);
         $timestamp = time();
-        $sig = hash_hmac('sha256', $timestamp . '.' . $body, 'super-secret-key-1122');
+        $sig = hash_hmac('sha256', $timestamp.'.'.$body, 'super-secret-key-1122');
 
         $request = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_Signature'   => $sig,
+            'HTTP_Signature' => $sig,
             'HTTP_X-Timestamp' => $timestamp,
         ], $body);
 

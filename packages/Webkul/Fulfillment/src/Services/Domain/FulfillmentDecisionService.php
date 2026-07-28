@@ -8,10 +8,6 @@ class FulfillmentDecisionService
 {
     /**
      * Evaluate rules and output a FulfillmentDecision DTO.
-     *
-     * @param  int  $orderId
-     * @param  array  $context
-     * @return \Webkul\Fulfillment\DataObjects\FulfillmentDecision
      */
     public function makeDecision(int $orderId, array $context = []): FulfillmentDecision
     {

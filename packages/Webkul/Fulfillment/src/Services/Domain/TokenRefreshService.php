@@ -16,8 +16,8 @@ class TokenRefreshService
         }
 
         $account->update([
-            'access_token'  => 'refreshed-fake-access-token-' . uniqid(),
-            'status'        => 'ACTIVE',
+            'access_token' => 'refreshed-fake-access-token-'.uniqid(),
+            'status' => 'ACTIVE',
         ]);
 
         return true;

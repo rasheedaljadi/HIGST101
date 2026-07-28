@@ -37,25 +37,25 @@ final class SupplierOrderRequest
     {
         return [
             'internalReference' => $this->internalReference,
-            'idempotencyKey'    => $this->idempotencyKey,
-            'shippingAddress'   => $this->shippingAddress ? [
-                'firstName'   => $this->shippingAddress->firstName,
-                'lastName'    => $this->shippingAddress->lastName,
-                'address'     => $this->shippingAddress->address,
-                'city'        => $this->shippingAddress->city,
-                'state'       => $this->shippingAddress->state,
-                'postcode'    => $this->shippingAddress->postcode,
-                'country'     => $this->shippingAddress->country,
-                'phone'       => $this->shippingAddress->phone,
-                'email'       => $this->shippingAddress->email,
+            'idempotencyKey' => $this->idempotencyKey,
+            'shippingAddress' => $this->shippingAddress ? [
+                'firstName' => $this->shippingAddress->firstName,
+                'lastName' => $this->shippingAddress->lastName,
+                'address' => $this->shippingAddress->address,
+                'city' => $this->shippingAddress->city,
+                'state' => $this->shippingAddress->state,
+                'postcode' => $this->shippingAddress->postcode,
+                'country' => $this->shippingAddress->country,
+                'phone' => $this->shippingAddress->phone,
+                'email' => $this->shippingAddress->email,
                 'companyName' => $this->shippingAddress->companyName,
             ] : null,
-            'items'             => array_map(fn($item) => [
+            'items' => array_map(fn ($item) => [
                 'aliexpressProductId' => $item->aliexpressProductId,
-                'skuId'               => $item->skuId,
-                'qty'                 => $item->qty,
+                'skuId' => $item->skuId,
+                'qty' => $item->qty,
             ], $this->items),
-            'currency'          => $this->currency,
+            'currency' => $this->currency,
             'providerAccountId' => $this->providerAccountId,
         ];
     }

@@ -25,10 +25,10 @@ class ProviderSyncState extends Model
     ];
 
     protected $casts = [
-        'last_attempt_cursor'    => 'array',
+        'last_attempt_cursor' => 'array',
         'last_successful_cursor' => 'array',
-        'last_attempt_at'        => 'datetime',
-        'last_successful_at'     => 'datetime',
-        'last_full_sync_at'      => 'datetime',
+        'last_attempt_at' => 'datetime',
+        'last_successful_at' => 'datetime',
+        'last_full_sync_at' => 'datetime',
     ];
 }

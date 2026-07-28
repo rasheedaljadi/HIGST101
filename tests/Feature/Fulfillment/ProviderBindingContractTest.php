@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Fulfillment;
 
-use Tests\TestCase;
 use App\Services\AliExpress\AliExpressApiClient;
+use Tests\TestCase;
 use Webkul\Fulfillment\Providers\AliExpress\AliExpressHttpClient;
 
 class ProviderBindingContractTest extends TestCase

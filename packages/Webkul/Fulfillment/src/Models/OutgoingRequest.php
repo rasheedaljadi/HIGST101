@@ -22,6 +22,6 @@ class OutgoingRequest extends Model implements OutgoingRequestContract
 
     protected $casts = [
         'response_payload' => 'array',
-        'sent_at'          => 'datetime',
+        'sent_at' => 'datetime',
     ];
 }

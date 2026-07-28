@@ -3,11 +3,11 @@
 namespace Tests\Feature\Fulfillment;
 
 use Tests\TestCase;
+use Webkul\Fulfillment\Contracts\FulfillmentProviderInterface;
 use Webkul\Fulfillment\Providers\AliExpress\AliExpressEventNormalizer;
+use Webkul\Fulfillment\Providers\AliExpress\AliExpressFulfillmentProvider;
 use Webkul\Fulfillment\Providers\AliExpress\AliExpressRetryPolicy;
 use Webkul\Fulfillment\Services\Domain\ExternalStateMapper;
-use Webkul\Fulfillment\Contracts\FulfillmentProviderInterface;
-use Webkul\Fulfillment\Providers\AliExpress\AliExpressFulfillmentProvider;
 
 class AliExpressContractComplianceTest extends TestCase
 {
@@ -33,7 +33,7 @@ class AliExpressContractComplianceTest extends TestCase
      */
     public function test_normalizer_status_mappings_coverage(): void
     {
-        $normalizer = new AliExpressEventNormalizer();
+        $normalizer = new AliExpressEventNormalizer;
 
         $statuses = [
             'place_order_success',
@@ -54,10 +54,10 @@ class AliExpressContractComplianceTest extends TestCase
 
         foreach ($statuses as $status) {
             $payload = [
-                'event_id'   => 'evt-compliance-1',
-                'order_id'   => 'ae-ext-9921',
-                'status'     => $status,
-                'timestamp'  => now()->toIso8601String(),
+                'event_id' => 'evt-compliance-1',
+                'order_id' => 'ae-ext-9921',
+                'status' => $status,
+                'timestamp' => now()->toIso8601String(),
             ];
 
             $normalized = $normalizer->normalize($payload);
@@ -71,14 +71,14 @@ class AliExpressContractComplianceTest extends TestCase
      */
     public function test_status_mapping_and_casing_compliance(): void
     {
-        $mapper = new ExternalStateMapper();
-        $normalizer = new AliExpressEventNormalizer();
+        $mapper = new ExternalStateMapper;
+        $normalizer = new AliExpressEventNormalizer;
 
         $shippedPayload = [
-            'event_id'     => 'evt-compliance-2',
-            'order_id'     => 'ae-ext-9921',
-            'status'       => 'SELLER_SEND_GOODS',
-            'timestamp'    => now()->toIso8601String(),
+            'event_id' => 'evt-compliance-2',
+            'order_id' => 'ae-ext-9921',
+            'status' => 'SELLER_SEND_GOODS',
+            'timestamp' => now()->toIso8601String(),
             'carrier_code' => 'aliexpress_standard',
         ];
 
@@ -93,7 +93,7 @@ class AliExpressContractComplianceTest extends TestCase
      */
     public function test_retry_policy_compliance(): void
     {
-        $policy = new AliExpressRetryPolicy();
+        $policy = new AliExpressRetryPolicy;
         $this->assertEquals(3, $policy->maxAttempts());
         $this->assertEquals([5, 20, 60], $policy->delays());
     }

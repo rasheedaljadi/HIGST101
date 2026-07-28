@@ -12,16 +12,17 @@ class FulfillmentMetricTracker
 
         if (! $metric) {
             DB::table('procurement_metrics')->insert([
-                'provider'              => $provider,
-                'total_orders'          => 1,
-                'success_rate'          => $success ? 100.00 : 0.00,
-                'average_submit_time'   => $submitTime,
+                'provider' => $provider,
+                'total_orders' => 1,
+                'success_rate' => $success ? 100.00 : 0.00,
+                'average_submit_time' => $submitTime,
                 'average_shipping_time' => $shippingTime,
-                'failure_rate'          => $success ? 0.00 : 100.00,
-                'last_failure_reason'   => $failureReason,
-                'created_at'            => now(),
-                'updated_at'            => now(),
+                'failure_rate' => $success ? 0.00 : 100.00,
+                'last_failure_reason' => $failureReason,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
+
             return;
         }
 
@@ -36,13 +37,13 @@ class FulfillmentMetricTracker
         DB::table('procurement_metrics')
             ->where('provider', $provider)
             ->update([
-                'total_orders'          => $total,
-                'success_rate'          => round($successRate, 2),
-                'average_submit_time'   => round($newSubmitTime, 2),
+                'total_orders' => $total,
+                'success_rate' => round($successRate, 2),
+                'average_submit_time' => round($newSubmitTime, 2),
                 'average_shipping_time' => round($newShippingTime, 2),
-                'failure_rate'          => round($failureRate, 2),
-                'last_failure_reason'   => $failureReason ?: $metric->last_failure_reason,
-                'updated_at'            => now(),
+                'failure_rate' => round($failureRate, 2),
+                'last_failure_reason' => $failureReason ?: $metric->last_failure_reason,
+                'updated_at' => now(),
             ]);
     }
 }

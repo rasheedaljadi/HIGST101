@@ -2,10 +2,10 @@
 
 namespace Webkul\Fulfillment\Services\Application;
 
+use Illuminate\Support\Facades\DB;
 use Webkul\Fulfillment\Contracts\SyncProviderInterface;
 use Webkul\Fulfillment\DataObjects\SyncCursor;
 use Webkul\Fulfillment\DataObjects\SyncResult;
-use Illuminate\Support\Facades\DB;
 
 class SyncPipeline
 {
@@ -37,7 +37,8 @@ class SyncPipeline
 
                 $supplierProductId = $aeProduct['id'] ?? '';
                 if (empty($supplierProductId)) {
-                    $warnings[] = "Product skipped: missing external supplier ID.";
+                    $warnings[] = 'Product skipped: missing external supplier ID.';
+
                     continue;
                 }
 
@@ -47,8 +48,9 @@ class SyncPipeline
                     ->where('external_product_id', $supplierProductId)
                     ->first();
 
-                if (!$projection) {
+                if (! $projection) {
                     $warnings[] = "Supplier product [{$supplierProductId}] not mapped to any local product.";
+
                     continue;
                 }
 
@@ -74,7 +76,7 @@ class SyncPipeline
             if ($batch->next_page_token) {
                 $newCursor = $newCursor->withNextPage($batch->next_page_token);
             }
-            if (!empty($batch->products)) {
+            if (! empty($batch->products)) {
                 $productsCopy = $batch->products;
                 $lastProduct = end($productsCopy);
                 if (isset($lastProduct['id'])) {

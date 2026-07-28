@@ -2,27 +2,26 @@
 
 namespace Tests\Feature\Fulfillment;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
+use Webkul\Fulfillment\Listeners\OrderLifecycleListener;
+use Webkul\Fulfillment\Models\LedgerEntry;
+use Webkul\Fulfillment\Models\OrderAllocation;
+use Webkul\Fulfillment\Models\OrderProcess;
+use Webkul\Fulfillment\Models\ProcurementSession;
+use Webkul\Fulfillment\Models\PurchaseOrder;
+use Webkul\Fulfillment\Providers\AliExpress\FakeProviderSimulator;
+use Webkul\Fulfillment\Services\Application\ExternalInboxService;
+use Webkul\Fulfillment\Services\Application\InboxEventProcessor;
+use Webkul\Fulfillment\Services\Application\OutboxEventProcessor;
+use Webkul\Sales\Models\Invoice;
 use Webkul\Sales\Models\Order;
+use Webkul\Sales\Models\OrderAddress;
 use Webkul\Sales\Models\OrderItem;
 use Webkul\Sales\Models\OrderPayment;
-use Webkul\Sales\Models\OrderAddress;
-use Webkul\Sales\Models\Invoice;
 use Webkul\Sales\Models\Shipment;
-use Webkul\Fulfillment\Models\OrderProcess;
-use Webkul\Fulfillment\Models\OrderAllocation;
-use Webkul\Fulfillment\Models\PurchaseOrder;
-use Webkul\Fulfillment\Models\ProcurementSession;
-use Webkul\Fulfillment\Models\LedgerEntry;
-use Webkul\Fulfillment\Listeners\OrderLifecycleListener;
-use Webkul\Fulfillment\Services\Application\InboxEventProcessor;
-use Webkul\Fulfillment\Services\Application\ExternalInboxService;
-use Webkul\Fulfillment\Services\Application\OutboxEventProcessor;
-use Webkul\Fulfillment\Providers\AliExpress\FakeProviderSimulator;
-use Webkul\Fulfillment\Services\FulfillmentService;
-use Illuminate\Http\Request;
 
 class EndToEndProcurementTest extends TestCase
 {
@@ -56,26 +55,26 @@ class EndToEndProcurementTest extends TestCase
         // 1. Customer Order Placement
         $order = Order::factory()->create(['grand_total' => 200.00]);
         $orderItem = OrderItem::factory()->create([
-            'order_id'    => $order->id,
+            'order_id' => $order->id,
             'qty_ordered' => 1,
-            'price'       => 200.00,
+            'price' => 200.00,
         ]);
 
         OrderPayment::create([
             'order_id' => $order->id,
-            'method'   => 'stripe',
+            'method' => 'stripe',
         ]);
 
         // Clean up any default factory-created addresses
         DB::table('addresses')->where('order_id', $order->id)->delete();
 
         OrderAddress::create([
-            'order_id'     => $order->id,
+            'order_id' => $order->id,
             'address_type' => OrderAddress::ADDRESS_TYPE_SHIPPING,
-            'first_name'   => 'Ahmad',
-            'last_name'    => 'Ali',
-            'city'         => 'Riyadh',
-            'country'      => 'SA',
+            'first_name' => 'Ahmad',
+            'last_name' => 'Ali',
+            'city' => 'Riyadh',
+            'country' => 'SA',
         ]);
         $order->unsetRelation('addresses');
 
@@ -94,26 +93,26 @@ class EndToEndProcurementTest extends TestCase
         // 2. Allocation & OrderAccepted Trigger
         // Settle payment (online invoice paid) to accept order and start saga
         $invoice = Invoice::create([
-            'order_id'    => $order->id,
-            'state'       => 'paid',
+            'order_id' => $order->id,
+            'state' => 'paid',
             'grand_total' => 200.00,
         ]);
 
         // Manually create the allocation before invoice trigger so saga can route it
         $allocation = OrderAllocation::create([
-            'order_id'          => $order->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 1,
-            'source_type'       => 'supplier',
-            'source_code'       => 'aliexpress',
-            'state'             => 'reserved',
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
+            'qty' => 1,
+            'source_type' => 'supplier',
+            'source_code' => 'aliexpress',
+            'state' => 'reserved',
             'supplier_snapshot' => json_encode([
                 'supplier_product_id' => 'ae-prod-e2e',
-                'supplier_sku_id'     => 'ae-sku-e2e',
-                'requested_qty'       => 1,
-                'available_qty'       => 1,
-                'supplier_cost'       => 120.00,
-            ])
+                'supplier_sku_id' => 'ae-sku-e2e',
+                'requested_qty' => 1,
+                'available_qty' => 1,
+                'supplier_cost' => 120.00,
+            ]),
         ]);
 
         // Trigger paid event
@@ -132,10 +131,10 @@ class EndToEndProcurementTest extends TestCase
         // 4. Procurement Session checks
         $session = ProcurementSession::create([
             'order_allocation_id' => $allocation->id,
-            'state'               => 'COMPLETED',
-            'correlation_id'      => $correlationId,
-            'supplier_snapshot'   => json_decode($allocation->supplier_snapshot, true),
-            'policy_snapshot'     => ['pricing_policy' => 'aliexpress_default'],
+            'state' => 'COMPLETED',
+            'correlation_id' => $correlationId,
+            'supplier_snapshot' => json_decode($allocation->supplier_snapshot, true),
+            'policy_snapshot' => ['pricing_policy' => 'aliexpress_default'],
         ]);
 
         $this->assertEquals($correlationId, $session->correlation_id);
@@ -147,21 +146,21 @@ class EndToEndProcurementTest extends TestCase
         $processor = app(InboxEventProcessor::class);
 
         $shippedPayload = [
-            'event_id'          => 'evt-e2e-shipped',
-            'order_id'          => 'SIM-EXT-100200300',
-            'status'            => 'SELLER_SEND_GOODS',
-            'tracking_number'   => 'TRK-E2E-123',
-            'carrier_code'      => 'aliexpress_standard',
-            'timestamp'         => now()->toIso8601String(),
+            'event_id' => 'evt-e2e-shipped',
+            'order_id' => 'SIM-EXT-100200300',
+            'status' => 'SELLER_SEND_GOODS',
+            'tracking_number' => 'TRK-E2E-123',
+            'carrier_code' => 'aliexpress_standard',
+            'timestamp' => now()->toIso8601String(),
         ];
 
         config(['fulfillment.aliexpress.webhook_secret' => 'key']);
         $body = json_encode($shippedPayload);
         $timestamp = time();
-        $sig = hash_hmac('sha256', $timestamp . '.' . $body, 'key');
+        $sig = hash_hmac('sha256', $timestamp.'.'.$body, 'key');
 
         $request = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_Signature'   => $sig,
+            'HTTP_Signature' => $sig,
             'HTTP_X-Timestamp' => $timestamp,
         ], $body);
 
@@ -178,16 +177,16 @@ class EndToEndProcurementTest extends TestCase
 
         // 6. Webhook -> PurchaseOrder Delivered & Invoice recognized
         $deliveredPayload = [
-            'event_id'          => 'evt-e2e-delivered',
-            'order_id'          => 'SIM-EXT-100200300',
-            'status'            => 'FINISH',
-            'timestamp'         => now()->toIso8601String(),
+            'event_id' => 'evt-e2e-delivered',
+            'order_id' => 'SIM-EXT-100200300',
+            'status' => 'FINISH',
+            'timestamp' => now()->toIso8601String(),
         ];
         $bodyDel = json_encode($deliveredPayload);
-        $sigDel = hash_hmac('sha256', $timestamp . '.' . $bodyDel, 'key');
+        $sigDel = hash_hmac('sha256', $timestamp.'.'.$bodyDel, 'key');
 
         $requestDel = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_Signature'   => $sigDel,
+            'HTTP_Signature' => $sigDel,
             'HTTP_X-Timestamp' => $timestamp,
         ], $bodyDel);
 

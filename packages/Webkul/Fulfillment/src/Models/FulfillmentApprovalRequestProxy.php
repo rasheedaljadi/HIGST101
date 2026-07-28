@@ -4,6 +4,4 @@ namespace Webkul\Fulfillment\Models;
 
 use Konekt\Concord\Proxies\ModelProxy;
 
-class FulfillmentApprovalRequestProxy extends ModelProxy
-{
-}
+class FulfillmentApprovalRequestProxy extends ModelProxy {}

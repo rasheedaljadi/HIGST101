@@ -12,6 +12,8 @@ use Webkul\Fulfillment\DataObjects\SupplierOrderRequest;
 use Webkul\Fulfillment\Exceptions\FulfillmentSagaException;
 use Webkul\Fulfillment\Handlers\CreatePurchaseOrderHandler;
 use Webkul\Fulfillment\Handlers\ReserveAllocationHandler;
+use Webkul\Fulfillment\Models\ProcurementAggregate;
+use Webkul\Fulfillment\Models\ProcurementSession;
 use Webkul\Fulfillment\Services\FulfillmentProviderRegistry;
 use Webkul\Sales\Models\OrderProxy;
 
@@ -29,15 +31,8 @@ class SupplierProcurementWorkflow
     /**
      * Coordinate supplier dropshipping procurement.
      *
-     * @param  int  $orderId
-     * @param  int  $orderItemId
-     * @param  int  $qty
-     * @param  string  $providerCode
-     * @param  string  $correlationId
-     * @param  string  $causationId
-     * @return array
      *
-     * @throws \Webkul\Fulfillment\Exceptions\FulfillmentSagaException
+     * @throws FulfillmentSagaException
      */
     public function processSupplier(int $orderId, int $orderItemId, int $qty, string $providerCode, string $correlationId, string $causationId): array
     {
@@ -64,17 +59,17 @@ class SupplierProcurementWorkflow
             $po = $this->poHandler->handle($poCommand);
 
             // Explicitly initialize ProcurementSession here
-            $aggregate = \Webkul\Fulfillment\Models\ProcurementAggregate::firstOrCreate([
+            $aggregate = ProcurementAggregate::firstOrCreate([
                 'purchase_order_id' => $po->id,
             ]);
 
-            $session = \Webkul\Fulfillment\Models\ProcurementSession::create([
+            $session = ProcurementSession::create([
                 'procurement_aggregate_id' => $aggregate->id,
-                'order_allocation_id'      => $allocation->id,
-                'provider_account_id'      => $po->provider_account_id,
-                'state'                    => 'CREATED',
-                'correlation_id'           => $correlationId,
-                'causation_id'             => $causationId,
+                'order_allocation_id' => $allocation->id,
+                'provider_account_id' => $po->provider_account_id,
+                'state' => 'CREATED',
+                'correlation_id' => $correlationId,
+                'causation_id' => $causationId,
             ]);
 
             return [$allocation, $po, $session];
@@ -83,10 +78,10 @@ class SupplierProcurementWorkflow
         // 2. Dispatch to API Provider outside database transaction boundary
         try {
             $provider = $this->providerRegistry->resolve($providerCode);
-            
+
             $order = OrderProxy::modelClass()::findOrFail($orderId);
-            
-            $warehouse = \Illuminate\Support\Facades\DB::table('inventory_sources')
+
+            $warehouse = DB::table('inventory_sources')
                 ->where('code', 'default')
                 ->first();
 
@@ -143,12 +138,12 @@ class SupplierProcurementWorkflow
                     aliexpressProductId: $supplierProductId,
                     skuId: $supplierSkuId,
                     qty: $qty
-                )
+                ),
             ];
 
             $request = new SupplierOrderRequest(
                 internalReference: $po->internal_reference,
-                idempotencyKey: 'idemp-' . $po->internal_reference,
+                idempotencyKey: 'idemp-'.$po->internal_reference,
                 shippingAddress: $shippingAddress,
                 items: $items,
                 currency: $supplierCurrency
@@ -178,23 +173,23 @@ class SupplierProcurementWorkflow
 
                 // Append outbox event: SupplierOrderSubmitted
                 DB::table('domain_outbox_events')->insert([
-                    'event_id'       => (string) Str::uuid(),
-                    'event_name'     => 'SupplierOrderSubmitted',
-                    'event_version'  => 1,
+                    'event_id' => (string) Str::uuid(),
+                    'event_name' => 'SupplierOrderSubmitted',
+                    'event_version' => 1,
                     'aggregate_type' => 'PurchaseOrder',
-                    'aggregate_id'   => (string) $po->id,
+                    'aggregate_id' => (string) $po->id,
                     'correlation_id' => $correlationId,
-                    'causation_id'   => $causationId,
-                    'payload'        => json_encode([
+                    'causation_id' => $causationId,
+                    'payload' => json_encode([
                         'purchase_order_id' => $po->id,
                         'external_order_id' => $result->externalOrderId,
-                        'order_id'          => $orderId,
-                        'supplier_cost'     => (float) $po->items->sum(fn($i) => $i->qty * $i->supplier_unit_cost),
+                        'order_id' => $orderId,
+                        'supplier_cost' => (float) $po->items->sum(fn ($i) => $i->qty * $i->supplier_unit_cost),
                     ]),
-                    'status'         => 'pending',
-                    'attempts'       => 0,
-                    'created_at'     => now(),
-                    'updated_at'     => now(),
+                    'status' => 'pending',
+                    'attempts' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             });
 
@@ -204,7 +199,7 @@ class SupplierProcurementWorkflow
             // Append outbox event: SupplierOrderFailed in its own transaction
             DB::transaction(function () use ($po, $allocation, $orderId, $correlationId, $causationId, $e, $session) {
                 $po->update([
-                    'state'      => 'needs_manual_review',
+                    'state' => 'needs_manual_review',
                     'last_error' => $e->getMessage(),
                 ]);
 
@@ -212,27 +207,27 @@ class SupplierProcurementWorkflow
                 $session->update(['error_message' => $e->getMessage()]);
 
                 DB::table('domain_outbox_events')->insert([
-                    'event_id'       => (string) Str::uuid(),
-                    'event_name'     => 'SupplierOrderFailed',
-                    'event_version'  => 1,
+                    'event_id' => (string) Str::uuid(),
+                    'event_name' => 'SupplierOrderFailed',
+                    'event_version' => 1,
                     'aggregate_type' => 'PurchaseOrder',
-                    'aggregate_id'   => (string) $po->id,
+                    'aggregate_id' => (string) $po->id,
                     'correlation_id' => $correlationId,
-                    'causation_id'   => $causationId,
-                    'payload'        => json_encode([
-                        'purchase_order_id'   => $po->id,
+                    'causation_id' => $causationId,
+                    'payload' => json_encode([
+                        'purchase_order_id' => $po->id,
                         'order_allocation_id' => $allocation->id,
-                        'order_id'            => $orderId,
-                        'error_message'       => $e->getMessage(),
+                        'order_id' => $orderId,
+                        'error_message' => $e->getMessage(),
                     ]),
-                    'status'         => 'pending',
-                    'attempts'       => 0,
-                    'created_at'     => now(),
-                    'updated_at'     => now(),
+                    'status' => 'pending',
+                    'attempts' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             });
 
-            throw new FulfillmentSagaException("Supplier procurement failed: " . $e->getMessage(), 0, $e);
+            throw new FulfillmentSagaException('Supplier procurement failed: '.$e->getMessage(), 0, $e);
         }
     }
 }

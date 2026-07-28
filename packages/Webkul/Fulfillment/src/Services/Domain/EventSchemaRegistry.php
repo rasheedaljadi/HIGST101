@@ -8,8 +8,8 @@ class EventSchemaRegistry
         'ProcurementStarted' => [
             1 => [
                 'deserialize' => 'deserializeV1',
-            ]
-        ]
+            ],
+        ],
     ];
 
     public function deserialize(string $eventName, int $version, array $payload): array
@@ -18,6 +18,7 @@ class EventSchemaRegistry
         if ($handler && method_exists($this, $handler)) {
             return $this->$handler($payload);
         }
+
         return $payload;
     }
 

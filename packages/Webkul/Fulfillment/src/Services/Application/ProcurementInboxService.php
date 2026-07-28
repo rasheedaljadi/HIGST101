@@ -39,16 +39,16 @@ class ProcurementInboxService
 
         try {
             DB::table('procurement_inbox_events')->insert([
-                'provider'          => $provider,
-                'event_id'          => $eventId,
-                'event_type'        => $eventType,
+                'provider' => $provider,
+                'event_id' => $eventId,
+                'event_type' => $eventType,
                 'external_order_id' => $payload['aliexpress_order_id'] ?? null,
-                'payload_hash'      => $hash,
-                'payload'           => json_encode($payload),
-                'status'            => 'pending',
-                'received_at'       => now(),
-                'created_at'        => now(),
-                'updated_at'        => now(),
+                'payload_hash' => $hash,
+                'payload' => json_encode($payload),
+                'status' => 'pending',
+                'received_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             $processor($payload);
@@ -57,9 +57,9 @@ class ProcurementInboxService
                 ->where('provider', $provider)
                 ->where('event_id', $eventId)
                 ->update([
-                    'status'       => 'processed',
+                    'status' => 'processed',
                     'processed_at' => now(),
-                    'updated_at'   => now(),
+                    'updated_at' => now(),
                 ]);
 
             return true;

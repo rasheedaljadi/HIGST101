@@ -2,19 +2,31 @@
 
 namespace Webkul\Fulfillment\Http\Controllers\Admin;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\View\View;
 use Webkul\Admin\Http\Controllers\Controller;
-use Webkul\Fulfillment\Repositories\PurchaseOrderRepository;
+use Webkul\Fulfillment\DataGrids\FulfillmentApprovalRequestDataGrid;
+use Webkul\Fulfillment\DataGrids\PurchaseOrderDataGrid;
+use Webkul\Fulfillment\Models\FinancialTimeline;
+use Webkul\Fulfillment\Models\FulfillmentProviderEvent;
+use Webkul\Fulfillment\Models\LedgerEntry;
+use Webkul\Fulfillment\Models\OrderAllocation;
+use Webkul\Fulfillment\Models\ProcurementSession;
+use Webkul\Fulfillment\Models\PurchaseOrder;
+use Webkul\Fulfillment\Models\PurchaseOrderItem;
 use Webkul\Fulfillment\Repositories\FulfillmentApprovalRequestRepository;
 use Webkul\Fulfillment\Repositories\FulfillmentAttemptRepository;
 use Webkul\Fulfillment\Repositories\FulfillmentAuditLogRepository;
+use Webkul\Fulfillment\Repositories\PurchaseOrderRepository;
+use Webkul\Fulfillment\Services\FulfillmentAlertService;
 use Webkul\Fulfillment\Services\FulfillmentProviderRegistry;
 use Webkul\Fulfillment\Services\FulfillmentService;
 use Webkul\Sales\Repositories\OrderCommentRepository;
-use Webkul\Fulfillment\Models\PurchaseOrder;
-use Webkul\Fulfillment\Models\PurchaseOrderItem;
 
 class FulfillmentController extends Controller
 {
@@ -39,25 +51,26 @@ class FulfillmentController extends Controller
 
         if (request()->ajax()) {
             if (request()->query('grid') === 'approvals') {
-                return datagrid(\Webkul\Fulfillment\DataGrids\FulfillmentApprovalRequestDataGrid::class)->process();
+                return datagrid(FulfillmentApprovalRequestDataGrid::class)->process();
             }
-            return datagrid(\Webkul\Fulfillment\DataGrids\PurchaseOrderDataGrid::class)->process();
+
+            return datagrid(PurchaseOrderDataGrid::class)->process();
         }
 
         // Cache KPIs for 15 minutes (900 seconds)
-        $kpis = \Illuminate\Support\Facades\Cache::remember('fulfillment_dashboard_kpis', 900, function () {
+        $kpis = Cache::remember('fulfillment_dashboard_kpis', 900, function () {
             $total = DB::table('purchase_orders')->count();
-            
+
             $success = DB::table('purchase_orders')
                 ->whereIn('state', ['submitted', 'shipped', 'delivered'])
                 ->count();
-            
+
             $successRate = $total > 0 ? round(($success / $total) * 100, 1) : 100;
 
             $retries = DB::table('purchase_orders')
                 ->where('attempts', '>', 1)
                 ->count();
-            
+
             $retryRate = $total > 0 ? round(($retries / $total) * 100, 1) : 0;
 
             $avgTime = 0;
@@ -67,7 +80,7 @@ class FulfillmentController extends Controller
                 ->select('purchase_orders.submitted_at', 'invoices.created_at')
                 ->limit(100)
                 ->get();
-            
+
             if ($submittedPOs->isNotEmpty()) {
                 $diffs = [];
                 foreach ($submittedPOs as $po) {
@@ -91,23 +104,24 @@ class FulfillmentController extends Controller
 
             $backlog = 0;
             try {
-                if (\Illuminate\Support\Facades\Schema::hasTable('jobs')) {
+                if (Schema::hasTable('jobs')) {
                     $backlog = DB::table('jobs')->count();
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
 
             return [
                 'successRate' => $successRate,
-                'retryRate'   => $retryRate,
-                'avgTime'     => $avgTime,
-                'health'      => $health,
-                'waiting'     => $waiting,
+                'retryRate' => $retryRate,
+                'avgTime' => $avgTime,
+                'health' => $health,
+                'waiting' => $waiting,
                 'needsReview' => $needsReview,
-                'backlog'     => $backlog,
+                'backlog' => $backlog,
             ];
         });
 
-        $alerts = \Illuminate\Support\Facades\Cache::get('fulfillment_active_alerts', []);
+        $alerts = Cache::get('fulfillment_active_alerts', []);
 
         $poCounts = [
             'all' => DB::table('purchase_orders')->count(),
@@ -130,12 +144,12 @@ class FulfillmentController extends Controller
         }
 
         // 1. Paginated double-entry ledger entries
-        $ledgerEntries = \Webkul\Fulfillment\Models\LedgerEntry::orderBy('id', 'desc')
+        $ledgerEntries = LedgerEntry::orderBy('id', 'desc')
             ->paginate(15, ['*'], 'ledger_page')
             ->withQueryString();
 
         // 2. Paginated financial timelines
-        $financialTimeline = \Webkul\Fulfillment\Models\FinancialTimeline::orderBy('id', 'desc')
+        $financialTimeline = FinancialTimeline::orderBy('id', 'desc')
             ->paginate(15, ['*'], 'timeline_page')
             ->withQueryString();
 
@@ -146,12 +160,12 @@ class FulfillmentController extends Controller
         $totalProfit = $totalRevenue - $totalSupplierCost;
 
         return view('fulfillment::admin.finance', [
-            'ledgerEntries'     => $ledgerEntries,
+            'ledgerEntries' => $ledgerEntries,
             'financialTimeline' => $financialTimeline,
-            'totalRevenue'      => $totalRevenue,
+            'totalRevenue' => $totalRevenue,
             'totalSupplierCost' => $totalSupplierCost,
-            'cogsPending'       => $cogsPending,
-            'totalProfit'       => $totalProfit,
+            'cogsPending' => $cogsPending,
+            'totalProfit' => $totalProfit,
         ]);
     }
 
@@ -165,12 +179,12 @@ class FulfillmentController extends Controller
         }
 
         // 1. Fetch Circuit Breaker Failures
-        $failures = (int) \Illuminate\Support\Facades\Cache::get("circuit_breaker:aliexpress:failures", 0);
+        $failures = (int) Cache::get('circuit_breaker:aliexpress:failures', 0);
         $circuitState = $failures >= 5 ? 'OPEN' : 'CLOSED';
 
         // 2. Fetch Rate Limiting Calls
-        $limitKey = "rate_limit:aliexpress:" . date('Y-m-d-H-i');
-        $apiCalls = (int) \Illuminate\Support\Facades\Cache::get($limitKey, 0);
+        $limitKey = 'rate_limit:aliexpress:'.date('Y-m-d-H-i');
+        $apiCalls = (int) Cache::get($limitKey, 0);
 
         // 3. Fetch Queue Backlog
         $queueBacklog = 0;
@@ -198,7 +212,7 @@ class FulfillmentController extends Controller
             abort(403, 'Fulfillment Admin UI is disabled.');
         }
 
-        \Illuminate\Support\Facades\Cache::forget("circuit_breaker:aliexpress:failures");
+        Cache::forget('circuit_breaker:aliexpress:failures');
 
         session()->flash('success', 'تم إعادة ضبط وتصفير قاطع الدورة بنجاح. الاتصالات مع AliExpress نشطة الآن.');
 
@@ -208,8 +222,7 @@ class FulfillmentController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function view(int $id)
     {
@@ -221,17 +234,17 @@ class FulfillmentController extends Controller
         $po = $this->purchaseOrderRepository->with([
             'order',
             'items',
-            'fulfillmentAttempts' => fn($q) => $q->orderBy('id', 'desc'),
-            'events'              => fn($q) => $q->orderBy('id', 'desc'),
-            'auditLogs'           => fn($q) => $q->with('user')->orderBy('id', 'desc'),
-            'approvalRequests'    => fn($q) => $q->with(['requestedBy', 'approvedBy'])->orderBy('id', 'desc'),
+            'fulfillmentAttempts' => fn ($q) => $q->orderBy('id', 'desc'),
+            'events' => fn ($q) => $q->orderBy('id', 'desc'),
+            'auditLogs' => fn ($q) => $q->with('user')->orderBy('id', 'desc'),
+            'approvalRequests' => fn ($q) => $q->with(['requestedBy', 'approvedBy'])->orderBy('id', 'desc'),
         ])->findOrFail($id);
 
-        $allocations = \Webkul\Fulfillment\Models\OrderAllocation::with(['logs', 'product', 'variantProduct'])
+        $allocations = OrderAllocation::with(['logs', 'product', 'variantProduct'])
             ->where('order_id', $po->order_id)
             ->get();
 
-        $procurementSessions = \Webkul\Fulfillment\Models\ProcurementSession::with(['providerAccount'])
+        $procurementSessions = ProcurementSession::with(['providerAccount'])
             ->whereIn('order_allocation_id', $allocations->pluck('id')->toArray())
             ->orderBy('id', 'desc')
             ->get();
@@ -242,13 +255,13 @@ class FulfillmentController extends Controller
     /**
      * Retry submitting a failed purchase order.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function retry(int $id)
     {
         if (! config('fulfillment.retry_enabled', true)) {
             session()->flash('error', 'Fulfillment retries are disabled by feature flag.');
+
             return redirect()->back();
         }
 
@@ -257,6 +270,7 @@ class FulfillmentController extends Controller
         // State check: Cannot retry if already in final/submitted states
         if (in_array($po->state, [PurchaseOrder::STATE_SUBMITTED, PurchaseOrder::STATE_SHIPPED, PurchaseOrder::STATE_DELIVERED], true)) {
             session()->flash('warning', 'Purchase order is already placed or shipped.');
+
             return redirect()->back();
         }
 
@@ -266,11 +280,11 @@ class FulfillmentController extends Controller
             // Write audit log
             $this->auditLogRepository->create([
                 'purchase_order_id' => $po->id,
-                'user_id'           => $admin->id,
-                'action'            => 'retry',
-                'reason'            => 'Manual Retry triggered by administrator',
-                'ip_address'        => request()->ip(),
-                'changes_payload'   => ['status' => 'executed'],
+                'user_id' => $admin->id,
+                'action' => 'retry',
+                'reason' => 'Manual Retry triggered by administrator',
+                'ip_address' => request()->ip(),
+                'changes_payload' => ['status' => 'executed'],
             ]);
 
             // Set PO state back to pending for execution
@@ -290,13 +304,13 @@ class FulfillmentController extends Controller
     /**
      * Cancel a purchase order.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function cancel(int $id)
     {
         if (! config('fulfillment.manual_cancel_enabled', true)) {
             session()->flash('error', 'Manual cancellations are disabled.');
+
             return redirect()->back();
         }
 
@@ -308,6 +322,7 @@ class FulfillmentController extends Controller
 
         if ($po->state === PurchaseOrder::STATE_CANCELED) {
             session()->flash('warning', 'Purchase order is already canceled.');
+
             return redirect()->back();
         }
 
@@ -316,28 +331,29 @@ class FulfillmentController extends Controller
 
         // Check if approval workflow is enabled and PO is paid/active (has external ID or is submitted/shipped)
         $isPaidOrSubmitted = $po->external_order_id || in_array($po->state, [PurchaseOrder::STATE_SUBMITTED, PurchaseOrder::STATE_SHIPPED, PurchaseOrder::STATE_AWAITING_PAYMENT], true);
-        
+
         if (config('fulfillment.approval_workflow.enabled', false) && $isPaidOrSubmitted) {
             // Suspend and create approval request
             $this->approvalRequestRepository->create([
                 'purchase_order_id' => $po->id,
-                'requested_by'      => $admin->id,
-                'action'            => 'cancel',
-                'reason'            => $reason,
-                'changes_payload'   => [],
-                'status'            => 'pending',
+                'requested_by' => $admin->id,
+                'action' => 'cancel',
+                'reason' => $reason,
+                'changes_payload' => [],
+                'status' => 'pending',
             ]);
 
             $this->auditLogRepository->create([
                 'purchase_order_id' => $po->id,
-                'user_id'           => $admin->id,
-                'action'            => 'cancel',
-                'reason'            => $reason,
-                'ip_address'        => request()->ip(),
-                'changes_payload'   => ['status' => 'pending_approval'],
+                'user_id' => $admin->id,
+                'action' => 'cancel',
+                'reason' => $reason,
+                'ip_address' => request()->ip(),
+                'changes_payload' => ['status' => 'pending_approval'],
             ]);
 
             session()->flash('info', trans('fulfillment::app.admin.actions.approval-submitted'));
+
             return redirect()->back();
         }
 
@@ -349,19 +365,19 @@ class FulfillmentController extends Controller
 
             if ($po->external_order_id) {
                 $provider = $this->registry->resolve($po->provider);
-                
+
                 // 1. Query Current Status
                 $status = $provider->getSupplierOrderStatus($po->external_order_id, $po->provider_account_id);
-                
+
                 if (in_array(strtolower($status->mappedState), ['shipped', 'delivered', 'completed'], true)) {
                     $cancelSuccess = false;
                     $failReason = 'Cannot cancel; order already shipped or completed by supplier.';
                 } else {
                     // 2. Call AliExpress Cancel API
                     $cancelResult = $provider->cancelSupplierOrder($po->external_order_id, $po->provider_account_id);
-                    if (!$cancelResult->ok) {
+                    if (! $cancelResult->ok) {
                         $cancelSuccess = false;
-                        $failReason = 'AliExpress cancellation rejected: ' . ($cancelResult->message ?? 'Unknown reason');
+                        $failReason = 'AliExpress cancellation rejected: '.($cancelResult->message ?? 'Unknown reason');
                     }
                 }
             }
@@ -371,16 +387,16 @@ class FulfillmentController extends Controller
 
                 $this->auditLogRepository->create([
                     'purchase_order_id' => $po->id,
-                    'user_id'           => $admin->id,
-                    'action'            => 'cancel',
-                    'reason'            => $reason,
-                    'ip_address'        => request()->ip(),
-                    'changes_payload'   => ['status' => 'executed'],
+                    'user_id' => $admin->id,
+                    'action' => 'cancel',
+                    'reason' => $reason,
+                    'ip_address' => request()->ip(),
+                    'changes_payload' => ['status' => 'executed'],
                 ]);
 
                 $this->orderCommentRepository->create([
-                    'order_id'          => $po->order_id,
-                    'comment'           => "Purchase Order #{$po->id} canceled. Reason: {$reason}",
+                    'order_id' => $po->order_id,
+                    'comment' => "Purchase Order #{$po->id} canceled. Reason: {$reason}",
                     'customer_notified' => 0,
                 ]);
 
@@ -390,22 +406,22 @@ class FulfillmentController extends Controller
                 session()->flash('success', trans('fulfillment::app.admin.actions.action-success'));
             } else {
                 $po->update([
-                    'state'      => PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW,
+                    'state' => PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW,
                     'last_error' => $failReason,
                 ]);
 
                 $this->auditLogRepository->create([
                     'purchase_order_id' => $po->id,
-                    'user_id'           => $admin->id,
-                    'action'            => 'cancel_failed',
-                    'reason'            => $failReason,
-                    'ip_address'        => request()->ip(),
-                    'changes_payload'   => ['status' => 'needs_manual_review'],
+                    'user_id' => $admin->id,
+                    'action' => 'cancel_failed',
+                    'reason' => $failReason,
+                    'ip_address' => request()->ip(),
+                    'changes_payload' => ['status' => 'needs_manual_review'],
                 ]);
 
                 $this->orderCommentRepository->create([
-                    'order_id'          => $po->order_id,
-                    'comment'           => "Cancellation failed for Purchase Order #{$po->id}. Reason: {$failReason}",
+                    'order_id' => $po->order_id,
+                    'comment' => "Cancellation failed for Purchase Order #{$po->id}. Reason: {$failReason}",
                     'customer_notified' => 0,
                 ]);
 
@@ -416,7 +432,7 @@ class FulfillmentController extends Controller
             }
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::channel('aliexpress')->error('PO manual cancel failed: ' . $e->getMessage(), ['po' => $id]);
+            Log::channel('aliexpress')->error('PO manual cancel failed: '.$e->getMessage(), ['po' => $id]);
             session()->flash('error', trans('fulfillment::app.admin.actions.action-failed', ['error' => $e->getMessage()]));
         }
 
@@ -426,13 +442,12 @@ class FulfillmentController extends Controller
     /**
      * Override state of a purchase order.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function overrideState(int $id)
     {
         $this->validate(request(), [
-            'state'  => 'required|string',
+            'state' => 'required|string',
             'reason' => 'required|string|min:10',
         ]);
 
@@ -449,23 +464,24 @@ class FulfillmentController extends Controller
             // Suspend and create approval request
             $this->approvalRequestRepository->create([
                 'purchase_order_id' => $po->id,
-                'requested_by'      => $admin->id,
-                'action'            => 'state_override',
-                'reason'            => $reason,
-                'changes_payload'   => ['state' => $state],
-                'status'            => 'pending',
+                'requested_by' => $admin->id,
+                'action' => 'state_override',
+                'reason' => $reason,
+                'changes_payload' => ['state' => $state],
+                'status' => 'pending',
             ]);
 
             $this->auditLogRepository->create([
                 'purchase_order_id' => $po->id,
-                'user_id'           => $admin->id,
-                'action'            => 'state_override',
-                'reason'            => $reason,
-                'ip_address'        => request()->ip(),
-                'changes_payload'   => ['state' => $state, 'status' => 'pending_approval'],
+                'user_id' => $admin->id,
+                'action' => 'state_override',
+                'reason' => $reason,
+                'ip_address' => request()->ip(),
+                'changes_payload' => ['state' => $state, 'status' => 'pending_approval'],
             ]);
 
             session()->flash('info', trans('fulfillment::app.admin.actions.approval-submitted'));
+
             return redirect()->back();
         }
 
@@ -474,36 +490,36 @@ class FulfillmentController extends Controller
 
         $this->auditLogRepository->create([
             'purchase_order_id' => $po->id,
-            'user_id'           => $admin->id,
-            'action'            => 'state_override',
-            'reason'            => $reason,
-            'ip_address'        => request()->ip(),
-            'changes_payload'   => ['old_state' => $oldState, 'new_state' => $state, 'status' => 'executed'],
+            'user_id' => $admin->id,
+            'action' => 'state_override',
+            'reason' => $reason,
+            'ip_address' => request()->ip(),
+            'changes_payload' => ['old_state' => $oldState, 'new_state' => $state, 'status' => 'executed'],
         ]);
 
         $this->orderCommentRepository->create([
-            'order_id'          => $po->order_id,
-            'comment'           => "Purchase Order #{$po->id} state overridden to '{$state}'. Reason: {$reason}",
+            'order_id' => $po->order_id,
+            'comment' => "Purchase Order #{$po->id} state overridden to '{$state}'. Reason: {$reason}",
             'customer_notified' => 0,
         ]);
 
         $this->fulfillmentService->reflectOnCustomerOrder($po->order);
 
         session()->flash('success', trans('fulfillment::app.admin.actions.action-success'));
+
         return redirect()->back();
     }
 
     /**
      * Edit item quantities of a purchase order.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function editPo(int $id)
     {
         $this->validate(request(), [
-            'qty'    => 'required|array',
-            'qty.*'  => 'required|integer|min:1',
+            'qty' => 'required|array',
+            'qty.*' => 'required|integer|min:1',
             'reason' => 'required|string|min:10',
         ]);
 
@@ -517,23 +533,24 @@ class FulfillmentController extends Controller
         if (config('fulfillment.approval_workflow.enabled', false) && $isSubmitted) {
             $this->approvalRequestRepository->create([
                 'purchase_order_id' => $po->id,
-                'requested_by'      => $admin->id,
-                'action'            => 'edit',
-                'reason'            => $reason,
-                'changes_payload'   => ['qty' => $qtyData],
-                'status'            => 'pending',
+                'requested_by' => $admin->id,
+                'action' => 'edit',
+                'reason' => $reason,
+                'changes_payload' => ['qty' => $qtyData],
+                'status' => 'pending',
             ]);
 
             $this->auditLogRepository->create([
                 'purchase_order_id' => $po->id,
-                'user_id'           => $admin->id,
-                'action'            => 'edit',
-                'reason'            => $reason,
-                'ip_address'        => request()->ip(),
-                'changes_payload'   => ['qty' => $qtyData, 'status' => 'pending_approval'],
+                'user_id' => $admin->id,
+                'action' => 'edit',
+                'reason' => $reason,
+                'ip_address' => request()->ip(),
+                'changes_payload' => ['qty' => $qtyData, 'status' => 'pending_approval'],
             ]);
 
             session()->flash('info', trans('fulfillment::app.admin.actions.approval-submitted'));
+
             return redirect()->back();
         }
 
@@ -547,29 +564,30 @@ class FulfillmentController extends Controller
 
         $this->auditLogRepository->create([
             'purchase_order_id' => $po->id,
-            'user_id'           => $admin->id,
-            'action'            => 'edit',
-            'reason'            => $reason,
-            'ip_address'        => request()->ip(),
-            'changes_payload'   => ['qty' => $qtyData, 'status' => 'executed'],
+            'user_id' => $admin->id,
+            'action' => 'edit',
+            'reason' => $reason,
+            'ip_address' => request()->ip(),
+            'changes_payload' => ['qty' => $qtyData, 'status' => 'executed'],
         ]);
 
         session()->flash('success', trans('fulfillment::app.admin.actions.action-success'));
+
         return redirect()->back();
     }
 
     /**
      * Refresh state of a purchase order from supplier API.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function refreshStatus(int $id)
     {
         $po = $this->purchaseOrderRepository->findOrFail($id);
 
-        if (!$po->external_order_id) {
+        if (! $po->external_order_id) {
             session()->flash('error', 'Cannot sync status: Purchase order does not have an external order ID.');
+
             return redirect()->back();
         }
 
@@ -578,55 +596,57 @@ class FulfillmentController extends Controller
             $status = $provider->getSupplierOrderStatus($po->external_order_id, $po->provider_account_id);
 
             // Log response
-            \Webkul\Fulfillment\Models\FulfillmentProviderEvent::create([
+            FulfillmentProviderEvent::create([
                 'purchase_order_id' => $po->id,
-                'provider'          => $po->provider,
-                'external_state'    => $status->rawState ?? 'unknown',
-                'source_type'       => 'manual_refresh',
-                'payload'           => [
-                    'mapped_state'     => $status->mappedState,
-                    'raw_state'        => $status->rawState,
-                    'tracking_number'  => $status->trackingNumber,
+                'provider' => $po->provider,
+                'external_state' => $status->rawState ?? 'unknown',
+                'source_type' => 'manual_refresh',
+                'payload' => [
+                    'mapped_state' => $status->mappedState,
+                    'raw_state' => $status->rawState,
+                    'tracking_number' => $status->trackingNumber,
                     'tracking_company' => $status->trackingCompany,
                 ],
-                'received_at'       => now(),
-                'processed_at'      => now(),
+                'received_at' => now(),
+                'processed_at' => now(),
             ]);
 
             if ($status->mappedState === 'failed_transient') {
                 session()->flash('warning', 'Sync status returned transient failure. Please try again later.');
+
                 return redirect()->back();
             }
 
             if ($status->mappedState === PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW) {
                 $po->update([
-                    'state'              => PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW,
+                    'state' => PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW,
                     'supplier_state_raw' => $status->rawState,
                 ]);
 
                 $this->orderCommentRepository->create([
-                    'order_id'          => $po->order_id,
-                    'comment'           => trans('fulfillment::app.status_check_failed', ['po' => $po->id, 'external' => $po->external_order_id]),
+                    'order_id' => $po->order_id,
+                    'comment' => trans('fulfillment::app.status_check_failed', ['po' => $po->id, 'external' => $po->external_order_id]),
                     'customer_notified' => 0,
                 ]);
 
                 session()->flash('warning', 'PO changed state to Needs Manual Review.');
+
                 return redirect()->back();
             }
 
             $oldState = $po->state;
 
             $po->update([
-                'state'              => $status->mappedState,
+                'state' => $status->mappedState,
                 'supplier_state_raw' => $status->rawState,
-                'tracking_number'    => $status->trackingNumber ?? $po->tracking_number,
-                'tracking_company'   => $status->trackingCompany ?? $po->tracking_company,
+                'tracking_number' => $status->trackingNumber ?? $po->tracking_number,
+                'tracking_company' => $status->trackingCompany ?? $po->tracking_company,
             ]);
 
             if ($oldState !== $status->mappedState) {
                 $this->orderCommentRepository->create([
-                    'order_id'          => $po->order_id,
-                    'comment'           => trans('fulfillment::app.state_updated', ['po' => $po->id, 'old' => $oldState, 'new' => $status->mappedState, 'raw' => $status->rawState]),
+                    'order_id' => $po->order_id,
+                    'comment' => trans('fulfillment::app.state_updated', ['po' => $po->id, 'old' => $oldState, 'new' => $status->mappedState, 'raw' => $status->rawState]),
                     'customer_notified' => 0,
                 ]);
 
@@ -636,10 +656,10 @@ class FulfillmentController extends Controller
             session()->flash('success', 'Status refreshed successfully.');
         } catch (\Throwable $e) {
             Log::channel('aliexpress')->error("Error manual polling status for PO #{$po->id}", [
-                'po_id'   => $po->id,
+                'po_id' => $po->id,
                 'message' => $e->getMessage(),
             ]);
-            session()->flash('error', 'Error syncing status: ' . $e->getMessage());
+            session()->flash('error', 'Error syncing status: '.$e->getMessage());
         }
 
         return redirect()->back();
@@ -648,8 +668,7 @@ class FulfillmentController extends Controller
     /**
      * Approve a pending approval request.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function approveRequest(int $id)
     {
@@ -657,6 +676,7 @@ class FulfillmentController extends Controller
 
         if ($request->status !== 'pending') {
             session()->flash('warning', 'Approval request is not pending.');
+
             return redirect()->back();
         }
 
@@ -665,8 +685,8 @@ class FulfillmentController extends Controller
 
         try {
             $request->update([
-                'status'          => 'approved',
-                'approved_by'     => $admin->id,
+                'status' => 'approved',
+                'approved_by' => $admin->id,
                 'decision_reason' => 'Approved by supervisor',
             ]);
 
@@ -677,19 +697,19 @@ class FulfillmentController extends Controller
 
                 if ($po->external_order_id) {
                     $provider = $this->registry->resolve($po->provider);
-                    
+
                     // 1. Query Current Status
                     $status = $provider->getSupplierOrderStatus($po->external_order_id, $po->provider_account_id);
-                    
+
                     if (in_array(strtolower($status->mappedState), ['shipped', 'delivered', 'completed'], true)) {
                         $cancelSuccess = false;
                         $failReason = 'Cannot cancel; order already shipped or completed by supplier.';
                     } else {
                         // 2. Call AliExpress Cancel API
                         $cancelResult = $provider->cancelSupplierOrder($po->external_order_id, $po->provider_account_id);
-                        if (!$cancelResult->ok) {
+                        if (! $cancelResult->ok) {
                             $cancelSuccess = false;
-                            $failReason = 'AliExpress cancellation rejected: ' . ($cancelResult->message ?? 'Unknown reason');
+                            $failReason = 'AliExpress cancellation rejected: '.($cancelResult->message ?? 'Unknown reason');
                         }
                     }
                 }
@@ -697,18 +717,18 @@ class FulfillmentController extends Controller
                 if ($cancelSuccess) {
                     $po->update(['state' => PurchaseOrder::STATE_CANCELED]);
                     $this->orderCommentRepository->create([
-                        'order_id'          => $po->order_id,
-                        'comment'           => "Purchase Order #{$po->id} canceled (Approved by supervisor).",
+                        'order_id' => $po->order_id,
+                        'comment' => "Purchase Order #{$po->id} canceled (Approved by supervisor).",
                         'customer_notified' => 0,
                     ]);
                 } else {
                     $po->update([
-                        'state'      => PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW,
+                        'state' => PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW,
                         'last_error' => $failReason,
                     ]);
                     $this->orderCommentRepository->create([
-                        'order_id'          => $po->order_id,
-                        'comment'           => "Cancellation failed for Purchase Order #{$po->id} (Approved by supervisor). Reason: {$failReason}",
+                        'order_id' => $po->order_id,
+                        'comment' => "Cancellation failed for Purchase Order #{$po->id} (Approved by supervisor). Reason: {$failReason}",
                         'customer_notified' => 0,
                     ]);
                 }
@@ -717,8 +737,8 @@ class FulfillmentController extends Controller
                 $newState = $request->changes_payload['state'];
                 $po->update(['state' => $newState]);
                 $this->orderCommentRepository->create([
-                    'order_id'          => $po->order_id,
-                    'comment'           => "Purchase Order #{$po->id} state overridden to '{$newState}' (Approved by supervisor).",
+                    'order_id' => $po->order_id,
+                    'comment' => "Purchase Order #{$po->id} state overridden to '{$newState}' (Approved by supervisor).",
                     'customer_notified' => 0,
                 ]);
             } elseif ($request->action === 'edit') {
@@ -733,11 +753,11 @@ class FulfillmentController extends Controller
 
             $this->auditLogRepository->create([
                 'purchase_order_id' => $po->id,
-                'user_id'           => $admin->id,
-                'action'            => $request->action,
-                'reason'            => "Approved request #{$request->id}: {$request->reason}",
-                'ip_address'        => request()->ip(),
-                'changes_payload'   => ['status' => 'approved', 'approval_request_id' => $request->id],
+                'user_id' => $admin->id,
+                'action' => $request->action,
+                'reason' => "Approved request #{$request->id}: {$request->reason}",
+                'ip_address' => request()->ip(),
+                'changes_payload' => ['status' => 'approved', 'approval_request_id' => $request->id],
             ]);
 
             $this->fulfillmentService->reflectOnCustomerOrder($po->order);
@@ -745,7 +765,7 @@ class FulfillmentController extends Controller
 
             session()->flash('success', trans('fulfillment::app.admin.actions.approval-approved'));
         } catch (\Throwable $e) {
-            session()->flash('error', 'Approval failed: ' . $e->getMessage());
+            session()->flash('error', 'Approval failed: '.$e->getMessage());
         }
 
         return redirect()->back();
@@ -754,8 +774,7 @@ class FulfillmentController extends Controller
     /**
      * Reject a pending approval request.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function rejectRequest(int $id)
     {
@@ -763,41 +782,43 @@ class FulfillmentController extends Controller
 
         if ($request->status !== 'pending') {
             session()->flash('warning', 'Approval request is not pending.');
+
             return redirect()->back();
         }
 
         $admin = auth()->guard('admin')->user();
 
         $request->update([
-            'status'          => 'rejected',
-            'approved_by'     => $admin->id,
+            'status' => 'rejected',
+            'approved_by' => $admin->id,
             'decision_reason' => 'Rejected by supervisor',
         ]);
 
         $this->auditLogRepository->create([
             'purchase_order_id' => $request->purchase_order_id,
-            'user_id'           => $admin->id,
-            'action'            => $request->action,
-            'reason'            => "Rejected request #{$request->id}: {$request->reason}",
-            'ip_address'        => request()->ip(),
-            'changes_payload'   => ['status' => 'rejected', 'approval_request_id' => $request->id],
+            'user_id' => $admin->id,
+            'action' => $request->action,
+            'reason' => "Rejected request #{$request->id}: {$request->reason}",
+            'ip_address' => request()->ip(),
+            'changes_payload' => ['status' => 'rejected', 'approval_request_id' => $request->id],
         ]);
 
         session()->flash('success', trans('fulfillment::app.admin.actions.approval-rejected'));
+
         return redirect()->back();
     }
 
     /**
      * Dismiss a persistent alert from the dashboard.
      *
-     * @param  string  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function dismissAlert(string $id)
     {
-        \Webkul\Fulfillment\Services\FulfillmentAlertService::clearAlert($id);
-        
+        FulfillmentAlertService::clearAlert($id);
+
         session()->flash('success', 'Alert dismissed successfully.');
+
         return redirect()->back();
     }
 }

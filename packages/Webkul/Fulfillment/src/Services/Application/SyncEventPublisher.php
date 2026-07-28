@@ -21,10 +21,10 @@ class SyncEventPublisher
         // Define sort order: identityChanged => 1, priceChanged => 2, stockChanged => 3, others => 4
         $typeOrder = [
             'identityChanged' => 1,
-            'priceChanged'    => 2,
-            'stockChanged'    => 3,
-            'removed'         => 4,
-            'unavailable'     => 4,
+            'priceChanged' => 2,
+            'stockChanged' => 3,
+            'removed' => 4,
+            'unavailable' => 4,
         ];
 
         // Sort changes by variant_id first, then by typeOrder, ensuring deterministic order per variant
@@ -43,7 +43,7 @@ class SyncEventPublisher
 
         foreach ($changes as $change) {
             $eventName = $this->mapTypeToEventName($change['type']);
-            if (!$eventName) {
+            if (! $eventName) {
                 continue;
             }
 
@@ -53,18 +53,18 @@ class SyncEventPublisher
             $payload['event_version'] = 1;
 
             DB::table('domain_outbox_events')->insert([
-                'event_id'       => (string) Str::uuid(),
-                'event_name'     => $eventName,
-                'event_version'  => 1,
+                'event_id' => (string) Str::uuid(),
+                'event_name' => $eventName,
+                'event_version' => 1,
                 'aggregate_type' => 'ExternalProduct',
-                'aggregate_id'   => (string) $changeSet->productId,
+                'aggregate_id' => (string) $changeSet->productId,
                 'correlation_id' => $syncRunId,
-                'causation_id'   => $syncRunId,
-                'payload'        => json_encode($payload),
-                'status'         => 'pending',
-                'attempts'       => 0,
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'causation_id' => $syncRunId,
+                'payload' => json_encode($payload),
+                'status' => 'pending',
+                'attempts' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             $publishedCount++;
@@ -77,11 +77,11 @@ class SyncEventPublisher
     {
         return match ($type) {
             'identityChanged' => 'VariantIdentityChanged',
-            'priceChanged'    => 'SupplierPriceChanged',
-            'stockChanged'    => 'SupplierStockChanged',
-            'removed'         => 'ExternalProductRemoved',
-            'unavailable'     => 'ExternalProductUnavailable',
-            default           => null,
+            'priceChanged' => 'SupplierPriceChanged',
+            'stockChanged' => 'SupplierStockChanged',
+            'removed' => 'ExternalProductRemoved',
+            'unavailable' => 'ExternalProductUnavailable',
+            default => null,
         };
     }
 }

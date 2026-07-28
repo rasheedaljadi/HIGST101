@@ -1191,8 +1191,8 @@ return [
             'verify-email' => 'Verify your email account',
         ],
 
-                'coming-soon' => [
-            'title'   => 'Under development',
+        'coming-soon' => [
+            'title' => 'Under development',
             'message' => 'We are currently building the store. We will be back very soon with a great experience.',
         ],
 

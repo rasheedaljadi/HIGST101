@@ -13,15 +13,15 @@ class ChangeSet
     public function addChange(string $type, ?int $variantId, array $payload): void
     {
         $this->changes[] = [
-            'type'       => $type,
+            'type' => $type,
             'variant_id' => $variantId,
-            'payload'    => $payload,
+            'payload' => $payload,
         ];
     }
 
     public function hasChanges(): bool
     {
-        return !empty($this->changes);
+        return ! empty($this->changes);
     }
 
     public function getChanges(): array

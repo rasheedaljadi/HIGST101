@@ -5,6 +5,7 @@ namespace Webkul\Fulfillment\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Webkul\Fulfillment\Contracts\LedgerEntry as LedgerEntryContract;
+use Webkul\Sales\Models\OrderProxy;
 
 class LedgerEntry extends Model implements LedgerEntryContract
 {
@@ -23,6 +24,6 @@ class LedgerEntry extends Model implements LedgerEntryContract
      */
     public function order(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Sales\Models\OrderProxy::modelClass(), 'order_id');
+        return $this->belongsTo(OrderProxy::modelClass(), 'order_id');
     }
 }

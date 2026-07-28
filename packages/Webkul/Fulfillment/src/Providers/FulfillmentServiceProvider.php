@@ -2,7 +2,20 @@
 
 namespace Webkul\Fulfillment\Providers;
 
+use App\Services\AliExpress\AliExpressApiClient;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
+use Webkul\Fulfillment\Console\Commands\BenchmarkSyncCommand;
+use Webkul\Fulfillment\Console\Commands\ProductionAcceptanceFulfillmentCommand;
+use Webkul\Fulfillment\Console\Commands\ProductionCheckFulfillmentCommand;
+use Webkul\Fulfillment\Console\Commands\RecoverSyncRunsCommand;
+use Webkul\Fulfillment\Console\Commands\SmokeTestFulfillmentCommand;
+use Webkul\Fulfillment\Console\Commands\SoakTestSyncCommand;
+use Webkul\Fulfillment\Jobs\PollSupplierOrdersJob;
+use Webkul\Fulfillment\Providers\AliExpress\AliExpressHttpClient;
+use Webkul\Fulfillment\Services\Application\InboxEventProcessor;
+use Webkul\Fulfillment\Services\Application\OutboxEventProcessor;
+use Webkul\Fulfillment\Services\Application\ReconciliationEngine;
 
 class FulfillmentServiceProvider extends ServiceProvider
 {
@@ -14,8 +27,8 @@ class FulfillmentServiceProvider extends ServiceProvider
         $this->registerConfig();
 
         $this->app->singleton(
-            \App\Services\AliExpress\AliExpressApiClient::class,
-            \Webkul\Fulfillment\Providers\AliExpress\AliExpressHttpClient::class
+            AliExpressApiClient::class,
+            AliExpressHttpClient::class
         );
     }
 
@@ -34,12 +47,12 @@ class FulfillmentServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \Webkul\Fulfillment\Console\Commands\BenchmarkSyncCommand::class,
-                \Webkul\Fulfillment\Console\Commands\RecoverSyncRunsCommand::class,
-                \Webkul\Fulfillment\Console\Commands\SoakTestSyncCommand::class,
-                \Webkul\Fulfillment\Console\Commands\SmokeTestFulfillmentCommand::class,
-                \Webkul\Fulfillment\Console\Commands\ProductionCheckFulfillmentCommand::class,
-                \Webkul\Fulfillment\Console\Commands\ProductionAcceptanceFulfillmentCommand::class,
+                BenchmarkSyncCommand::class,
+                RecoverSyncRunsCommand::class,
+                SoakTestSyncCommand::class,
+                SmokeTestFulfillmentCommand::class,
+                ProductionCheckFulfillmentCommand::class,
+                ProductionAcceptanceFulfillmentCommand::class,
             ]);
         }
 
@@ -55,22 +68,22 @@ class FulfillmentServiceProvider extends ServiceProvider
             });
         }
 
-        $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
             $schedule->command('fulfillment:recover-sync-runs')->everyFifteenMinutes();
 
             if (config('fulfillment.poll.enabled', true)) {
-                $schedule->job(new \Webkul\Fulfillment\Jobs\PollSupplierOrdersJob)->everyFifteenMinutes();
+                $schedule->job(new PollSupplierOrdersJob)->everyFifteenMinutes();
             }
-            $schedule->call(function() {
-                app(\Webkul\Fulfillment\Services\Application\ReconciliationEngine::class)->reconcile();
+            $schedule->call(function () {
+                app(ReconciliationEngine::class)->reconcile();
             })->daily();
 
-            $schedule->call(function() {
-                app(\Webkul\Fulfillment\Services\Application\OutboxEventProcessor::class)->processPending();
+            $schedule->call(function () {
+                app(OutboxEventProcessor::class)->processPending();
             })->name('process-outbox-events')->everyMinute()->withoutOverlapping()->onOneServer();
 
-            $schedule->call(function() {
-                app(\Webkul\Fulfillment\Services\Application\InboxEventProcessor::class)->processPending();
+            $schedule->call(function () {
+                app(InboxEventProcessor::class)->processPending();
             })->name('process-inbox-events')->everyMinute()->withoutOverlapping()->onOneServer();
         });
     }

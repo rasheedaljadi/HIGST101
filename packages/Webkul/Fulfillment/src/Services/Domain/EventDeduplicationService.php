@@ -10,12 +10,6 @@ class EventDeduplicationService
 {
     /**
      * Validate and log an event.
-     *
-     * @param  string  $provider
-     * @param  string  $eventId
-     * @param  string  $eventName
-     * @param  \Carbon\Carbon  $occurredAt
-     * @return \Webkul\Fulfillment\DataObjects\EventProcessingResult
      */
     public function processEvent(string $provider, string $eventId, string $eventName, Carbon $occurredAt): EventProcessingResult
     {
@@ -39,9 +33,9 @@ class EventDeduplicationService
 
         // 3. Accept event and persist deduplication record
         ProcessedEventProxy::create([
-            'provider'     => $provider,
-            'event_id'     => $eventId,
-            'event_name'   => $eventName,
+            'provider' => $provider,
+            'event_id' => $eventId,
+            'event_name' => $eventName,
             'processed_at' => $occurredAt,
         ]);
 

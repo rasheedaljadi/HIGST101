@@ -20,9 +20,9 @@ class AliExpressOrderShippedNormalizer
             correlationId: $payload['correlation_id'] ?? null,
             causationId: $payload['causation_id'] ?? null,
             attributes: [
-                'status'          => 'SHIPPED',
+                'status' => 'SHIPPED',
                 'tracking_number' => $payload['tracking_number'] ?? $payload['tracking']['number'] ?? null,
-                'carrier'         => $payload['carrier'] ?? $payload['carrier_code'] ?? $payload['tracking']['company'] ?? null,
+                'carrier' => $payload['carrier'] ?? $payload['carrier_code'] ?? $payload['tracking']['company'] ?? null,
             ]
         );
     }

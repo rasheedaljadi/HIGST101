@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Webkul\Fulfillment\Contracts\OrderAllocation as OrderAllocationContract;
 use Webkul\Fulfillment\Exceptions\InvalidStateTransitionException;
 use Webkul\Fulfillment\Traits\OptimisticLocking;
+use Webkul\Product\Models\ProductProxy;
+use Webkul\Sales\Models\OrderItemProxy;
+use Webkul\Sales\Models\OrderProxy;
 
 class OrderAllocation extends Model implements OrderAllocationContract
 {
@@ -38,7 +41,7 @@ class OrderAllocation extends Model implements OrderAllocationContract
      */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Product\Models\ProductProxy::modelClass(), 'product_id');
+        return $this->belongsTo(ProductProxy::modelClass(), 'product_id');
     }
 
     /**
@@ -46,7 +49,7 @@ class OrderAllocation extends Model implements OrderAllocationContract
      */
     public function variantProduct(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Product\Models\ProductProxy::modelClass(), 'variant_product_id');
+        return $this->belongsTo(ProductProxy::modelClass(), 'variant_product_id');
     }
 
     /**
@@ -54,7 +57,7 @@ class OrderAllocation extends Model implements OrderAllocationContract
      */
     public function order(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Sales\Models\OrderProxy::modelClass(), 'order_id');
+        return $this->belongsTo(OrderProxy::modelClass(), 'order_id');
     }
 
     /**
@@ -62,7 +65,7 @@ class OrderAllocation extends Model implements OrderAllocationContract
      */
     public function orderItem(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Sales\Models\OrderItemProxy::modelClass(), 'order_item_id');
+        return $this->belongsTo(OrderItemProxy::modelClass(), 'order_item_id');
     }
 
     /**
@@ -76,10 +79,8 @@ class OrderAllocation extends Model implements OrderAllocationContract
     /**
      * Set a reserved quantity.
      *
-     * @param  int  $qty
-     * @return void
      *
-     * @throws \Webkul\Fulfillment\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      */
     public function reserve(int $qty): void
     {
@@ -94,10 +95,8 @@ class OrderAllocation extends Model implements OrderAllocationContract
     /**
      * Fulfill the allocation.
      *
-     * @param  int  $qty
-     * @return void
      *
-     * @throws \Webkul\Fulfillment\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      */
     public function fulfill(int $qty): void
     {
@@ -114,11 +113,8 @@ class OrderAllocation extends Model implements OrderAllocationContract
     /**
      * Cancel the allocation.
      *
-     * @param  int  $qty
-     * @param  string  $reason
-     * @return void
      *
-     * @throws \Webkul\Fulfillment\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      */
     public function cancel(int $qty, string $reason): void
     {
@@ -133,40 +129,34 @@ class OrderAllocation extends Model implements OrderAllocationContract
 
         // Audit log entry creation
         $this->logs()->create([
-            'action'  => 'cancel',
+            'action' => 'cancel',
             'old_qty' => $qty,
             'new_qty' => 0,
-            'reason'  => $reason,
+            'reason' => $reason,
         ]);
     }
 
     /**
      * Release the reserved allocation.
-     *
-     * @return void
      */
     public function release(): void
     {
-        $this->cancel($this->reserved_qty, "Released reservation");
+        $this->cancel($this->reserved_qty, 'Released reservation');
     }
 
     /**
      * Expire the reservation.
-     *
-     * @return void
      */
     public function expire(): void
     {
-        $this->cancel($this->reserved_qty, "Reservation expired");
+        $this->cancel($this->reserved_qty, 'Reservation expired');
     }
 
     /**
      * Split the reserved allocation into two.
      *
-     * @param  int  $splitQty
-     * @return self
      *
-     * @throws \Webkul\Fulfillment\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      * @throws \InvalidArgumentException
      */
     public function split(int $splitQty): self
@@ -183,39 +173,37 @@ class OrderAllocation extends Model implements OrderAllocationContract
         $this->save();
 
         $this->logs()->create([
-            'action'  => 'split',
+            'action' => 'split',
             'old_qty' => $this->reserved_qty + $splitQty,
             'new_qty' => $this->reserved_qty,
-            'reason'  => "Split allocation of {$splitQty}",
+            'reason' => "Split allocation of {$splitQty}",
         ]);
 
         return self::create([
-            'order_id'           => $this->order_id,
-            'order_item_id'      => $this->order_item_id,
-            'allocation_type'    => $this->allocation_type,
-            'source_code'        => $this->source_code,
+            'order_id' => $this->order_id,
+            'order_item_id' => $this->order_item_id,
+            'allocation_type' => $this->allocation_type,
+            'source_code' => $this->source_code,
             'supplier_signature' => $this->supplier_signature,
-            'reserved_qty'       => $splitQty,
-            'state'              => 'reserved',
+            'reserved_qty' => $splitQty,
+            'state' => 'reserved',
         ]);
     }
 
     /**
      * Merge another reserved allocation into this one.
      *
-     * @param  self  $other
-     * @return void
      *
-     * @throws \Webkul\Fulfillment\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      */
     public function merge(self $other): void
     {
         if ($this->state !== 'reserved' || $other->state !== 'reserved') {
-            throw new InvalidStateTransitionException("Only reserved allocations can be merged.");
+            throw new InvalidStateTransitionException('Only reserved allocations can be merged.');
         }
 
         if ($this->allocation_type !== $other->allocation_type || $this->source_code !== $other->source_code) {
-            throw new InvalidStateTransitionException("Cannot merge allocations from different sources or types.");
+            throw new InvalidStateTransitionException('Cannot merge allocations from different sources or types.');
         }
 
         $oldQty = $this->reserved_qty;
@@ -223,10 +211,10 @@ class OrderAllocation extends Model implements OrderAllocationContract
         $this->save();
 
         $this->logs()->create([
-            'action'  => 'merge',
+            'action' => 'merge',
             'old_qty' => $oldQty,
             'new_qty' => $this->reserved_qty,
-            'reason'  => "Merged with allocation ID: {$other->id}",
+            'reason' => "Merged with allocation ID: {$other->id}",
         ]);
 
         // Cancel the other allocation

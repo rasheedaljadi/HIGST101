@@ -5,6 +5,7 @@ namespace Webkul\Fulfillment\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Webkul\Fulfillment\Contracts\FulfillmentAuditLog as FulfillmentAuditLogContract;
+use Webkul\User\Models\AdminProxy;
 
 class FulfillmentAuditLog extends Model implements FulfillmentAuditLogContract
 {
@@ -42,6 +43,6 @@ class FulfillmentAuditLog extends Model implements FulfillmentAuditLogContract
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\User\Models\AdminProxy::modelClass(), 'user_id');
+        return $this->belongsTo(AdminProxy::modelClass(), 'user_id');
     }
 }

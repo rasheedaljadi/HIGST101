@@ -27,12 +27,12 @@ class OutgoingRequestRegistry
         ?string $responseHash = null
     ): OutgoingRequest {
         return OutgoingRequest::create([
-            'request_hash'     => $requestHash,
-            'endpoint'         => $endpoint,
-            'idempotency_key'  => $idempotencyKey,
+            'request_hash' => $requestHash,
+            'endpoint' => $endpoint,
+            'idempotency_key' => $idempotencyKey,
             'response_payload' => $responsePayload,
-            'response_hash'    => $responseHash,
-            'sent_at'          => now(),
+            'response_hash' => $responseHash,
+            'sent_at' => now(),
         ]);
     }
 }

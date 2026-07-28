@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\AliExpressSetting;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 use Webkul\Admin\Tests\Concerns\AdminTestBench;
-use Illuminate\Support\Facades\DB;
 
 uses(TestCase::class, AdminTestBench::class);
 
@@ -76,7 +76,7 @@ test('admin can save shipping section only', function () {
     $response->assertSessionHas('success', 'تم حفظ خيارات الشحن بنجاح.');
 
     $settings = AliExpressSetting::current();
-    expect((float)$settings->shipping_margin)->toBe(12.50);
+    expect((float) $settings->shipping_margin)->toBe(12.50);
     expect($settings->shipping_extra_days)->toBe(5);
     expect($settings->shipping_enabled)->toBeTrue();
 });
@@ -86,14 +86,14 @@ test('admin can save warehouse section only', function () {
 
     $response = $this->post(route('admin.dropshipping.keys.store'), [
         'section' => 'warehouse',
-        'warehouse_contact_name'   => 'Mostafa Mohammed',
+        'warehouse_contact_name' => 'Mostafa Mohammed',
         'warehouse_contact_number' => '0572124578',
-        'warehouse_contact_email'  => 'mostafa@example.com',
-        'warehouse_street'         => 'Southern Ring Road',
-        'warehouse_city'           => 'Riyadh',
-        'warehouse_state'          => 'Riyadh',
-        'warehouse_country'        => 'SA',
-        'warehouse_postcode'       => 'RMAD8016',
+        'warehouse_contact_email' => 'mostafa@example.com',
+        'warehouse_street' => 'Southern Ring Road',
+        'warehouse_city' => 'Riyadh',
+        'warehouse_state' => 'Riyadh',
+        'warehouse_country' => 'SA',
+        'warehouse_postcode' => 'RMAD8016',
     ]);
 
     $response->assertRedirect(route('admin.dropshipping.keys.index'));

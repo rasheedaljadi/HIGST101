@@ -17,9 +17,6 @@ class ProcessedEventRepository extends Repository
     /**
      * Validate data before creation or update.
      *
-     * @param  array  $data
-     * @param  int|null  $id
-     * @return void
      *
      * @throws \InvalidArgumentException
      */
@@ -38,7 +35,6 @@ class ProcessedEventRepository extends Repository
     /**
      * Create a new processed event entry.
      *
-     * @param  array  $attributes
      * @return mixed
      */
     public function create(array $attributes)
@@ -51,7 +47,6 @@ class ProcessedEventRepository extends Repository
     /**
      * Update an existing processed event entry.
      *
-     * @param  array  $attributes
      * @param  string  $id
      * @return mixed
      */

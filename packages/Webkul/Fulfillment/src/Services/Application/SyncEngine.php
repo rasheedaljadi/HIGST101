@@ -4,16 +4,18 @@ namespace Webkul\Fulfillment\Services\Application;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Webkul\Fulfillment\Contracts\SyncProviderInterface;
-use Webkul\Fulfillment\DataObjects\SyncCursor;
 use Webkul\Fulfillment\DataObjects\BackpressureDecision;
-use Webkul\Fulfillment\Models\SyncRun;
+use Webkul\Fulfillment\DataObjects\SyncCursor;
 use Webkul\Fulfillment\Models\ProviderSyncState;
+use Webkul\Fulfillment\Models\SyncRun;
 
 class SyncEngine
 {
     protected SyncPipeline $pipeline;
+
     protected SyncEventPublisher $publisher;
 
     public function __construct(SyncPipeline $pipeline, SyncEventPublisher $publisher)
@@ -31,7 +33,7 @@ class SyncEngine
         $lockOwner = (string) Str::uuid();
         $lock = Cache::lock($lockKey, 3600, $lockOwner);
 
-        if (!$lock->get()) {
+        if (! $lock->get()) {
             throw new \RuntimeException("Could not acquire sync lock for provider [{$providerName}]. Process already running.");
         }
 
@@ -47,26 +49,26 @@ class SyncEngine
 
         // 2. Create SyncRun Aggregate Model
         $run = SyncRun::create([
-            'id'              => $runId,
-            'provider'        => $providerName,
-            'status'          => SyncRun::STATUS_CREATED,
-            'cursor'          => $cursor->toArray(),
-            'metadata'        => [
+            'id' => $runId,
+            'provider' => $providerName,
+            'status' => SyncRun::STATUS_CREATED,
+            'cursor' => $cursor->toArray(),
+            'metadata' => [
                 'capabilities' => $capabilities->toArray(),
             ],
             'health_snapshot' => [
                 'memory_start' => memory_get_usage(true),
             ],
-            'statistics'      => [
-                'scanned'             => 0,
-                'changed'             => 0,
-                'published'           => 0,
-                'errors_count'        => 0,
-                'warnings_count'      => 0,
-                'chunks_processed'    => 0,
-                'total_items'         => 0,
-                'synced_items'        => 0,
-                'failed_items'        => 0,
+            'statistics' => [
+                'scanned' => 0,
+                'changed' => 0,
+                'published' => 0,
+                'errors_count' => 0,
+                'warnings_count' => 0,
+                'chunks_processed' => 0,
+                'total_items' => 0,
+                'synced_items' => 0,
+                'failed_items' => 0,
             ],
         ]);
 
@@ -77,8 +79,8 @@ class SyncEngine
             ['provider' => $providerName],
             [
                 'last_attempt_cursor' => $cursor->toArray(),
-                'last_attempt_at'     => now(),
-                'schema_version'      => $capabilities->version,
+                'last_attempt_at' => now(),
+                'schema_version' => $capabilities->version,
             ]
         );
 
@@ -97,7 +99,7 @@ class SyncEngine
                 // Verify lock ownership is still held to prevent split-brain execution
                 if ($this->getLockOwner($lockKey) !== $lockOwner) {
                     $hasErrors = true;
-                    $run->fail("Distributed lock lost or acquired by another worker process.");
+                    $run->fail('Distributed lock lost or acquired by another worker process.');
                     break;
                 }
 
@@ -105,7 +107,7 @@ class SyncEngine
                 $backpressure = $this->getBackpressureDecision();
                 if ($backpressure->shouldStop()) {
                     $hasErrors = true;
-                    $run->fail("Throttled/Stopped due to backpressure: " . $backpressure->reason);
+                    $run->fail('Throttled/Stopped due to backpressure: '.$backpressure->reason);
                     break;
                 }
 
@@ -134,11 +136,11 @@ class SyncEngine
                 $stats['total_items'] = $stats['scanned'];
                 $stats['synced_items'] = $stats['published'] ?: $stats['changed'];
 
-                if (!empty($result->errors)) {
+                if (! empty($result->errors)) {
                     $hasErrors = true;
                     $stats['errors_count'] += count($result->errors);
                 }
-                if (!empty($result->warnings)) {
+                if (! empty($result->warnings)) {
                     $stats['warnings_count'] += count($result->warnings);
                 }
 
@@ -153,7 +155,7 @@ class SyncEngine
                     ['provider' => $providerName],
                     [
                         'last_attempt_cursor' => $cursor->toArray(),
-                        'last_attempt_at'     => now(),
+                        'last_attempt_at' => now(),
                     ]
                 );
 
@@ -163,8 +165,8 @@ class SyncEngine
                 }
 
                 // Prevent infinite loop if cursor doesn't progress and errors are encountered
-                if (!empty($result->errors) && $startingCursor->toArray() === $cursor->toArray()) {
-                    $run->fail("Pipeline execution failed with errors and cursor did not progress: " . implode('; ', $result->errors));
+                if (! empty($result->errors) && $startingCursor->toArray() === $cursor->toArray()) {
+                    $run->fail('Pipeline execution failed with errors and cursor did not progress: '.implode('; ', $result->errors));
                     break;
                 }
             }
@@ -178,9 +180,9 @@ class SyncEngine
                 $isDrained = $this->verifyDrained($runId, $drainingTimeout);
 
                 $health = [
-                    'memory_peak'  => memory_get_peak_usage(true),
+                    'memory_peak' => memory_get_peak_usage(true),
                     'duration_sec' => round(microtime(true) - $startTime, 2),
-                    'is_drained'   => $isDrained,
+                    'is_drained' => $isDrained,
                 ];
 
                 if ($hasErrors) {
@@ -193,8 +195,8 @@ class SyncEngine
                         ['provider' => $providerName],
                         [
                             'last_successful_cursor' => $cursor->toArray(),
-                            'last_successful_at'     => now(),
-                            'last_full_sync_at'      => now(),
+                            'last_successful_at' => now(),
+                            'last_full_sync_at' => now(),
                         ]
                     );
                 }
@@ -220,7 +222,7 @@ class SyncEngine
 
         // 2. Check inbox size
         $inboxCount = 0;
-        if (\Illuminate\Support\Facades\Schema::hasTable('domain_inbox_events')) {
+        if (Schema::hasTable('domain_inbox_events')) {
             $inboxCount = DB::table('domain_inbox_events')->whereIn('status', ['pending', 'processing'])->count();
         }
         $inboxLimit = (int) config('sync.backpressure.inbox_limit', 5000);
@@ -247,7 +249,7 @@ class SyncEngine
                 ->count();
 
             $inboxPending = 0;
-            if (\Illuminate\Support\Facades\Schema::hasTable('domain_inbox_events')) {
+            if (Schema::hasTable('domain_inbox_events')) {
                 $inboxPending = DB::table('domain_inbox_events')
                     ->whereIn('status', ['pending', 'processing'])
                     ->count();
@@ -274,10 +276,12 @@ class SyncEngine
             if (is_object($lockData)) {
                 return $lockData->owner ?? null;
             }
+
             return is_string($lockData) ? $lockData : null;
         }
 
         $val = Cache::get($lockKey);
+
         return is_string($val) ? $val : null;
     }
 }

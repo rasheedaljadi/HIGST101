@@ -20,7 +20,7 @@ class AliExpressOrderPaidNormalizer
             correlationId: $payload['correlation_id'] ?? null,
             causationId: $payload['causation_id'] ?? null,
             attributes: [
-                'status' => 'PAYMENT_CONFIRMED'
+                'status' => 'PAYMENT_CONFIRMED',
             ]
         );
     }

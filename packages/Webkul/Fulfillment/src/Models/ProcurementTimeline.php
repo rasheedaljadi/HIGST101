@@ -24,7 +24,7 @@ class ProcurementTimeline extends Model implements ProcurementTimelineContract
     ];
 
     protected $casts = [
-        'payload'    => 'array',
+        'payload' => 'array',
         'created_at' => 'datetime',
     ];
 }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 use Webkul\Fulfillment\Contracts\FinancialTimeline as FinancialTimelineContract;
 use Webkul\Fulfillment\Exceptions\ImmutableTimelineException;
+use Webkul\Sales\Models\OrderProxy;
 
 class FinancialTimeline extends Model implements FinancialTimelineContract
 {
@@ -45,11 +46,11 @@ class FinancialTimeline extends Model implements FinancialTimelineContract
         });
 
         static::updating(function ($model) {
-            throw new ImmutableTimelineException("FinancialTimeline is immutable. Updates are blocked.");
+            throw new ImmutableTimelineException('FinancialTimeline is immutable. Updates are blocked.');
         });
 
         static::deleting(function ($model) {
-            throw new ImmutableTimelineException("FinancialTimeline is immutable. Deletions are blocked.");
+            throw new ImmutableTimelineException('FinancialTimeline is immutable. Deletions are blocked.');
         });
     }
 
@@ -67,23 +68,16 @@ class FinancialTimeline extends Model implements FinancialTimelineContract
 
     /**
      * Domain factory method to build a timeline event.
-     *
-     * @param  int  $orderId
-     * @param  string  $eventType
-     * @param  float  $amount
-     * @param  string  $currency
-     * @param  array  $metadata
-     * @return self
      */
     public static function appendEvent(int $orderId, string $eventType, float $amount, string $currency, array $metadata = [], ?string $eventId = null): self
     {
         return new self([
-            'event_id'   => $eventId ?? (string) Str::uuid(),
-            'order_id'   => $orderId,
+            'event_id' => $eventId ?? (string) Str::uuid(),
+            'order_id' => $orderId,
             'event_type' => $eventType,
-            'amount'     => $amount,
-            'currency'   => $currency,
-            'metadata'   => $metadata,
+            'amount' => $amount,
+            'currency' => $currency,
+            'metadata' => $metadata,
         ]);
     }
 
@@ -92,6 +86,6 @@ class FinancialTimeline extends Model implements FinancialTimelineContract
      */
     public function order(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Sales\Models\OrderProxy::modelClass(), 'order_id');
+        return $this->belongsTo(OrderProxy::modelClass(), 'order_id');
     }
 }

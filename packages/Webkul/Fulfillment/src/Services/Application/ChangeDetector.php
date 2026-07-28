@@ -26,20 +26,21 @@ class ChangeDetector
                 ->where('external_sku_id', $skuId)
                 ->first();
 
-            if (!$projection) {
+            if (! $projection) {
                 // Identity changed or new variant
                 $changeSet->addChange('identityChanged', null, [
-                    'product_id'               => $productId,
-                    'variant_id'               => null,
-                    'old_sku'                  => null,
-                    'new_sku'                  => $skuId,
-                    'old_options'              => [],
-                    'new_options'              => $aeVariant['options'] ?? [],
-                    'supplier_product_id'      => $supplierProductId,
+                    'product_id' => $productId,
+                    'variant_id' => null,
+                    'old_sku' => null,
+                    'new_sku' => $skuId,
+                    'old_options' => [],
+                    'new_options' => $aeVariant['options'] ?? [],
+                    'supplier_product_id' => $supplierProductId,
                     'external_variant_version' => $aeVariant['version'] ?? null,
-                    'provider_updated_at'      => $providerMetadata['provider_updated_at'] ?? null,
-                    'occurred_at'              => now()->toIso8601String(),
+                    'provider_updated_at' => $providerMetadata['provider_updated_at'] ?? null,
+                    'occurred_at' => now()->toIso8601String(),
                 ]);
+
                 continue;
             }
 
@@ -48,7 +49,7 @@ class ChangeDetector
 
             // Load local variant to compare details
             $localVariant = Product::with('inventories')->find($variantId);
-            if (!$localVariant) {
+            if (! $localVariant) {
                 continue;
             }
 
@@ -58,16 +59,16 @@ class ChangeDetector
             if ($localPrice !== $newPrice) {
                 $pct = $localPrice > 0 ? (($newPrice - $localPrice) / $localPrice) * 100 : 0;
                 $changeSet->addChange('priceChanged', $variantId, [
-                    'product_id'               => $productId,
-                    'variant_id'               => $variantId,
-                    'old_price'                => $localPrice,
-                    'new_price'                => $newPrice,
-                    'price_change_percentage'  => round($pct, 2),
-                    'supplier_product_id'      => $supplierProductId,
-                    'supplier_sku_id'          => $skuId,
+                    'product_id' => $productId,
+                    'variant_id' => $variantId,
+                    'old_price' => $localPrice,
+                    'new_price' => $newPrice,
+                    'price_change_percentage' => round($pct, 2),
+                    'supplier_product_id' => $supplierProductId,
+                    'supplier_sku_id' => $skuId,
                     'external_variant_version' => $aeVariant['version'] ?? null,
-                    'provider_updated_at'      => $providerMetadata['provider_updated_at'] ?? null,
-                    'occurred_at'              => now()->toIso8601String(),
+                    'provider_updated_at' => $providerMetadata['provider_updated_at'] ?? null,
+                    'occurred_at' => now()->toIso8601String(),
                 ]);
             }
 
@@ -76,15 +77,15 @@ class ChangeDetector
             $newStock = (int) ($aeVariant['stock'] ?? 0);
             if ($localStock !== $newStock) {
                 $changeSet->addChange('stockChanged', $variantId, [
-                    'product_id'               => $productId,
-                    'variant_id'               => $variantId,
-                    'old_stock'                => $localStock,
-                    'new_stock'                => $newStock,
-                    'supplier_product_id'      => $supplierProductId,
-                    'supplier_sku_id'          => $skuId,
+                    'product_id' => $productId,
+                    'variant_id' => $variantId,
+                    'old_stock' => $localStock,
+                    'new_stock' => $newStock,
+                    'supplier_product_id' => $supplierProductId,
+                    'supplier_sku_id' => $skuId,
                     'external_variant_version' => $aeVariant['version'] ?? null,
-                    'provider_updated_at'      => $providerMetadata['provider_updated_at'] ?? null,
-                    'occurred_at'              => now()->toIso8601String(),
+                    'provider_updated_at' => $providerMetadata['provider_updated_at'] ?? null,
+                    'occurred_at' => now()->toIso8601String(),
                 ]);
             }
 
@@ -93,16 +94,16 @@ class ChangeDetector
             $newVersion = $aeVariant['version'] ?? null;
             if ($currentVersion !== null && $newVersion !== null && $currentVersion !== $newVersion) {
                 $changeSet->addChange('identityChanged', $variantId, [
-                    'product_id'               => $productId,
-                    'variant_id'               => $variantId,
-                    'old_sku'                  => $projection->external_sku_id,
-                    'new_sku'                  => $skuId,
-                    'old_options'              => [],
-                    'new_options'              => $aeVariant['options'] ?? [],
-                    'supplier_product_id'      => $supplierProductId,
+                    'product_id' => $productId,
+                    'variant_id' => $variantId,
+                    'old_sku' => $projection->external_sku_id,
+                    'new_sku' => $skuId,
+                    'old_options' => [],
+                    'new_options' => $aeVariant['options'] ?? [],
+                    'supplier_product_id' => $supplierProductId,
                     'external_variant_version' => $newVersion,
-                    'provider_updated_at'      => $providerMetadata['provider_updated_at'] ?? null,
-                    'occurred_at'              => now()->toIso8601String(),
+                    'provider_updated_at' => $providerMetadata['provider_updated_at'] ?? null,
+                    'occurred_at' => now()->toIso8601String(),
                 ]);
             }
         }
@@ -114,19 +115,19 @@ class ChangeDetector
             ->get();
 
         foreach ($allLocalVariantProjections as $localProj) {
-            if (!in_array($localProj->external_sku_id, $processedExternalSkuIds)) {
+            if (! in_array($localProj->external_sku_id, $processedExternalSkuIds)) {
                 // Variant was removed by the supplier
                 $changeSet->addChange('removed', $localProj->variant_product_id, [
-                    'product_id'               => $productId,
-                    'variant_id'               => $localProj->variant_product_id,
-                    'old_sku'                  => $localProj->external_sku_id,
-                    'new_sku'                  => null,
-                    'old_options'              => [],
-                    'new_options'              => [],
-                    'supplier_product_id'      => $supplierProductId,
+                    'product_id' => $productId,
+                    'variant_id' => $localProj->variant_product_id,
+                    'old_sku' => $localProj->external_sku_id,
+                    'new_sku' => null,
+                    'old_options' => [],
+                    'new_options' => [],
+                    'supplier_product_id' => $supplierProductId,
                     'external_variant_version' => null,
-                    'provider_updated_at'      => $providerMetadata['provider_updated_at'] ?? null,
-                    'occurred_at'              => now()->toIso8601String(),
+                    'provider_updated_at' => $providerMetadata['provider_updated_at'] ?? null,
+                    'occurred_at' => now()->toIso8601String(),
                 ]);
             }
         }

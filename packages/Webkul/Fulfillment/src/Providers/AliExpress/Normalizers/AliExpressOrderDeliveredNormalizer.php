@@ -20,7 +20,7 @@ class AliExpressOrderDeliveredNormalizer
             correlationId: $payload['correlation_id'] ?? null,
             causationId: $payload['causation_id'] ?? null,
             attributes: [
-                'status' => 'COMPLETED'
+                'status' => 'COMPLETED',
             ]
         );
     }

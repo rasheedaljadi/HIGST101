@@ -2,7 +2,11 @@
 
 namespace Webkul\Fulfillment\Providers;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Webkul\Fulfillment\Events\OrderAccepted;
+use Webkul\Fulfillment\Listeners\InitiateFulfillmentListener;
+use Webkul\Fulfillment\Listeners\OrderLifecycleListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -12,30 +16,30 @@ class EventServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Fulfillment Saga Trigger
-        \Illuminate\Support\Facades\Event::listen(
-            \Webkul\Fulfillment\Events\OrderAccepted::class,
-            \Webkul\Fulfillment\Listeners\InitiateFulfillmentListener::class
+        Event::listen(
+            OrderAccepted::class,
+            InitiateFulfillmentListener::class
         );
 
         // Order Lifecycle & Bookkeeping Triggers
-        \Illuminate\Support\Facades\Event::listen(
+        Event::listen(
             'sales.order.place.after',
-            [\Webkul\Fulfillment\Listeners\OrderLifecycleListener::class, 'handleOrderPlaced']
+            [OrderLifecycleListener::class, 'handleOrderPlaced']
         );
 
-        \Illuminate\Support\Facades\Event::listen(
+        Event::listen(
             'sales.invoice.save.after',
-            [\Webkul\Fulfillment\Listeners\OrderLifecycleListener::class, 'handleInvoiceSaved']
+            [OrderLifecycleListener::class, 'handleInvoiceSaved']
         );
 
-        \Illuminate\Support\Facades\Event::listen(
+        Event::listen(
             'sales.shipment.save.after',
-            [\Webkul\Fulfillment\Listeners\OrderLifecycleListener::class, 'handleShipmentSaved']
+            [OrderLifecycleListener::class, 'handleShipmentSaved']
         );
 
-        \Illuminate\Support\Facades\Event::listen(
+        Event::listen(
             'sales.refund.save.after',
-            [\Webkul\Fulfillment\Listeners\OrderLifecycleListener::class, 'handleRefundSaved']
+            [OrderLifecycleListener::class, 'handleRefundSaved']
         );
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Webkul\Fulfillment\Services\Domain;
 
+use Carbon\Carbon;
 use Webkul\Fulfillment\DataObjects\ProjectionDecision;
 
 class ProjectionVersionGuard
@@ -48,8 +49,8 @@ class ProjectionVersionGuard
 
         // 2. Compare by provider_updated_at (if present)
         if (isset($payload['provider_updated_at']) && $projection->provider_updated_at !== null) {
-            $incomingTime = new \Carbon\Carbon($payload['provider_updated_at']);
-            $currentTime = new \Carbon\Carbon($projection->provider_updated_at);
+            $incomingTime = new Carbon($payload['provider_updated_at']);
+            $currentTime = new Carbon($projection->provider_updated_at);
 
             if ($incomingTime->lt($currentTime)) {
                 return ProjectionDecision::stale(
@@ -72,8 +73,8 @@ class ProjectionVersionGuard
 
         // 3. Fallback to occurred_at (if present)
         if (isset($payload['occurred_at']) && isset($projection->updated_at)) {
-            $incomingTime = new \Carbon\Carbon($payload['occurred_at']);
-            $currentTime = new \Carbon\Carbon($projection->updated_at);
+            $incomingTime = new Carbon($payload['occurred_at']);
+            $currentTime = new Carbon($projection->updated_at);
 
             if ($incomingTime->lt($currentTime)) {
                 return ProjectionDecision::stale(
@@ -94,6 +95,6 @@ class ProjectionVersionGuard
             return ProjectionDecision::apply("Incoming occurred_at [{$incomingTime}] is newer");
         }
 
-        return ProjectionDecision::apply("No version or timestamp information to check, applying by default");
+        return ProjectionDecision::apply('No version or timestamp information to check, applying by default');
     }
 }

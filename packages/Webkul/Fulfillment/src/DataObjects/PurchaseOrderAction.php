@@ -14,13 +14,11 @@ class PurchaseOrderAction
 
     /**
      * Convert to array.
-     *
-     * @return array
      */
     public function toArray(): array
     {
         return [
-            'action'     => $this->action,
+            'action' => $this->action,
             'attributes' => $this->attributes,
         ];
     }

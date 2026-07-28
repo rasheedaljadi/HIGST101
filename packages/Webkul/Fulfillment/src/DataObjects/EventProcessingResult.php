@@ -5,7 +5,9 @@ namespace Webkul\Fulfillment\DataObjects;
 class EventProcessingResult
 {
     public const STATUS_ACCEPTED = 'accepted';
+
     public const STATUS_DUPLICATE = 'duplicate';
+
     public const STATUS_STALE = 'stale';
 
     protected string $status;

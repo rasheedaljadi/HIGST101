@@ -7,6 +7,7 @@ use Illuminate\View\View;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Marketing\Repositories\URLRewriteRepository;
 use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Shop\Transformers\ProductPDPTransformer;
 use Webkul\Theme\Repositories\ThemeCustomizationRepository;
 
 class ProductsCategoriesProxyController extends Controller
@@ -27,7 +28,8 @@ class ProductsCategoriesProxyController extends Controller
         protected CategoryRepository $categoryRepository,
         protected ProductRepository $productRepository,
         protected ThemeCustomizationRepository $themeCustomizationRepository,
-        protected URLRewriteRepository $urlRewriteRepository
+        protected URLRewriteRepository $urlRewriteRepository,
+        protected ProductPDPTransformer $productPDPTransformer
     ) {}
 
     /**
@@ -91,7 +93,11 @@ class ProductsCategoriesProxyController extends Controller
                 return redirect()->to($productURLRewrite->target_path, $productURLRewrite->redirect_type);
             }
 
-            return view('shop::products.view', compact('product'));
+            $pdpViewData = $this->productPDPTransformer->transform($product);
+
+            return view('shop::products.view', array_merge(compact('product'), [
+                'pdpViewData' => $pdpViewData,
+            ]));
         }
 
         /**

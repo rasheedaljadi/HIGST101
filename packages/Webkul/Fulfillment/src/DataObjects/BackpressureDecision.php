@@ -5,7 +5,9 @@ namespace Webkul\Fulfillment\DataObjects;
 class BackpressureDecision
 {
     public const ACTION_PROCEED = 'PROCEED';
+
     public const ACTION_THROTTLE = 'THROTTLE';
+
     public const ACTION_STOP = 'STOP';
 
     public function __construct(

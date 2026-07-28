@@ -9,9 +9,6 @@ class ExternalStateMapper
 {
     /**
      * Map a normalized external event to a purchase order action.
-     *
-     * @param  \Webkul\Fulfillment\DataObjects\NormalizedExternalEvent  $event
-     * @return \Webkul\Fulfillment\DataObjects\PurchaseOrderAction
      */
     public function map(NormalizedExternalEvent $event): PurchaseOrderAction
     {
@@ -23,7 +20,7 @@ class ExternalStateMapper
             case 'ORDER_CREATED':
                 return new PurchaseOrderAction('MARK_SUBMITTED', [
                     'external_order_id' => $event->resourceId,
-                    'raw_response'      => $attributes,
+                    'raw_response' => $attributes,
                 ]);
 
             case 'ORDER_AWAITING_PAYMENT':
@@ -38,7 +35,7 @@ class ExternalStateMapper
             case 'SHIPPED':
                 return new PurchaseOrderAction('MARK_SHIPPED', [
                     'tracking_number' => $attributes['tracking_number'] ?? null,
-                    'carrier'         => $attributes['carrier'] ?? null,
+                    'carrier' => $attributes['carrier'] ?? null,
                 ]);
 
             case 'ORDER_DELIVERED':

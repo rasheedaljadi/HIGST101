@@ -2,9 +2,9 @@
 
 namespace Webkul\Fulfillment\Contracts;
 
-use Webkul\Fulfillment\DataObjects\SyncCursor;
 use Webkul\Fulfillment\DataObjects\NormalizedExternalProductBatch;
 use Webkul\Fulfillment\DataObjects\ProviderSyncCapabilities;
+use Webkul\Fulfillment\DataObjects\SyncCursor;
 
 interface SyncProviderInterface
 {

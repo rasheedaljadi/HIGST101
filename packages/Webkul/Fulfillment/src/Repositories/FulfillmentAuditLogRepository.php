@@ -17,9 +17,6 @@ class FulfillmentAuditLogRepository extends Repository
     /**
      * Validate data before creation or update.
      *
-     * @param  array  $data
-     * @param  int|null  $id
-     * @return void
      *
      * @throws \InvalidArgumentException
      */
@@ -42,7 +39,6 @@ class FulfillmentAuditLogRepository extends Repository
     /**
      * Create a new audit log.
      *
-     * @param  array  $attributes
      * @return mixed
      *
      * @throws \InvalidArgumentException
@@ -57,7 +53,6 @@ class FulfillmentAuditLogRepository extends Repository
     /**
      * Update an existing audit log.
      *
-     * @param  array  $attributes
      * @param  int  $id
      * @return mixed
      *

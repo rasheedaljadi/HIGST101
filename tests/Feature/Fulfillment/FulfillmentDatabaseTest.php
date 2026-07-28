@@ -2,21 +2,23 @@
 
 namespace Tests\Feature\Fulfillment;
 
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
+use Webkul\Fulfillment\Contracts\FulfillmentApprovalRequest as FulfillmentApprovalRequestContract;
+use Webkul\Fulfillment\Contracts\FulfillmentAttempt as FulfillmentAttemptContract;
+use Webkul\Fulfillment\Contracts\FulfillmentAuditLog as FulfillmentAuditLogContract;
+use Webkul\Fulfillment\Contracts\FulfillmentProviderEvent as FulfillmentProviderEventContract;
 use Webkul\Fulfillment\Contracts\PurchaseOrder as PurchaseOrderContract;
 use Webkul\Fulfillment\Contracts\PurchaseOrderItem as PurchaseOrderItemContract;
-use Webkul\Fulfillment\Contracts\FulfillmentAttempt as FulfillmentAttemptContract;
-use Webkul\Fulfillment\Contracts\FulfillmentProviderEvent as FulfillmentProviderEventContract;
-use Webkul\Fulfillment\Contracts\FulfillmentAuditLog as FulfillmentAuditLogContract;
-use Webkul\Fulfillment\Contracts\FulfillmentApprovalRequest as FulfillmentApprovalRequestContract;
+use Webkul\Fulfillment\Enums\FulfillmentErrorType;
+use Webkul\Fulfillment\Models\FulfillmentApprovalRequest;
+use Webkul\Fulfillment\Models\FulfillmentAttempt;
+use Webkul\Fulfillment\Models\FulfillmentAuditLog;
+use Webkul\Fulfillment\Models\FulfillmentProviderEvent;
 use Webkul\Fulfillment\Models\PurchaseOrder;
 use Webkul\Fulfillment\Models\PurchaseOrderItem;
-use Webkul\Fulfillment\Models\FulfillmentAttempt;
-use Webkul\Fulfillment\Models\FulfillmentProviderEvent;
-use Webkul\Fulfillment\Models\FulfillmentAuditLog;
-use Webkul\Fulfillment\Models\FulfillmentApprovalRequest;
-use Webkul\Fulfillment\Enums\FulfillmentErrorType;
 use Webkul\Sales\Models\Order;
 use Webkul\Sales\Models\OrderItem;
 use Webkul\User\Models\Admin;
@@ -27,10 +29,10 @@ class FulfillmentDatabaseTest extends TestCase
     {
         parent::setUp();
 
-        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
-            \Illuminate\Support\Facades\DB::statement('PRAGMA foreign_keys = OFF;');
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF;');
         } else {
-            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
         }
     }
 
@@ -46,42 +48,42 @@ class FulfillmentDatabaseTest extends TestCase
             'idempotency_key', 'internal_reference', 'external_order_id', 'state',
             'supplier_state_raw', 'supplier_snapshot', 'attempts', 'last_error',
             'tracking_number', 'tracking_company', 'supplier_cost', 'supplier_currency',
-            'payload_snapshot', 'submitted_at', 'created_at', 'updated_at'
+            'payload_snapshot', 'submitted_at', 'created_at', 'updated_at',
         ]));
 
         // 2. purchase_order_items
         $this->assertTrue(Schema::hasTable('purchase_order_items'));
         $this->assertTrue(Schema::hasColumns('purchase_order_items', [
             'id', 'purchase_order_id', 'order_item_id', 'aliexpress_product_id',
-            'sku_id', 'qty', 'supplier_unit_cost', 'created_at', 'updated_at'
+            'sku_id', 'qty', 'supplier_unit_cost', 'created_at', 'updated_at',
         ]));
 
         // 3. fulfillment_attempts
         $this->assertTrue(Schema::hasTable('fulfillment_attempts'));
         $this->assertTrue(Schema::hasColumns('fulfillment_attempts', [
             'id', 'purchase_order_id', 'attempt_no', 'result', 'error_type',
-            'provider_code', 'message', 'created_at', 'updated_at'
+            'provider_code', 'message', 'created_at', 'updated_at',
         ]));
 
         // 4. fulfillment_provider_events
         $this->assertTrue(Schema::hasTable('fulfillment_provider_events'));
         $this->assertTrue(Schema::hasColumns('fulfillment_provider_events', [
             'id', 'purchase_order_id', 'provider', 'external_state', 'source_type',
-            'payload', 'received_at', 'processed_at', 'created_at', 'updated_at'
+            'payload', 'received_at', 'processed_at', 'created_at', 'updated_at',
         ]));
 
         // 5. fulfillment_audit_logs
         $this->assertTrue(Schema::hasTable('fulfillment_audit_logs'));
         $this->assertTrue(Schema::hasColumns('fulfillment_audit_logs', [
             'id', 'purchase_order_id', 'user_id', 'action', 'reason',
-            'ip_address', 'changes_payload', 'created_at', 'updated_at'
+            'ip_address', 'changes_payload', 'created_at', 'updated_at',
         ]));
 
         // 6. fulfillment_approval_requests
         $this->assertTrue(Schema::hasTable('fulfillment_approval_requests'));
         $this->assertTrue(Schema::hasColumns('fulfillment_approval_requests', [
             'id', 'purchase_order_id', 'requested_by', 'action', 'reason',
-            'changes_payload', 'status', 'approved_by', 'decision_reason', 'created_at', 'updated_at'
+            'changes_payload', 'status', 'approved_by', 'decision_reason', 'created_at', 'updated_at',
         ]));
     }
 
@@ -107,7 +109,7 @@ class FulfillmentDatabaseTest extends TestCase
         $order = Order::factory()->create([
             'status' => 'pending',
         ]);
-        
+
         $orderItem = OrderItem::factory()->create([
             'order_id' => $order->id,
             'qty_ordered' => 2,
@@ -116,68 +118,68 @@ class FulfillmentDatabaseTest extends TestCase
         // 2. Create Admin user
         $admin = Admin::create([
             'name' => 'Operator Test',
-            'email' => 'operator-' . uniqid() . '@example.com',
+            'email' => 'operator-'.uniqid().'@example.com',
             'password' => bcrypt('password'),
             'role_id' => 1,
         ]);
 
         // 3. Create PurchaseOrder
         $po = PurchaseOrder::create([
-            'order_id'            => $order->id,
-            'provider'            => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'provider_account_id' => 12,
-            'supplier_signature'  => 'ae-store-xyz',
-            'idempotency_key'     => hash('sha256', 'test-idempotency-' . uniqid()),
-            'internal_reference'  => 'ref-' . uniqid(),
-            'state'               => PurchaseOrder::STATE_PENDING,
-            'supplier_snapshot'   => ['name' => 'AliExpress', 'account' => 'main'],
+            'supplier_signature' => 'ae-store-xyz',
+            'idempotency_key' => hash('sha256', 'test-idempotency-'.uniqid()),
+            'internal_reference' => 'ref-'.uniqid(),
+            'state' => PurchaseOrder::STATE_PENDING,
+            'supplier_snapshot' => ['name' => 'AliExpress', 'account' => 'main'],
         ]);
 
         // 4. Create PurchaseOrderItem
         $poItem = PurchaseOrderItem::create([
             'purchase_order_id' => $po->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 2,
-            'supplier_unit_cost'=> 8.50,
+            'order_item_id' => $orderItem->id,
+            'qty' => 2,
+            'supplier_unit_cost' => 8.50,
         ]);
 
         // 5. Create FulfillmentAttempt
         $attempt = FulfillmentAttempt::create([
             'purchase_order_id' => $po->id,
-            'attempt_no'        => 1,
-            'result'            => 'transient',
-            'error_type'        => FulfillmentErrorType::NETWORK_ERROR->value,
-            'provider_code'     => 'TIMEOUT',
-            'message'           => 'Connection timed out',
+            'attempt_no' => 1,
+            'result' => 'transient',
+            'error_type' => FulfillmentErrorType::NETWORK_ERROR->value,
+            'provider_code' => 'TIMEOUT',
+            'message' => 'Connection timed out',
         ]);
 
         // 6. Create Provider Event
         $event = FulfillmentProviderEvent::create([
             'purchase_order_id' => $po->id,
-            'provider'          => 'aliexpress',
-            'external_state'    => 'WAIT_SELLER_SEND_GOODS',
-            'source_type'       => 'webhook',
-            'payload'           => ['status' => 'shipped'],
-            'received_at'       => now(),
+            'provider' => 'aliexpress',
+            'external_state' => 'WAIT_SELLER_SEND_GOODS',
+            'source_type' => 'webhook',
+            'payload' => ['status' => 'shipped'],
+            'received_at' => now(),
         ]);
 
         // 7. Create Audit Log
         $auditLog = FulfillmentAuditLog::create([
             'purchase_order_id' => $po->id,
-            'user_id'           => $admin->id,
-            'action'            => 'retry',
-            'reason'            => 'Connection failed initially',
-            'ip_address'        => '127.0.0.1',
-            'changes_payload'   => ['state' => 'pending'],
+            'user_id' => $admin->id,
+            'action' => 'retry',
+            'reason' => 'Connection failed initially',
+            'ip_address' => '127.0.0.1',
+            'changes_payload' => ['state' => 'pending'],
         ]);
 
         // 8. Create Approval Request
         $approval = FulfillmentApprovalRequest::create([
             'purchase_order_id' => $po->id,
-            'requested_by'      => $admin->id,
-            'action'            => 'cancel',
-            'reason'            => 'Customer requested cancel',
-            'status'            => 'pending',
+            'requested_by' => $admin->id,
+            'action' => 'cancel',
+            'reason' => 'Customer requested cancel',
+            'status' => 'pending',
         ]);
 
         // Assert relations from PurchaseOrder side
@@ -205,26 +207,26 @@ class FulfillmentDatabaseTest extends TestCase
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
 
         $po = PurchaseOrder::create([
-            'order_id'            => $order->id,
-            'provider'            => 'aliexpress',
-            'idempotency_key'     => hash('sha256', 'uniq-1'),
-            'internal_reference'  => 'ref-uniq-1',
-            'state'               => PurchaseOrder::STATE_PENDING,
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
+            'idempotency_key' => hash('sha256', 'uniq-1'),
+            'internal_reference' => 'ref-uniq-1',
+            'state' => PurchaseOrder::STATE_PENDING,
         ]);
 
         PurchaseOrderItem::create([
             'purchase_order_id' => $po->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 1,
+            'order_item_id' => $orderItem->id,
+            'qty' => 1,
         ]);
 
         // Attempting to create another PurchaseOrderItem linking the same PO and OrderItem should fail unique constraint
-        $this->expectException(\Illuminate\Database\QueryException::class);
-        
+        $this->expectException(QueryException::class);
+
         PurchaseOrderItem::create([
             'purchase_order_id' => $po->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 1,
+            'order_item_id' => $orderItem->id,
+            'qty' => 1,
         ]);
     }
 
@@ -236,13 +238,13 @@ class FulfillmentDatabaseTest extends TestCase
         $order = Order::factory()->create();
 
         PurchaseOrder::create([
-            'order_id'            => $order->id,
-            'provider'            => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'provider_account_id' => 1,
-            'idempotency_key'     => hash('sha256', 'idx-1'),
-            'internal_reference'  => 'ref-idx-1',
-            'external_order_id'   => 'ext-idx-999',
-            'state'               => 'pending',
+            'idempotency_key' => hash('sha256', 'idx-1'),
+            'internal_reference' => 'ref-idx-1',
+            'external_order_id' => 'ext-idx-999',
+            'state' => 'pending',
         ]);
 
         // Query by state & created_at (Composite index validation)

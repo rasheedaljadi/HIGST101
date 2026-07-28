@@ -2,22 +2,19 @@
 
 namespace Tests\Feature\Fulfillment;
 
-use Tests\TestCase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use Webkul\Fulfillment\Models\SyncRun;
-use Webkul\Fulfillment\Models\ProviderSyncState;
-use Webkul\Fulfillment\Services\Application\SyncEngine;
-use Webkul\Fulfillment\Services\Application\SyncPipeline;
-use Webkul\Fulfillment\Services\Application\SyncEventPublisher;
-use Webkul\Fulfillment\Services\Application\ChangeDetector;
-use Webkul\Fulfillment\Services\Application\ProviderRateLimiter;
-use Webkul\Fulfillment\Services\Application\ProviderCircuitBreaker;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
 use Webkul\Fulfillment\Contracts\SyncProviderInterface;
-use Webkul\Fulfillment\DataObjects\ProviderSyncCapabilities;
 use Webkul\Fulfillment\DataObjects\NormalizedExternalProductBatch;
+use Webkul\Fulfillment\DataObjects\ProviderSyncCapabilities;
 use Webkul\Fulfillment\DataObjects\SyncCursor;
 use Webkul\Fulfillment\Exceptions\RateLimitExceededException;
+use Webkul\Fulfillment\Models\ProviderSyncState;
+use Webkul\Fulfillment\Models\SyncRun;
+use Webkul\Fulfillment\Services\Application\ProviderCircuitBreaker;
+use Webkul\Fulfillment\Services\Application\ProviderRateLimiter;
+use Webkul\Fulfillment\Services\Application\SyncEngine;
 
 class FulfillmentSyncEngineTest extends TestCase
 {
@@ -42,10 +39,10 @@ class FulfillmentSyncEngineTest extends TestCase
     public function test_sync_run_state_transitions(): void
     {
         $run = SyncRun::create([
-            'id'       => 'test-run-id',
+            'id' => 'test-run-id',
             'provider' => 'aliexpress',
-            'status'   => SyncRun::STATUS_CREATED,
-            'cursor'   => [],
+            'status' => SyncRun::STATUS_CREATED,
+            'cursor' => [],
         ]);
 
         $this->assertEquals(SyncRun::STATUS_CREATED, $run->status);
@@ -75,11 +72,15 @@ class FulfillmentSyncEngineTest extends TestCase
     {
         $engine = app(SyncEngine::class);
 
-        $mockProvider = new class implements SyncProviderInterface {
-            public function getCapabilities(): ProviderSyncCapabilities {
+        $mockProvider = new class implements SyncProviderInterface
+        {
+            public function getCapabilities(): ProviderSyncCapabilities
+            {
                 return new ProviderSyncCapabilities(1, true, true, true, true, true);
             }
-            public function fetchProductsBatch(SyncCursor $cursor, int $batchSize): NormalizedExternalProductBatch {
+
+            public function fetchProductsBatch(SyncCursor $cursor, int $batchSize): NormalizedExternalProductBatch
+            {
                 return new NormalizedExternalProductBatch('aliexpress', [], null, false);
             }
         };
@@ -104,20 +105,25 @@ class FulfillmentSyncEngineTest extends TestCase
     {
         $engine = app(SyncEngine::class);
 
-        $mockProvider = new class implements SyncProviderInterface {
-            public function getCapabilities(): ProviderSyncCapabilities {
+        $mockProvider = new class implements SyncProviderInterface
+        {
+            public function getCapabilities(): ProviderSyncCapabilities
+            {
                 return new ProviderSyncCapabilities(1, true, true, true, true, true);
             }
-            public function fetchProductsBatch(SyncCursor $cursor, int $batchSize): NormalizedExternalProductBatch {
+
+            public function fetchProductsBatch(SyncCursor $cursor, int $batchSize): NormalizedExternalProductBatch
+            {
                 // If cursor has page token 'page_1', return no more data. Otherwise return next page.
                 if ($cursor->page_token === 'page_1') {
                     return new NormalizedExternalProductBatch('aliexpress', [], null, false);
                 }
+
                 return new NormalizedExternalProductBatch('aliexpress', [
                     [
                         'id' => 'sp_1',
-                        'variants' => [['sku_id' => 'sku_1', 'price' => 10.0, 'stock' => 10, 'version' => 1]]
-                    ]
+                        'variants' => [['sku_id' => 'sku_1', 'price' => 10.0, 'stock' => 10, 'version' => 1]],
+                    ],
                 ], 'page_1', true);
             }
         };

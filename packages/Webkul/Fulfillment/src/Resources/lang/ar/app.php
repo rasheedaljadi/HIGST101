@@ -70,10 +70,10 @@ return [
             'approval-rejected' => 'تم رفض طلب الموافقة.',
         ],
         'acl' => [
-            'view'    => 'View Purchase Order',
-            'retry'   => 'Retry Execution',
-            'cancel'  => 'Cancel Purchase Order',
+            'view' => 'View Purchase Order',
+            'retry' => 'Retry Execution',
+            'cancel' => 'Cancel Purchase Order',
             'approve' => 'Approve/Reject Actions',
-        ]
-    ]
+        ],
+    ],
 ];

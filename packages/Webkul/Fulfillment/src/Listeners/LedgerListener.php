@@ -17,17 +17,11 @@ class LedgerListener
 
     /**
      * Handle the outbox event and build/save double ledger entries.
-     *
-     * @param  string  $eventName
-     * @param  array  $payload
-     * @param  string  $correlationId
-     * @param  string  $causationId
-     * @return void
      */
-    public function handle(string $eventName, array $payload, string $correlationId, string $causationId, string $outboxEventId = null): void
+    public function handle(string $eventName, array $payload, string $correlationId, string $causationId, ?string $outboxEventId = null): void
     {
         if (config('app.ledger_fail_sim')) {
-            throw new \RuntimeException("Simulated ledger database failure");
+            throw new \RuntimeException('Simulated ledger database failure');
         }
 
         $orderId = $payload['order_id'] ?? null;
@@ -41,10 +35,10 @@ class LedgerListener
         $purchaseOrderId = $payload['purchase_order_id'] ?? null;
 
         $reference = ($eventName === 'OrderAllocationReserved')
-            ? 'Allocation reserved: ' . $outboxEventId
+            ? 'Allocation reserved: '.$outboxEventId
             : (($eventName === 'OrderAllocationReleased')
-                ? 'Reversal - Allocation released: ' . $outboxEventId
-                : $eventName . ': ' . $outboxEventId);
+                ? 'Reversal - Allocation released: '.$outboxEventId
+                : $eventName.': '.$outboxEventId);
 
         // Idempotency check: verify if the entries with this reference already exist
         $existing = $this->ledgerEntryRepository->findWhere(['reference' => $reference])->first();
@@ -55,14 +49,14 @@ class LedgerListener
         if ($eventName === 'OrderAllocationReserved') {
             // Debit: Cash/Receivables (1010), Credit: Inventory/Revenue (4010)
             $entries = $this->ledgerDomainService->buildDoubleEntry($orderId, '1010', '4010', $amount, $reference, $purchaseOrderId, $correlationId);
-            
+
             foreach ($entries as $entry) {
                 $this->ledgerEntryRepository->create($entry->toArray());
             }
         } elseif ($eventName === 'OrderAllocationReleased') {
             // Reverse entries: Debit: Inventory/Revenue (4010), Credit: Cash/Receivables (1010)
             $entries = $this->ledgerDomainService->buildDoubleEntry($orderId, '4010', '1010', $amount, $reference, $purchaseOrderId, $correlationId);
-            
+
             foreach ($entries as $entry) {
                 $this->ledgerEntryRepository->create($entry->toArray());
             }

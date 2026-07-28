@@ -2,31 +2,27 @@
 
 namespace Tests\Feature\Fulfillment;
 
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
-use Webkul\Fulfillment\Contracts\OrderAllocation as OrderAllocationContract;
 use Webkul\Fulfillment\Contracts\AllocationLog as AllocationLogContract;
-use Webkul\Fulfillment\Contracts\ProcessedEvent as ProcessedEventContract;
 use Webkul\Fulfillment\Contracts\FinancialTimeline as FinancialTimelineContract;
 use Webkul\Fulfillment\Contracts\LedgerEntry as LedgerEntryContract;
+use Webkul\Fulfillment\Contracts\OrderAllocation as OrderAllocationContract;
+use Webkul\Fulfillment\Contracts\ProcessedEvent as ProcessedEventContract;
 use Webkul\Fulfillment\Exceptions\ConcurrentUpdateException;
-use Webkul\Fulfillment\Exceptions\DuplicateEventException;
 use Webkul\Fulfillment\Exceptions\ImmutableTimelineException;
 use Webkul\Fulfillment\Exceptions\InvalidStateTransitionException;
-use Webkul\Fulfillment\Exceptions\StaleEventException;
 use Webkul\Fulfillment\Exceptions\UnbalancedLedgerException;
-use Webkul\Fulfillment\Models\OrderAllocation;
 use Webkul\Fulfillment\Models\AllocationLog;
-use Webkul\Fulfillment\Models\ProcessedEvent;
 use Webkul\Fulfillment\Models\FinancialTimeline;
 use Webkul\Fulfillment\Models\LedgerEntry;
-use Webkul\Fulfillment\Repositories\OrderAllocationRepository;
-use Webkul\Fulfillment\Repositories\AllocationLogRepository;
-use Webkul\Fulfillment\Repositories\ProcessedEventRepository;
+use Webkul\Fulfillment\Models\OrderAllocation;
+use Webkul\Fulfillment\Models\ProcessedEvent;
 use Webkul\Fulfillment\Repositories\FinancialTimelineRepository;
 use Webkul\Fulfillment\Repositories\LedgerEntryRepository;
+use Webkul\Fulfillment\Repositories\OrderAllocationRepository;
+use Webkul\Fulfillment\Repositories\ProcessedEventRepository;
 use Webkul\Fulfillment\Services\Domain\EventDeduplicationService;
 use Webkul\Fulfillment\Services\Domain\LedgerDomainService;
 use Webkul\Sales\Models\Order;
@@ -38,10 +34,10 @@ class FulfillmentModelsTest extends TestCase
     {
         parent::setUp();
 
-        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
-            \Illuminate\Support\Facades\DB::statement('PRAGMA foreign_keys = OFF;');
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF;');
         } else {
-            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
         }
     }
 
@@ -55,34 +51,34 @@ class FulfillmentModelsTest extends TestCase
         $this->assertTrue(Schema::hasColumns('order_allocations', [
             'id', 'order_id', 'order_item_id', 'allocation_type', 'source_code',
             'supplier_signature', 'reserved_qty', 'fulfilled_qty', 'canceled_qty',
-            'state', 'version', 'created_at', 'updated_at'
+            'state', 'version', 'created_at', 'updated_at',
         ]));
 
         // 2. allocation_logs
         $this->assertTrue(Schema::hasTable('allocation_logs'));
         $this->assertTrue(Schema::hasColumns('allocation_logs', [
             'id', 'order_allocation_id', 'action', 'old_qty', 'new_qty',
-            'reason', 'created_at', 'updated_at'
+            'reason', 'created_at', 'updated_at',
         ]));
 
         // 3. processed_events
         $this->assertTrue(Schema::hasTable('processed_events'));
         $this->assertTrue(Schema::hasColumns('processed_events', [
-            'id', 'provider', 'event_id', 'event_name', 'processed_at', 'created_at', 'updated_at'
+            'id', 'provider', 'event_id', 'event_name', 'processed_at', 'created_at', 'updated_at',
         ]));
 
         // 4. financial_timeline
         $this->assertTrue(Schema::hasTable('financial_timeline'));
         $this->assertTrue(Schema::hasColumns('financial_timeline', [
             'id', 'event_id', 'order_id', 'event_type', 'amount', 'currency',
-            'metadata', 'recorded_at', 'created_at', 'updated_at'
+            'metadata', 'recorded_at', 'created_at', 'updated_at',
         ]));
 
         // 5. ledger_entries
         $this->assertTrue(Schema::hasTable('ledger_entries'));
         $this->assertTrue(Schema::hasColumns('ledger_entries', [
             'id', 'order_id', 'account_code', 'debit', 'credit', 'reference',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at',
         ]));
     }
 
@@ -107,13 +103,13 @@ class FulfillmentModelsTest extends TestCase
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
 
         $allocation = OrderAllocation::create([
-            'order_id'        => $order->id,
-            'order_item_id'   => $orderItem->id,
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
             'allocation_type' => 'supplier',
-            'source_code'     => 'aliexpress',
-            'reserved_qty'    => 2,
-            'state'           => 'reserved',
-            'version'         => 1,
+            'source_code' => 'aliexpress',
+            'reserved_qty' => 2,
+            'state' => 'reserved',
+            'version' => 1,
         ]);
 
         // Simulating 3 concurrent instances loaded from database
@@ -134,18 +130,18 @@ class FulfillmentModelsTest extends TestCase
         $a2->reserved_qty = 4;
         try {
             $a2->save();
-            $this->fail("Expected ConcurrentUpdateException was not thrown.");
+            $this->fail('Expected ConcurrentUpdateException was not thrown.');
         } catch (ConcurrentUpdateException $e) {
-            $this->assertStringContainsString("Version conflict", $e->getMessage());
+            $this->assertStringContainsString('Version conflict', $e->getMessage());
         }
 
         // Instance 3 attempts update (should also fail)
         $a3->reserved_qty = 5;
         try {
             $a3->save();
-            $this->fail("Expected ConcurrentUpdateException was not thrown.");
+            $this->fail('Expected ConcurrentUpdateException was not thrown.');
         } catch (ConcurrentUpdateException $e) {
-            $this->assertStringContainsString("Version conflict", $e->getMessage());
+            $this->assertStringContainsString('Version conflict', $e->getMessage());
         }
 
         // Fresh retrieve & update retry should succeed
@@ -175,17 +171,17 @@ class FulfillmentModelsTest extends TestCase
         // 2. Amount <= 0 Exception
         try {
             $ledgerDomainService->buildDoubleEntry($order->id, '1010', '4010', -10.00);
-            $this->fail("Expected UnbalancedLedgerException not thrown for negative amount.");
+            $this->fail('Expected UnbalancedLedgerException not thrown for negative amount.');
         } catch (UnbalancedLedgerException $e) {
-            $this->assertStringContainsString("greater than zero", $e->getMessage());
+            $this->assertStringContainsString('greater than zero', $e->getMessage());
         }
 
         // 3. Same debit/credit account Exception
         try {
             $ledgerDomainService->buildDoubleEntry($order->id, '1010', '1010', 100.00);
-            $this->fail("Expected UnbalancedLedgerException not thrown for identical accounts.");
+            $this->fail('Expected UnbalancedLedgerException not thrown for identical accounts.');
         } catch (UnbalancedLedgerException $e) {
-            $this->assertStringContainsString("cannot be the same", $e->getMessage());
+            $this->assertStringContainsString('cannot be the same', $e->getMessage());
         }
     }
 
@@ -233,9 +229,9 @@ class FulfillmentModelsTest extends TestCase
             FinancialTimeline::create([
                 'order_id' => $order->id,
             ]);
-            $this->fail("Expected InvalidArgumentException for missing fields.");
+            $this->fail('Expected InvalidArgumentException for missing fields.');
         } catch (\InvalidArgumentException $e) {
-            $this->assertStringContainsString("required for FinancialTimeline", $e->getMessage());
+            $this->assertStringContainsString('required for FinancialTimeline', $e->getMessage());
         }
 
         // 2. Append event via factory helper
@@ -248,17 +244,17 @@ class FulfillmentModelsTest extends TestCase
         try {
             $timeline->amount = 150.00;
             $timeline->save();
-            $this->fail("Expected ImmutableTimelineException on update.");
+            $this->fail('Expected ImmutableTimelineException on update.');
         } catch (ImmutableTimelineException $e) {
-            $this->assertStringContainsString("updates are blocked", strtolower($e->getMessage()));
+            $this->assertStringContainsString('updates are blocked', strtolower($e->getMessage()));
         }
 
         // 4. Prevent deletes
         try {
             $timeline->delete();
-            $this->fail("Expected ImmutableTimelineException on delete.");
+            $this->fail('Expected ImmutableTimelineException on delete.');
         } catch (ImmutableTimelineException $e) {
-            $this->assertStringContainsString("deletions are blocked", strtolower($e->getMessage()));
+            $this->assertStringContainsString('deletions are blocked', strtolower($e->getMessage()));
         }
     }
 
@@ -271,12 +267,12 @@ class FulfillmentModelsTest extends TestCase
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
 
         $alloc = OrderAllocation::create([
-            'order_id'        => $order->id,
-            'order_item_id'   => $orderItem->id,
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
             'allocation_type' => 'supplier',
-            'source_code'     => 'aliexpress',
-            'reserved_qty'    => 5,
-            'state'           => 'reserved',
+            'source_code' => 'aliexpress',
+            'reserved_qty' => 5,
+            'state' => 'reserved',
         ]);
 
         // Fulfill allocation
@@ -287,10 +283,10 @@ class FulfillmentModelsTest extends TestCase
 
         // Attempt another action on fulfilled allocation - fails
         try {
-            $alloc->cancel(5, "Should fail");
-            $this->fail("Expected InvalidStateTransitionException on fulfilled cancel.");
+            $alloc->cancel(5, 'Should fail');
+            $this->fail('Expected InvalidStateTransitionException on fulfilled cancel.');
         } catch (InvalidStateTransitionException $e) {
-            $this->assertStringContainsString("Cannot cancel allocation in state", $e->getMessage());
+            $this->assertStringContainsString('Cannot cancel allocation in state', $e->getMessage());
         }
     }
 
@@ -303,17 +299,17 @@ class FulfillmentModelsTest extends TestCase
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
 
         $alloc1 = OrderAllocation::create([
-            'order_id'        => $order->id,
-            'order_item_id'   => $orderItem->id,
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
             'allocation_type' => 'supplier',
-            'source_code'     => 'aliexpress',
-            'reserved_qty'    => 10,
-            'state'           => 'reserved',
+            'source_code' => 'aliexpress',
+            'reserved_qty' => 10,
+            'state' => 'reserved',
         ]);
 
         // Split 4 from 10
         $alloc2 = $alloc1->split(4);
-        
+
         $alloc1->refresh();
         $this->assertEquals(6, $alloc1->reserved_qty);
         $this->assertEquals(4, $alloc2->reserved_qty);
@@ -321,7 +317,7 @@ class FulfillmentModelsTest extends TestCase
 
         // Merge alloc2 (4) back into alloc1 (6)
         $alloc1->merge($alloc2);
-        
+
         $alloc1->refresh();
         $alloc2->refresh();
         $this->assertEquals(10, $alloc1->reserved_qty);
@@ -330,19 +326,19 @@ class FulfillmentModelsTest extends TestCase
 
         // Incompatible merge check (supplier vs local warehouse)
         $localAlloc = OrderAllocation::create([
-            'order_id'        => $order->id,
-            'order_item_id'   => $orderItem->id,
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
             'allocation_type' => 'warehouse',
-            'source_code'     => 'warehouse_riyadh',
-            'reserved_qty'    => 2,
-            'state'           => 'reserved',
+            'source_code' => 'warehouse_riyadh',
+            'reserved_qty' => 2,
+            'state' => 'reserved',
         ]);
 
         try {
             $alloc1->merge($localAlloc);
-            $this->fail("Expected InvalidStateTransitionException when merging incompatible sources.");
+            $this->fail('Expected InvalidStateTransitionException when merging incompatible sources.');
         } catch (InvalidStateTransitionException $e) {
-            $this->assertStringContainsString("Cannot merge allocations from different sources", $e->getMessage());
+            $this->assertStringContainsString('Cannot merge allocations from different sources', $e->getMessage());
         }
     }
 
@@ -363,18 +359,18 @@ class FulfillmentModelsTest extends TestCase
             DB::transaction(function () use ($order, $orderItem, $ledgerRepository, $timelineRepository, $allocationRepository, $processedEventRepository) {
                 // 1. Create Allocation
                 $allocationRepository->create([
-                    'order_id'        => $order->id,
-                    'order_item_id'   => $orderItem->id,
+                    'order_id' => $order->id,
+                    'order_item_id' => $orderItem->id,
                     'allocation_type' => 'supplier',
-                    'source_code'     => 'aliexpress',
-                    'reserved_qty'    => 2,
-                    'state'           => 'reserved',
+                    'source_code' => 'aliexpress',
+                    'reserved_qty' => 2,
+                    'state' => 'reserved',
                 ]);
 
                 // 2. Create ProcessedEvent
                 $processedEventRepository->create([
-                    'provider'   => 'aliexpress',
-                    'event_id'   => 'evt_tx_failure_test',
+                    'provider' => 'aliexpress',
+                    'event_id' => 'evt_tx_failure_test',
                     'event_name' => 'OrderPlaced',
                 ]);
 
@@ -384,17 +380,17 @@ class FulfillmentModelsTest extends TestCase
 
                 // 4. Ledger Entry
                 $ledgerRepository->create([
-                    'order_id'     => $order->id,
+                    'order_id' => $order->id,
                     'account_code' => '1010',
-                    'debit'        => 100.00,
-                    'credit'       => 0.00,
+                    'debit' => 100.00,
+                    'credit' => 0.00,
                 ]);
 
                 // Force a query exception or custom exception to trigger rollback
-                throw new \RuntimeException("Forced coordinator transaction failure");
+                throw new \RuntimeException('Forced coordinator transaction failure');
             });
         } catch (\RuntimeException $e) {
-            $this->assertEquals("Forced coordinator transaction failure", $e->getMessage());
+            $this->assertEquals('Forced coordinator transaction failure', $e->getMessage());
         }
 
         // Verify that absolutely no database records were saved

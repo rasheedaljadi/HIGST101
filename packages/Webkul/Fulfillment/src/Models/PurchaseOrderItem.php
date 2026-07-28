@@ -5,6 +5,7 @@ namespace Webkul\Fulfillment\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Webkul\Fulfillment\Contracts\PurchaseOrderItem as PurchaseOrderItemContract;
+use Webkul\Sales\Models\OrderItemProxy;
 
 class PurchaseOrderItem extends Model implements PurchaseOrderItemContract
 {
@@ -30,6 +31,6 @@ class PurchaseOrderItem extends Model implements PurchaseOrderItemContract
      */
     public function orderItem(): BelongsTo
     {
-        return $this->belongsTo(\Webkul\Sales\Models\OrderItemProxy::modelClass(), 'order_item_id');
+        return $this->belongsTo(OrderItemProxy::modelClass(), 'order_item_id');
     }
 }

@@ -9,9 +9,6 @@ class AliExpressWebhookVerifier implements ExternalWebhookVerifierInterface
 {
     /**
      * Verify incoming request signature.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return bool
      */
     public function verify(Request $request): bool
     {
@@ -30,7 +27,7 @@ class AliExpressWebhookVerifier implements ExternalWebhookVerifierInterface
 
         // Secure HMAC validation using system credentials
         $secret = config('fulfillment.aliexpress.webhook_secret', 'test-signing-key-9922');
-        $expectedSignature = hash_hmac('sha256', $timestamp . '.' . $body, $secret);
+        $expectedSignature = hash_hmac('sha256', $timestamp.'.'.$body, $secret);
 
         return hash_equals($expectedSignature, $signature);
     }

@@ -23,23 +23,21 @@ class NormalizedExternalEvent
 
     /**
      * Convert the DTO to an array.
-     *
-     * @return array
      */
     public function toArray(): array
     {
         return [
-            'eventId'        => $this->eventId,
+            'eventId' => $this->eventId,
             'externalSystem' => $this->externalSystem,
-            'eventType'      => $this->eventType,
-            'resourceType'   => $this->resourceType,
-            'resourceId'     => $this->resourceId,
-            'occurredAt'     => $this->occurredAt,
-            'receivedAt'     => $this->receivedAt,
-            'schemaVersion'  => $this->schemaVersion,
-            'correlationId'  => $this->correlationId,
-            'causationId'    => $this->causationId,
-            'attributes'     => $this->attributes,
+            'eventType' => $this->eventType,
+            'resourceType' => $this->resourceType,
+            'resourceId' => $this->resourceId,
+            'occurredAt' => $this->occurredAt,
+            'receivedAt' => $this->receivedAt,
+            'schemaVersion' => $this->schemaVersion,
+            'correlationId' => $this->correlationId,
+            'causationId' => $this->causationId,
+            'attributes' => $this->attributes,
         ];
     }
 }

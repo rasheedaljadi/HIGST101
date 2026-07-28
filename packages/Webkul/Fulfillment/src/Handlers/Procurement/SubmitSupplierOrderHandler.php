@@ -5,14 +5,15 @@ namespace Webkul\Fulfillment\Handlers\Procurement;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Webkul\Fulfillment\Commands\SubmitSupplierOrderCommand;
-use Webkul\Fulfillment\Models\ProcurementSession;
-use Webkul\Fulfillment\Models\ExternalPayloadArchive;
-use Webkul\Fulfillment\Models\ExternalOrder;
-use Webkul\Fulfillment\Services\FulfillmentProviderRegistry;
-use Webkul\Fulfillment\Services\Domain\ExternalIdentityMapper;
-use Webkul\Fulfillment\DataObjects\SupplierOrderRequest;
-use Webkul\Fulfillment\DataObjects\SupplierOrderLine;
 use Webkul\Fulfillment\DataObjects\ShippingAddress;
+use Webkul\Fulfillment\DataObjects\SupplierOrderLine;
+use Webkul\Fulfillment\DataObjects\SupplierOrderRequest;
+use Webkul\Fulfillment\Models\ExternalOrder;
+use Webkul\Fulfillment\Models\ExternalPayloadArchive;
+use Webkul\Fulfillment\Models\ProcurementSession;
+use Webkul\Fulfillment\Models\ProviderAccount;
+use Webkul\Fulfillment\Services\Domain\ExternalIdentityMapper;
+use Webkul\Fulfillment\Services\FulfillmentProviderRegistry;
 
 class SubmitSupplierOrderHandler
 {
@@ -31,17 +32,17 @@ class SubmitSupplierOrderHandler
             $aggregate = $session->aggregate;
             $purchaseOrderId = $aggregate->purchase_order_id;
 
-            $account = \Webkul\Fulfillment\Models\ProviderAccount::firstOrCreate([
+            $account = ProviderAccount::firstOrCreate([
                 'provider' => 'aliexpress',
-                'name'     => 'Main Account'
+                'name' => 'Main Account',
             ], [
-                'status'        => 'ACTIVE',
-                'access_token'  => 'fake-access-token',
+                'status' => 'ACTIVE',
+                'access_token' => 'fake-access-token',
                 'refresh_token' => 'fake-refresh-token',
             ]);
 
             $session->update([
-                'provider_account_id' => $account->id
+                'provider_account_id' => $account->id,
             ]);
 
             $providerCode = 'aliexpress';
@@ -55,7 +56,7 @@ class SubmitSupplierOrderHandler
             $order = $allocation->orderItem->order;
 
             $shipping = $order->shipping_address;
-            $warehouse = \Illuminate\Support\Facades\DB::table('inventory_sources')
+            $warehouse = DB::table('inventory_sources')
                 ->where('code', 'default')
                 ->first();
 
@@ -109,7 +110,7 @@ class SubmitSupplierOrderHandler
                     aliexpressProductId: $supplierSnap['supplier_product_id'] ?? 'unknown',
                     skuId: $supplierSnap['supplier_sku_id'] ?? 'unknown',
                     qty: (int) ($supplierSnap['requested_qty'] ?? 1)
-                )
+                ),
             ];
 
             $outOrderId = $this->identityMapper->mapInternalToExternal($purchaseOrderId, $allocation->id);
@@ -127,15 +128,15 @@ class SubmitSupplierOrderHandler
 
             if ($result->ok) {
                 $archive = ExternalPayloadArchive::create([
-                    'request_payload'  => $requestObj->toArray(),
+                    'request_payload' => $requestObj->toArray(),
                     'response_payload' => $result->raw,
-                    'normalized_dto'   => [
+                    'normalized_dto' => [
                         'external_order_id' => $result->externalOrderId,
-                        'code'              => $result->code,
-                        'message'           => $result->message,
+                        'code' => $result->code,
+                        'message' => $result->message,
                     ],
-                    'request_hash'     => hash('sha256', json_encode($requestObj->toArray())),
-                    'response_hash'    => hash('sha256', json_encode($result->raw)),
+                    'request_hash' => hash('sha256', json_encode($requestObj->toArray())),
+                    'response_hash' => hash('sha256', json_encode($result->raw)),
                     'provider_version' => 'v2',
                     'contract_version' => $session->contract_version,
                 ]);
@@ -147,97 +148,97 @@ class SubmitSupplierOrderHandler
                 $session->transitionTo('SUBMITTED');
 
                 ExternalOrder::create([
-                    'provider'               => 'aliexpress',
-                    'provider_account_id'    => $account->id,
-                    'external_order_id'      => $result->externalOrderId,
-                    'purchase_order_id'      => $purchaseOrderId,
+                    'provider' => 'aliexpress',
+                    'provider_account_id' => $account->id,
+                    'external_order_id' => $result->externalOrderId,
+                    'purchase_order_id' => $purchaseOrderId,
                     'procurement_session_id' => $session->id,
-                    'status'                 => 'SUBMITTED',
+                    'status' => 'SUBMITTED',
                 ]);
 
                 DB::table('external_order_projections')->updateOrInsert(
                     ['external_order_id' => $result->externalOrderId],
                     [
                         'purchase_order_id' => $purchaseOrderId,
-                        'status'            => 'SUBMITTED',
-                        'updated_at'        => now(),
-                        'created_at'        => now(),
+                        'status' => 'SUBMITTED',
+                        'updated_at' => now(),
+                        'created_at' => now(),
                     ]
                 );
 
                 DB::table('procurement_timelines')->insert([
                     'procurement_session_id' => $session->id,
-                    'purchase_order_id'      => $purchaseOrderId,
-                    'stage'                  => 'SUBMITTED',
-                    'payload'                => json_encode($result->raw),
-                    'correlation_id'         => $command->correlationId,
-                    'causation_id'           => $command->causationId,
-                    'created_at'             => now(),
+                    'purchase_order_id' => $purchaseOrderId,
+                    'stage' => 'SUBMITTED',
+                    'payload' => json_encode($result->raw),
+                    'correlation_id' => $command->correlationId,
+                    'causation_id' => $command->causationId,
+                    'created_at' => now(),
                 ]);
 
                 DB::table('domain_outbox_events')->insert([
-                    'event_id'       => (string) Str::uuid(),
-                    'event_name'     => 'ProcurementSubmitted',
-                    'event_version'  => 1,
+                    'event_id' => (string) Str::uuid(),
+                    'event_name' => 'ProcurementSubmitted',
+                    'event_version' => 1,
                     'aggregate_type' => 'ProcurementSession',
-                    'aggregate_id'   => (string) $session->id,
+                    'aggregate_id' => (string) $session->id,
                     'correlation_id' => $command->correlationId,
-                    'causation_id'   => $command->causationId,
-                    'payload'        => json_encode([
+                    'causation_id' => $command->causationId,
+                    'payload' => json_encode([
                         'procurement_session_id' => $session->id,
-                        'purchase_order_id'      => $purchaseOrderId,
-                        'external_order_id'      => $result->externalOrderId,
-                        'status'                 => 'SUBMITTED',
+                        'purchase_order_id' => $purchaseOrderId,
+                        'external_order_id' => $result->externalOrderId,
+                        'status' => 'SUBMITTED',
                     ]),
-                    'status'         => 'pending',
-                    'attempts'       => 0,
-                    'created_at'     => now(),
-                    'updated_at'     => now(),
+                    'status' => 'pending',
+                    'attempts' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
 
                 DB::table('domain_outbox_events')->insert([
-                    'event_id'       => (string) Str::uuid(),
-                    'event_name'     => 'SupplierOrderSubmitted',
-                    'event_version'  => 1,
+                    'event_id' => (string) Str::uuid(),
+                    'event_name' => 'SupplierOrderSubmitted',
+                    'event_version' => 1,
                     'aggregate_type' => 'ProcurementSession',
-                    'aggregate_id'   => (string) $session->id,
+                    'aggregate_id' => (string) $session->id,
                     'correlation_id' => $command->correlationId,
-                    'causation_id'   => $command->causationId,
-                    'payload'        => json_encode([
+                    'causation_id' => $command->causationId,
+                    'payload' => json_encode([
                         'procurement_session_id' => $session->id,
-                        'purchase_order_id'      => $purchaseOrderId,
-                        'external_order_id'      => $result->externalOrderId,
-                        'supplier_cost'          => $session->price_snapshot['current_cost'] ?? 0.00,
+                        'purchase_order_id' => $purchaseOrderId,
+                        'external_order_id' => $result->externalOrderId,
+                        'supplier_cost' => $session->price_snapshot['current_cost'] ?? 0.00,
                     ]),
-                    'status'         => 'pending',
-                    'attempts'       => 0,
-                    'created_at'     => now(),
-                    'updated_at'     => now(),
+                    'status' => 'pending',
+                    'attempts' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
 
             } else {
                 $session->transitionTo('FAILED');
                 $session->update([
-                    'error_message' => $result->message
+                    'error_message' => $result->message,
                 ]);
 
                 DB::table('domain_outbox_events')->insert([
-                    'event_id'       => (string) Str::uuid(),
-                    'event_name'     => 'ProcurementFailed',
-                    'event_version'  => 1,
+                    'event_id' => (string) Str::uuid(),
+                    'event_name' => 'ProcurementFailed',
+                    'event_version' => 1,
                     'aggregate_type' => 'ProcurementSession',
-                    'aggregate_id'   => (string) $session->id,
+                    'aggregate_id' => (string) $session->id,
                     'correlation_id' => $command->correlationId,
-                    'causation_id'   => $command->causationId,
-                    'payload'        => json_encode([
+                    'causation_id' => $command->causationId,
+                    'payload' => json_encode([
                         'procurement_session_id' => $session->id,
-                        'purchase_order_id'      => $purchaseOrderId,
-                        'error_message'          => $result->message,
+                        'purchase_order_id' => $purchaseOrderId,
+                        'error_message' => $result->message,
                     ]),
-                    'status'         => 'pending',
-                    'attempts'       => 0,
-                    'created_at'     => now(),
-                    'updated_at'     => now(),
+                    'status' => 'pending',
+                    'attempts' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 

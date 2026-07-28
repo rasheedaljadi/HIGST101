@@ -13,17 +13,57 @@
 
 <!-- SEO Meta Content -->
 @push('meta')
+    <?php $productBaseImage = product_image()->getProductBaseImage($product); ?>
+
+    <!-- LCP Image Preload Candidate -->
+    <link rel="preload" as="image" href="{{ $productBaseImage['large_image_url'] }}" fetchpriority="high" type="image/webp"/>
+
     <meta name="description" content="{{ trim($product->meta_description) != "" ? $product->meta_description : \Illuminate\Support\Str::limit(strip_tags($product->description), 120, '') }}"/>
 
     <meta name="keywords" content="{{ $product->meta_keywords }}"/>
 
-    @if (core()->getConfigData('catalog.rich_snippets.products.enable'))
-        <script type="application/ld+json">
-            {!! app('Webkul\Product\Helpers\SEO')->getProductJsonLd($product) !!}
-        </script>
-    @endif
-
-    <?php $productBaseImage = product_image()->getProductBaseImage($product); ?>
+    <!-- SEO JSON-LD Structured Data Schemas -->
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": "{{ addslashes($product->name) }}",
+            "image": [
+                "{{ $productBaseImage['large_image_url'] }}"
+            ],
+            "description": "{{ addslashes(trim(strip_tags($product->description))) }}",
+            "sku": "{{ $product->sku }}",
+            "brand": {
+                "@type": "Brand",
+                "name": "HIGEST"
+            },
+            "offers": {
+                "@type": "Offer",
+                "url": "{{ route('shop.product_or_category.index', $product->url_key) }}",
+                "priceCurrency": "{{ core()->getCurrentCurrencyCode() }}",
+                "price": "{{ $product->getTypeInstance()->getMinimalPrice() }}",
+                "itemCondition": "https://schema.org/NewCondition",
+                "availability": "{{ $product->isSaleable(1) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }}"
+            },
+            "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Home",
+                        "item": "{{ route('shop.home.index') }}"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": "{{ addslashes($product->name) }}",
+                        "item": "{{ route('shop.product_or_category.index', $product->url_key) }}"
+                    }
+                ]
+            }
+        }
+    </script>
 
     <meta name="twitter:card" content="summary_large_image" />
 
@@ -261,6 +301,8 @@
 
     <v-product-associations />
 
+    @include('shop::products.view.mobile-sticky-bar')
+
     {!! view_render_event('bagisto.shop.products.view.after', ['product' => $product]) !!}
 
     @pushOnce('scripts')
@@ -339,6 +381,12 @@
 
                                 {!! view_render_event('bagisto.shop.products.rating.after', ['product' => $product]) !!}
 
+                                <!-- Stock Meter Indicator -->
+                                <x-shop::products.stock-meter
+                                    :total-qty="$pdpViewData['total_qty'] ?? 0"
+                                    :in-stock="$pdpViewData['in_stock'] ?? true"
+                                />
+
                                 <!-- Pricing -->
                                 {!! view_render_event('bagisto.shop.products.price.before', ['product' => $product]) !!}
 
@@ -384,68 +432,70 @@
 
                                 @include('shop::products.view.types.booking')
 
-                                <!-- Product Actions and Quantity Box -->
-                                <div class="mt-8 flex max-w-[470px] gap-4 max-sm:mt-4">
+                                <!-- Product Actions and Quantity Box (IntersectionObserver Sentinel) -->
+                                <div id="primary-pdp-cta-container">
+                                    <div class="mt-8 flex max-w-[470px] gap-4 max-sm:mt-4">
 
-                                    {!! view_render_event('bagisto.shop.products.view.quantity.before', ['product' => $product]) !!}
+                                        {!! view_render_event('bagisto.shop.products.view.quantity.before', ['product' => $product]) !!}
 
-                                    @if ($product->getTypeInstance()->showQuantityBox())
-                                        <x-shop::quantity-changer
-                                            name="quantity"
-                                            value="1"
-                                            class="gap-x-4 rounded-xl px-7 py-4 max-md:py-3 max-sm:gap-x-5 max-sm:rounded-lg max-sm:px-4 max-sm:py-1.5"
-                                        />
-                                    @endif
+                                        @if ($product->getTypeInstance()->showQuantityBox())
+                                            <x-shop::quantity-changer
+                                                name="quantity"
+                                                value="1"
+                                                class="gap-x-4 rounded-xl px-7 py-4 max-md:py-3 max-sm:gap-x-5 max-sm:rounded-lg max-sm:px-4 max-sm:py-1.5"
+                                            />
+                                        @endif
 
-                                    {!! view_render_event('bagisto.shop.products.view.quantity.after', ['product' => $product]) !!}
+                                        {!! view_render_event('bagisto.shop.products.view.quantity.after', ['product' => $product]) !!}
 
+                                        @if (core()->getConfigData('sales.checkout.shopping_cart.cart_page'))
+                                            <!-- Add To Cart Button -->
+                                            {!! view_render_event('bagisto.shop.products.view.add_to_cart.before', ['product' => $product]) !!}
+
+                                            <x-shop::button
+                                                type="submit"
+                                                class="secondary-button w-full max-w-full max-md:py-3 max-sm:rounded-lg max-sm:py-1.5"
+                                                button-type="secondary-button"
+                                                :loading="false"
+                                                :title="trans('shop::app.products.view.add-to-cart')"
+                                                :disabled="! $product->isSaleable(1)"
+                                                ::loading="isStoring.addToCart"
+                                                ::disabled="isStoring.addToCart"
+                                                @click="is_buy_now=0;"
+                                            />
+
+                                            {!! view_render_event('bagisto.shop.products.view.add_to_cart.after', ['product' => $product]) !!}
+                                        @else
+                                            <button
+                                                type="button"
+                                                class="secondary-button w-full max-w-full max-md:py-3 max-sm:rounded-lg max-sm:py-1.5"
+                                                @click="$refs.contactUsModal.open()"
+                                            >
+                                                @lang('shop::app.components.layouts.footer.contact-us')
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    <!-- Buy Now Button -->
                                     @if (core()->getConfigData('sales.checkout.shopping_cart.cart_page'))
-                                        <!-- Add To Cart Button -->
-                                        {!! view_render_event('bagisto.shop.products.view.add_to_cart.before', ['product' => $product]) !!}
+                                        {!! view_render_event('bagisto.shop.products.view.buy_now.before', ['product' => $product]) !!}
 
-                                        <x-shop::button
-                                            type="submit"
-                                            class="secondary-button w-full max-w-full max-md:py-3 max-sm:rounded-lg max-sm:py-1.5"
-                                            button-type="secondary-button"
-                                            :loading="false"
-                                            :title="trans('shop::app.products.view.add-to-cart')"
-                                            :disabled="! $product->isSaleable(1)"
-                                            ::loading="isStoring.addToCart"
-                                            ::disabled="isStoring.addToCart"
-                                            @click="is_buy_now=0;"
-                                        />
+                                        @if (core()->getConfigData('catalog.products.storefront.buy_now_button_display'))
+                                            <x-shop::button
+                                                type="submit"
+                                                class="primary-button mt-5 w-full max-w-[470px] max-md:py-3 max-sm:mt-3 max-sm:rounded-lg max-sm:py-1.5"
+                                                button-type="primary-button"
+                                                :title="trans('shop::app.products.view.buy-now')"
+                                                :disabled="! $product->isSaleable(1)"
+                                                ::loading="isStoring.buyNow"
+                                                @click="is_buy_now=1;"
+                                                ::disabled="isStoring.buyNow"
+                                            />
+                                        @endif
 
-                                        {!! view_render_event('bagisto.shop.products.view.add_to_cart.after', ['product' => $product]) !!}
-                                    @else
-                                        <button
-                                            type="button"
-                                            class="secondary-button w-full max-w-full max-md:py-3 max-sm:rounded-lg max-sm:py-1.5"
-                                            @click="$refs.contactUsModal.open()"
-                                        >
-                                            @lang('shop::app.components.layouts.footer.contact-us')
-                                        </button>
+                                        {!! view_render_event('bagisto.shop.products.view.buy_now.after', ['product' => $product]) !!}
                                     @endif
                                 </div>
-
-                                <!-- Buy Now Button -->
-                                @if (core()->getConfigData('sales.checkout.shopping_cart.cart_page'))
-                                    {!! view_render_event('bagisto.shop.products.view.buy_now.before', ['product' => $product]) !!}
-
-                                    @if (core()->getConfigData('catalog.products.storefront.buy_now_button_display'))
-                                        <x-shop::button
-                                            type="submit"
-                                            class="primary-button mt-5 w-full max-w-[470px] max-md:py-3 max-sm:mt-3 max-sm:rounded-lg max-sm:py-1.5"
-                                            button-type="primary-button"
-                                            :title="trans('shop::app.products.view.buy-now')"
-                                            :disabled="! $product->isSaleable(1)"
-                                            ::loading="isStoring.buyNow"
-                                            @click="is_buy_now=1;"
-                                            ::disabled="isStoring.buyNow"
-                                        />
-                                    @endif
-
-                                    {!! view_render_event('bagisto.shop.products.view.buy_now.after', ['product' => $product]) !!}
-                                @endif
 
                                 {!! view_render_event('bagisto.shop.products.view.additional_actions.before', ['product' => $product]) !!}
 
@@ -473,6 +523,11 @@
                                 </div>
 
                                 {!! view_render_event('bagisto.shop.products.view.additional_actions.after', ['product' => $product]) !!}
+
+                                <!-- Dropshipping Fulfillment & Dispatch Transparency Card -->
+                                <x-shop::products.dropshipping-transparency
+                                    :dropshipping="$pdpViewData['dropshipping'] ?? []"
+                                />
                             </div>
                         </div>
                     </div>

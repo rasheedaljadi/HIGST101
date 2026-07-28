@@ -4,11 +4,10 @@ namespace Tests\Feature\Fulfillment;
 
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
-use Webkul\Sales\Models\Order;
-use Webkul\Sales\Models\OrderItem;
-use Webkul\Fulfillment\Models\OrderProcess;
 use Webkul\Fulfillment\Models\LedgerEntry;
+use Webkul\Fulfillment\Models\OrderProcess;
 use Webkul\Fulfillment\Services\Domain\FinancialSettlementService;
+use Webkul\Sales\Models\Order;
 
 class FinancialConsistencyTest extends TestCase
 {
@@ -38,10 +37,10 @@ class FinancialConsistencyTest extends TestCase
         $correlationId = 'corr-prepaid-123';
 
         OrderProcess::create([
-            'order_id'        => $order->id,
-            'payment_mode'    => 'prepaid',
+            'order_id' => $order->id,
+            'payment_mode' => 'prepaid',
             'lifecycle_state' => 'fulfillment_started',
-            'correlation_id'  => $correlationId,
+            'correlation_id' => $correlationId,
         ]);
 
         // 1. Invoiced (Prepaid Deposit)
@@ -96,10 +95,10 @@ class FinancialConsistencyTest extends TestCase
         $correlationId = 'corr-refund-preship';
 
         OrderProcess::create([
-            'order_id'        => $order->id,
-            'payment_mode'    => 'prepaid',
+            'order_id' => $order->id,
+            'payment_mode' => 'prepaid',
             'lifecycle_state' => 'fulfillment_started',
-            'correlation_id'  => $correlationId,
+            'correlation_id' => $correlationId,
         ]);
 
         // Invoice paid
@@ -125,10 +124,10 @@ class FinancialConsistencyTest extends TestCase
         $correlationId = 'corr-refund-postship';
 
         OrderProcess::create([
-            'order_id'        => $order->id,
-            'payment_mode'    => 'prepaid',
+            'order_id' => $order->id,
+            'payment_mode' => 'prepaid',
             'lifecycle_state' => 'fulfillment_started',
-            'correlation_id'  => $correlationId,
+            'correlation_id' => $correlationId,
         ]);
 
         // Invoice -> Shipped -> Refund post-shipment

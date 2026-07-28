@@ -3,13 +3,13 @@
 namespace Webkul\Fulfillment\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Webkul\Fulfillment\Models\ProviderAccount;
-use Webkul\Fulfillment\Services\FulfillmentProviderRegistry;
-use Webkul\Fulfillment\Services\Application\ProviderCircuitBreaker;
 use Webkul\Fulfillment\Providers\AliExpress\AliExpressEventNormalizer;
+use Webkul\Fulfillment\Services\Application\ProviderCircuitBreaker;
+use Webkul\Fulfillment\Services\FulfillmentProviderRegistry;
 
 class ProductionAcceptanceFulfillmentCommand extends Command
 {
@@ -20,7 +20,7 @@ class ProductionAcceptanceFulfillmentCommand extends Command
     public function handle()
     {
         $strict = $this->option('strict');
-        $this->info($strict ? "=== Starting STRICT Production Release Gate Audit ===" : "=== Starting Production E2E Readiness Audit ===");
+        $this->info($strict ? '=== Starting STRICT Production Release Gate Audit ===' : '=== Starting Production E2E Readiness Audit ===');
 
         $results = [];
         $passedChecks = 0;
@@ -28,10 +28,10 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         // Ensure at least one active provider account exists for AliExpress
         ProviderAccount::firstOrCreate([
             'provider' => 'aliexpress',
-            'name'     => 'Main Account'
+            'name' => 'Main Account',
         ], [
-            'status'        => 'ACTIVE',
-            'access_token'  => 'acceptance-token',
+            'status' => 'ACTIVE',
+            'access_token' => 'acceptance-token',
             'refresh_token' => 'acceptance-refresh',
         ]);
 
@@ -42,20 +42,20 @@ class ProductionAcceptanceFulfillmentCommand extends Command
             $provider = $registry->resolve('aliexpress');
             $latency = round((microtime(true) - $start) * 1000, 1);
             $results[] = [
-                'Category'       => 'Provider Connectivity',
-                'Status'         => 'PASS',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'Healthy (Verified response)'
+                'Category' => 'Provider Connectivity',
+                'Status' => 'PASS',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => 'Healthy (Verified response)',
             ];
             $passedChecks++;
         } catch (\Throwable $e) {
             $results[] = [
-                'Category'       => 'Provider Connectivity',
-                'Status'         => 'FAIL',
-                'Latency'        => 'N/A',
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'Register provider class in config'
+                'Category' => 'Provider Connectivity',
+                'Status' => 'FAIL',
+                'Latency' => 'N/A',
+                'Last Check' => 'Just now',
+                'Recommendation' => 'Register provider class in config',
             ];
         }
 
@@ -65,20 +65,20 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         $latency = round((microtime(true) - $start) * 1000, 1);
         if ($activeAccount) {
             $results[] = [
-                'Category'       => 'Authentication',
-                'Status'         => 'PASS',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'Healthy (Token is active)'
+                'Category' => 'Authentication',
+                'Status' => 'PASS',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => 'Healthy (Token is active)',
             ];
             $passedChecks++;
         } else {
             $results[] = [
-                'Category'       => 'Authentication',
-                'Status'         => 'WARN',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'Authentication token expired or inactive'
+                'Category' => 'Authentication',
+                'Status' => 'WARN',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => 'Authentication token expired or inactive',
             ];
         }
 
@@ -88,20 +88,20 @@ class ProductionAcceptanceFulfillmentCommand extends Command
             $queueActive = DB::table('jobs')->count() >= 0;
             $latency = round((microtime(true) - $start) * 1000, 1);
             $results[] = [
-                'Category'       => 'Queue',
-                'Status'         => 'PASS',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'Queue connection active'
+                'Category' => 'Queue',
+                'Status' => 'PASS',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => 'Queue connection active',
             ];
             $passedChecks++;
         } catch (\Throwable $e) {
             $results[] = [
-                'Category'       => 'Queue',
-                'Status'         => 'PASS', // Fallback to pass if not using database queue
-                'Latency'        => 'N/A',
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'Queue connection verification OK'
+                'Category' => 'Queue',
+                'Status' => 'PASS', // Fallback to pass if not using database queue
+                'Latency' => 'N/A',
+                'Last Check' => 'Just now',
+                'Recommendation' => 'Queue connection verification OK',
             ];
             $passedChecks++;
         }
@@ -112,20 +112,20 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         $latency = round((microtime(true) - $start) * 1000, 1);
         if ($pendingOutbox <= 5) {
             $results[] = [
-                'Category'       => 'Outbox',
-                'Status'         => 'PASS',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => "Outbox is clean ({$pendingOutbox} pending)"
+                'Category' => 'Outbox',
+                'Status' => 'PASS',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => "Outbox is clean ({$pendingOutbox} pending)",
             ];
             $passedChecks++;
         } else {
             $results[] = [
-                'Category'       => 'Outbox',
-                'Status'         => 'WARN',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => "High pending outbox events: {$pendingOutbox}"
+                'Category' => 'Outbox',
+                'Status' => 'WARN',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => "High pending outbox events: {$pendingOutbox}",
             ];
         }
 
@@ -135,20 +135,20 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         $latency = round((microtime(true) - $start) * 1000, 1);
         if ($pendingInbox <= 5) {
             $results[] = [
-                'Category'       => 'Inbox',
-                'Status'         => 'PASS',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => "Inbox is clean ({$pendingInbox} pending)"
+                'Category' => 'Inbox',
+                'Status' => 'PASS',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => "Inbox is clean ({$pendingInbox} pending)",
             ];
             $passedChecks++;
         } else {
             $results[] = [
-                'Category'       => 'Inbox',
-                'Status'         => 'WARN',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => "High pending inbox events: {$pendingInbox}"
+                'Category' => 'Inbox',
+                'Status' => 'WARN',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => "High pending inbox events: {$pendingInbox}",
             ];
         }
 
@@ -157,11 +157,11 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         DB::select('SELECT 1');
         $latency = round((microtime(true) - $start) * 1000, 1);
         $results[] = [
-            'Category'       => 'Database',
-            'Status'         => 'PASS',
-            'Latency'        => "{$latency} ms",
-            'Last Check'     => 'Just now',
-            'Recommendation' => 'Connection established'
+            'Category' => 'Database',
+            'Status' => 'PASS',
+            'Latency' => "{$latency} ms",
+            'Last Check' => 'Just now',
+            'Recommendation' => 'Connection established',
         ];
         $passedChecks++;
 
@@ -171,20 +171,20 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         $latency = round((microtime(true) - $start) * 1000, 1);
         if (! $blocked) {
             $results[] = [
-                'Category'       => 'Circuit Breaker',
-                'Status'         => 'PASS',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'State is CLOSED (Healthy)'
+                'Category' => 'Circuit Breaker',
+                'Status' => 'PASS',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => 'State is CLOSED (Healthy)',
             ];
             $passedChecks++;
         } else {
             $results[] = [
-                'Category'       => 'Circuit Breaker',
-                'Status'         => 'WARN',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'Breaker tripped OPEN'
+                'Category' => 'Circuit Breaker',
+                'Status' => 'WARN',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => 'Breaker tripped OPEN',
             ];
         }
 
@@ -194,11 +194,11 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         Cache::forget('readiness_limiter_test');
         $latency = round((microtime(true) - $start) * 1000, 1);
         $results[] = [
-            'Category'       => 'Rate Limiter',
-            'Status'         => 'PASS',
-            'Latency'        => "{$latency} ms",
-            'Last Check'     => 'Just now',
-            'Recommendation' => 'Cache connection active'
+            'Category' => 'Rate Limiter',
+            'Status' => 'PASS',
+            'Latency' => "{$latency} ms",
+            'Last Check' => 'Just now',
+            'Recommendation' => 'Cache connection active',
         ];
         $passedChecks++;
 
@@ -208,40 +208,40 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         Crypt::decrypt($encrypted);
         $latency = round((microtime(true) - $start) * 1000, 1);
         $results[] = [
-            'Category'       => 'Encryption',
-            'Status'         => 'PASS',
-            'Latency'        => "{$latency} ms",
-            'Last Check'     => 'Just now',
-            'Recommendation' => 'Keys are secure'
+            'Category' => 'Encryption',
+            'Status' => 'PASS',
+            'Latency' => "{$latency} ms",
+            'Last Check' => 'Just now',
+            'Recommendation' => 'Keys are secure',
         ];
         $passedChecks++;
 
         // 10. Schema Compliance
         $start = microtime(true);
         try {
-            $normalizer = new AliExpressEventNormalizer();
+            $normalizer = new AliExpressEventNormalizer;
             $normalizer->normalize([
-                'event_id'  => 'evt-cmd-test',
-                'order_id'  => 'PO-CMD-1',
-                'status'    => 'order_created',
+                'event_id' => 'evt-cmd-test',
+                'order_id' => 'PO-CMD-1',
+                'status' => 'order_created',
                 'timestamp' => now()->toIso8601String(),
             ]);
             $latency = round((microtime(true) - $start) * 1000, 1);
             $results[] = [
-                'Category'       => 'Schema Compliance',
-                'Status'         => 'PASS',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'Match AliExpress schema'
+                'Category' => 'Schema Compliance',
+                'Status' => 'PASS',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => 'Match AliExpress schema',
             ];
             $passedChecks++;
         } catch (\Throwable $e) {
             $results[] = [
-                'Category'       => 'Schema Compliance',
-                'Status'         => 'WARN',
-                'Latency'        => 'N/A',
-                'Last Check'     => 'Just now',
-                'Recommendation' => 'Schema mappings inconsistent'
+                'Category' => 'Schema Compliance',
+                'Status' => 'WARN',
+                'Latency' => 'N/A',
+                'Last Check' => 'Just now',
+                'Recommendation' => 'Schema mappings inconsistent',
             ];
         }
 
@@ -252,20 +252,20 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         $latency = round((microtime(true) - $start) * 1000, 1);
         if ($totalDebit === $totalCredit) {
             $results[] = [
-                'Category'       => 'Financial Ledger',
-                'Status'         => 'PASS',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => "Ledger balanced (Total: {$totalDebit})"
+                'Category' => 'Financial Ledger',
+                'Status' => 'PASS',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => "Ledger balanced (Total: {$totalDebit})",
             ];
             $passedChecks++;
         } else {
             $results[] = [
-                'Category'       => 'Financial Ledger',
-                'Status'         => 'FAIL',
-                'Latency'        => "{$latency} ms",
-                'Last Check'     => 'Just now',
-                'Recommendation' => "Unbalanced Ledger! Debit: {$totalDebit}, Credit: {$totalCredit}"
+                'Category' => 'Financial Ledger',
+                'Status' => 'FAIL',
+                'Latency' => "{$latency} ms",
+                'Last Check' => 'Just now',
+                'Recommendation' => "Unbalanced Ledger! Debit: {$totalDebit}, Credit: {$totalCredit}",
             ];
         }
 
@@ -275,14 +275,14 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         if ($strict) {
             $totalChecksCount += 5;
 
-            $this->info("Running regression test suite...");
+            $this->info('Running regression test suite...');
             $start = microtime(true);
-            $phpBinary = "C:\\Users\\RASHEED\\AppData\\Local\\Microsoft\\WinGet\\Packages\\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\\php.exe";
-            
+            $phpBinary = 'C:\\Users\\RASHEED\\AppData\\Local\\Microsoft\\WinGet\\Packages\\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\\php.exe';
+
             $descriptorspec = [
-                0 => ["pipe", "r"], // stdin
-                1 => ["pipe", "w"], // stdout
-                2 => ["pipe", "w"]  // stderr
+                0 => ['pipe', 'r'], // stdin
+                1 => ['pipe', 'w'], // stdout
+                2 => ['pipe', 'w'],  // stderr
             ];
             $env = [];
             foreach (array_merge($_ENV, $_SERVER) as $key => $val) {
@@ -306,11 +306,11 @@ class ProductionAcceptanceFulfillmentCommand extends Command
                 }
             }
             $env['APP_ENV'] = 'testing';
-            
+
             $process = proc_open("\"{$phpBinary}\" artisan test --compact --filter=Fulfillment", $descriptorspec, $pipes, base_path(), $env);
             $stdout = '';
             $exitCode = 1;
-            
+
             if (is_resource($process)) {
                 $stdout = stream_get_contents($pipes[1]);
                 $stderr = stream_get_contents($pipes[2]);
@@ -319,27 +319,27 @@ class ProductionAcceptanceFulfillmentCommand extends Command
                 fclose($pipes[2]);
                 $exitCode = proc_close($process);
             }
-            
+
             $output = explode("\n", $stdout);
             $latency = round(microtime(true) - $start, 1);
             if ($exitCode === 0) {
                 $results[] = [
-                    'Category'       => 'Regression Tests',
-                    'Status'         => 'PASS',
-                    'Latency'        => "{$latency} s",
-                    'Last Check'     => 'Just now',
-                    'Recommendation' => '100% of Fulfillment tests pass'
+                    'Category' => 'Regression Tests',
+                    'Status' => 'PASS',
+                    'Latency' => "{$latency} s",
+                    'Last Check' => 'Just now',
+                    'Recommendation' => '100% of Fulfillment tests pass',
                 ];
                 $passedChecks++;
             } else {
                 $results[] = [
-                    'Category'       => 'Regression Tests',
-                    'Status'         => 'FAIL',
-                    'Latency'        => "{$latency} s",
-                    'Last Check'     => 'Just now',
-                    'Recommendation' => 'Fulfillment test suite fails'
+                    'Category' => 'Regression Tests',
+                    'Status' => 'FAIL',
+                    'Latency' => "{$latency} s",
+                    'Last Check' => 'Just now',
+                    'Recommendation' => 'Fulfillment test suite fails',
                 ];
-                $this->error("Regression Test Output:\n" . implode("\n", $output));
+                $this->error("Regression Test Output:\n".implode("\n", $output));
             }
 
             // Strict Check 2: Pending Migrations
@@ -354,29 +354,29 @@ class ProductionAcceptanceFulfillmentCommand extends Command
                 $latency = round((microtime(true) - $start) * 1000, 1);
                 if ($pendingCount === 0) {
                     $results[] = [
-                        'Category'       => 'Pending Migrations',
-                        'Status'         => 'PASS',
-                        'Latency'        => "{$latency} ms",
-                        'Last Check'     => 'Just now',
-                        'Recommendation' => 'Schema is up to date'
+                        'Category' => 'Pending Migrations',
+                        'Status' => 'PASS',
+                        'Latency' => "{$latency} ms",
+                        'Last Check' => 'Just now',
+                        'Recommendation' => 'Schema is up to date',
                     ];
                     $passedChecks++;
                 } else {
                     $results[] = [
-                        'Category'       => 'Pending Migrations',
-                        'Status'         => 'FAIL',
-                        'Latency'        => "{$latency} ms",
-                        'Last Check'     => 'Just now',
-                        'Recommendation' => "{$pendingCount} pending migrations exist"
+                        'Category' => 'Pending Migrations',
+                        'Status' => 'FAIL',
+                        'Latency' => "{$latency} ms",
+                        'Last Check' => 'Just now',
+                        'Recommendation' => "{$pendingCount} pending migrations exist",
                     ];
                 }
             } catch (\Throwable $e) {
                 $results[] = [
-                    'Category'       => 'Pending Migrations',
-                    'Status'         => 'FAIL',
-                    'Latency'        => 'N/A',
-                    'Last Check'     => 'Just now',
-                    'Recommendation' => 'Failed querying migrations'
+                    'Category' => 'Pending Migrations',
+                    'Status' => 'FAIL',
+                    'Latency' => 'N/A',
+                    'Last Check' => 'Just now',
+                    'Recommendation' => 'Failed querying migrations',
                 ];
             }
 
@@ -387,29 +387,29 @@ class ProductionAcceptanceFulfillmentCommand extends Command
                 $latency = round((microtime(true) - $start) * 1000, 1);
                 if ($failedJobsCount === 0) {
                     $results[] = [
-                        'Category'       => 'Queue Health',
-                        'Status'         => 'PASS',
-                        'Latency'        => "{$latency} ms",
-                        'Last Check'     => 'Just now',
-                        'Recommendation' => 'No failed jobs in queue'
+                        'Category' => 'Queue Health',
+                        'Status' => 'PASS',
+                        'Latency' => "{$latency} ms",
+                        'Last Check' => 'Just now',
+                        'Recommendation' => 'No failed jobs in queue',
                     ];
                     $passedChecks++;
                 } else {
                     $results[] = [
-                        'Category'       => 'Queue Health',
-                        'Status'         => 'WARN',
-                        'Latency'        => "{$latency} ms",
-                        'Last Check'     => 'Just now',
-                        'Recommendation' => "{$failedJobsCount} failed jobs detected"
+                        'Category' => 'Queue Health',
+                        'Status' => 'WARN',
+                        'Latency' => "{$latency} ms",
+                        'Last Check' => 'Just now',
+                        'Recommendation' => "{$failedJobsCount} failed jobs detected",
                     ];
                 }
             } catch (\Throwable $e) {
                 $results[] = [
-                    'Category'       => 'Queue Health',
-                    'Status'         => 'PASS',
-                    'Latency'        => 'N/A',
-                    'Last Check'     => 'Just now',
-                    'Recommendation' => 'No failed_jobs table found'
+                    'Category' => 'Queue Health',
+                    'Status' => 'PASS',
+                    'Latency' => 'N/A',
+                    'Last Check' => 'Just now',
+                    'Recommendation' => 'No failed_jobs table found',
                 ];
                 $passedChecks++;
             }
@@ -424,29 +424,29 @@ class ProductionAcceptanceFulfillmentCommand extends Command
                 $latency = round((microtime(true) - $start) * 1000, 1);
                 if ($staleCount === 0) {
                     $results[] = [
-                        'Category'       => 'Stale Sync Runs',
-                        'Status'         => 'PASS',
-                        'Latency'        => "{$latency} ms",
-                        'Last Check'     => 'Just now',
-                        'Recommendation' => 'No active runs are stuck'
+                        'Category' => 'Stale Sync Runs',
+                        'Status' => 'PASS',
+                        'Latency' => "{$latency} ms",
+                        'Last Check' => 'Just now',
+                        'Recommendation' => 'No active runs are stuck',
                     ];
                     $passedChecks++;
                 } else {
                     $results[] = [
-                        'Category'       => 'Stale Sync Runs',
-                        'Status'         => 'WARN',
-                        'Latency'        => "{$latency} ms",
-                        'Last Check'     => 'Just now',
-                        'Recommendation' => "{$staleCount} stale runs detected"
+                        'Category' => 'Stale Sync Runs',
+                        'Status' => 'WARN',
+                        'Latency' => "{$latency} ms",
+                        'Last Check' => 'Just now',
+                        'Recommendation' => "{$staleCount} stale runs detected",
                     ];
                 }
             } catch (\Throwable $e) {
                 $results[] = [
-                    'Category'       => 'Stale Sync Runs',
-                    'Status'         => 'PASS',
-                    'Latency'        => 'N/A',
-                    'Last Check'     => 'Just now',
-                    'Recommendation' => 'No sync_runs table found'
+                    'Category' => 'Stale Sync Runs',
+                    'Status' => 'PASS',
+                    'Latency' => 'N/A',
+                    'Last Check' => 'Just now',
+                    'Recommendation' => 'No sync_runs table found',
                 ];
                 $passedChecks++;
             }
@@ -465,20 +465,20 @@ class ProductionAcceptanceFulfillmentCommand extends Command
             $latency = round((microtime(true) - $start) * 1000, 1);
             if ($totalStuck === 0) {
                 $results[] = [
-                    'Category'       => 'Stuck Events',
-                    'Status'         => 'PASS',
-                    'Latency'        => "{$latency} ms",
-                    'Last Check'     => 'Just now',
-                    'Recommendation' => 'Outbox/Inbox events are processing normally'
+                    'Category' => 'Stuck Events',
+                    'Status' => 'PASS',
+                    'Latency' => "{$latency} ms",
+                    'Last Check' => 'Just now',
+                    'Recommendation' => 'Outbox/Inbox events are processing normally',
                 ];
                 $passedChecks++;
             } else {
                 $results[] = [
-                    'Category'       => 'Stuck Events',
-                    'Status'         => 'WARN',
-                    'Latency'        => "{$latency} ms",
-                    'Last Check'     => 'Just now',
-                    'Recommendation' => "{$totalStuck} events stuck for >5 min"
+                    'Category' => 'Stuck Events',
+                    'Status' => 'WARN',
+                    'Latency' => "{$latency} ms",
+                    'Last Check' => 'Just now',
+                    'Recommendation' => "{$totalStuck} events stuck for >5 min",
                 ];
             }
         }
@@ -490,10 +490,12 @@ class ProductionAcceptanceFulfillmentCommand extends Command
         $this->info("\nOverall Readiness: {$readinessPercent}%");
 
         if ((int) $readinessPercent === 100) {
-            $this->info("READY FOR LIVE PROCUREMENT");
+            $this->info('READY FOR LIVE PROCUREMENT');
+
             return 0;
         } else {
-            $this->warn("WARN: SYSTEM NOT FULLY READIED");
+            $this->warn('WARN: SYSTEM NOT FULLY READIED');
+
             return 1;
         }
     }

@@ -24,10 +24,10 @@ return new class extends Migration
 
         // Seed default aliexpress external system
         DB::table('external_systems')->insert([
-            'code'       => 'aliexpress',
-            'name'       => 'AliExpress Dropshipping System',
-            'type'       => 'supplier',
-            'enabled'    => true,
+            'code' => 'aliexpress',
+            'name' => 'AliExpress Dropshipping System',
+            'type' => 'supplier',
+            'enabled' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

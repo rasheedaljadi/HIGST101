@@ -14,10 +14,9 @@ trait OptimisticLocking
     /**
      * Perform a model update filtered by version.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return bool
      *
-     * @throws \Webkul\Fulfillment\Exceptions\ConcurrentUpdateException
+     * @throws ConcurrentUpdateException
      */
     protected function performUpdate(Builder $query)
     {
@@ -47,7 +46,7 @@ trait OptimisticLocking
 
         if ($affected === 0) {
             throw new ConcurrentUpdateException(
-                "Model updated concurrently. Version conflict for ID: " . $this->getKey()
+                'Model updated concurrently. Version conflict for ID: '.$this->getKey()
             );
         }
 

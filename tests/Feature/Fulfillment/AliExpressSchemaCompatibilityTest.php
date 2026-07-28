@@ -12,14 +12,14 @@ class AliExpressSchemaCompatibilityTest extends TestCase
      */
     public function test_ignores_new_unknown_fields(): void
     {
-        $normalizer = new AliExpressEventNormalizer();
+        $normalizer = new AliExpressEventNormalizer;
 
         $payload = [
-            'event_id'          => 'ae-evt-comp-1',
-            'status'            => 'order_created',
-            'order_id'          => 'ae-ext-9921',
-            'timestamp'         => now()->toIso8601String(),
-            'brand_new_field'   => 'some_value',
+            'event_id' => 'ae-evt-comp-1',
+            'status' => 'order_created',
+            'order_id' => 'ae-ext-9921',
+            'timestamp' => now()->toIso8601String(),
+            'brand_new_field' => 'some_value',
             'meta_extra_nested' => ['foo' => 'bar'],
         ];
 
@@ -34,12 +34,12 @@ class AliExpressSchemaCompatibilityTest extends TestCase
      */
     public function test_handles_missing_optional_fields(): void
     {
-        $normalizer = new AliExpressEventNormalizer();
+        $normalizer = new AliExpressEventNormalizer;
 
         $payload = [
-            'event_id'          => 'ae-evt-comp-2',
-            'status'            => 'order_created',
-            'order_id'          => 'ae-ext-9921',
+            'event_id' => 'ae-evt-comp-2',
+            'status' => 'order_created',
+            'order_id' => 'ae-ext-9921',
             // optional fields like correlation_id, timestamp, schema_version are missing
         ];
 
@@ -55,10 +55,10 @@ class AliExpressSchemaCompatibilityTest extends TestCase
      */
     public function test_throws_exception_on_missing_essential_fields(): void
     {
-        $normalizer = new AliExpressEventNormalizer();
+        $normalizer = new AliExpressEventNormalizer;
 
         $payload = [
-            'status'   => 'order_created',
+            'status' => 'order_created',
             // event_id and order_id are completely missing
         ];
 

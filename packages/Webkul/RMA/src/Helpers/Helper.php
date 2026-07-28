@@ -4,7 +4,6 @@ namespace Webkul\RMA\Helpers;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 use Webkul\RMA\Enums\DefaultRMAStatusEnum;
 use Webkul\RMA\Repositories\RMAItemRepository;
 use Webkul\RMA\Repositories\RMARepository;

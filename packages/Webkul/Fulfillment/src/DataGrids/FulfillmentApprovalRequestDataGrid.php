@@ -2,6 +2,7 @@
 
 namespace Webkul\Fulfillment\DataGrids;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Webkul\DataGrid\DataGrid;
 
@@ -17,7 +18,7 @@ class FulfillmentApprovalRequestDataGrid extends DataGrid
     /**
      * Prepare query builder.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return Builder
      */
     public function prepareQueryBuilder()
     {
@@ -53,60 +54,61 @@ class FulfillmentApprovalRequestDataGrid extends DataGrid
     public function prepareColumns()
     {
         $this->addColumn([
-            'index'      => 'id',
-            'label'      => trans('fulfillment::app.admin.datagrid.id'),
-            'type'       => 'integer',
+            'index' => 'id',
+            'label' => trans('fulfillment::app.admin.datagrid.id'),
+            'type' => 'integer',
             'filterable' => true,
-            'sortable'   => true,
+            'sortable' => true,
         ]);
 
         $this->addColumn([
-            'index'      => 'purchase_order_id',
-            'label'      => trans('fulfillment::app.admin.datagrid.id') . ' PO',
-            'type'       => 'integer',
+            'index' => 'purchase_order_id',
+            'label' => trans('fulfillment::app.admin.datagrid.id').' PO',
+            'type' => 'integer',
             'filterable' => true,
-            'sortable'   => true,
-            'closure'    => function ($row) {
-                $ref = $row->po_reference ? ' (' . htmlspecialchars($row->po_reference) . ')' : '';
-                return '<a href="' . route('admin.dropshipping.fulfillment.view', $row->purchase_order_id) . '" class="text-blue-600 hover:underline">#' . $row->purchase_order_id . $ref . '</a>';
-            }
+            'sortable' => true,
+            'closure' => function ($row) {
+                $ref = $row->po_reference ? ' ('.htmlspecialchars($row->po_reference).')' : '';
+
+                return '<a href="'.route('admin.dropshipping.fulfillment.view', $row->purchase_order_id).'" class="text-blue-600 hover:underline">#'.$row->purchase_order_id.$ref.'</a>';
+            },
         ]);
 
         $this->addColumn([
-            'index'      => 'requested_by_name',
-            'label'      => 'Requested By',
-            'type'       => 'string',
+            'index' => 'requested_by_name',
+            'label' => 'Requested By',
+            'type' => 'string',
             'searchable' => true,
         ]);
 
         $this->addColumn([
-            'index'      => 'action',
-            'label'      => 'Requested Action',
-            'type'       => 'string',
-            'closure'    => function ($row) {
-                return '<span class="capitalize font-mono text-xs">' . htmlspecialchars(str_replace('_', ' ', $row->action)) . '</span>';
-            }
+            'index' => 'action',
+            'label' => 'Requested Action',
+            'type' => 'string',
+            'closure' => function ($row) {
+                return '<span class="capitalize font-mono text-xs">'.htmlspecialchars(str_replace('_', ' ', $row->action)).'</span>';
+            },
         ]);
 
         $this->addColumn([
-            'index'      => 'reason',
-            'label'      => 'Reason',
-            'type'       => 'string',
+            'index' => 'reason',
+            'label' => 'Reason',
+            'type' => 'string',
             'searchable' => true,
-            'closure'    => function ($row) {
-                return htmlspecialchars(substr($row->reason, 0, 80)) . (strlen($row->reason) > 80 ? '...' : '');
-            }
+            'closure' => function ($row) {
+                return htmlspecialchars(substr($row->reason, 0, 80)).(strlen($row->reason) > 80 ? '...' : '');
+            },
         ]);
 
         $this->addColumn([
-            'index'      => 'status',
-            'label'      => trans('fulfillment::app.admin.datagrid.state'),
-            'type'       => 'string',
+            'index' => 'status',
+            'label' => trans('fulfillment::app.admin.datagrid.state'),
+            'type' => 'string',
             'filterable' => true,
-            'sortable'   => true,
-            'closure'    => function ($row) {
+            'sortable' => true,
+            'closure' => function ($row) {
                 $status = $row->status;
-                
+
                 switch ($status) {
                     case 'pending':
                         return '<span class="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200 text-xs font-semibold">Pending</span>';
@@ -117,29 +119,29 @@ class FulfillmentApprovalRequestDataGrid extends DataGrid
                     case 'rejected':
                         return '<span class="px-2.5 py-1 rounded-full bg-red-100 text-red-800 border border-red-200 text-xs font-semibold">Rejected</span>';
                     default:
-                        return '<span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-semibold">' . htmlspecialchars($status) . '</span>';
+                        return '<span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-semibold">'.htmlspecialchars($status).'</span>';
                 }
-            }
+            },
         ]);
 
         $this->addColumn([
-            'index'      => 'approved_by_name',
-            'label'      => 'Decision By',
-            'type'       => 'string',
-            'closure'    => function ($row) {
+            'index' => 'approved_by_name',
+            'label' => 'Decision By',
+            'type' => 'string',
+            'closure' => function ($row) {
                 return $row->approved_by_name ?: '<span class="text-gray-400 italic">Pending</span>';
-            }
+            },
         ]);
 
         $this->addColumn([
-            'index'      => 'created_at',
-            'label'      => 'Requested At',
-            'type'       => 'datetime',
+            'index' => 'created_at',
+            'label' => 'Requested At',
+            'type' => 'datetime',
             'filterable' => true,
-            'sortable'   => true,
-            'closure'    => function ($row) {
+            'sortable' => true,
+            'closure' => function ($row) {
                 return core()->formatDate($row->created_at, 'Y-m-d H:i:s');
-            }
+            },
         ]);
     }
 }

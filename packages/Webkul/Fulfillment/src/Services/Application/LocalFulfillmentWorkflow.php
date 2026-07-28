@@ -15,13 +15,6 @@ class LocalFulfillmentWorkflow
 
     /**
      * Process a local warehouse allocation.
-     *
-     * @param  int  $orderId
-     * @param  int  $orderItemId
-     * @param  int  $qty
-     * @param  string  $correlationId
-     * @param  string  $causationId
-     * @return \Webkul\Fulfillment\Models\OrderAllocation
      */
     public function processLocal(int $orderId, int $orderItemId, int $qty, string $correlationId, string $causationId): OrderAllocation
     {

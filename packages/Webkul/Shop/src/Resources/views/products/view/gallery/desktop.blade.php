@@ -39,8 +39,11 @@
                     alt="{{ $product->name }}"
                     width="100"
                     height="100"
+                    loading="lazy"
+                    decoding="async"
                     tabindex="0"
                     @click="change(media, index)"
+                    @error="$event.target.src = media.original_image_url || media.fallback_url"
                 />
             </template>
         </div>
@@ -59,27 +62,30 @@
 
     <!-- Product Base Image and Video with Shimmer-->
     <div
-        class="max-h-[610px] max-w-[560px]"
+        class="aspect-[560/610] max-h-[610px] max-w-[560px]"
         v-show="isMediaLoading"
     >
         <div class="shimmer min-h-[607px] min-w-[560px] rounded-xl bg-zinc-200"></div>
     </div>
 
     <div
-        class="max-h-[610px] max-w-[560px]"
+        class="relative aspect-[560/610] max-h-[610px] max-w-[560px] overflow-hidden rounded-xl bg-zinc-100"
         v-show="! isMediaLoading"
     >
         <img
-            class="min-w-[450px] cursor-pointer rounded-xl"
+            class="h-full w-full object-cover min-w-[450px] cursor-pointer rounded-xl"
             :src="baseFile.path"
             v-if="baseFile.type == 'image'"
             alt="{{ $product->name }}"
             width="560"
             height="610"
+            loading="eager"
+            fetchpriority="high"
+            decoding="sync"
             tabindex="0"
             @click="isImageZooming = !isImageZooming"
             @load="onMediaLoad()"
-            fetchpriority="high"
+            @error="onMediaLoad(); $event.target.src = baseFile.fallback_path || media.images[activeIndex]?.original_image_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
         />
 
         <div

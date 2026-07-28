@@ -18,6 +18,7 @@ return new class extends Migration
             Schema::table('product_price_indices', function (Blueprint $table) {
                 $table->integer('channel_id')->unsigned()->default(1)->after('customer_group_id');
             });
+
             return;
         }
 
@@ -47,6 +48,7 @@ return new class extends Migration
             Schema::table('product_price_indices', function (Blueprint $table) {
                 $table->dropColumn('channel_id');
             });
+
             return;
         }
 

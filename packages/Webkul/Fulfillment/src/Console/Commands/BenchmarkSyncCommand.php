@@ -24,33 +24,43 @@ class BenchmarkSyncCommand extends Command
         $this->info("Initializing sync benchmark for provider [{$providerName}]...");
 
         // Create a mock provider for benchmarking
-        $mockProvider = new class($providerName) implements SyncProviderInterface {
+        $mockProvider = new class($providerName) implements SyncProviderInterface
+        {
             private string $name;
-            public function __construct(string $name) { $this->name = $name; }
-            public function getCapabilities(): ProviderSyncCapabilities {
+
+            public function __construct(string $name)
+            {
+                $this->name = $name;
+            }
+
+            public function getCapabilities(): ProviderSyncCapabilities
+            {
                 return new ProviderSyncCapabilities(1, true, true, true, true, true);
             }
-            public function fetchProductsBatch(SyncCursor $cursor, int $batchSize): NormalizedExternalProductBatch {
+
+            public function fetchProductsBatch(SyncCursor $cursor, int $batchSize): NormalizedExternalProductBatch
+            {
                 // Generate simulated batch data
                 $products = [];
                 for ($i = 1; $i <= $batchSize; $i++) {
-                    $supplierProductId = "benchmark_sp_" . $i;
+                    $supplierProductId = 'benchmark_sp_'.$i;
                     $products[] = [
                         'id' => $supplierProductId,
                         'variants' => [
                             [
-                                'sku_id' => "benchmark_sku_" . $i,
+                                'sku_id' => 'benchmark_sku_'.$i,
                                 'price' => 10.00 + $i,
                                 'stock' => 100 + $i,
                                 'version' => 1,
-                                'options' => []
-                            ]
+                                'options' => [],
+                            ],
                         ],
                         'metadata' => [
                             'provider_updated_at' => now()->toIso8601String(),
-                        ]
+                        ],
                     ];
                 }
+
                 return new NormalizedExternalProductBatch($this->name, $products, null, false);
             }
         };
@@ -99,22 +109,23 @@ class BenchmarkSyncCommand extends Command
                 'updated_at' => now(),
             ]);
 
-            $this->info("Benchmark completed successfully.");
+            $this->info('Benchmark completed successfully.');
             $this->table(
                 ['Metric', 'Value'],
                 [
                     ['Total Scanned', $scanned],
                     ['Total Changed', $changed],
                     ['Events Published', $published],
-                    ['Throughput', round($throughput, 2) . ' products/sec'],
-                    ['Avg Latency', $latencyAvg . ' ms'],
-                    ['Peak Memory', round($peakMemory / 1024 / 1024, 2) . ' MB'],
-                    ['Duration', round($duration, 2) . ' seconds'],
+                    ['Throughput', round($throughput, 2).' products/sec'],
+                    ['Avg Latency', $latencyAvg.' ms'],
+                    ['Peak Memory', round($peakMemory / 1024 / 1024, 2).' MB'],
+                    ['Duration', round($duration, 2).' seconds'],
                 ]
             );
 
         } catch (\Throwable $e) {
-            $this->error("Benchmark failed: " . $e->getMessage());
+            $this->error('Benchmark failed: '.$e->getMessage());
+
             return 1;
         }
 

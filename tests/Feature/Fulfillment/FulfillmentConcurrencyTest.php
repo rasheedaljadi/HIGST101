@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Fulfillment;
 
-use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
+use Webkul\Fulfillment\Listeners\CatalogProjectionListener;
 use Webkul\Product\Models\Product;
 
 class FulfillmentConcurrencyTest extends TestCase
@@ -51,7 +51,7 @@ class FulfillmentConcurrencyTest extends TestCase
 
         // 2. Simulate Worker A (processing version 12)
         // 3. Simulate Worker B (processing version 11 - stale/replay)
-        $listener = app(\Webkul\Fulfillment\Listeners\CatalogProjectionListener::class);
+        $listener = app(CatalogProjectionListener::class);
 
         // Apply Worker A (Version 12) -> should succeed
         $listener->handle('SupplierPriceChanged', [
@@ -125,15 +125,15 @@ class FulfillmentConcurrencyTest extends TestCase
                     ->first();
 
                 // Worker A crashes here
-                throw new \RuntimeException("Worker A Crashed mid-flight!");
+                throw new \RuntimeException('Worker A Crashed mid-flight!');
             });
         } catch (\RuntimeException $e) {
             // Worker crash caught
-            $this->assertEquals("Worker A Crashed mid-flight!", $e->getMessage());
+            $this->assertEquals('Worker A Crashed mid-flight!', $e->getMessage());
         }
 
         // Verify Worker B can immediately acquire lock and process its event
-        $listener = app(\Webkul\Fulfillment\Listeners\CatalogProjectionListener::class);
+        $listener = app(CatalogProjectionListener::class);
 
         $listener->handle('SupplierPriceChanged', [
             'variant_id' => $productId,

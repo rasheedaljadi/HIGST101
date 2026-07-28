@@ -7,10 +7,13 @@ use Illuminate\Support\Facades\Cache;
 class ProviderCircuitBreaker
 {
     private const STATE_CLOSED = 'CLOSED';
+
     private const STATE_OPEN = 'OPEN';
+
     private const STATE_HALF_OPEN = 'HALF_OPEN';
 
     private const FAILURE_THRESHOLD = 5;
+
     private const COOLDOWN_SECONDS = 300; // 5 minutes
 
     /**
@@ -28,6 +31,7 @@ class ProviderCircuitBreaker
             if ($openedAt && (time() - $openedAt) > self::COOLDOWN_SECONDS) {
                 // Cooldown period expired, transition to HALF_OPEN to test
                 Cache::put($stateKey, self::STATE_HALF_OPEN);
+
                 return false;
             }
 
@@ -60,6 +64,7 @@ class ProviderCircuitBreaker
         if ($state === self::STATE_HALF_OPEN) {
             // Failure in half-open immediately trips circuit back to open
             self::trip($provider, $endpoint, $operation);
+
             return;
         }
 

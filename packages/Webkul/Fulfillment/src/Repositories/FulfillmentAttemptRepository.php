@@ -17,9 +17,6 @@ class FulfillmentAttemptRepository extends Repository
     /**
      * Validate data before creation or update.
      *
-     * @param  array  $data
-     * @param  int|null  $id
-     * @return void
      *
      * @throws \InvalidArgumentException
      */
@@ -42,7 +39,6 @@ class FulfillmentAttemptRepository extends Repository
     /**
      * Create a new fulfillment attempt.
      *
-     * @param  array  $attributes
      * @return mixed
      *
      * @throws \InvalidArgumentException
@@ -57,7 +53,6 @@ class FulfillmentAttemptRepository extends Repository
     /**
      * Update an existing fulfillment attempt.
      *
-     * @param  array  $attributes
      * @param  int  $id
      * @return mixed
      *

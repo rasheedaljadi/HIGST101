@@ -10,7 +10,7 @@ class ExchangeRate
         protected float $rate
     ) {
         if ($rate <= 0) {
-            throw new \InvalidArgumentException("Exchange rate must be greater than zero.");
+            throw new \InvalidArgumentException('Exchange rate must be greater than zero.');
         }
     }
 

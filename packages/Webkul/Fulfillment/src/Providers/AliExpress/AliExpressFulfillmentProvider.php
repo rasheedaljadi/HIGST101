@@ -4,6 +4,7 @@ namespace Webkul\Fulfillment\Providers\AliExpress;
 
 use App\Services\AliExpress\AliExpressApiClient;
 use App\Services\AliExpress\AliExpressOAuthService;
+use Illuminate\Support\Facades\Log;
 use Webkul\Fulfillment\Contracts\FulfillmentProviderInterface;
 use Webkul\Fulfillment\DataObjects\SupplierOrderRequest;
 use Webkul\Fulfillment\DataObjects\SupplierOrderResult;
@@ -56,7 +57,7 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
         $items = array_map(function ($item) use ($token) {
             $data = [
                 'product_count' => (int) $item->qty,
-                'product_id'    => (string) $item->aliexpressProductId,
+                'product_id' => (string) $item->aliexpressProductId,
             ];
 
             if ($item->skuId !== null && $item->skuId !== '') {
@@ -66,7 +67,7 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
                 // Fetch live product details to resolve the exact sku_attr from AliExpress
                 try {
                     $res = $this->apiClient->call('aliexpress.ds.product.get', $token->access_token, [
-                        'product_id'      => $item->aliexpressProductId,
+                        'product_id' => $item->aliexpressProductId,
                         'ship_to_country' => config('aliexpress.import.ship_to_country', 'SA'),
                         'target_currency' => config('aliexpress.import.target_currency', 'USD'),
                         'target_language' => config('aliexpress.import.primary_language', 'en'),
@@ -78,14 +79,14 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
                         $result = $resp['result'] ?? [];
                         $variants = $result['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
                         foreach ($variants as $v) {
-                            if (($v['sku_id'] ?? '') == $item->skuId && !empty($v['sku_attr'])) {
+                            if (($v['sku_id'] ?? '') == $item->skuId && ! empty($v['sku_attr'])) {
                                 $data['sku_attr'] = $v['sku_attr'];
                                 break;
                             }
                         }
                     }
                 } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::channel('aliexpress')->warning('Live sku_attr resolution failed: ' . $e->getMessage());
+                    Log::channel('aliexpress')->warning('Live sku_attr resolution failed: '.$e->getMessage());
                 }
             }
 
@@ -96,20 +97,20 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
 
         $params = [
             'param_place_order_request4_open_api_d_t_o' => [
-                'out_order_id'      => (string) $request->internalReference,
+                'out_order_id' => (string) $request->internalReference,
                 'logistics_address' => [
                     'contact_person' => $request->shippingAddress->fullName(),
-                    'phone_num'      => $request->shippingAddress->phone ?? '',
-                    'mobile_no'      => $request->shippingAddress->phone ?? '',
-                    'phone_country'  => $phoneCountry,
-                    'address'        => $request->shippingAddress->address,
-                    'city'           => $request->shippingAddress->city,
-                    'province'       => $request->shippingAddress->state ?? '',
-                    'zip'            => $request->shippingAddress->postcode ?? '',
-                    'country'        => $request->shippingAddress->country ?? '',
-                    'company_name'   => $request->shippingAddress->companyName ?? '',
+                    'phone_num' => $request->shippingAddress->phone ?? '',
+                    'mobile_no' => $request->shippingAddress->phone ?? '',
+                    'phone_country' => $phoneCountry,
+                    'address' => $request->shippingAddress->address,
+                    'city' => $request->shippingAddress->city,
+                    'province' => $request->shippingAddress->state ?? '',
+                    'zip' => $request->shippingAddress->postcode ?? '',
+                    'country' => $request->shippingAddress->country ?? '',
+                    'company_name' => $request->shippingAddress->companyName ?? '',
                 ],
-                'product_items'     => $items,
+                'product_items' => $items,
             ],
         ];
 
@@ -154,7 +155,6 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
                 raw: $body
             );
         }
-
 
         // Try to extract external order ID
         $externalOrderId = $this->parseExternalOrderId($body);
@@ -201,7 +201,7 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
             // Since status is called inside scheduler/polling, return unchanged/null parameters
             return new SupplierOrderStatus(
                 mappedState: 'failed_transient',
-                rawState: 'API_TRANSPORT_ERROR: ' . $e->getMessage()
+                rawState: 'API_TRANSPORT_ERROR: '.$e->getMessage()
             );
         }
 
@@ -211,7 +211,7 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
 
             return new SupplierOrderStatus(
                 mappedState: $isRetryable ? 'failed_transient' : PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW,
-                rawState: 'API_ERROR_CODE: ' . ($code ?? 'UNKNOWN')
+                rawState: 'API_ERROR_CODE: '.($code ?? 'UNKNOWN')
             );
         }
 
@@ -321,7 +321,6 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
         return $map[strtoupper($country)] ?? '1';
     }
 
-
     /**
      * Classify an API error code as transient (retryable) or permanent.
      */
@@ -366,6 +365,7 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
 
         if (isset($res['order_list']['number'])) {
             $list = $res['order_list']['number'];
+
             return is_array($list) ? implode(',', $list) : (string) $list;
         }
 

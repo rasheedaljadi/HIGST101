@@ -11,11 +11,11 @@ class ExternalInboxService
     /**
      * Ingest a webhook request.
      *
-     * @param  string  $provider External system code (e.g. 'aliexpress')
-     * @param  string  $eventId Unique event ID from provider
-     * @param  string  $eventType Webhook event type
-     * @param  array  $payload Full raw request body
-     * @param  \Illuminate\Http\Request  $request Request for signature validation
+     * @param  string  $provider  External system code (e.g. 'aliexpress')
+     * @param  string  $eventId  Unique event ID from provider
+     * @param  string  $eventType  Webhook event type
+     * @param  array  $payload  Full raw request body
+     * @param  Request  $request  Request for signature validation
      * @return array [status => success|duplicate|invalid_signature, record_id => int|null]
      */
     public function ingest(string $provider, string $eventId, string $eventType, array $payload, Request $request): array
@@ -42,22 +42,22 @@ class ExternalInboxService
 
         // 3. Persist Event to Inbox in pending status
         $id = DB::table('external_inbox_events')->insertGetId([
-            'provider'             => $provider,
-            'event_id'             => $eventId,
-            'event_type'           => $eventType,
-            'aggregate_type'       => $payload['aggregate_type'] ?? null,
-            'aggregate_id'         => $payload['aggregate_id'] ?? null,
-            'payload'              => json_encode($payload),
-            'signature'            => $request->header('X-Signature') ?: $request->header('Signature'),
-            'status'               => 'pending',
-            'attempts'             => 0,
-            'last_error'           => null,
-            'processing_started_at'=> null,
-            'processing_lock_id'   => null,
-            'received_at'          => now(),
-            'processed_at'         => null,
-            'created_at'           => now(),
-            'updated_at'           => now(),
+            'provider' => $provider,
+            'event_id' => $eventId,
+            'event_type' => $eventType,
+            'aggregate_type' => $payload['aggregate_type'] ?? null,
+            'aggregate_id' => $payload['aggregate_id'] ?? null,
+            'payload' => json_encode($payload),
+            'signature' => $request->header('X-Signature') ?: $request->header('Signature'),
+            'status' => 'pending',
+            'attempts' => 0,
+            'last_error' => null,
+            'processing_started_at' => null,
+            'processing_lock_id' => null,
+            'received_at' => now(),
+            'processed_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return ['status' => 'success', 'record_id' => $id];

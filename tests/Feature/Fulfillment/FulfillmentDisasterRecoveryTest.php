@@ -2,11 +2,17 @@
 
 namespace Tests\Feature\Fulfillment;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
+use Webkul\Core\Models\Channel;
+use Webkul\Fulfillment\Contracts\FulfillmentProviderInterface;
 use Webkul\Fulfillment\Models\PurchaseOrder;
+use Webkul\Fulfillment\Services\FulfillmentProviderRegistry;
+use Webkul\Fulfillment\Services\FulfillmentService;
 use Webkul\Sales\Models\Order;
+use Webkul\Sales\Models\OrderAddress;
 use Webkul\User\Models\Admin;
 
 class FulfillmentDisasterRecoveryTest extends TestCase
@@ -20,28 +26,28 @@ class FulfillmentDisasterRecoveryTest extends TestCase
         if (DB::getDriverName() === 'sqlite') {
             $this->artisan('migrate');
             DB::statement('PRAGMA foreign_keys = OFF;');
-            
+
             DB::table('currencies')->insertOrIgnore(['id' => 1, 'code' => 'USD', 'name' => 'US Dollar', 'symbol' => '$']);
             DB::table('locales')->insertOrIgnore(['id' => 1, 'code' => 'en', 'name' => 'English', 'direction' => 'ltr']);
             DB::table('categories')->insertOrIgnore(['id' => 1, 'position' => 1, 'status' => 1, '_lft' => 1, '_rgt' => 2]);
-            
+
             DB::table('roles')->insertOrIgnore([
-                'id'              => 1,
-                'name'            => 'Administrator',
+                'id' => 1,
+                'name' => 'Administrator',
                 'permission_type' => 'all',
             ]);
         }
 
-        if (! \Webkul\Core\Models\Channel::find(1)) {
-            \Webkul\Core\Models\Channel::factory()->create(['id' => 1]);
+        if (! Channel::find(1)) {
+            Channel::factory()->create(['id' => 1]);
         }
 
         $this->admin = Admin::create([
-            'name'     => 'Super Administrator',
-            'email'    => 'admin-' . uniqid() . '@example.com',
+            'name' => 'Super Administrator',
+            'email' => 'admin-'.uniqid().'@example.com',
             'password' => bcrypt('password'),
-            'role_id'  => 1,
-            'status'   => 1,
+            'role_id' => 1,
+            'status' => 1,
         ]);
     }
 
@@ -52,18 +58,19 @@ class FulfillmentDisasterRecoveryTest extends TestCase
     {
         $order = Order::factory()->create();
         $order->addresses()->create([
-            'address_type' => \Webkul\Sales\Models\OrderAddress::ADDRESS_TYPE_SHIPPING,
-            'first_name'   => 'John',
-            'last_name'    => 'Doe',
-            'email'        => 'john@example.com',
-            'address1'     => '123 Test St',
-            'address'      => '123 Test St',
-            'city'         => 'Test City',
-            'state'        => 'NY',
-            'postcode'     => '10001',
-            'country'      => 'US',
-            'phone'        => '1234567890',
+            'address_type' => OrderAddress::ADDRESS_TYPE_SHIPPING,
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'email' => 'john@example.com',
+            'address1' => '123 Test St',
+            'address' => '123 Test St',
+            'city' => 'Test City',
+            'state' => 'NY',
+            'postcode' => '10001',
+            'country' => 'US',
+            'phone' => '1234567890',
         ]);
+
         return $order;
     }
 
@@ -74,25 +81,25 @@ class FulfillmentDisasterRecoveryTest extends TestCase
     {
         $order = $this->createOrderWithAddress();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'crash-key',
+            'idempotency_key' => 'crash-key',
             'internal_reference' => 'ref-crash',
-            'state'              => 'submitting', // Worker crashed while submitting
-            'attempts'           => 1,
+            'state' => 'submitting', // Worker crashed while submitting
+            'attempts' => 1,
         ]);
 
         // Mock the provider to simulate reconciliation finding a placed order on AliExpress
-        $mockProvider = $this->mock(\Webkul\Fulfillment\Contracts\FulfillmentProviderInterface::class);
+        $mockProvider = $this->mock(FulfillmentProviderInterface::class);
         $mockProvider->shouldReceive('findByReference')->once()->andReturn('AE-ORDER-CRASH-RECOVERED');
 
-        $registry = $this->mock(\Webkul\Fulfillment\Services\FulfillmentProviderRegistry::class);
+        $registry = $this->mock(FulfillmentProviderRegistry::class);
         $registry->shouldReceive('resolve')->with('aliexpress')->andReturn($mockProvider);
-        $this->app->instance(\Webkul\Fulfillment\Services\FulfillmentProviderRegistry::class, $registry);
+        $this->app->instance(FulfillmentProviderRegistry::class, $registry);
 
-        $service = resolve(\Webkul\Fulfillment\Services\FulfillmentService::class);
-        
+        $service = resolve(FulfillmentService::class);
+
         // Execute PO submission again (re-run crashed job)
         $service->executePurchaseOrder($po);
 
@@ -108,19 +115,19 @@ class FulfillmentDisasterRecoveryTest extends TestCase
     {
         $order = $this->createOrderWithAddress();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'db-outage-key',
+            'idempotency_key' => 'db-outage-key',
             'internal_reference' => 'ref-db-outage',
-            'state'              => 'needs_manual_review',
+            'state' => 'needs_manual_review',
         ]);
 
         $this->actingAs($this->admin, 'admin');
 
         // Mock FulfillmentService reflectOnCustomerOrder to throw DB exception
-        $this->mock(\Webkul\Fulfillment\Services\FulfillmentService::class, function ($mock) {
-            $mock->shouldReceive('reflectOnCustomerOrder')->andThrow(new \Illuminate\Database\QueryException('sqlite', 'select *', [], new \Exception('DB Outage')));
+        $this->mock(FulfillmentService::class, function ($mock) {
+            $mock->shouldReceive('reflectOnCustomerOrder')->andThrow(new QueryException('sqlite', 'select *', [], new \Exception('DB Outage')));
         });
 
         // Call cancel action which runs in transaction
@@ -130,7 +137,7 @@ class FulfillmentDisasterRecoveryTest extends TestCase
 
         // Assert response redirects back with error flashed in session
         $response->assertRedirect();
-        
+
         // Assert state did not update to canceled and was rolled back completely
         $this->assertEquals('needs_manual_review', $po->fresh()->state);
     }
@@ -142,12 +149,12 @@ class FulfillmentDisasterRecoveryTest extends TestCase
     {
         $order = $this->createOrderWithAddress();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'timeout-key',
+            'idempotency_key' => 'timeout-key',
             'internal_reference' => 'ref-timeout',
-            'state'              => 'pending',
+            'state' => 'pending',
         ]);
 
         $lockKey = "fulfillment-po-{$po->id}";

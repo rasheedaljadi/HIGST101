@@ -30,8 +30,6 @@ class CreatePurchaseOrderJob implements ShouldQueue
 
     /**
      * Create a new job instance.
-     *
-     * @param  PurchaseOrder  $purchaseOrder
      */
     public function __construct(public PurchaseOrder $purchaseOrder)
     {
@@ -41,8 +39,6 @@ class CreatePurchaseOrderJob implements ShouldQueue
 
     /**
      * Execute the job.
-     *
-     * @return void
      */
     public function handle(): void
     {

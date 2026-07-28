@@ -2,24 +2,23 @@
 
 namespace Tests\Feature\Fulfillment;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Tests\TestCase;
-use Webkul\Sales\Models\Order;
-use Webkul\Sales\Models\OrderItem;
-use Webkul\Sales\Models\OrderAddress;
-use Webkul\Fulfillment\Models\OrderProcess;
-use Webkul\Fulfillment\Models\PurchaseOrder;
-use Webkul\Fulfillment\Models\ProcurementSession;
-use Webkul\Fulfillment\Models\OrderAllocation;
-use Webkul\Fulfillment\Models\ProviderAccount;
-use Webkul\Fulfillment\Services\Application\InboxEventProcessor;
-use Webkul\Fulfillment\Services\Application\ExternalInboxService;
-use Webkul\Fulfillment\Services\Application\ProviderCircuitBreaker;
-use Webkul\Fulfillment\Services\FulfillmentService;
-use Webkul\Fulfillment\Providers\AliExpress\FakeProviderSimulator;
-use Webkul\Fulfillment\Services\Domain\TokenRefreshService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
+use Webkul\Fulfillment\Models\OrderAllocation;
+use Webkul\Fulfillment\Models\ProcurementSession;
+use Webkul\Fulfillment\Models\ProviderAccount;
+use Webkul\Fulfillment\Models\PurchaseOrder;
+use Webkul\Fulfillment\Providers\AliExpress\FakeProviderSimulator;
+use Webkul\Fulfillment\Services\Application\ExternalInboxService;
+use Webkul\Fulfillment\Services\Application\InboxEventProcessor;
+use Webkul\Fulfillment\Services\Application\ProviderCircuitBreaker;
+use Webkul\Fulfillment\Services\Domain\TokenRefreshService;
+use Webkul\Fulfillment\Services\FulfillmentService;
+use Webkul\Sales\Models\Order;
+use Webkul\Sales\Models\OrderAddress;
+use Webkul\Sales\Models\OrderItem;
 
 class FailureMatrixTest extends TestCase
 {
@@ -47,20 +46,21 @@ class FailureMatrixTest extends TestCase
     protected function createTestOrder(): Order
     {
         $order = Order::factory()->create();
-        
+
         // Delete any default addresses created by factory to prevent duplicate active addresses
         DB::table('addresses')->where('order_id', $order->id)->delete();
 
         OrderAddress::create([
-            'order_id'     => $order->id,
+            'order_id' => $order->id,
             'address_type' => OrderAddress::ADDRESS_TYPE_SHIPPING,
-            'first_name'   => 'Ahmad',
-            'last_name'    => 'Ali',
-            'city'         => 'Riyadh',
-            'country'      => 'SA',
+            'first_name' => 'Ahmad',
+            'last_name' => 'Ali',
+            'city' => 'Riyadh',
+            'country' => 'SA',
         ]);
-        
+
         $order->unsetRelation('addresses'); // force reloading the addresses relation
+
         return $order;
     }
 
@@ -70,10 +70,10 @@ class FailureMatrixTest extends TestCase
     public function test_oauth_expired_and_token_refresh(): void
     {
         $account = ProviderAccount::create([
-            'provider'      => 'aliexpress',
-            'name'          => 'Main Account',
-            'status'        => 'EXPIRED',
-            'access_token'  => 'old-expired-token',
+            'provider' => 'aliexpress',
+            'name' => 'Main Account',
+            'status' => 'EXPIRED',
+            'access_token' => 'old-expired-token',
             'refresh_token' => 'active-refresh-token',
         ]);
 
@@ -97,18 +97,18 @@ class FailureMatrixTest extends TestCase
 
         $order = $this->createTestOrder();
         $po = PurchaseOrder::create([
-            'order_id'            => $order->id,
-            'provider'            => 'aliexpress',
-            'idempotency_key'     => 'idemp-rate-limit',
-            'internal_reference'  => 'PO-RL-1',
-            'state'               => 'pending',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
+            'idempotency_key' => 'idemp-rate-limit',
+            'internal_reference' => 'PO-RL-1',
+            'state' => 'pending',
         ]);
 
         $service = app(FulfillmentService::class);
 
         try {
             $service->executePurchaseOrder($po);
-            $this->fail("Should have thrown rate limit exception.");
+            $this->fail('Should have thrown rate limit exception.');
         } catch (\Throwable $e) {
             $po->refresh();
             // Since the rate limit error occurred, we threw RuntimeException, but po is marked 'pending' for retry
@@ -128,11 +128,11 @@ class FailureMatrixTest extends TestCase
 
         $order = $this->createTestOrder();
         $po = PurchaseOrder::create([
-            'order_id'            => $order->id,
-            'provider'            => 'aliexpress',
-            'idempotency_key'     => 'idemp-timeout',
-            'internal_reference'  => 'PO-TIMEOUT-1',
-            'state'               => 'pending',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
+            'idempotency_key' => 'idemp-timeout',
+            'internal_reference' => 'PO-TIMEOUT-1',
+            'state' => 'pending',
         ]);
 
         $service = app(FulfillmentService::class);
@@ -162,15 +162,15 @@ class FailureMatrixTest extends TestCase
     {
         $inboxService = app(ExternalInboxService::class);
         $payload = [
-            'event_id'  => 'evt-dup-matrix',
-            'order_id'  => 'PO-DUP-1',
-            'status'    => 'order_created',
+            'event_id' => 'evt-dup-matrix',
+            'order_id' => 'PO-DUP-1',
+            'status' => 'order_created',
             'timestamp' => now()->toIso8601String(),
         ];
 
         config(['fulfillment.aliexpress.webhook_secret' => 'key']);
         $request = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_Signature'   => hash_hmac('sha256', time() . '.' . json_encode($payload), 'key'),
+            'HTTP_Signature' => hash_hmac('sha256', time().'.'.json_encode($payload), 'key'),
             'HTTP_X-Timestamp' => time(),
         ], json_encode($payload));
 
@@ -187,11 +187,11 @@ class FailureMatrixTest extends TestCase
     public function test_webhook_before_polling(): void
     {
         $po = PurchaseOrder::create([
-            'order_id'           => 1,
-            'provider'           => 'aliexpress',
-            'idempotency_key'    => 'idemp-web-poll',
+            'order_id' => 1,
+            'provider' => 'aliexpress',
+            'idempotency_key' => 'idemp-web-poll',
             'internal_reference' => 'PO-WEB-POLL',
-            'state'              => 'submitted',
+            'state' => 'submitted',
         ]);
 
         // Webhook updates status to shipped
@@ -210,18 +210,18 @@ class FailureMatrixTest extends TestCase
         $order = $this->createTestOrder();
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
         $allocation = OrderAllocation::create([
-            'order_id'          => $order->id,
-            'order_item_id'     => $orderItem->id,
-            'qty'               => 1,
-            'source_type'       => 'supplier',
-            'source_code'       => 'aliexpress',
-            'state'             => 'reserved',
+            'order_id' => $order->id,
+            'order_item_id' => $orderItem->id,
+            'qty' => 1,
+            'source_type' => 'supplier',
+            'source_code' => 'aliexpress',
+            'state' => 'reserved',
             'supplier_snapshot' => json_encode(['available_qty' => 0]),
         ]);
 
         $session = ProcurementSession::create([
             'order_allocation_id' => $allocation->id,
-            'state'               => 'CREATED',
+            'state' => 'CREATED',
         ]);
 
         $this->assertEquals('CREATED', $session->state);
@@ -241,11 +241,11 @@ class FailureMatrixTest extends TestCase
 
         $order = $this->createTestOrder();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
-            'idempotency_key'    => 'idemp-price',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
+            'idempotency_key' => 'idemp-price',
             'internal_reference' => 'PO-PRICE-1',
-            'state'              => 'pending',
+            'state' => 'pending',
         ]);
 
         $service = app(FulfillmentService::class);
@@ -286,16 +286,16 @@ class FailureMatrixTest extends TestCase
 
         // Insert locked processing event
         DB::table('external_inbox_events')->insert([
-            'provider'              => 'aliexpress',
-            'event_id'              => 'evt-stuck-matrix',
-            'event_type'            => 'order_status_changed',
-            'payload'               => json_encode(['foo' => 'bar']),
-            'status'                => 'processing',
-            'processing_lock_id'    => 'lock-stuck',
+            'provider' => 'aliexpress',
+            'event_id' => 'evt-stuck-matrix',
+            'event_type' => 'order_status_changed',
+            'payload' => json_encode(['foo' => 'bar']),
+            'status' => 'processing',
+            'processing_lock_id' => 'lock-stuck',
             'processing_started_at' => now()->subMinutes(10), // Stale
-            'received_at'           => now(),
-            'created_at'            => now(),
-            'updated_at'            => now(),
+            'received_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $recovered = $processor->recoverTimedOutEvents(300);
@@ -313,12 +313,12 @@ class FailureMatrixTest extends TestCase
     {
         $order = $this->createTestOrder();
         $po = PurchaseOrder::create([
-            'order_id'            => $order->id,
-            'provider'            => 'aliexpress',
-            'idempotency_key'     => 'idemp-db-fail',
-            'internal_reference'  => 'PO-DB-FAIL-1',
-            'state'               => 'pending',
-            'attempts'            => 1, // Represents a retry
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
+            'idempotency_key' => 'idemp-db-fail',
+            'internal_reference' => 'PO-DB-FAIL-1',
+            'state' => 'pending',
+            'attempts' => 1, // Represents a retry
         ]);
 
         $simulator = app(FakeProviderSimulator::class);
@@ -341,11 +341,11 @@ class FailureMatrixTest extends TestCase
     {
         $order = $this->createTestOrder();
         $po = PurchaseOrder::create([
-            'order_id'            => $order->id,
-            'provider'            => 'aliexpress',
-            'idempotency_key'     => 'idemp-prov-timeout',
-            'internal_reference'  => 'PO-PROV-TIMEOUT-1',
-            'state'               => 'submitting', // Committed locally as submitting
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
+            'idempotency_key' => 'idemp-prov-timeout',
+            'internal_reference' => 'PO-PROV-TIMEOUT-1',
+            'state' => 'submitting', // Committed locally as submitting
         ]);
 
         $simulator = app(FakeProviderSimulator::class);

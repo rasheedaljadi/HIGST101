@@ -17,9 +17,6 @@ class OrderAllocationRepository extends Repository
     /**
      * Validate data before creation or update.
      *
-     * @param  array  $data
-     * @param  int|null  $id
-     * @return void
      *
      * @throws \InvalidArgumentException
      */
@@ -42,7 +39,6 @@ class OrderAllocationRepository extends Repository
     /**
      * Create a new order allocation.
      *
-     * @param  array  $attributes
      * @return mixed
      */
     public function create(array $attributes)
@@ -55,7 +51,6 @@ class OrderAllocationRepository extends Repository
     /**
      * Update an existing order allocation.
      *
-     * @param  array  $attributes
      * @param  int  $id
      * @return mixed
      */

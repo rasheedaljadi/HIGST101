@@ -2,8 +2,8 @@
 
 namespace Webkul\Fulfillment\Services;
 
-use Webkul\Fulfillment\Contracts\FulfillmentProviderInterface;
 use Webkul\Fulfillment\Contracts\ExternalFulfillmentProviderInterface;
+use Webkul\Fulfillment\Contracts\FulfillmentProviderInterface;
 
 class FulfillmentProviderRegistry
 {
@@ -17,8 +17,6 @@ class FulfillmentProviderRegistry
     /**
      * Resolve a provider code to an instance.
      *
-     * @param  string  $code
-     * @return FulfillmentProviderInterface|ExternalFulfillmentProviderInterface
      *
      * @throws \InvalidArgumentException
      */
@@ -43,7 +41,7 @@ class FulfillmentProviderRegistry
         $instance = app($class);
 
         if (! $instance instanceof FulfillmentProviderInterface && ! $instance instanceof ExternalFulfillmentProviderInterface) {
-            throw new \InvalidArgumentException("Fulfillment provider class [{$class}] must implement " . FulfillmentProviderInterface::class . " or " . ExternalFulfillmentProviderInterface::class);
+            throw new \InvalidArgumentException("Fulfillment provider class [{$class}] must implement ".FulfillmentProviderInterface::class.' or '.ExternalFulfillmentProviderInterface::class);
         }
 
         $this->instances[$code] = $instance;

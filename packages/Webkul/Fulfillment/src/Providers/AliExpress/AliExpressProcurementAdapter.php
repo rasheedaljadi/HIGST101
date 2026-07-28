@@ -6,6 +6,7 @@ use Webkul\Fulfillment\Contracts\ExternalFulfillmentProviderInterface;
 use Webkul\Fulfillment\DataObjects\SupplierOrderRequest;
 use Webkul\Fulfillment\DataObjects\SupplierOrderResult;
 use Webkul\Fulfillment\DataObjects\SupplierOrderStatus;
+use Webkul\Fulfillment\Models\ProviderAccount;
 
 class AliExpressProcurementAdapter implements ExternalFulfillmentProviderInterface
 {
@@ -18,7 +19,8 @@ class AliExpressProcurementAdapter implements ExternalFulfillmentProviderInterfa
 
     public function isConfigured(int $providerAccountId): bool
     {
-        $account = \Webkul\Fulfillment\Models\ProviderAccount::find($providerAccountId);
+        $account = ProviderAccount::find($providerAccountId);
+
         return $account !== null && $account->status === 'ACTIVE' && ! empty($account->access_token);
     }
 
@@ -26,38 +28,38 @@ class AliExpressProcurementAdapter implements ExternalFulfillmentProviderInterfa
         SupplierOrderRequest $request,
         string $contractVersion
     ): SupplierOrderResult {
-        $account = \Webkul\Fulfillment\Models\ProviderAccount::findOrFail($request->providerAccountId);
+        $account = ProviderAccount::findOrFail($request->providerAccountId);
 
         $items = [];
         foreach ($request->items as $line) {
             $items[] = [
                 'product_id' => $line->aliexpressProductId,
-                'sku_id'     => $line->skuId,
-                'quantity'   => $line->qty,
+                'sku_id' => $line->skuId,
+                'quantity' => $line->qty,
             ];
         }
 
         $params = [
-            'out_order_id'     => $request->internalReference,
-            'items'            => $items,
+            'out_order_id' => $request->internalReference,
+            'items' => $items,
             'shipping_address' => [
-                'contact_person' => $request->shippingAddress->firstName . ' ' . $request->shippingAddress->lastName,
-                'address'        => $request->shippingAddress->address,
-                'city'           => $request->shippingAddress->city,
-                'province'       => $request->shippingAddress->state,
-                'zip'            => $request->shippingAddress->postcode,
-                'country'        => $request->shippingAddress->country,
-                'phone'          => $request->shippingAddress->phone,
-            ]
+                'contact_person' => $request->shippingAddress->firstName.' '.$request->shippingAddress->lastName,
+                'address' => $request->shippingAddress->address,
+                'city' => $request->shippingAddress->city,
+                'province' => $request->shippingAddress->state,
+                'zip' => $request->shippingAddress->postcode,
+                'country' => $request->shippingAddress->country,
+                'phone' => $request->shippingAddress->phone,
+            ],
         ];
 
         $meta = [
-            'correlation_id'        => $request->idempotencyKey,
-            'causation_id'          => $request->idempotencyKey,
-            'provider_account_id'   => $account->id,
-            'idempotency_key'       => $request->idempotencyKey,
-            'api_version'           => 'v2',
-            'provider_api_version'  => '2026-06',
+            'correlation_id' => $request->idempotencyKey,
+            'causation_id' => $request->idempotencyKey,
+            'provider_account_id' => $account->id,
+            'idempotency_key' => $request->idempotencyKey,
+            'api_version' => 'v2',
+            'provider_api_version' => '2026-06',
         ];
 
         try {
@@ -88,6 +90,7 @@ class AliExpressProcurementAdapter implements ExternalFulfillmentProviderInterfa
             }
 
             $isRetryable = in_array((string) $response['code'], ['500', '10001', 'RateLimitExceeded'], true);
+
             return SupplierOrderResult::failure(
                 isRetryable: $isRetryable,
                 code: (string) $response['code'],
@@ -109,17 +112,17 @@ class AliExpressProcurementAdapter implements ExternalFulfillmentProviderInterfa
         int $providerAccountId,
         string $contractVersion
     ): SupplierOrderStatus {
-        $account = \Webkul\Fulfillment\Models\ProviderAccount::findOrFail($providerAccountId);
+        $account = ProviderAccount::findOrFail($providerAccountId);
 
         $params = [
             'aliexpress_order_id' => $externalOrderId,
         ];
 
         $meta = [
-            'correlation_id'       => uniqid('sync-', true),
-            'causation_id'         => $externalOrderId,
-            'provider_account_id'  => $providerAccountId,
-            'api_version'          => 'v2',
+            'correlation_id' => uniqid('sync-', true),
+            'causation_id' => $externalOrderId,
+            'provider_account_id' => $providerAccountId,
+            'api_version' => 'v2',
             'provider_api_version' => '2026-06',
         ];
 
@@ -136,11 +139,11 @@ class AliExpressProcurementAdapter implements ExternalFulfillmentProviderInterfa
                 $rawState = $data['status'] ?? 'unknown';
 
                 $mappedState = match (strtolower($rawState)) {
-                    'wait_send'       => 'PROCESSING',
+                    'wait_send' => 'PROCESSING',
                     'wait_receive', 'shipped' => 'SHIPPED',
-                    'finish', 'completed'   => 'COMPLETED',
+                    'finish', 'completed' => 'COMPLETED',
                     'cancelled', 'closed' => 'CANCELLED',
-                    default           => 'PROCESSING',
+                    default => 'PROCESSING',
                 };
 
                 return new SupplierOrderStatus(
@@ -162,17 +165,17 @@ class AliExpressProcurementAdapter implements ExternalFulfillmentProviderInterfa
         int $providerAccountId,
         string $contractVersion
     ): SupplierOrderResult {
-        $account = \Webkul\Fulfillment\Models\ProviderAccount::findOrFail($providerAccountId);
+        $account = ProviderAccount::findOrFail($providerAccountId);
 
         $params = [
             'aliexpress_order_id' => $externalOrderId,
         ];
 
         $meta = [
-            'correlation_id'       => uniqid('cancel-', true),
-            'causation_id'         => $externalOrderId,
-            'provider_account_id'  => $providerAccountId,
-            'api_version'          => 'v2',
+            'correlation_id' => uniqid('cancel-', true),
+            'causation_id' => $externalOrderId,
+            'provider_account_id' => $providerAccountId,
+            'api_version' => 'v2',
             'provider_api_version' => '2026-06',
         ];
 
@@ -213,17 +216,17 @@ class AliExpressProcurementAdapter implements ExternalFulfillmentProviderInterfa
         int $providerAccountId,
         string $contractVersion
     ): ?string {
-        $account = \Webkul\Fulfillment\Models\ProviderAccount::findOrFail($providerAccountId);
+        $account = ProviderAccount::findOrFail($providerAccountId);
 
         $params = [
             'out_order_id' => $internalReference,
         ];
 
         $meta = [
-            'correlation_id'       => uniqid('reconcile-', true),
-            'causation_id'         => $internalReference,
-            'provider_account_id'  => $providerAccountId,
-            'api_version'          => 'v2',
+            'correlation_id' => uniqid('reconcile-', true),
+            'causation_id' => $internalReference,
+            'provider_account_id' => $providerAccountId,
+            'api_version' => 'v2',
             'provider_api_version' => '2026-06',
         ];
 

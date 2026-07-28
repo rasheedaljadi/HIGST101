@@ -71,13 +71,13 @@ class SyncCursor
     public function toArray(): array
     {
         return [
-            'version'         => $this->version,
-            'provider'        => $this->provider,
-            'updated_since'   => $this->updated_since,
-            'page_token'      => $this->page_token,
+            'version' => $this->version,
+            'provider' => $this->provider,
+            'updated_since' => $this->updated_since,
+            'page_token' => $this->page_token,
             'last_product_id' => $this->last_product_id,
-            'api_cursor'      => $this->api_cursor,
-            'sync_strategy'   => $this->sync_strategy->value,
+            'api_cursor' => $this->api_cursor,
+            'sync_strategy' => $this->sync_strategy->value,
         ];
     }
 

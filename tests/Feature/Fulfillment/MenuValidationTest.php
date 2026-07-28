@@ -1,13 +1,14 @@
 <?php
 
-uses(\Tests\TestCase::class);
+uses(TestCase::class);
 
 use Illuminate\Support\Facades\Route;
+use Tests\TestCase;
 
 test('all dropshipping sidebar menu items must be valid and secure', function () {
     // Retrieve the admin menu from the resolved configuration
     $menuItems = config('menu.admin', []);
-    
+
     expect($menuItems)->not->toBeEmpty('The admin menu configuration is empty.');
 
     // Filter to dropshipping items

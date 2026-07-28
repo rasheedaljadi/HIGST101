@@ -14,7 +14,7 @@ class RecoverSyncRunsCommand extends Command
 
     public function handle(): int
     {
-        $this->info("Scanning for hung or crashed sync runs...");
+        $this->info('Scanning for hung or crashed sync runs...');
 
         // Threshold: 15 minutes of inactivity based on heartbeat_at
         $threshold = now()->subMinutes(15);
@@ -24,7 +24,8 @@ class RecoverSyncRunsCommand extends Command
             ->get();
 
         if ($hungRuns->isEmpty()) {
-            $this->info("No hung or crashed sync runs detected.");
+            $this->info('No hung or crashed sync runs detected.');
+
             return 0;
         }
 
@@ -41,7 +42,7 @@ class RecoverSyncRunsCommand extends Command
 
                 $this->info("Sync run [{$run->id}] recovered and transitioned to INTERRUPTED state.");
             } catch (\Throwable $e) {
-                $this->error("Failed to recover sync run [{$run->id}]: " . $e->getMessage());
+                $this->error("Failed to recover sync run [{$run->id}]: ".$e->getMessage());
             }
         }
 

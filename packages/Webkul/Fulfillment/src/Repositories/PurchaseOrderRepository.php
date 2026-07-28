@@ -18,9 +18,6 @@ class PurchaseOrderRepository extends Repository
     /**
      * Validate data before creation or update.
      *
-     * @param  array  $data
-     * @param  int|null  $id
-     * @return void
      *
      * @throws \InvalidArgumentException
      */
@@ -39,7 +36,7 @@ class PurchaseOrderRepository extends Repository
         // 2. Validate idempotency_key if set
         if (isset($data['idempotency_key'])) {
             if (! preg_match('/^[a-f0-9]{64}$/i', $data['idempotency_key'])) {
-                throw new \InvalidArgumentException("Invalid idempotency_key format. Must be a SHA-256 hex string (64 characters).");
+                throw new \InvalidArgumentException('Invalid idempotency_key format. Must be a SHA-256 hex string (64 characters).');
             }
 
             // Uniqueness check
@@ -48,7 +45,7 @@ class PurchaseOrderRepository extends Repository
                 $query->where('id', '!=', $id);
             }
             if ($query->exists()) {
-                throw new \InvalidArgumentException("The idempotency_key must be unique.");
+                throw new \InvalidArgumentException('The idempotency_key must be unique.');
             }
         }
 
@@ -59,7 +56,7 @@ class PurchaseOrderRepository extends Repository
                 $query->where('id', '!=', $id);
             }
             if ($query->exists()) {
-                throw new \InvalidArgumentException("The internal_reference must be unique.");
+                throw new \InvalidArgumentException('The internal_reference must be unique.');
             }
         }
 
@@ -85,7 +82,6 @@ class PurchaseOrderRepository extends Repository
     /**
      * Create a new purchase order.
      *
-     * @param  array  $attributes
      * @return mixed
      *
      * @throws \InvalidArgumentException
@@ -100,7 +96,6 @@ class PurchaseOrderRepository extends Repository
     /**
      * Update an existing purchase order.
      *
-     * @param  array  $attributes
      * @param  int  $id
      * @return mixed
      *

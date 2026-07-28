@@ -2,12 +2,14 @@
 
 namespace Webkul\Fulfillment\Listeners;
 
-use Webkul\Sales\Contracts\Order;
-use Webkul\Sales\Contracts\Invoice;
-use Webkul\Sales\Contracts\Shipment;
-use Webkul\Sales\Contracts\Refund;
+use Webkul\Fulfillment\Models\OrderProcess;
+use Webkul\Fulfillment\Models\PurchaseOrder;
 use Webkul\Fulfillment\Services\Application\OrderLifecycleCoordinator;
 use Webkul\Fulfillment\Services\Domain\FinancialSettlementService;
+use Webkul\Sales\Contracts\Invoice;
+use Webkul\Sales\Contracts\Order;
+use Webkul\Sales\Contracts\Refund;
+use Webkul\Sales\Contracts\Shipment;
 
 class OrderLifecycleListener
 {
@@ -41,7 +43,7 @@ class OrderLifecycleListener
 
         if (! $isCOD) {
             // Ensure order process is initialized first to establish correlation_id for ledger entries
-            $process = \Webkul\Fulfillment\Models\OrderProcess::where('order_id', $order->id)->first();
+            $process = OrderProcess::where('order_id', $order->id)->first();
             if (! $process) {
                 $this->lifecycleCoordinator->initiate($order);
             }
@@ -49,10 +51,10 @@ class OrderLifecycleListener
             // Settle online invoice paid & gateway clearing deposits
             $total = (float) $invoice->grand_total;
             $this->settlementService->settlePrepaidInvoice($order->id, $total);
-            
+
             // Settle payment gateway commission dynamically based on payment method config
             $paymentMethod = $order->payment->method;
-            $rate = config("fulfillment.commission_rates.{$paymentMethod}", config("fulfillment.commission_rates.default", 0.03));
+            $rate = config("fulfillment.commission_rates.{$paymentMethod}", config('fulfillment.commission_rates.default', 0.03));
             $commission = $total * $rate;
             $this->settlementService->settlePrepaidCommission($order->id, $commission);
 
@@ -61,7 +63,7 @@ class OrderLifecycleListener
         } else {
             // Settle COD invoice / order confirmation
             // If the order process was not initialized (e.g. due to historical gap), initialize it first.
-            $process = \Webkul\Fulfillment\Models\OrderProcess::where('order_id', $order->id)->first();
+            $process = OrderProcess::where('order_id', $order->id)->first();
             if (! $process) {
                 $this->lifecycleCoordinator->initiate($order);
             }
@@ -108,8 +110,8 @@ class OrderLifecycleListener
             $this->settlementService->settleRefundPrepaidBeforeShip($order->id, $total);
         } else {
             // Refund after shipping (via RMA returns)
-            $po = \Webkul\Fulfillment\Models\PurchaseOrder::where('order_id', $order->id)->first();
-            $actualCogs = $po ? (float) $po->items->sum(fn($i) => $i->qty * $i->supplier_unit_cost) : ($total * 0.5);
+            $po = PurchaseOrder::where('order_id', $order->id)->first();
+            $actualCogs = $po ? (float) $po->items->sum(fn ($i) => $i->qty * $i->supplier_unit_cost) : ($total * 0.5);
 
             $this->settlementService->settleRefundAfterShip(
                 orderId: $order->id,

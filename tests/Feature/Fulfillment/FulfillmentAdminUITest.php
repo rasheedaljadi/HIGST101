@@ -6,13 +6,15 @@ use App\Models\AliExpressToken;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
-use Webkul\Fulfillment\Models\PurchaseOrder;
-use Webkul\Fulfillment\Models\PurchaseOrderItem;
+use Webkul\Attribute\Models\AttributeFamily;
+use Webkul\Core\Models\Channel;
 use Webkul\Fulfillment\Models\FulfillmentApprovalRequest;
 use Webkul\Fulfillment\Models\FulfillmentAuditLog;
+use Webkul\Fulfillment\Models\PurchaseOrder;
+use Webkul\Fulfillment\Services\FulfillmentService;
 use Webkul\Sales\Models\Order;
-use Webkul\Sales\Models\OrderItem;
 use Webkul\User\Models\Admin;
+use Webkul\User\Models\Role;
 
 class FulfillmentAdminUITest extends TestCase
 {
@@ -25,50 +27,50 @@ class FulfillmentAdminUITest extends TestCase
         if (DB::getDriverName() === 'sqlite') {
             $this->artisan('migrate');
             DB::statement('PRAGMA foreign_keys = OFF;');
-            
+
             // Seed core dependencies to satisfy Channel foreign keys
             DB::table('currencies')->insertOrIgnore(['id' => 1, 'code' => 'USD', 'name' => 'US Dollar', 'symbol' => '$']);
             DB::table('locales')->insertOrIgnore(['id' => 1, 'code' => 'en', 'name' => 'English', 'direction' => 'ltr']);
             DB::table('categories')->insertOrIgnore(['id' => 1, 'position' => 1, 'status' => 1, '_lft' => 1, '_rgt' => 2]);
-            
+
             // Seed roles table so Bouncer check does not fail / redirect admin to login
             DB::table('roles')->insertOrIgnore([
-                'id'              => 1,
-                'name'            => 'Administrator',
+                'id' => 1,
+                'name' => 'Administrator',
                 'permission_type' => 'all',
             ]);
         }
 
-        if (! \Webkul\Core\Models\Channel::find(1)) {
-            \Webkul\Core\Models\Channel::factory()->create(['id' => 1]);
+        if (! Channel::find(1)) {
+            Channel::factory()->create(['id' => 1]);
         }
 
-        if (! \Webkul\Attribute\Models\AttributeFamily::find(1)) {
-            \Webkul\Attribute\Models\AttributeFamily::create([
-                'id'              => 1,
-                'code'            => 'default',
-                'name'            => 'Default',
-                'status'          => 1,
+        if (! AttributeFamily::find(1)) {
+            AttributeFamily::create([
+                'id' => 1,
+                'code' => 'default',
+                'name' => 'Default',
+                'status' => 1,
                 'is_user_defined' => 0,
             ]);
         }
 
         // Seed a valid AliExpress token so client requests don't fail OAuth check
         AliExpressToken::create([
-            'account'                 => 'test-account',
-            'access_token'            => 'valid-test-access-token',
-            'refresh_token'           => 'valid-test-refresh-token',
+            'account' => 'test-account',
+            'access_token' => 'valid-test-access-token',
+            'refresh_token' => 'valid-test-refresh-token',
             'access_token_expires_at' => now()->addDays(7),
-            'refresh_token_expires_at'=> now()->addDays(30),
+            'refresh_token_expires_at' => now()->addDays(30),
         ]);
 
         // Create Admin user linked to role_id = 1
         $this->admin = Admin::create([
-            'name'     => 'Super Administrator',
-            'email'    => 'admin-' . uniqid() . '@example.com',
+            'name' => 'Super Administrator',
+            'email' => 'admin-'.uniqid().'@example.com',
             'password' => bcrypt('password'),
-            'role_id'  => 1,
-            'status'   => 1,
+            'role_id' => 1,
+            'status' => 1,
         ]);
 
         Cache::flush();
@@ -80,7 +82,7 @@ class FulfillmentAdminUITest extends TestCase
     public function test_admin_menu_visibility_config_toggle(): void
     {
         config(['fulfillment.admin_ui_enabled' => false]);
-        
+
         $this->actingAs($this->admin, 'admin');
 
         $response = $this->get(route('admin.dropshipping.fulfillment.index'));
@@ -102,18 +104,18 @@ class FulfillmentAdminUITest extends TestCase
         // Create PO in needs review state
         $order = Order::factory()->create(['status' => 'pending']);
         PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-kpis',
+            'idempotency_key' => 'test-key-kpis',
             'internal_reference' => 'ref-kpis',
-            'state'              => 'needs_manual_review',
+            'state' => 'needs_manual_review',
         ]);
 
         $this->actingAs($this->admin, 'admin');
 
         $response = $this->get(route('admin.dropshipping.fulfillment.index'));
-        
+
         $response->assertStatus(200);
         $response->assertSee(trans('fulfillment::app.admin.dashboard.manual-review-orders'));
         $response->assertSee(trans('fulfillment::app.admin.dashboard.success-rate'));
@@ -132,12 +134,12 @@ class FulfillmentAdminUITest extends TestCase
 
         $order = Order::factory()->create();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-view',
+            'idempotency_key' => 'test-key-view',
             'internal_reference' => 'ref-view',
-            'state'              => 'needs_manual_review',
+            'state' => 'needs_manual_review',
         ]);
 
         $this->actingAs($this->admin, 'admin');
@@ -157,16 +159,16 @@ class FulfillmentAdminUITest extends TestCase
 
         $order = Order::factory()->create();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-retry',
+            'idempotency_key' => 'test-key-retry',
             'internal_reference' => 'ref-retry',
-            'state'              => 'needs_manual_review',
+            'state' => 'needs_manual_review',
         ]);
 
         // Mock the FulfillmentService to prevent running actual API execution on supplier
-        $this->mock(\Webkul\Fulfillment\Services\FulfillmentService::class, function ($mock) {
+        $this->mock(FulfillmentService::class, function ($mock) {
             $mock->shouldReceive('executePurchaseOrder')->once()->andReturn(true);
         });
 
@@ -174,15 +176,15 @@ class FulfillmentAdminUITest extends TestCase
 
         $response = $this->post(route('admin.dropshipping.fulfillment.retry', $po->id));
         $response->assertRedirect();
-        
+
         // Assert state was reverted to pending for job queue/retry attempts
         $this->assertEquals(PurchaseOrder::STATE_PENDING, $po->fresh()->state);
-        
+
         // Assert audit log exists
         $this->assertDatabaseHas('fulfillment_audit_logs', [
             'purchase_order_id' => $po->id,
-            'action'            => 'retry',
-            'user_id'           => $this->admin->id,
+            'action' => 'retry',
+            'user_id' => $this->admin->id,
         ]);
     }
 
@@ -197,16 +199,16 @@ class FulfillmentAdminUITest extends TestCase
 
         $order = Order::factory()->create();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-cancel-direct',
+            'idempotency_key' => 'test-key-cancel-direct',
             'internal_reference' => 'ref-cancel-direct',
-            'state'              => 'needs_manual_review',
+            'state' => 'needs_manual_review',
         ]);
 
         // Mock reflection logic
-        $this->mock(\Webkul\Fulfillment\Services\FulfillmentService::class, function ($mock) {
+        $this->mock(FulfillmentService::class, function ($mock) {
             $mock->shouldReceive('reflectOnCustomerOrder')->once()->andReturn(true);
         });
 
@@ -236,13 +238,13 @@ class FulfillmentAdminUITest extends TestCase
 
         $order = Order::factory()->create();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-cancel-workflow',
+            'idempotency_key' => 'test-key-cancel-workflow',
             'internal_reference' => 'ref-cancel-workflow',
-            'state'              => 'submitted', // Active paid state
-            'external_order_id'  => '1234567890',
+            'state' => 'submitted', // Active paid state
+            'external_order_id' => '1234567890',
         ]);
 
         $this->actingAs($this->admin, 'admin');
@@ -252,16 +254,16 @@ class FulfillmentAdminUITest extends TestCase
         ]);
 
         $response->assertRedirect();
-        
+
         // State remains submitted (suspended for approval)
         $this->assertEquals('submitted', $po->fresh()->state);
 
         // Approval request created
         $this->assertDatabaseHas('fulfillment_approval_requests', [
             'purchase_order_id' => $po->id,
-            'action'            => 'cancel',
-            'status'            => 'pending',
-            'requested_by'      => $this->admin->id,
+            'action' => 'cancel',
+            'status' => 'pending',
+            'requested_by' => $this->admin->id,
         ]);
 
         // Audit log created with pending_approval in changes_payload
@@ -277,24 +279,24 @@ class FulfillmentAdminUITest extends TestCase
     {
         $order = Order::factory()->create();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-approve',
+            'idempotency_key' => 'test-key-approve',
             'internal_reference' => 'ref-approve',
-            'state'              => 'submitted',
+            'state' => 'submitted',
         ]);
 
         $request = FulfillmentApprovalRequest::create([
             'purchase_order_id' => $po->id,
-            'requested_by'      => $this->admin->id,
-            'action'            => 'cancel',
-            'reason'            => 'Customer cancelled',
-            'status'            => 'pending',
+            'requested_by' => $this->admin->id,
+            'action' => 'cancel',
+            'reason' => 'Customer cancelled',
+            'status' => 'pending',
         ]);
 
         // Mock reflection logic
-        $this->mock(\Webkul\Fulfillment\Services\FulfillmentService::class, function ($mock) {
+        $this->mock(FulfillmentService::class, function ($mock) {
             $mock->shouldReceive('reflectOnCustomerOrder')->once()->andReturn(true);
         });
 
@@ -305,7 +307,7 @@ class FulfillmentAdminUITest extends TestCase
 
         // Check request status updated to executed
         $this->assertEquals('executed', $request->fresh()->status);
-        
+
         // Check PO state updated to canceled
         $this->assertEquals(PurchaseOrder::STATE_CANCELED, $po->fresh()->state);
     }
@@ -317,20 +319,20 @@ class FulfillmentAdminUITest extends TestCase
     {
         $order = Order::factory()->create();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-reject',
+            'idempotency_key' => 'test-key-reject',
             'internal_reference' => 'ref-reject',
-            'state'              => 'submitted',
+            'state' => 'submitted',
         ]);
 
         $request = FulfillmentApprovalRequest::create([
             'purchase_order_id' => $po->id,
-            'requested_by'      => $this->admin->id,
-            'action'            => 'cancel',
-            'reason'            => 'Customer cancelled',
-            'status'            => 'pending',
+            'requested_by' => $this->admin->id,
+            'action' => 'cancel',
+            'reason' => 'Customer cancelled',
+            'status' => 'pending',
         ]);
 
         $this->actingAs($this->admin, 'admin');
@@ -340,7 +342,7 @@ class FulfillmentAdminUITest extends TestCase
 
         // Check request status updated to rejected
         $this->assertEquals('rejected', $request->fresh()->status);
-        
+
         // Check PO state remains unchanged
         $this->assertEquals('submitted', $po->fresh()->state);
     }
@@ -352,11 +354,11 @@ class FulfillmentAdminUITest extends TestCase
     {
         Cache::put('fulfillment_active_alerts', [
             [
-                'id'        => 'alert_test_123',
-                'severity'  => 'critical',
-                'message'   => 'Token refresh failed',
+                'id' => 'alert_test_123',
+                'severity' => 'critical',
+                'message' => 'Token refresh failed',
                 'timestamp' => now()->toDateTimeString(),
-            ]
+            ],
         ], 3600);
 
         $this->actingAs($this->admin, 'admin');
@@ -375,28 +377,28 @@ class FulfillmentAdminUITest extends TestCase
     public function test_acl_unauthorized_user_blocked_from_actions(): void
     {
         // Create an unauthorized user role
-        $unauthRole = \Webkul\User\Models\Role::create([
-            'name'            => 'Unauthorised',
+        $unauthRole = Role::create([
+            'name' => 'Unauthorised',
             'permission_type' => 'custom',
-            'permissions'     => [], // no permissions
+            'permissions' => [], // no permissions
         ]);
 
         $unauthAdmin = Admin::create([
-            'name'     => 'Unauthorised Staff',
-            'email'    => 'unauth-' . uniqid() . '@example.com',
+            'name' => 'Unauthorised Staff',
+            'email' => 'unauth-'.uniqid().'@example.com',
             'password' => bcrypt('password'),
-            'role_id'  => $unauthRole->id,
-            'status'   => 1,
+            'role_id' => $unauthRole->id,
+            'status' => 1,
         ]);
 
         $order = Order::factory()->create();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-acl',
+            'idempotency_key' => 'test-key-acl',
             'internal_reference' => 'ref-acl',
-            'state'              => 'needs_manual_review',
+            'state' => 'needs_manual_review',
         ]);
 
         $this->actingAs($unauthAdmin, 'admin');
@@ -406,18 +408,18 @@ class FulfillmentAdminUITest extends TestCase
         $response->assertStatus(302);
 
         // Create a role with minimal permissions but NOT fulfillment
-        $minRole = \Webkul\User\Models\Role::create([
-            'name'            => 'Minimal Staff',
+        $minRole = Role::create([
+            'name' => 'Minimal Staff',
             'permission_type' => 'custom',
-            'permissions'     => ['dashboard'], // dashboard permission only
+            'permissions' => ['dashboard'], // dashboard permission only
         ]);
 
         $minAdmin = Admin::create([
-            'name'     => 'Minimal Staff User',
-            'email'    => 'min-' . uniqid() . '@example.com',
+            'name' => 'Minimal Staff User',
+            'email' => 'min-'.uniqid().'@example.com',
             'password' => bcrypt('password'),
-            'role_id'  => $minRole->id,
-            'status'   => 1,
+            'role_id' => $minRole->id,
+            'status' => 1,
         ]);
 
         $this->actingAs($minAdmin, 'admin');
@@ -450,12 +452,12 @@ class FulfillmentAdminUITest extends TestCase
         // Case 1: Load dashboard with 1 PO
         $order1 = Order::factory()->create();
         PurchaseOrder::create([
-            'order_id'           => $order1->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order1->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-q1',
+            'idempotency_key' => 'test-key-q1',
             'internal_reference' => 'ref-q1',
-            'state'              => 'needs_manual_review',
+            'state' => 'needs_manual_review',
         ]);
 
         // Flush KPI cache to guarantee DB queries run
@@ -469,12 +471,12 @@ class FulfillmentAdminUITest extends TestCase
         for ($i = 2; $i <= 6; $i++) {
             $order = Order::factory()->create();
             PurchaseOrder::create([
-                'order_id'           => $order->id,
-                'provider'           => 'aliexpress',
+                'order_id' => $order->id,
+                'provider' => 'aliexpress',
                 'supplier_signature' => 'ae-store-xyz',
-                'idempotency_key'    => "test-key-q{$i}",
+                'idempotency_key' => "test-key-q{$i}",
                 'internal_reference' => "ref-q{$i}",
-                'state'              => 'needs_manual_review',
+                'state' => 'needs_manual_review',
             ]);
         }
 
@@ -498,12 +500,12 @@ class FulfillmentAdminUITest extends TestCase
     {
         $order = Order::factory()->create();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-lock',
+            'idempotency_key' => 'test-key-lock',
             'internal_reference' => 'ref-lock',
-            'state'              => 'pending',
+            'state' => 'pending',
         ]);
 
         // Manually lock the PO execution key
@@ -512,8 +514,8 @@ class FulfillmentAdminUITest extends TestCase
         $this->assertTrue($lock->get());
 
         // Resolve FulfillmentService and run executePurchaseOrder
-        $service = resolve(\Webkul\Fulfillment\Services\FulfillmentService::class);
-        
+        $service = resolve(FulfillmentService::class);
+
         // Execute under lock must return immediately without updating state to submitting/submitted
         $service->executePurchaseOrder($po);
         $this->assertEquals('pending', $po->fresh()->state);
@@ -529,21 +531,21 @@ class FulfillmentAdminUITest extends TestCase
     {
         $order = Order::factory()->create();
         $po = PurchaseOrder::create([
-            'order_id'           => $order->id,
-            'provider'           => 'aliexpress',
+            'order_id' => $order->id,
+            'provider' => 'aliexpress',
             'supplier_signature' => 'ae-store-xyz',
-            'idempotency_key'    => 'test-key-obs',
+            'idempotency_key' => 'test-key-obs',
             'internal_reference' => 'ref-obs',
-            'state'              => 'pending',
+            'state' => 'pending',
         ]);
 
         // Record provider event
         $po->events()->create([
-            'provider'       => 'aliexpress',
+            'provider' => 'aliexpress',
             'external_state' => 'placed',
-            'source_type'    => 'webhook',
-            'payload'        => ['request' => 'data'],
-            'received_at'    => now(),
+            'source_type' => 'webhook',
+            'payload' => ['request' => 'data'],
+            'received_at' => now(),
         ]);
 
         // Record audit log

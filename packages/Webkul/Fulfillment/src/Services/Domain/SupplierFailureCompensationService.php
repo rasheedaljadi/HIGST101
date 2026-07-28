@@ -26,24 +26,24 @@ class SupplierFailureCompensationService
             }
 
             DB::table('domain_outbox_events')->insert([
-                'event_id'       => (string) Str::uuid(),
-                'event_name'     => 'SupplierOrderRefunded',
-                'event_version'  => 1,
+                'event_id' => (string) Str::uuid(),
+                'event_name' => 'SupplierOrderRefunded',
+                'event_version' => 1,
                 'aggregate_type' => 'ProcurementSession',
-                'aggregate_id'   => (string) $session->id,
+                'aggregate_id' => (string) $session->id,
                 'correlation_id' => $session->correlation_id,
-                'causation_id'   => $session->causation_id,
-                'payload'        => json_encode([
+                'causation_id' => $session->causation_id,
+                'payload' => json_encode([
                     'procurement_session_id' => $session->id,
-                    'purchase_order_id'      => $po?->id,
-                    'order_id'               => $allocation?->order_id,
-                    'supplier_cost'          => $session->price_snapshot['current_cost'] ?? 0.00,
-                    'reason'                 => $reason,
+                    'purchase_order_id' => $po?->id,
+                    'order_id' => $allocation?->order_id,
+                    'supplier_cost' => $session->price_snapshot['current_cost'] ?? 0.00,
+                    'reason' => $reason,
                 ]),
-                'status'         => 'pending',
-                'attempts'       => 0,
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'status' => 'pending',
+                'attempts' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         });
     }

@@ -26,8 +26,8 @@ class ProcurementDashboardProjection extends Model implements ProcurementDashboa
     ];
 
     protected $casts = [
-        'started_at'            => 'datetime',
-        'updated_at'            => 'datetime',
+        'started_at' => 'datetime',
+        'updated_at' => 'datetime',
         'estimated_delivery_at' => 'datetime',
     ];
 }

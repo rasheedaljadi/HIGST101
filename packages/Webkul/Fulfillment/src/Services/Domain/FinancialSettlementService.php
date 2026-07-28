@@ -75,7 +75,7 @@ class FinancialSettlementService
     public function settleCourierRemittance(int $orderId, float $collected, float $fee): void
     {
         $reference = "Courier settlement: {$orderId}";
-        
+
         DB::transaction(function () use ($orderId, $collected, $fee, $reference) {
             // First Debit Cash & Bank for the net amount
             $netAmount = $collected - $fee;
@@ -132,9 +132,9 @@ class FinancialSettlementService
         DB::transaction(function () use ($orderId, $debitAccount, $creditAccount, $amount, $reference, $purchaseOrderId, $correlationId) {
             // Idempotency: skip posting if reference for these accounts already exists
             $exists = $this->ledgerEntryRepository->findWhere([
-                'order_id'     => $orderId,
+                'order_id' => $orderId,
                 'account_code' => $debitAccount,
-                'reference'    => $reference,
+                'reference' => $reference,
             ])->isNotEmpty();
 
             if ($exists) {

@@ -9,6 +9,7 @@ class ProviderFeatureService
     public function supports(string $providerCode, string $contractVersion, string $feature): bool
     {
         $caps = $this->registry->getCapabilities($providerCode, $contractVersion);
+
         return (bool) ($caps[$feature] ?? false);
     }
 }

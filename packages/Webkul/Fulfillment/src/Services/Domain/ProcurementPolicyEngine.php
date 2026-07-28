@@ -11,16 +11,16 @@ class ProcurementPolicyEngine
 
     public function getHash(): string
     {
-        return hash('sha256', $this->getVersion() . '|auto_accept_limit=0.05|review_limit=0.15');
+        return hash('sha256', $this->getVersion().'|auto_accept_limit=0.05|review_limit=0.15');
     }
 
     public function getSnapshot(): array
     {
         return [
-            'policy_version'    => $this->getVersion(),
+            'policy_version' => $this->getVersion(),
             'auto_accept_limit' => 0.05,
-            'review_limit'      => 0.15,
-            'partial_allowed'   => true,
+            'review_limit' => 0.15,
+            'partial_allowed' => true,
         ];
     }
 

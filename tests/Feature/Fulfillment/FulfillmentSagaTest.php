@@ -20,7 +20,9 @@ use Webkul\Sales\Models\OrderItem;
 class MockAliExpressProvider implements FulfillmentProviderInterface
 {
     public static bool $shouldSucceed = true;
+
     public static ?string $lastExternalId = 'ae-ext-9921';
+
     public static ?string $errorCode = 'OUT_OF_STOCK';
 
     public function code(): string
@@ -115,7 +117,7 @@ class FulfillmentSagaTest extends TestCase
 
         // Run coordinator with local stock context
         $result = $coordinator->coordinate($order->id, $orderItem->id, 3, 'evt_local_1', 'corr_local_1', ['has_local_stock' => true]);
-        
+
         $this->assertEquals('success', $result['status']);
         $this->assertNotNull($result['data']['allocation']);
         $this->assertEquals('warehouse_riyadh', $result['data']['allocation']->source_code);
@@ -133,7 +135,7 @@ class FulfillmentSagaTest extends TestCase
         // Verify ledger entries created (Debit Cash 1010, Credit Revenue 4010)
         $debit = LedgerEntry::where('order_id', $order->id)->where('account_code', '1010')->first();
         $credit = LedgerEntry::where('order_id', $order->id)->where('account_code', '4010')->first();
-        
+
         $this->assertNotNull($debit);
         $this->assertNotNull($credit);
         $this->assertEquals(60.00, $debit->debit); // 3 qty * $20.00
@@ -161,7 +163,7 @@ class FulfillmentSagaTest extends TestCase
 
         // Run coordinator (should attempt supplier procurement and catch failure)
         $result = $coordinator->coordinate($order->id, $orderItem->id, 2, 'evt_supp_fail_1', 'corr_supp_fail_1', ['has_local_stock' => false]);
-        
+
         $this->assertEquals('compensated', $result['status']);
 
         // Assert all allocations reserved initially were canceled/released by compensation handler
@@ -207,7 +209,7 @@ class FulfillmentSagaTest extends TestCase
         // Break LedgerEntry validation constraint temporarily using database connection bypass in test
         // By inserting a ledger listener mock that fails
         config(['app.ledger_fail_sim' => true]);
-        
+
         // Custom listener mock that throws exception to test retry attempts
         $outboxProcessor->processPending(maxAttempts: 2);
 
@@ -230,7 +232,7 @@ class FulfillmentSagaTest extends TestCase
         $order = Order::factory()->create();
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
         $coordinator = app(FulfillmentSagaCoordinator::class);
-        
+
         // Trigger allocation event
         $coordinator->coordinate($order->id, $orderItem->id, 2, 'evt_replay_idemp_1', 'corr_replay_idemp_1', ['has_local_stock' => true]);
 

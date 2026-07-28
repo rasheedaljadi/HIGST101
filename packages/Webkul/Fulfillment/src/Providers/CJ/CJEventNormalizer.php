@@ -9,9 +9,6 @@ class CJEventNormalizer implements ExternalEventNormalizerInterface
 {
     /**
      * Map CJ payload to NormalizedExternalEvent DTO.
-     *
-     * @param  array  $payload
-     * @return \Webkul\Fulfillment\DataObjects\NormalizedExternalEvent
      */
     public function normalize(array $payload): NormalizedExternalEvent
     {
@@ -28,8 +25,8 @@ class CJEventNormalizer implements ExternalEventNormalizerInterface
             causationId: $payload['caus_id'] ?? null,
             attributes: [
                 'tracking_number' => $payload['trackingNumber'] ?? null,
-                'carrier'         => $payload['logisticsCompany'] ?? null,
-                'reason'          => $payload['cancelReason'] ?? null,
+                'carrier' => $payload['logisticsCompany'] ?? null,
+                'reason' => $payload['cancelReason'] ?? null,
             ]
         );
     }

@@ -5,8 +5,11 @@ namespace Webkul\Fulfillment\DataObjects;
 class ProjectionDecision
 {
     public const STATUS_APPLY = 'APPLY';
+
     public const STATUS_STALE = 'STALE';
+
     public const STATUS_REPLAY = 'REPLAY';
+
     public const STATUS_UNSAFE_VERSION_JUMP = 'UNSAFE_VERSION_JUMP';
 
     public function __construct(

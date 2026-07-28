@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 use Webkul\Fulfillment\Commands\CancelAllocationCommand;
 use Webkul\Fulfillment\Exceptions\FulfillmentSagaException;
 use Webkul\Fulfillment\Handlers\CancelAllocationHandler;
+use Webkul\Fulfillment\Models\OrderAllocation;
+use Webkul\Fulfillment\Models\OrderProcess;
 use Webkul\Fulfillment\Services\Domain\EventDeduplicationService;
 use Webkul\Fulfillment\Services\Domain\FulfillmentDecisionService;
 
@@ -25,14 +27,6 @@ class FulfillmentSagaCoordinator
 
     /**
      * Coordinate fulfillment saga.
-     *
-     * @param  int  $orderId
-     * @param  int  $orderItemId
-     * @param  int  $qty
-     * @param  string  $eventId
-     * @param  string  $correlationId
-     * @param  array  $decisionContext
-     * @return array
      */
     public function coordinate(int $orderId, int $orderItemId, int $qty, string $eventId, string $correlationId, array $decisionContext = []): array
     {
@@ -49,7 +43,7 @@ class FulfillmentSagaCoordinator
         if (! $dedupResult->isAccepted()) {
             return [
                 'status' => $dedupResult->getStatus(),
-                'data'   => null,
+                'data' => null,
             ];
         }
 
@@ -60,10 +54,10 @@ class FulfillmentSagaCoordinator
         try {
             if ($decision->isLocal()) {
                 $allocation = $this->localWorkflow->processLocal($orderId, $orderItemId, $qty, $correlationId, $causationId);
-                
+
                 return [
                     'status' => 'success',
-                    'data'   => ['allocation' => $allocation],
+                    'data' => ['allocation' => $allocation],
                 ];
             } else {
                 [$allocation, $po] = $this->supplierWorkflow->processSupplier(
@@ -77,7 +71,7 @@ class FulfillmentSagaCoordinator
 
                 return [
                     'status' => 'success',
-                    'data'   => ['allocation' => $allocation, 'purchase_order' => $po],
+                    'data' => ['allocation' => $allocation, 'purchase_order' => $po],
                 ];
             }
         } catch (FulfillmentSagaException $e) {
@@ -91,13 +85,13 @@ class FulfillmentSagaCoordinator
             // Run compensation steps
             DB::transaction(function () use ($orderId, $correlationId, $causationId, $e) {
                 // Flag OrderProcess for Operations review
-                $process = \Webkul\Fulfillment\Models\OrderProcess::where('order_id', $orderId)->first();
+                $process = OrderProcess::where('order_id', $orderId)->first();
                 if ($process) {
-                    $process->flagOps('Supplier procurement failed: ' . $e->getMessage());
+                    $process->flagOps('Supplier procurement failed: '.$e->getMessage());
                 }
 
                 // Find draft allocations to release
-                $allocationsToCancel = \Webkul\Fulfillment\Models\OrderAllocation::where('order_id', $orderId)
+                $allocationsToCancel = OrderAllocation::where('order_id', $orderId)
                     ->where('state', 'reserved')
                     ->get();
 
@@ -114,27 +108,27 @@ class FulfillmentSagaCoordinator
 
                 // Transition Customer Order status / Emit CustomerOrderFlagged domain event
                 DB::table('domain_outbox_events')->insert([
-                    'event_id'       => (string) Str::uuid(),
-                    'event_name'     => 'CustomerOrderFlagged',
-                    'event_version'  => 1,
+                    'event_id' => (string) Str::uuid(),
+                    'event_name' => 'CustomerOrderFlagged',
+                    'event_version' => 1,
                     'aggregate_type' => 'Order',
-                    'aggregate_id'   => (string) $orderId,
+                    'aggregate_id' => (string) $orderId,
                     'correlation_id' => $correlationId,
-                    'causation_id'   => $causationId,
-                    'payload'        => json_encode([
+                    'causation_id' => $causationId,
+                    'payload' => json_encode([
                         'order_id' => $orderId,
-                        'reason'   => 'Supplier procurement failed. Order flagged for manual review.',
+                        'reason' => 'Supplier procurement failed. Order flagged for manual review.',
                     ]),
-                    'status'         => 'pending',
-                    'attempts'       => 0,
-                    'created_at'     => now(),
-                    'updated_at'     => now(),
+                    'status' => 'pending',
+                    'attempts' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             });
 
             return [
                 'status' => 'compensated',
-                'error'  => $e->getMessage(),
+                'error' => $e->getMessage(),
             ];
         }
     }

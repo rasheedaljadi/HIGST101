@@ -20,8 +20,8 @@ class ExternalPayloadArchive extends Model implements ExternalPayloadArchiveCont
     ];
 
     protected $casts = [
-        'request_payload'  => 'array',
+        'request_payload' => 'array',
         'response_payload' => 'array',
-        'normalized_dto'   => 'array',
+        'normalized_dto' => 'array',
     ];
 }

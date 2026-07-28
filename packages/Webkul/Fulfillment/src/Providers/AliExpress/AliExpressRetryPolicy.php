@@ -18,8 +18,6 @@ class AliExpressRetryPolicy implements ExternalRetryPolicy
 
     /**
      * Get maximum retry limit.
-     *
-     * @return int
      */
     public function maxAttempts(): int
     {
@@ -28,9 +26,6 @@ class AliExpressRetryPolicy implements ExternalRetryPolicy
 
     /**
      * Determine if processing should retry for the given exception.
-     *
-     * @param  \Exception  $exception
-     * @return bool
      */
     public function shouldRetry(\Exception $exception): bool
     {

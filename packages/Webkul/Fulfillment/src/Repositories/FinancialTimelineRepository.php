@@ -17,9 +17,6 @@ class FinancialTimelineRepository extends Repository
     /**
      * Validate data before creation or update.
      *
-     * @param  array  $data
-     * @param  int|null  $id
-     * @return void
      *
      * @throws \InvalidArgumentException
      */
@@ -38,7 +35,6 @@ class FinancialTimelineRepository extends Repository
     /**
      * Create a new financial timeline event.
      *
-     * @param  array  $attributes
      * @return mixed
      */
     public function create(array $attributes)
@@ -51,7 +47,6 @@ class FinancialTimelineRepository extends Repository
     /**
      * Update an existing financial timeline event.
      *
-     * @param  array  $attributes
      * @param  int  $id
      * @return mixed
      */

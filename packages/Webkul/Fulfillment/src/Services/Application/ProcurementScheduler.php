@@ -2,9 +2,9 @@
 
 namespace Webkul\Fulfillment\Services\Application;
 
-use Webkul\Fulfillment\Models\ProcurementSession;
 use Webkul\Fulfillment\Commands\SyncSupplierOrderStatusCommand;
 use Webkul\Fulfillment\Handlers\Procurement\SyncSupplierOrderStatusHandler;
+use Webkul\Fulfillment\Models\ProcurementSession;
 
 class ProcurementScheduler
 {

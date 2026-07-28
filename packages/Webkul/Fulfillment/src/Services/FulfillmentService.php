@@ -3,15 +3,21 @@
 namespace Webkul\Fulfillment\Services;
 
 use App\Models\AliExpressProductImport;
+use App\Models\AliExpressToken;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Webkul\Attribute\Models\AttributeOption;
 use Webkul\Fulfillment\Contracts\FulfillmentProviderInterface;
 use Webkul\Fulfillment\DataObjects\ShippingAddress;
 use Webkul\Fulfillment\DataObjects\SupplierOrderLine;
 use Webkul\Fulfillment\DataObjects\SupplierOrderRequest;
-use Webkul\Fulfillment\DataObjects\SupplierOrderResult;
+use Webkul\Fulfillment\Enums\FulfillmentErrorType;
 use Webkul\Fulfillment\Jobs\CreatePurchaseOrderJob;
+use Webkul\Fulfillment\Models\FulfillmentProviderEvent;
+use Webkul\Fulfillment\Models\OrderAllocation;
+use Webkul\Fulfillment\Models\ProcurementAggregate;
+use Webkul\Fulfillment\Models\ProcurementSession;
 use Webkul\Fulfillment\Models\PurchaseOrder;
 use Webkul\Fulfillment\Models\PurchaseOrderItem;
 use Webkul\Fulfillment\Repositories\FulfillmentAttemptRepository;
@@ -38,7 +44,6 @@ class FulfillmentService
     /**
      * Group order items and plan purchase orders (Task 5.1).
      *
-     * @param  Order  $order
      * @return array<PurchaseOrder>
      */
     public function planPurchaseOrders(Order $order): array
@@ -49,7 +54,7 @@ class FulfillmentService
 
         return DB::transaction(function () use ($order) {
             // Resolve active token for provider_account_id
-            $token = \App\Models\AliExpressToken::query()->latest('id')->first();
+            $token = AliExpressToken::query()->latest('id')->first();
             $providerAccountId = $token ? $token->id : null;
 
             // Grouping: [provider_code => [supplier_signature => [items]]]
@@ -66,8 +71,9 @@ class FulfillmentService
                 if ($alreadyFulfilled) {
                     Log::channel('aliexpress')->info('Fulfillment planning skipped: Order item already has an active purchase order', [
                         'order_item_id' => $item->id,
-                        'order_id'      => $order->id,
+                        'order_id' => $order->id,
                     ]);
+
                     continue;
                 }
 
@@ -83,7 +89,7 @@ class FulfillmentService
                 }
 
                 $groups[$provider][$supplierSignature][] = [
-                    'item'   => $item,
+                    'item' => $item,
                     'import' => $import,
                 ];
             }
@@ -99,21 +105,21 @@ class FulfillmentService
 
             foreach ($groups as $provider => $suppliers) {
                 foreach ($suppliers as $supplierSignature => $groupedItems) {
-                    $idempotencyKey = hash('sha256', $order->id . '|' . $provider . '|' . $supplierSignature);
-                    $internalReference = $order->increment_id . '-' . substr($idempotencyKey, 0, 8);
+                    $idempotencyKey = hash('sha256', $order->id.'|'.$provider.'|'.$supplierSignature);
+                    $internalReference = $order->increment_id.'-'.substr($idempotencyKey, 0, 8);
 
                     $isReview = ($supplierSignature === 'needs_manual_review');
 
                     $po = PurchaseOrder::firstOrCreate([
                         'idempotency_key' => $idempotencyKey,
                     ], [
-                        'order_id'            => $order->id,
-                        'provider'            => $provider,
+                        'order_id' => $order->id,
+                        'provider' => $provider,
                         'provider_account_id' => $providerAccountId,
-                        'supplier_signature'  => $supplierSignature,
-                        'internal_reference'  => $internalReference,
-                        'state'               => $isReview ? PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW : PurchaseOrder::STATE_PENDING,
-                        'last_error'          => $isReview ? 'Missing AliExpress product import source for one or more items.' : null,
+                        'supplier_signature' => $supplierSignature,
+                        'internal_reference' => $internalReference,
+                        'state' => $isReview ? PurchaseOrder::STATE_NEEDS_MANUAL_REVIEW : PurchaseOrder::STATE_PENDING,
+                        'last_error' => $isReview ? 'Missing AliExpress product import source for one or more items.' : null,
                     ]);
 
                     foreach ($groupedItems as $groupItem) {
@@ -141,12 +147,12 @@ class FulfillmentService
 
                         PurchaseOrderItem::firstOrCreate([
                             'purchase_order_id' => $po->id,
-                            'order_item_id'     => $item->id,
+                            'order_item_id' => $item->id,
                         ], [
                             'aliexpress_product_id' => $supplierProductId,
-                            'sku_id'                => $skuId,
-                            'qty'                   => (int) $item->qty_ordered,
-                            'supplier_unit_cost'    => $supplierCost,
+                            'sku_id' => $skuId,
+                            'qty' => (int) $item->qty_ordered,
+                            'supplier_unit_cost' => $supplierCost,
                         ]);
                     }
 
@@ -173,8 +179,6 @@ class FulfillmentService
     /**
      * Execute a planned purchase order (Task 6.1).
      *
-     * @param  PurchaseOrder  $po
-     * @return void
      *
      * @throws \Throwable
      */
@@ -184,6 +188,7 @@ class FulfillmentService
 
         if (! $lock->get()) {
             Log::channel('aliexpress')->warning('Fulfillment skipped: PO already locked', ['po' => $po->id]);
+
             return;
         }
 
@@ -203,6 +208,7 @@ class FulfillmentService
 
                 if ($externalOrderId !== null) {
                     $this->updatePoSuccess($po, $externalOrderId);
+
                     return;
                 }
             }
@@ -210,18 +216,18 @@ class FulfillmentService
             // Transition to submitting
             $po->update(['state' => PurchaseOrder::STATE_SUBMITTING]);
 
-            $aggregate = \Webkul\Fulfillment\Models\ProcurementAggregate::firstOrCreate([
+            $aggregate = ProcurementAggregate::firstOrCreate([
                 'purchase_order_id' => $po->id,
             ]);
-            $allocation = \Webkul\Fulfillment\Models\OrderAllocation::where('order_id', $po->order_id)->first();
-            $session = \Webkul\Fulfillment\Models\ProcurementSession::firstOrCreate([
+            $allocation = OrderAllocation::where('order_id', $po->order_id)->first();
+            $session = ProcurementSession::firstOrCreate([
                 'procurement_aggregate_id' => $aggregate->id,
             ], [
-                'order_allocation_id'      => $allocation?->id ?: 1,
-                'provider_account_id'      => $po->provider_account_id,
-                'state'                    => 'CREATED',
-                'correlation_id'           => $po->idempotency_key,
-                'causation_id'             => $po->idempotency_key,
+                'order_allocation_id' => $allocation?->id ?: 1,
+                'provider_account_id' => $po->provider_account_id,
+                'state' => 'CREATED',
+                'correlation_id' => $po->idempotency_key,
+                'causation_id' => $po->idempotency_key,
             ]);
 
             if ($po->attempts > 0) {
@@ -242,24 +248,24 @@ class FulfillmentService
             $attemptNo = $po->attempts;
 
             // Log raw response as provider event
-            \Webkul\Fulfillment\Models\FulfillmentProviderEvent::create([
+            FulfillmentProviderEvent::create([
                 'purchase_order_id' => $po->id,
-                'provider'          => $po->provider,
-                'external_state'    => $result->ok ? 'submitted' : 'failed_attempt',
-                'source_type'       => 'system_recovery',
-                'payload'           => $result->raw ?? [],
-                'received_at'       => now(),
-                'processed_at'      => now(),
+                'provider' => $po->provider,
+                'external_state' => $result->ok ? 'submitted' : 'failed_attempt',
+                'source_type' => 'system_recovery',
+                'payload' => $result->raw ?? [],
+                'received_at' => now(),
+                'processed_at' => now(),
             ]);
 
             if ($result->ok) {
                 $this->fulfillmentAttemptRepository->create([
                     'purchase_order_id' => $po->id,
-                    'attempt_no'        => $attemptNo,
-                    'result'            => 'success',
-                    'error_type'        => null,
-                    'provider_code'     => $result->code,
-                    'message'           => 'Order created successfully.',
+                    'attempt_no' => $attemptNo,
+                    'result' => 'success',
+                    'error_type' => null,
+                    'provider_code' => $result->code,
+                    'message' => 'Order created successfully.',
                 ]);
 
                 $this->updatePoSuccess($po, $result->externalOrderId, $result->raw);
@@ -269,29 +275,29 @@ class FulfillmentService
 
                 // Map error classification enum
                 $errorType = $isRetryable
-                    ? \Webkul\Fulfillment\Enums\FulfillmentErrorType::NETWORK_ERROR->value
-                    : \Webkul\Fulfillment\Enums\FulfillmentErrorType::BUSINESS_RULE_ERROR->value;
+                    ? FulfillmentErrorType::NETWORK_ERROR->value
+                    : FulfillmentErrorType::BUSINESS_RULE_ERROR->value;
 
                 // Redact and truncate error message (1000 characters custom limit for attempt logs)
                 $sanitizedMessage = SecretRedactor::sanitize($result->message ?? 'Unknown error', [], 1000);
 
                 $this->fulfillmentAttemptRepository->create([
                     'purchase_order_id' => $po->id,
-                    'attempt_no'        => $attemptNo,
-                    'result'            => $resultType,
-                    'error_type'        => $errorType,
-                    'provider_code'     => $result->code,
-                    'message'           => $sanitizedMessage,
+                    'attempt_no' => $attemptNo,
+                    'result' => $resultType,
+                    'error_type' => $errorType,
+                    'provider_code' => $result->code,
+                    'message' => $sanitizedMessage,
                 ]);
 
                 $po->update([
-                    'last_error'       => $sanitizedMessage,
+                    'last_error' => $sanitizedMessage,
                     'payload_snapshot' => $result->raw,
                 ]);
 
                 $maxAttempts = (int) config('fulfillment.retry.max_attempts', 3);
 
-                $session = \Webkul\Fulfillment\Models\ProcurementSession::where('procurement_aggregate_id', function ($query) use ($po) {
+                $session = ProcurementSession::where('procurement_aggregate_id', function ($query) use ($po) {
                     $query->select('id')->from('procurement_aggregates')->where('purchase_order_id', $po->id);
                 })->first();
 
@@ -310,7 +316,7 @@ class FulfillmentService
                     );
 
                     // Dispatch error alert notification
-                    \Webkul\Fulfillment\Services\FulfillmentAlertService::sendAlert(
+                    FulfillmentAlertService::sendAlert(
                         'error',
                         "Fulfillment failed permanently for PO #{$po->id}. Error: {$sanitizedMessage}",
                         $po
@@ -318,10 +324,10 @@ class FulfillmentService
 
                     // Log permanent failure
                     SecretRedactor::logFailure("Fulfillment failed permanently for PO #{$po->id}", [
-                        'po_id'       => $po->id,
-                        'order_id'    => $po->order_id,
-                        'attempts'    => $attemptNo,
-                        'error_code'  => $result->code,
+                        'po_id' => $po->id,
+                        'order_id' => $po->order_id,
+                        'attempts' => $attemptNo,
+                        'error_code' => $result->code,
                     ]);
                 } else {
                     // Log transient failure and throw exception to retry
@@ -343,9 +349,7 @@ class FulfillmentService
     /**
      * Perform reconciliation before submitting (Task 6.1).
      *
-     * @param  PurchaseOrder  $po
      * @param  FulfillmentProviderInterface  $provider
-     * @return string|null
      */
     protected function reconcileBeforeSubmit(PurchaseOrder $po, $provider): ?string
     {
@@ -353,25 +357,23 @@ class FulfillmentService
             return $provider->findByReference($po->internal_reference, $po->provider_account_id);
         } catch (\Throwable $e) {
             Log::channel('aliexpress')->error('Reconciliation check failed', [
-                'po'      => $po->id,
+                'po' => $po->id,
                 'message' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
 
     /**
      * Build the SupplierOrderRequest DTO.
-     *
-     * @param  PurchaseOrder  $po
-     * @return SupplierOrderRequest
      */
     protected function buildSupplierOrderRequest(PurchaseOrder $po): SupplierOrderRequest
     {
         $order = $po->order;
         $shipping = $order->shipping_address;
 
-        $warehouse = \Illuminate\Support\Facades\DB::table('inventory_sources')
+        $warehouse = DB::table('inventory_sources')
             ->where('code', 'default')
             ->first();
 
@@ -440,10 +442,6 @@ class FulfillmentService
 
     /**
      * Resolve the AliExpress SKU ID from the product model and import snapshot.
-     *
-     * @param  mixed  $variantProduct
-     * @param  AliExpressProductImport  $import
-     * @return string|null
      */
     protected function resolveSkuId(mixed $variantProduct, AliExpressProductImport $import): ?string
     {
@@ -463,7 +461,7 @@ class FulfillmentService
             foreach ($parent->super_attributes as $attribute) {
                 $optionId = $variantProduct->getAttribute($attribute->code);
                 if ($optionId) {
-                    $option = \Webkul\Attribute\Models\AttributeOption::find($optionId);
+                    $option = AttributeOption::find($optionId);
                     if ($option) {
                         $label = null;
                         foreach (['en', 'en_US', core()->getDefaultLocaleCodeFromDefaultChannel()] as $loc) {
@@ -505,22 +503,17 @@ class FulfillmentService
 
     /**
      * Update PO state on success.
-     *
-     * @param  PurchaseOrder  $po
-     * @param  string  $externalOrderId
-     * @param  array|null  $raw
-     * @return void
      */
     protected function updatePoSuccess(PurchaseOrder $po, string $externalOrderId, ?array $raw = null): void
     {
         $po->update([
-            'state'             => PurchaseOrder::STATE_SUBMITTED,
+            'state' => PurchaseOrder::STATE_SUBMITTED,
             'external_order_id' => $externalOrderId,
-            'submitted_at'      => now(),
-            'payload_snapshot'  => $raw ?? $po->payload_snapshot,
+            'submitted_at' => now(),
+            'payload_snapshot' => $raw ?? $po->payload_snapshot,
         ]);
 
-        $session = \Webkul\Fulfillment\Models\ProcurementSession::where('procurement_aggregate_id', function ($query) use ($po) {
+        $session = ProcurementSession::where('procurement_aggregate_id', function ($query) use ($po) {
             $query->select('id')->from('procurement_aggregates')->where('purchase_order_id', $po->id);
         })->first();
 
@@ -537,9 +530,6 @@ class FulfillmentService
 
     /**
      * Reflect state onto the Customer Order (Task 7.1).
-     *
-     * @param  Order  $order
-     * @return void
      */
     public function reflectOnCustomerOrder(Order $order): void
     {
@@ -582,24 +572,20 @@ class FulfillmentService
 
     /**
      * Add comment to customer order.
-     *
-     * @param  int  $orderId
-     * @param  string  $comment
-     * @return void
      */
     protected function addOrderComment(int $orderId, string $comment): void
     {
         try {
             $this->orderCommentRepository->create([
-                'order_id'          => $orderId,
-                'comment'           => $comment,
+                'order_id' => $orderId,
+                'comment' => $comment,
                 'customer_notified' => 0,
             ]);
         } catch (\Throwable $e) {
             Log::channel('aliexpress')->error('Failed to create order comment', [
                 'order_id' => $orderId,
-                'comment'  => $comment,
-                'error'    => $e->getMessage(),
+                'comment' => $comment,
+                'error' => $e->getMessage(),
             ]);
         }
     }

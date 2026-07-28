@@ -14,14 +14,8 @@ class TimelineListener
 
     /**
      * Handle the event and append to the FinancialTimeline log.
-     *
-     * @param  string  $eventName
-     * @param  array  $payload
-     * @param  string  $correlationId
-     * @param  string  $causationId
-     * @return void
      */
-    public function handle(string $eventName, array $payload, string $correlationId, string $causationId, string $outboxEventId = null): void
+    public function handle(string $eventName, array $payload, string $correlationId, string $causationId, ?string $outboxEventId = null): void
     {
         // 1. Idempotency Check: check if event has already been recorded
         $existing = $this->timelineRepository->findWhere(['event_id' => $outboxEventId])->first();
@@ -35,22 +29,22 @@ class TimelineListener
         $eventTypeMap = [
             'OrderAllocationReserved' => 'allocation_reserved',
             'OrderAllocationReleased' => 'allocation_released',
-            'PurchaseOrderCreated'    => 'purchase_order_created',
-            'SupplierOrderSubmitted'  => 'supplier_order_submitted',
-            'SupplierOrderFailed'     => 'supplier_order_failed',
+            'PurchaseOrderCreated' => 'purchase_order_created',
+            'SupplierOrderSubmitted' => 'supplier_order_submitted',
+            'SupplierOrderFailed' => 'supplier_order_failed',
         ];
 
         $eventType = $eventTypeMap[$eventName] ?? strtolower($eventName);
 
         $metadata = [
             'correlation_id' => $correlationId,
-            'causation_id'   => $causationId,
-            'details'        => $payload,
+            'causation_id' => $causationId,
+            'details' => $payload,
         ];
 
         // Pass outboxEventId as the stable event_id
         $timeline = FinancialTimeline::appendEvent($orderId, $eventType, $amount, 'USD', $metadata, $outboxEventId);
-        
+
         // Save using repository
         $this->timelineRepository->create($timeline->toArray());
     }

@@ -2,6 +2,7 @@
 
 namespace Webkul\Fulfillment\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
@@ -13,9 +14,7 @@ class WebhookController extends Controller
     /**
      * Handle incoming AliExpress dropshipping webhook.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  string  $provider
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function handleWebhook(Request $request, string $provider)
     {
@@ -23,7 +22,7 @@ class WebhookController extends Controller
         $eventId = $request->header('X-Event-ID') ?: ($payload['event_id'] ?? null);
         $eventType = $request->header('X-Event-Type') ?: ($payload['event_type'] ?? null);
 
-        if (!$eventId || !$eventType) {
+        if (! $eventId || ! $eventType) {
             return response()->json(['error' => 'Missing event metadata'], 400);
         }
 
@@ -50,16 +49,16 @@ class WebhookController extends Controller
                 $inboxProcessor = app(InboxEventProcessor::class);
                 $inboxProcessor->processPending();
             } catch (\Throwable $e) {
-                Log::channel('aliexpress')->error('Webhook real-time processing failed: ' . $e->getMessage(), [
+                Log::channel('aliexpress')->error('Webhook real-time processing failed: '.$e->getMessage(), [
                     'event_id' => $eventId,
-                    'trace'    => $e->getTraceAsString(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
         }
 
         return response()->json([
-            'status'    => 'success',
-            'record_id' => $res['record_id']
+            'status' => 'success',
+            'record_id' => $res['record_id'],
         ], 200);
     }
 }

@@ -4,22 +4,21 @@ namespace Tests\Feature\Fulfillment;
 
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
-use Webkul\Sales\Models\Order;
-use Webkul\Sales\Models\OrderItem;
-use Webkul\Sales\Models\OrderPayment;
-use Webkul\Sales\Models\OrderAddress;
-use Webkul\Sales\Models\Invoice;
-use Webkul\Sales\Models\Shipment;
-use Webkul\Sales\Models\Refund;
+use Webkul\Fulfillment\Exceptions\FulfillmentSagaException;
+use Webkul\Fulfillment\Listeners\OrderLifecycleListener;
+use Webkul\Fulfillment\Models\LedgerEntry;
 use Webkul\Fulfillment\Models\OrderProcess;
 use Webkul\Fulfillment\Models\PurchaseOrder;
-use Webkul\Fulfillment\Models\LedgerEntry;
-use Webkul\Fulfillment\Services\Application\OrderLifecycleCoordinator;
 use Webkul\Fulfillment\Services\Application\FulfillmentSagaCoordinator;
+use Webkul\Fulfillment\Services\Application\OrderLifecycleCoordinator;
 use Webkul\Fulfillment\Services\Domain\FinancialSettlementService;
-use Webkul\Fulfillment\Listeners\OrderLifecycleListener;
-use Webkul\Fulfillment\Exceptions\FulfillmentSagaException;
-use Webkul\Fulfillment\Handlers\CancelAllocationHandler;
+use Webkul\Sales\Models\Invoice;
+use Webkul\Sales\Models\Order;
+use Webkul\Sales\Models\OrderAddress;
+use Webkul\Sales\Models\OrderItem;
+use Webkul\Sales\Models\OrderPayment;
+use Webkul\Sales\Models\Refund;
+use Webkul\Sales\Models\Shipment;
 
 class OrderLifecycleIntegrationTest extends TestCase
 {
@@ -51,16 +50,16 @@ class OrderLifecycleIntegrationTest extends TestCase
 
         OrderPayment::create([
             'order_id' => $order->id,
-            'method'   => 'cashondelivery',
+            'method' => 'cashondelivery',
         ]);
 
         OrderAddress::create([
-            'order_id'     => $order->id,
+            'order_id' => $order->id,
             'address_type' => 'shipping',
-            'first_name'   => 'Ahmad',
-            'last_name'    => 'Ali',
-            'city'         => 'Riyadh',
-            'country'      => 'SA',
+            'first_name' => 'Ahmad',
+            'last_name' => 'Ali',
+            'city' => 'Riyadh',
+            'country' => 'SA',
         ]);
 
         $mockSaga = $this->getMockBuilder(FulfillmentSagaCoordinator::class)
@@ -100,16 +99,16 @@ class OrderLifecycleIntegrationTest extends TestCase
 
         OrderPayment::create([
             'order_id' => $order->id,
-            'method'   => 'stripe',
+            'method' => 'stripe',
         ]);
 
         OrderAddress::create([
-            'order_id'     => $order->id,
+            'order_id' => $order->id,
             'address_type' => 'shipping',
-            'first_name'   => 'Sami',
-            'last_name'    => 'Ahmad',
-            'city'         => 'Jeddah',
-            'country'      => 'SA',
+            'first_name' => 'Sami',
+            'last_name' => 'Ahmad',
+            'city' => 'Jeddah',
+            'country' => 'SA',
         ]);
 
         $mockSaga = $this->getMockBuilder(FulfillmentSagaCoordinator::class)
@@ -130,8 +129,8 @@ class OrderLifecycleIntegrationTest extends TestCase
 
         // 2. Payment Invoice Received
         $invoice = Invoice::create([
-            'order_id'    => $order->id,
-            'state'       => 'paid',
+            'order_id' => $order->id,
+            'state' => 'paid',
             'grand_total' => 200.00,
         ]);
 
@@ -233,7 +232,7 @@ class OrderLifecycleIntegrationTest extends TestCase
 
         // 1. Test pre-shipment refund
         $refund1 = Refund::create([
-            'order_id'    => $order->id,
+            'order_id' => $order->id,
             'grand_total' => 300.00,
         ]);
 
@@ -248,7 +247,7 @@ class OrderLifecycleIntegrationTest extends TestCase
         Shipment::create(['order_id' => $order2->id]);
 
         $refund2 = Refund::create([
-            'order_id'    => $order2->id,
+            'order_id' => $order2->id,
             'grand_total' => 120.00,
         ]);
 
@@ -272,12 +271,12 @@ class OrderLifecycleIntegrationTest extends TestCase
         // Setup Order & OrderProcess
         $order = Order::factory()->create();
         $orderItem = OrderItem::factory()->create(['order_id' => $order->id]);
-        
+
         OrderProcess::create([
-            'order_id'        => $order->id,
-            'payment_mode'    => 'prepaid',
+            'order_id' => $order->id,
+            'payment_mode' => 'prepaid',
             'lifecycle_state' => 'fulfillment_started',
-            'correlation_id'  => 'corr_fail_1',
+            'correlation_id' => 'corr_fail_1',
         ]);
 
         // Mock a Coordinator that fails to trigger compensation
@@ -288,7 +287,7 @@ class OrderLifecycleIntegrationTest extends TestCase
 
         $coordinator->expects($this->once())
             ->method('coordinate')
-            ->willThrowException(new FulfillmentSagaException("AliExpress API Stockout"));
+            ->willThrowException(new FulfillmentSagaException('AliExpress API Stockout'));
 
         // Trigger coordinator
         try {
@@ -296,7 +295,7 @@ class OrderLifecycleIntegrationTest extends TestCase
         } catch (FulfillmentSagaException $e) {
             // Run manually inside the coordinator's catch block logic to assert OrderProcess
             $process = OrderProcess::where('order_id', $order->id)->first();
-            $process->flagOps('Supplier procurement failed: ' . $e->getMessage());
+            $process->flagOps('Supplier procurement failed: '.$e->getMessage());
         }
 
         $process = OrderProcess::where('order_id', $order->id)->first();

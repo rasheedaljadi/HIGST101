@@ -19,11 +19,11 @@ class ProviderHealthService
 
         if ($recentLogs->isEmpty()) {
             return [
-                'status'       => 'HEALTHY',
+                'status' => 'HEALTHY',
                 'success_rate' => 100,
-                'latency_avg'  => 0,
-                'mttr_hours'   => 0,
-                'mtbf_hours'   => 24,
+                'latency_avg' => 0,
+                'mttr_hours' => 0,
+                'mtbf_hours' => 24,
             ];
         }
 
@@ -52,11 +52,11 @@ class ProviderHealthService
         }
 
         return [
-            'status'       => $status,
+            'status' => $status,
             'success_rate' => round($successRate, 2),
-            'latency_avg'  => round($latencyAvg, 2),
-            'mttr_hours'   => $mttr,
-            'mtbf_hours'   => $mtbf,
+            'latency_avg' => round($latencyAvg, 2),
+            'mttr_hours' => $mttr,
+            'mtbf_hours' => $mtbf,
         ];
     }
 }

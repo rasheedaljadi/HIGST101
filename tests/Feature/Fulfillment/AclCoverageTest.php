@@ -1,8 +1,9 @@
 <?php
 
-uses(\Tests\TestCase::class);
+uses(TestCase::class);
 
 use Illuminate\Support\Facades\Route;
+use Tests\TestCase;
 
 test('every dropshipping admin route must be covered by an ACL permission mapping', function () {
     $routes = Route::getRoutes()->getRoutes();

@@ -2,22 +2,30 @@
 
 namespace Tests\Feature\Fulfillment;
 
-use Tests\TestCase;
-use Webkul\Sales\Models\Order;
-use Webkul\Sales\Models\OrderItem;
-use Webkul\Sales\Models\OrderAddress;
-use Webkul\Sales\Models\Invoice;
-use Webkul\Fulfillment\Models\PurchaseOrder;
-use Webkul\Fulfillment\Models\PurchaseOrderItem;
-use Webkul\Fulfillment\Models\ProcurementSession;
-use Webkul\Fulfillment\Models\OrderProcess;
-use Webkul\Fulfillment\Models\OrderAllocation;
-use Webkul\Fulfillment\Models\LedgerEntry;
-use App\Models\AliExpressToken;
 use App\Models\AliExpressProductImport;
+use App\Models\AliExpressToken;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
+use Tests\TestCase;
+use Webkul\Attribute\Models\AttributeFamily;
+use Webkul\Core\Models\Channel;
+use Webkul\Fulfillment\Listeners\OrderLifecycleListener;
+use Webkul\Fulfillment\Models\LedgerEntry;
+use Webkul\Fulfillment\Models\OrderAllocation;
+use Webkul\Fulfillment\Models\OrderProcess;
+use Webkul\Fulfillment\Models\ProcurementSession;
+use Webkul\Fulfillment\Models\ProviderAccount;
+use Webkul\Fulfillment\Models\PurchaseOrder;
+use Webkul\Fulfillment\Models\PurchaseOrderItem;
+use Webkul\Fulfillment\Services\Application\OutboxEventProcessor;
+use Webkul\Fulfillment\Services\FulfillmentService;
+use Webkul\Product\Models\Product;
+use Webkul\Sales\Models\Invoice;
+use Webkul\Sales\Models\Order;
+use Webkul\Sales\Models\OrderAddress;
+use Webkul\Sales\Models\OrderItem;
+use Webkul\Sales\Models\OrderPayment;
 
 class ProductionIntegrationAcceptanceTest extends TestCase
 {
@@ -33,16 +41,16 @@ class ProductionIntegrationAcceptanceTest extends TestCase
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         }
 
-        if (! \Webkul\Core\Models\Channel::find(1)) {
-            \Webkul\Core\Models\Channel::factory()->create(['id' => 1]);
+        if (! Channel::find(1)) {
+            Channel::factory()->create(['id' => 1]);
         }
 
-        if (! \Webkul\Attribute\Models\AttributeFamily::find(1)) {
-            \Webkul\Attribute\Models\AttributeFamily::create([
-                'id'              => 1,
-                'code'            => 'default',
-                'name'            => 'Default',
-                'status'          => 1,
+        if (! AttributeFamily::find(1)) {
+            AttributeFamily::create([
+                'id' => 1,
+                'code' => 'default',
+                'name' => 'Default',
+                'status' => 1,
                 'is_user_defined' => 0,
             ]);
         }
@@ -55,11 +63,11 @@ class ProductionIntegrationAcceptanceTest extends TestCase
         AliExpressToken::query()->delete();
 
         AliExpressToken::create([
-            'account'                 => 'aliexpress',
-            'access_token'            => 'test-token',
-            'refresh_token'           => 'test-refresh',
+            'account' => 'aliexpress',
+            'access_token' => 'test-token',
+            'refresh_token' => 'test-refresh',
             'access_token_expires_at' => now()->addDays(7),
-            'refresh_token_expires_at'=> now()->addDays(30),
+            'refresh_token_expires_at' => now()->addDays(30),
         ]);
 
         Cache::flush();
@@ -72,72 +80,72 @@ class ProductionIntegrationAcceptanceTest extends TestCase
     {
         // 1. Create a customer order
         $order = Order::factory()->create([
-            'status'              => 'pending',
-            'customer_email'      => 'cust@example.com',
+            'status' => 'pending',
+            'customer_email' => 'cust@example.com',
             'customer_first_name' => 'Jane',
-            'customer_last_name'  => 'Doe',
+            'customer_last_name' => 'Doe',
             'order_currency_code' => 'USD',
-            'grand_total'         => 100.00,
+            'grand_total' => 100.00,
         ]);
 
-        \Webkul\Sales\Models\OrderPayment::factory()->create([
+        OrderPayment::factory()->create([
             'order_id' => $order->id,
-            'method'   => 'stripe',
+            'method' => 'stripe',
         ]);
 
         OrderAddress::factory()->create([
-            'order_id'     => $order->id,
+            'order_id' => $order->id,
             'address_type' => OrderAddress::ADDRESS_TYPE_SHIPPING,
-            'first_name'   => 'Jane',
-            'last_name'    => 'Doe',
-            'address'      => '456 Test Blvd',
-            'city'         => 'Riyadh',
-            'state'        => 'Riyadh',
-            'postcode'     => '11564',
-            'country'      => 'SA',
-            'phone'        => '0500000000',
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'address' => '456 Test Blvd',
+            'city' => 'Riyadh',
+            'state' => 'Riyadh',
+            'postcode' => '11564',
+            'country' => 'SA',
+            'phone' => '0500000000',
         ]);
 
         // 2. Create product & order item
-        $product = \Webkul\Product\Models\Product::create([
-            'type'                => 'simple',
+        $product = Product::create([
+            'type' => 'simple',
             'attribute_family_id' => 1,
-            'sku'                 => 'ae-item-prod',
+            'sku' => 'ae-item-prod',
         ]);
 
         $item = OrderItem::factory()->create([
-            'order_id'    => $order->id,
-            'product_id'  => $product->id,
+            'order_id' => $order->id,
+            'product_id' => $product->id,
             'qty_ordered' => 2,
-            'price'       => 50.00,
-            'total'       => 100.00,
-            'sku'         => $product->sku,
-            'name'        => 'AliExpress Product Test',
-            'type'        => $product->type,
+            'price' => 50.00,
+            'total' => 100.00,
+            'sku' => $product->sku,
+            'name' => 'AliExpress Product Test',
+            'type' => $product->type,
         ]);
 
         // Mock product source import
         AliExpressProductImport::create([
-            'product_id'             => $product->id,
-            'aliexpress_product_id'  => '1234567890',
-            'status'                 => 'success',
-            'payload_snapshot'       => json_encode([
+            'product_id' => $product->id,
+            'aliexpress_product_id' => '1234567890',
+            'status' => 'success',
+            'payload_snapshot' => json_encode([
                 'variants' => [
                     [
                         'sku_id' => 'sku_abc_123',
-                        'price'  => 15.00,
-                    ]
-                ]
+                        'price' => 15.00,
+                    ],
+                ],
             ]),
         ]);
 
         // Seed default supplier account
-        \Webkul\Fulfillment\Models\ProviderAccount::firstOrCreate([
+        ProviderAccount::firstOrCreate([
             'provider' => 'aliexpress',
-            'name'     => 'Main Account',
+            'name' => 'Main Account',
         ], [
-            'status'        => 'ACTIVE',
-            'access_token'  => 'test-token',
+            'status' => 'ACTIVE',
+            'access_token' => 'test-token',
             'refresh_token' => 'test-refresh',
         ]);
 
@@ -147,27 +155,27 @@ class ProductionIntegrationAcceptanceTest extends TestCase
                 'aliexpress_ds_order_create_response' => [
                     'result' => [
                         'is_success' => true,
-                        'order_id'   => 9876543210,
-                    ]
-                ]
-            ], 200)
+                        'order_id' => 9876543210,
+                    ],
+                ],
+            ], 200),
         ]);
 
         // 3. Confirm payment (invoice paid prepaid)
         $invoice = Invoice::create([
-            'order_id'    => $order->id,
-            'state'       => 'paid',
+            'order_id' => $order->id,
+            'state' => 'paid',
             'grand_total' => 100.00,
         ]);
 
         // Trigger listener manually or via Laravel events
-        $listener = app(\Webkul\Fulfillment\Listeners\OrderLifecycleListener::class);
+        $listener = app(OrderLifecycleListener::class);
         $listener->handleInvoiceSaved($invoice);
 
         // 4. Verify PO, allocations, process and session are created
         $po = PurchaseOrder::where('order_id', $order->id)->first();
         $this->assertNotNull($po);
-        
+
         $process = OrderProcess::where('order_id', $order->id)->first();
         $this->assertNotNull($process);
         $correlationId = $process->correlation_id;
@@ -182,7 +190,7 @@ class ProductionIntegrationAcceptanceTest extends TestCase
         $this->assertEquals('SUBMITTED', $session->state);
 
         // 5. Execute PO submission
-        $service = app(\Webkul\Fulfillment\Services\FulfillmentService::class);
+        $service = app(FulfillmentService::class);
         $service->executePurchaseOrder($po);
 
         $po->refresh();
@@ -197,37 +205,37 @@ class ProductionIntegrationAcceptanceTest extends TestCase
         $timestamp = time();
         $secret = config('fulfillment.aliexpress.webhook_secret', 'test-signing-key-9922');
         $body = json_encode([
-            'event_id'   => 'evt_test_123',
+            'event_id' => 'evt_test_123',
             'event_type' => 'ORDER_STATUS_CHANGED',
-            'order_id'   => '9876543210',
-            'status'     => 'wait_receive', // wait_receive maps to SHIPPED
-            'tracking'   => [
-                'number'  => 'TRK-XYZ-99',
+            'order_id' => '9876543210',
+            'status' => 'wait_receive', // wait_receive maps to SHIPPED
+            'tracking' => [
+                'number' => 'TRK-XYZ-99',
                 'company' => 'DHL Express',
-            ]
+            ],
         ]);
-        $signature = hash_hmac('sha256', $timestamp . '.' . $body, $secret);
+        $signature = hash_hmac('sha256', $timestamp.'.'.$body, $secret);
 
         $response = $this->withHeaders([
             'X-Signature' => $signature,
             'X-Timestamp' => $timestamp,
-            'X-Event-ID'  => 'evt_test_123',
-            'X-Event-Type'=> 'ORDER_STATUS_CHANGED',
+            'X-Event-ID' => 'evt_test_123',
+            'X-Event-Type' => 'ORDER_STATUS_CHANGED',
         ])->postJson(route('fulfillment.webhook', ['provider' => 'aliexpress']), [
-            'event_id'   => 'evt_test_123',
+            'event_id' => 'evt_test_123',
             'event_type' => 'ORDER_STATUS_CHANGED',
-            'order_id'   => '9876543210',
-            'status'     => 'wait_receive',
-            'tracking'   => [
-                'number'  => 'TRK-XYZ-99',
+            'order_id' => '9876543210',
+            'status' => 'wait_receive',
+            'tracking' => [
+                'number' => 'TRK-XYZ-99',
                 'company' => 'DHL Express',
-            ]
+            ],
         ]);
 
         $response->assertStatus(200);
 
         // Execute scheduled tasks manually to process outbox/inbox
-        app(\Webkul\Fulfillment\Services\Application\OutboxEventProcessor::class)->processPending();
+        app(OutboxEventProcessor::class)->processPending();
 
         $po->refresh();
         $session->refresh();

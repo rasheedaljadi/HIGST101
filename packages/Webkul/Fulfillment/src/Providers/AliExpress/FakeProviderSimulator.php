@@ -46,7 +46,7 @@ class FakeProviderSimulator implements ExternalFulfillmentProviderInterface
         }
 
         if ($mode === 'NETWORK_TIMEOUT' || $mode === 'TIMEOUT') {
-            throw new \RuntimeException("Simulator timeout error.");
+            throw new \RuntimeException('Simulator timeout error.');
         }
 
         if ($mode === 'OUT_OF_STOCK' || $mode === 'STOCKOUT') {
@@ -69,28 +69,29 @@ class FakeProviderSimulator implements ExternalFulfillmentProviderInterface
 
         if ($mode === 'PARTIAL_SUCCESS') {
             return SupplierOrderResult::success(
-                externalOrderId: "SIM-EXT-PARTIAL-123",
+                externalOrderId: 'SIM-EXT-PARTIAL-123',
                 code: '0',
                 message: 'Simulated Order Partial Success',
                 raw: [
                     'aliexpress_order_id' => 'SIM-EXT-PARTIAL-123',
-                    'status'              => 'PLACE_ORDER_PARTIAL_SUCCESS',
-                    'order_amount'        => 22.99,
-                    'currency'            => 'USD'
+                    'status' => 'PLACE_ORDER_PARTIAL_SUCCESS',
+                    'order_amount' => 22.99,
+                    'currency' => 'USD',
                 ]
             );
         }
 
-        $externalOrderId = "SIM-EXT-100200300";
+        $externalOrderId = 'SIM-EXT-100200300';
+
         return SupplierOrderResult::success(
             externalOrderId: $externalOrderId,
             code: '0',
             message: 'Simulated Order Success',
             raw: [
                 'aliexpress_order_id' => $externalOrderId,
-                'status'              => 'PLACE_ORDER_SUCCESS',
-                'order_amount'        => 45.99,
-                'currency'            => 'USD'
+                'status' => 'PLACE_ORDER_SUCCESS',
+                'order_amount' => 45.99,
+                'currency' => 'USD',
             ]
         );
     }
@@ -147,8 +148,9 @@ class FakeProviderSimulator implements ExternalFulfillmentProviderInterface
         string $contractVersion = '1.0'
     ): ?string {
         if ($this->simulatedFailureMode === 'RECONCILE_MATCH' || $this->simulatedFailureMode === 'NORMAL') {
-            return "SIM-EXT-100200300";
+            return 'SIM-EXT-100200300';
         }
+
         return null;
     }
 }

@@ -17,9 +17,6 @@ class PurchaseOrderItemRepository extends Repository
     /**
      * Validate data before creation or update.
      *
-     * @param  array  $data
-     * @param  int|null  $id
-     * @return void
      *
      * @throws \InvalidArgumentException
      */
@@ -35,18 +32,18 @@ class PurchaseOrderItemRepository extends Repository
         }
 
         if (isset($data['qty']) && (! is_numeric($data['qty']) || $data['qty'] <= 0)) {
-            throw new \InvalidArgumentException("Quantity must be a positive integer.");
+            throw new \InvalidArgumentException('Quantity must be a positive integer.');
         }
 
         // Uniqueness check for composite key (purchase_order_id, order_item_id)
         if (isset($data['purchase_order_id']) && isset($data['order_item_id'])) {
             $query = $this->model->where('purchase_order_id', $data['purchase_order_id'])
-                                 ->where('order_item_id', $data['order_item_id']);
+                ->where('order_item_id', $data['order_item_id']);
             if ($id !== null) {
                 $query->where('id', '!=', $id);
             }
             if ($query->exists()) {
-                throw new \InvalidArgumentException("The order_item_id must be unique per purchase_order_id.");
+                throw new \InvalidArgumentException('The order_item_id must be unique per purchase_order_id.');
             }
         }
     }
@@ -54,7 +51,6 @@ class PurchaseOrderItemRepository extends Repository
     /**
      * Create a new purchase order item.
      *
-     * @param  array  $attributes
      * @return mixed
      *
      * @throws \InvalidArgumentException
@@ -69,7 +65,6 @@ class PurchaseOrderItemRepository extends Repository
     /**
      * Update an existing purchase order item.
      *
-     * @param  array  $attributes
      * @param  int  $id
      * @return mixed
      *

@@ -4,9 +4,9 @@ namespace Webkul\Fulfillment\Services\Application;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Webkul\Sales\Repositories\OrderRepository;
-use Webkul\Fulfillment\Models\OrderProcess;
 use Webkul\Fulfillment\Events\OrderAccepted;
+use Webkul\Fulfillment\Models\OrderProcess;
+use Webkul\Sales\Repositories\OrderRepository;
 
 class OrderLifecycleCoordinator
 {
@@ -28,28 +28,28 @@ class OrderLifecycleCoordinator
 
         return DB::transaction(function () use ($order, $isCOD, $correlationId) {
             $process = OrderProcess::create([
-                'order_id'        => $order->id,
-                'payment_mode'    => $isCOD ? 'cod' : 'prepaid',
+                'order_id' => $order->id,
+                'payment_mode' => $isCOD ? 'cod' : 'prepaid',
                 'lifecycle_state' => $isCOD ? 'pending_acceptance' : 'waiting_payment',
-                'correlation_id'  => $correlationId,
+                'correlation_id' => $correlationId,
             ]);
 
             // Save trace log in timeline
             DB::table('financial_timeline')->insert([
-                'event_id'       => (string) Str::uuid(),
-                'order_id'       => $order->id,
-                'event_type'     => 'OrderProcessInitialized',
-                'amount'         => 0.00,
-                'currency'       => $order->order_currency_code ?: 'USD',
-                'metadata'       => json_encode([
-                    'order_id'     => $order->id,
+                'event_id' => (string) Str::uuid(),
+                'order_id' => $order->id,
+                'event_type' => 'OrderProcessInitialized',
+                'amount' => 0.00,
+                'currency' => $order->order_currency_code ?: 'USD',
+                'metadata' => json_encode([
+                    'order_id' => $order->id,
                     'payment_mode' => $isCOD ? 'cod' : 'prepaid',
                 ]),
-                'recorded_at'    => now(),
+                'recorded_at' => now(),
                 'correlation_id' => $correlationId,
-                'causation_id'   => $correlationId,
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'causation_id' => $correlationId,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             return $process;
@@ -65,7 +65,7 @@ class OrderLifecycleCoordinator
             $process = OrderProcess::where('order_id', $orderId)->firstOrFail();
 
             if ($process->payment_mode !== 'cod') {
-                throw new \DomainException("Only COD orders require manual operations acceptance.");
+                throw new \DomainException('Only COD orders require manual operations acceptance.');
             }
 
             $process->accept($by);
@@ -84,7 +84,7 @@ class OrderLifecycleCoordinator
      */
     public function receivePrepaidPayment(int $orderId, string $transactionId): void
     {
-        DB::transaction(function () use ($orderId, $transactionId) {
+        DB::transaction(function () use ($orderId) {
             $process = OrderProcess::where('order_id', $orderId)->first();
 
             // If not initialized yet (e.g. race condition), initialize it

@@ -21,6 +21,6 @@ class ProcurementCommandLog extends Model
 
     protected $casts = [
         'processed_at' => 'datetime',
-        'created_at'   => 'datetime',
+        'created_at' => 'datetime',
     ];
 }

@@ -24,23 +24,23 @@ class ValidateSupplierAvailabilityHandler
             $session->transitionTo($result['status']);
 
             DB::table('domain_outbox_events')->insert([
-                'event_id'       => (string) Str::uuid(),
-                'event_name'     => 'ProcurementValidated',
-                'event_version'  => 1,
+                'event_id' => (string) Str::uuid(),
+                'event_name' => 'ProcurementValidated',
+                'event_version' => 1,
                 'aggregate_type' => 'ProcurementSession',
-                'aggregate_id'   => (string) $session->id,
+                'aggregate_id' => (string) $session->id,
                 'correlation_id' => $command->correlationId,
-                'causation_id'   => $command->causationId,
-                'payload'        => json_encode([
+                'causation_id' => $command->causationId,
+                'payload' => json_encode([
                     'procurement_session_id' => $session->id,
-                    'status'                 => $result['status'],
-                    'price_decision'         => $result['price_decision'],
-                    'stock_decision'         => $result['stock_decision'],
+                    'status' => $result['status'],
+                    'price_decision' => $result['price_decision'],
+                    'stock_decision' => $result['stock_decision'],
                 ]),
-                'status'         => 'pending',
-                'attempts'       => 0,
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'status' => 'pending',
+                'attempts' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             return $session;

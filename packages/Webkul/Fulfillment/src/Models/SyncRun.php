@@ -3,24 +3,33 @@
 namespace Webkul\Fulfillment\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Webkul\Fulfillment\Events\SyncRunStarted;
-use Webkul\Fulfillment\Events\SyncPaused;
-use Webkul\Fulfillment\Events\SyncResumed;
 use Webkul\Fulfillment\Events\SyncCompleted;
 use Webkul\Fulfillment\Events\SyncFailed;
+use Webkul\Fulfillment\Events\SyncPaused;
+use Webkul\Fulfillment\Events\SyncResumed;
 use Webkul\Fulfillment\Events\SyncRunCancelled;
+use Webkul\Fulfillment\Events\SyncRunStarted;
 
 class SyncRun extends Model
 {
     public const STATUS_CREATED = 'CREATED';
+
     public const STATUS_RUNNING = 'RUNNING';
+
     public const STATUS_DRAINING = 'DRAINING';
+
     public const STATUS_COMPLETED = 'COMPLETED';
+
     public const STATUS_COMPLETED_WITH_ERRORS = 'COMPLETED_WITH_ERRORS';
+
     public const STATUS_PAUSED = 'PAUSED';
+
     public const STATUS_RESUMING = 'RESUMING';
+
     public const STATUS_FAILED = 'FAILED';
+
     public const STATUS_INTERRUPTED = 'INTERRUPTED';
+
     public const STATUS_CANCELLED = 'CANCELLED';
 
     protected $table = 'sync_runs';
@@ -45,13 +54,13 @@ class SyncRun extends Model
     ];
 
     protected $casts = [
-        'cursor'          => 'array',
-        'metadata'        => 'array',
+        'cursor' => 'array',
+        'metadata' => 'array',
         'health_snapshot' => 'array',
-        'statistics'      => 'array',
-        'started_at'      => 'datetime',
-        'heartbeat_at'    => 'datetime',
-        'completed_at'    => 'datetime',
+        'statistics' => 'array',
+        'started_at' => 'datetime',
+        'heartbeat_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function start(string $lockOwner, string $workerId): void
@@ -121,7 +130,7 @@ class SyncRun extends Model
     public function fail(string $error): void
     {
         $this->transitionTo(self::STATUS_FAILED);
-        
+
         $meta = $this->metadata ?? [];
         $meta['error_message'] = $error;
         $this->metadata = $meta;
@@ -161,7 +170,7 @@ class SyncRun extends Model
             self::STATUS_CREATED => [self::STATUS_RUNNING, self::STATUS_CANCELLED],
             self::STATUS_RUNNING => [self::STATUS_DRAINING, self::STATUS_PAUSED, self::STATUS_FAILED, self::STATUS_INTERRUPTED, self::STATUS_CANCELLED],
             self::STATUS_DRAINING => [self::STATUS_COMPLETED, self::STATUS_COMPLETED_WITH_ERRORS, self::STATUS_FAILED, self::STATUS_INTERRUPTED, self::STATUS_CANCELLED],
-            self::STATUS_PAUSED  => [self::STATUS_RESUMING, self::STATUS_CANCELLED],
+            self::STATUS_PAUSED => [self::STATUS_RESUMING, self::STATUS_CANCELLED],
             self::STATUS_RESUMING => [self::STATUS_RUNNING],
         ];
 
@@ -171,7 +180,7 @@ class SyncRun extends Model
             return;
         }
 
-        if (!isset($transitions[$current]) || !in_array($targetStatus, $transitions[$current])) {
+        if (! isset($transitions[$current]) || ! in_array($targetStatus, $transitions[$current])) {
             throw new \DomainException("Invalid sync run status transition: [{$current}] -> [{$targetStatus}]");
         }
 

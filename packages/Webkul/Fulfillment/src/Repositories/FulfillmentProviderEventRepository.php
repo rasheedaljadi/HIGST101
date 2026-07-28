@@ -17,9 +17,6 @@ class FulfillmentProviderEventRepository extends Repository
     /**
      * Validate data before creation or update.
      *
-     * @param  array  $data
-     * @param  int|null  $id
-     * @return void
      *
      * @throws \InvalidArgumentException
      */
@@ -38,7 +35,6 @@ class FulfillmentProviderEventRepository extends Repository
     /**
      * Create a new provider event.
      *
-     * @param  array  $attributes
      * @return mixed
      *
      * @throws \InvalidArgumentException
@@ -53,7 +49,6 @@ class FulfillmentProviderEventRepository extends Repository
     /**
      * Update an existing provider event.
      *
-     * @param  array  $attributes
      * @param  int  $id
      * @return mixed
      *
