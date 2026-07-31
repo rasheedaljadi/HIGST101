@@ -1,14 +1,3 @@
-<!--
-    Modified for Offline Payments V2.
-
-    Reason:
-    Bagisto checkout Vue lifecycle requires direct integration.
-    Hooks cannot participate in reactive payment payload updates.
--->
-<script>
-    window.offlineAccounts = @json($offlineAccounts ?? []);
-</script>
-
 {!! view_render_event('bagisto.shop.checkout.onepage.payment_methods.before') !!}
 
 <v-payment-methods
@@ -233,5 +222,7 @@
                 },
             },
         });
+
+        window.offlineAccounts = @json($offlineAccounts ?? []);
     </script>
 @endpushonce
