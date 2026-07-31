@@ -67,8 +67,8 @@
                                 <template v-if="option.id">
                                     <!-- Color Swatch Options -->
                                     <label
-                                        class="relative -m-0.5 flex cursor-pointer items-center justify-center rounded-full p-0.5 focus:outline-none"
-                                        :class="{'ring-2 ring-gray-900' : option.id == attribute.selectedValue}"
+                                        class="relative -m-0.5 flex cursor-pointer items-center justify-center rounded-lg p-0.5 focus:outline-none"
+                                        :class="{'ring-2 ring-navyBlue' : option.id == attribute.selectedValue}"
                                         :title="option.label"
                                         v-if="attribute.swatch_type == 'color'"
                                     >
@@ -94,7 +94,17 @@
                                             />
                                         </v-field>
 
+                                        <img
+                                            v-if="getOptionImage(option)"
+                                            :src="getOptionImage(option)"
+                                            :alt="option.label"
+                                            :title="option.label"
+                                            class="h-11 w-11 rounded-md border border-gray-200 object-cover shadow-sm transition-all hover:scale-105 max-sm:h-9 max-sm:w-9"
+                                            :class="{'border-navyBlue border-2': option.id == attribute.selectedValue}"
+                                        />
+
                                         <span
+                                            v-else
                                             class="h-8 w-8 rounded-full border border-gray-200 max-sm:h-[25px] max-sm:w-[25px]"
                                             tabindex="0"
                                             :style="{ 'background-color': option.swatch_value }"
@@ -131,7 +141,7 @@
                                         </v-field>
 
                                         <img
-                                            :src="option.swatch_value"
+                                            :src="getOptionImage(option) || option.swatch_value"
                                             :title="option.label"
                                         />
                                     </label>
@@ -253,6 +263,28 @@
                 },
 
                 methods: {
+                    getOptionImage(option) {
+                        if (! option) {
+                            return null;
+                        }
+
+                        if (option.swatch_value && (option.swatch_value.startsWith('http') || option.swatch_value.startsWith('/') || option.swatch_value.includes('storage'))) {
+                            return option.swatch_value;
+                        }
+
+                        if (option.allowedProducts && option.allowedProducts.length > 0) {
+                            for (let i = 0; i < option.allowedProducts.length; i++) {
+                                let variantId = option.allowedProducts[i];
+                                let images = this.config.variant_images?.[variantId];
+                                if (images && images.length > 0) {
+                                    return images[0].small_image_url || images[0].medium_image_url || images[0].large_image_url;
+                                }
+                            }
+                        }
+
+                        return null;
+                    },
+
                     initAllVariantImages() {
                         let gallery = this.$parent?.$parent?.$refs?.gallery;
 
