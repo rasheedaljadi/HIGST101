@@ -12,7 +12,12 @@ trait CurrencyFormatter
      */
     public function formatCurrency(?float $price, Currency $currency): string
     {
-        if ($currency->currency_position) {
+        if (
+            $currency->currency_position
+            || ! is_null($currency->decimal)
+            || ! empty($currency->group_separator)
+            || ! empty($currency->decimal_separator)
+        ) {
             return $this->useCustomCurrencyFormatter($price, $currency);
         }
 
@@ -26,12 +31,12 @@ trait CurrencyFormatter
     {
         $formatter = new \NumberFormatter(app()->getLocale(), \NumberFormatter::CURRENCY);
 
+        if (! is_null($currency->decimal)) {
+            $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, (int) $currency->decimal);
+        }
+
         if ($currency->symbol) {
-            /**
-             * If, somehow, the currency symbol mentioned matches with the user-defined symbol,
-             * then we can simply use the 'formatCurrency' method.
-             */
-            if ($this->currencySymbol($currency) == $currency->symbol) {
+            if ($this->currencySymbol($currency) == $currency->symbol && is_null($currency->decimal)) {
                 return $formatter->formatCurrency($price, $currency->code);
             }
 
@@ -52,7 +57,9 @@ trait CurrencyFormatter
 
         $formatter->setSymbol(\NumberFormatter::CURRENCY_SYMBOL, '');
 
-        $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, $currency->decimal ?? 2);
+        $decimalDigits = ! is_null($currency->decimal) ? (int) $currency->decimal : 2;
+
+        $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, $decimalDigits);
 
         $formattedCurrency = preg_replace('/^\s+|\s+$/u', '', $formatter->format($price));
 
@@ -65,7 +72,7 @@ trait CurrencyFormatter
         }
 
         if (
-            $currency->decimal > 0
+            $decimalDigits > 0
             && ! empty($currency->decimal_separator)
         ) {
             $formattedCurrency = str_replace(
@@ -84,6 +91,7 @@ trait CurrencyFormatter
             CurrencyPositionEnum::LEFT_WITH_SPACE->value => $symbol.' '.$formattedCurrency,
             CurrencyPositionEnum::RIGHT->value => $formattedCurrency.$symbol,
             CurrencyPositionEnum::RIGHT_WITH_SPACE->value => $formattedCurrency.' '.$symbol,
+            default => $formattedCurrency.' '.$symbol,
         };
     }
 
