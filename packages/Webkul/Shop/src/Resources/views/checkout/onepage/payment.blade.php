@@ -146,6 +146,8 @@
                 {!! view_render_event('bagisto.shop.checkout.onepage.payment_method.accordion.after') !!}
             </template>
         </div>
+    </script>
+
     <script type="module">
         app.component('v-payment-methods', {
             template: '#v-payment-methods-template',
