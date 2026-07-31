@@ -5,6 +5,7 @@
 
     {!! view_render_event('bagisto.shop.products.view.configurable-options.after', ['product' => $product]) !!}
 
+
     @pushonce('scripts')
         <script
             type="text/x-template"
@@ -417,5 +418,4 @@
 
         </script>
     @endpushonce
-
 @endif
