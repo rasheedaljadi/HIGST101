@@ -135,16 +135,56 @@ class ConfigurableOption
         $allowAttributes = $this->getAllowAttributes($product);
 
         foreach ($allowAttributes as $attribute) {
+            $rawLabel = $attribute->name ? $attribute->name : $attribute->admin_name;
+
             $attributes[] = [
                 'id' => $attribute->id,
                 'code' => $attribute->code,
-                'label' => $attribute->name ? $attribute->name : $attribute->admin_name,
+                'label' => $this->translateAttributeName($rawLabel),
                 'swatch_type' => $attribute->swatch_type,
                 'options' => $this->getAttributeOptionsData($attribute, $options),
             ];
         }
 
         return $attributes;
+    }
+
+    /**
+     * Translate common attribute names to Arabic if current locale is Arabic.
+     *
+     * @param  string  $name
+     * @return string
+     */
+    protected function translateAttributeName($name)
+    {
+        if (in_array(app()->getLocale(), ['ar', 'ar_YE'])) {
+            $translations = [
+                'Compatibility by Model' => 'الموديل المتوافق',
+                'Compatibility By Model' => 'الموديل المتوافق',
+                'compatibility by model' => 'الموديل المتوافق',
+                'Compatibility' => 'الموديل المتوافق',
+                'Color' => 'اللون',
+                'color' => 'اللون',
+                'Size' => 'الحجم',
+                'size' => 'الحجم',
+                'Model' => 'الموديل',
+                'model' => 'الموديل',
+                'Brand' => 'الماركة',
+                'brand' => 'الماركة',
+                'Material' => 'الخامة',
+                'material' => 'الخامة',
+                'Capacity' => 'السعة',
+                'capacity' => 'السعة',
+                'Style' => 'الموديل / الشكل',
+                'style' => 'الموديل / الشكل',
+                'Weight' => 'الوزن',
+                'weight' => 'الوزن',
+            ];
+
+            return $translations[trim($name)] ?? $name;
+        }
+
+        return $name;
     }
 
     /**
