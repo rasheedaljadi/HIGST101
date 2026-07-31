@@ -246,10 +246,32 @@
                         this.childAttributes.unshift(attribute);
                     }
 
-                    this.autoSelectFirstOptions();
+                    // Merge all variant images into gallery so all thumbnails remain visible
+                    this.$nextTick(() => {
+                        this.initAllVariantImages();
+                        this.autoSelectFirstOptions();
+                    });
                 },
 
                 methods: {
+                    initAllVariantImages() {
+                        let gallery = this.$parent?.$parent?.$refs?.gallery;
+
+                        if (! gallery || ! gallery.media || ! gallery.media.images) {
+                            return;
+                        }
+
+                        let existingImages = gallery.media.images;
+
+                        Object.values(this.config.variant_images || {}).forEach(images => {
+                            images.forEach(img => {
+                                if (! existingImages.some(existing => existing.large_image_url === img.large_image_url || existing.original_image_url === img.original_image_url)) {
+                                    existingImages.push(img);
+                                }
+                            });
+                        });
+                    },
+
                     autoSelectFirstOptions() {
                         let currentAttribute = this.childAttributes[0];
 
@@ -267,6 +289,7 @@
                             }
                         }
                     },
+
                     configure(attribute, optionId) {
                         this.possibleOptionVariant = this.getPossibleOptionVariant(attribute, optionId);
 
@@ -411,27 +434,35 @@
                     },
 
                     reloadImages () {
-                        galleryImages.splice(0, galleryImages.length)
+                        let gallery = this.$parent?.$parent?.$refs?.gallery;
 
-                        if (this.possibleOptionVariant) {
-                            this.config.variant_images[this.possibleOptionVariant].forEach(function(image) {
-                                galleryImages.push(image);
-                            });
-
-                            this.config.variant_videos[this.possibleOptionVariant].forEach(function(video) {
-                                galleryImages.push(video);
-                            });
+                        if (! gallery || ! gallery.media || ! gallery.media.images) {
+                            return;
                         }
 
-                        this.galleryImages.forEach(function(image) {
-                            galleryImages.push(image);
-                        });
+                        if (this.possibleOptionVariant && this.config.variant_images[this.possibleOptionVariant]) {
+                            let variantImages = this.config.variant_images[this.possibleOptionVariant];
 
-                        if (galleryImages.length) {
-                            this.$parent.$parent.$refs.gallery.media.images =  [...galleryImages];
+                            if (variantImages.length > 0) {
+                                let selectedVariantImage = variantImages[0];
+                                let baseImages = gallery.media.images;
+
+                                let targetIndex = baseImages.findIndex(img => 
+                                    img.large_image_url === selectedVariantImage.large_image_url ||
+                                    img.original_image_url === selectedVariantImage.original_image_url ||
+                                    img.medium_image_url === selectedVariantImage.medium_image_url
+                                );
+
+                                if (targetIndex !== -1) {
+                                    gallery.change(baseImages[targetIndex], targetIndex);
+                                } else {
+                                    baseImages.unshift(selectedVariantImage);
+                                    gallery.change(selectedVariantImage, 0);
+                                }
+                            }
                         }
 
-                        this.$emitter.emit('configurable-variant-update-images-event', galleryImages);
+                        this.$emitter.emit('configurable-variant-update-images-event', gallery.media.images);
                     },
                 }
             });
