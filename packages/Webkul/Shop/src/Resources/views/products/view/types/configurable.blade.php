@@ -62,7 +62,7 @@
                         </h2>
 
                         <!-- Swatch Options -->
-                        <div class="flex items-center gap-3">
+                        <div class="flex flex-wrap items-center gap-2.5">
                             <template v-for="(option, index) in attribute.options">
                                 <template v-if="option.id">
                                     <!-- Color Swatch Options -->
