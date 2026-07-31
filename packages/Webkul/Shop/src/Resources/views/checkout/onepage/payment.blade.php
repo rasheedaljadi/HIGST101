@@ -1,3 +1,14 @@
+<!--
+    Modified for Offline Payments V2.
+
+    Reason:
+    Bagisto checkout Vue lifecycle requires direct integration.
+    Hooks cannot participate in reactive payment payload updates.
+-->
+<script>
+    window.offlineAccounts = @json($offlineAccounts ?? []);
+</script>
+
 {!! view_render_event('bagisto.shop.checkout.onepage.payment_methods.before') !!}
 
 <v-payment-methods
@@ -103,14 +114,49 @@
                                 {{-- \Webkul\Payment\Payment::getAdditionalDetails($payment['method'] --}}
                             </div>
                         </div>
+
+                        <!-- Sub-selector for Offline Payment Destinations -->
+                        <div v-if="selectedMethodCode === 'offline_payments' && offlineAccounts.length > 0" class="mt-6 p-5 border border-zinc-200 rounded-xl bg-white dark:bg-gray-900 dark:border-gray-800">
+                            <h3 class="text-lg font-medium text-zinc-800 dark:text-white mb-4">@lang('offline_payments::app.shop.checkout.select-account')</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div 
+                                    v-for="dest in offlineAccounts" 
+                                    :key="dest.id"
+                                    class="flex items-start gap-4 p-4 border rounded-xl cursor-pointer transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                    :class="[selectedOfflineAccountId === dest.id ? 'border-navyBlue bg-zinc-50 dark:bg-zinc-800 ring-2 ring-navyBlue/20 dark:border-navyBlue' : 'border-zinc-200 dark:border-gray-800']"
+                                    @click="selectOfflineAccount(dest)"
+                                >
+                                    <div class="flex-shrink-0 mt-0.5">
+                                        <span 
+                                            class="text-xl"
+                                            :class="[selectedOfflineAccountId === dest.id ? 'icon-radio-select text-navyBlue' : 'icon-radio-unselect text-zinc-400']"
+                                        ></span>
+                                    </div>
+                                    <img v-if="dest.account && dest.account.logo_path" :src="'/storage/' + dest.account.logo_path" class="h-10 w-10 object-cover rounded border bg-white flex-shrink-0">
+                                    <div class="flex-grow">
+                                        <p class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">@{{ dest.account ? dest.account.display_name : '' }}</p>
+                                        <p class="text-xs text-zinc-500 mt-1">
+                                            <strong>@{{ dest.account ? dest.account.provider_name : '' }}:</strong> @{{ dest.account_identifier }}
+                                        </p>
+                                        <p class="text-xs text-zinc-500" v-if="dest.account">
+                                            <strong>@lang('offline_payments::app.admin.form.recipient-name'):</strong> @{{ dest.account.recipient_name }}
+                                        </p>
+                                        <p class="text-xs text-zinc-500" v-if="dest.swift_code">
+                                            <strong>SWIFT:</strong> @{{ dest.swift_code }}
+                                        </p>
+                                        <div v-if="dest.transfer_instructions" class="text-xs text-zinc-600 dark:text-zinc-400 mt-2 border-t pt-2 border-zinc-100 dark:border-zinc-800 whitespace-pre-line">
+                                            @{{ dest.transfer_instructions }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </x-slot>
                 </x-shop::accordion>
 
                 {!! view_render_event('bagisto.shop.checkout.onepage.payment_method.accordion.after') !!}
             </template>
         </div>
-    </script>
-
     <script type="module">
         app.component('v-payment-methods', {
             template: '#v-payment-methods-template',
@@ -125,8 +171,42 @@
 
             emits: ['processing', 'processed'],
 
+            data() {
+                return {
+                    selectedMethodCode: null,
+                    selectedOfflineAccountId: null,
+                    offlineAccounts: window.offlineAccounts || [],
+                };
+            },
+
+            mounted() {
+                if (this.offlineAccounts.length > 0) {
+                    this.selectedOfflineAccountId = this.offlineAccounts[0].id;
+                }
+            },
+
             methods: {
+                selectOfflineAccount(dest) {
+                    this.selectedOfflineAccountId = dest.id;
+                    const offlineMethod = this.methods.find(m => m.method === 'offline_payments');
+                    if (offlineMethod) {
+                        offlineMethod.selected_offline_destination_id = dest.id;
+                        offlineMethod.selected_offline_account_id = dest.id;
+                        this.store(offlineMethod);
+                    }
+                },
+
                 store(selectedMethod) {
+                    this.selectedMethodCode = selectedMethod.method;
+
+                    if (selectedMethod.method === 'offline_payments') {
+                        if (! this.selectedOfflineAccountId && this.offlineAccounts.length > 0) {
+                            this.selectedOfflineAccountId = this.offlineAccounts[0].id;
+                        }
+                        selectedMethod.selected_offline_destination_id = this.selectedOfflineAccountId;
+                        selectedMethod.selected_offline_account_id = this.selectedOfflineAccountId;
+                    }
+
                     this.$emit('processing', 'review');
 
                     this.$axios.post("{{ route('shop.checkout.onepage.payment_methods.store') }}", {

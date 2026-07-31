@@ -24,6 +24,7 @@ use Webkul\Inventory\Providers\InventoryServiceProvider;
 use Webkul\MagicAI\Providers\MagicAIServiceProvider;
 use Webkul\Marketing\Providers\MarketingServiceProvider;
 use Webkul\Notification\Providers\NotificationServiceProvider;
+use Webkul\OfflinePayments\Providers\OfflinePaymentsServiceProvider;
 use Webkul\Payment\Providers\PaymentServiceProvider;
 use Webkul\Paypal\Providers\PaypalServiceProvider;
 use Webkul\PayU\Providers\PayUServiceProvider;
@@ -64,6 +65,7 @@ return [
     CustomerServiceProvider::class,
     DataGridServiceProvider::class,
     DataTransferServiceProvider::class,
+    OfflinePaymentsServiceProvider::class,
     DebugBarServiceProvider::class,
     FPCServiceProvider::class,
     FulfillmentServiceProvider::class,

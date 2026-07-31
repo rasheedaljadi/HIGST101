@@ -1,0 +1,24 @@
+{
+    "name": "webkul/dynamic-bank-transfer",
+    "description": "Dynamic Money Transfer package for Bagisto 2.4.x",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "HIGEST Engineering Team",
+            "email": "dev@higest.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Webkul\\DynamicBankTransfer\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\DynamicBankTransfer\\Providers\\DynamicBankTransferServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev"
+}
