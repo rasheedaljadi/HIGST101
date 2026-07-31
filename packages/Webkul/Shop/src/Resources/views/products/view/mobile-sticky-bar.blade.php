@@ -1,6 +1,6 @@
 <v-mobile-sticky-bar
     :product-id="{{ $product->id }}"
-    :is-saleable="{{ $pdpViewData['is_saleable'] ? 'true' : 'false' }}"
+    :is-saleable="{{ ($pdpViewData['is_saleable'] ?? $product->isSaleable(1)) ? 'true' : 'false' }}"
     :price-html='@json($product->getTypeInstance()->getPriceHtml())'
     :product-type="'{{ $product->type }}'"
 >
