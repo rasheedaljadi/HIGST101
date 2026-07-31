@@ -245,15 +245,31 @@
     <!-- Cart Grand Total -->
     {!! view_render_event('bagisto.shop.checkout.onepage.summary.grand_total.before') !!}
 
-    <div class="flex justify-between text-right">
-        <p class="text-lg font-semibold max-sm:text-sm">
+    <div class="flex justify-between text-right border-t border-gray-200/80 pt-3">
+        <p class="text-lg font-bold text-navyBlue max-sm:text-sm">
             @lang('shop::app.checkout.onepage.summary.grand-total')
         </p>
 
-        <p class="text-lg font-semibold max-sm:text-sm">
+        <p class="text-xl font-bold text-navyBlue max-sm:text-base">
             @{{ cart.formatted_grand_total }}
         </p>
     </div>
 
     {!! view_render_event('bagisto.shop.checkout.onepage.summary.grand_total.after') !!}
+
+    <!-- HIGEST Guarantee & Trust Badges -->
+    <div class="mt-6 border-t border-gray-100 pt-5 grid grid-cols-3 gap-2 text-center text-xs text-zinc-600 font-medium">
+        <div class="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50/80 border border-gray-100/80 transition-all hover:bg-white hover:shadow-sm">
+            <span class="text-xl">🛡️</span>
+            <span>منتج أصلي 100%</span>
+        </div>
+        <div class="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50/80 border border-gray-100/80 transition-all hover:bg-white hover:shadow-sm">
+            <span class="text-xl">🚀</span>
+            <span>توصيل كافه المحافظات والمديريات</span>
+        </div>
+        <div class="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50/80 border border-gray-100/80 transition-all hover:bg-white hover:shadow-sm">
+            <span class="text-xl">🔒</span>
+            <span>دفع آمن ومأمون</span>
+        </div>
+    </div>
 </div>

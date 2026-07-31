@@ -137,12 +137,24 @@
                             </div>
                         </div>
 
-                        <p class="mt-6 text-zinc-500 max-md:mt-5 max-md:text-sm" v-pre>
-                            {{ $address->address }},
+                        @if ($address->phone)
+                            <p class="mt-1.5 text-sm font-normal text-zinc-600" v-pre>
+                                📞 {{ $address->phone }}
+                            </p>
+                        @endif
 
-                            {{ $address->city }}, 
-                            {{ $address->state }}, {{ $address->country }}, 
-                            {{ $address->postcode }}
+                        <p class="mt-3 text-sm text-zinc-500 max-md:mt-2 max-sm:mt-0 leading-relaxed" v-pre>
+                            @if ($address->address)
+                                {{ is_array($address->address) ? implode(', ', $address->address) : $address->address }}،
+                            @endif
+
+                            @if ($address->city)
+                                المديرية: {{ $address->city }}،
+                            @endif
+
+                            @if ($address->state)
+                                المحافظة: {{ $address->country_state?->default_name ?? $address->state_name ?? $address->state }}
+                            @endif
                         </p>
                     </div>    
                 @endforeach

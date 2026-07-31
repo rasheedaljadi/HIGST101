@@ -1,8 +1,47 @@
-<!-- SEO Meta Content -->
-@push('meta')
-    <meta name="description" content="@lang('shop::app.checkout.onepage.index.checkout')"/>
+@push('styles')
+    <style>
+        /* HIGEST Brand Styling & Visual Enhancements */
+        .primary-button {
+            background: linear-gradient(135deg, #061738 0%, #0e2b63 100%) !important;
+            box-shadow: 0 4px 14px rgba(6, 23, 56, 0.25) !important;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
 
-    <meta name="keywords" content="@lang('shop::app.checkout.onepage.index.checkout')"/>
+        .primary-button:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 20px rgba(6, 23, 56, 0.35) !important;
+        }
+
+        .primary-button:active {
+            transform: translateY(0) !important;
+        }
+
+        /* Input Controls Refinement */
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        select {
+            border-radius: 0.75rem !important;
+            border-color: #e4e4e7 !important;
+            background-color: #fafafa !important;
+            transition: all 0.2s ease !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        select:focus {
+            background-color: #ffffff !important;
+            border-color: #061738 !important;
+            box-shadow: 0 0 0 4px rgba(6, 23, 56, 0.08) !important;
+        }
+
+        /* Card Container Enhancements */
+        #steps-container > div,
+        .sticky > div {
+            border-radius: 1rem !important;
+        }
+    </style>
 @endpush
 
 <x-shop::layouts
@@ -18,26 +57,39 @@
     {!! view_render_event('bagisto.shop.checkout.onepage.header.before') !!}
 
     <!-- Page Header -->
-    <div class="flex-wrap">
-        <div class="flex w-full justify-between border border-b border-l-0 border-r-0 border-t-0 px-[60px] py-4 max-lg:px-8 max-sm:px-4">
-            <div class="flex items-center gap-x-14 max-[1180px]:gap-x-9">
+    <div class="flex-wrap bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-100 mb-6">
+        <div class="flex w-full justify-between items-center px-[60px] py-3.5 max-lg:px-8 max-sm:px-4">
+            <div class="flex items-center gap-x-4">
                 <a
                     href="{{ route('shop.home.index') }}"
-                    class="flex min-h-[30px]"
-                    aria-label="@lang('shop::checkout.onepage.index.bagisto')"
+                    class="flex items-center gap-2"
+                    aria-label="{{ config('app.name') }}"
                 >
                     <img
                         src="{{ core()->getCurrentChannel()->logo_url ?? bagisto_asset('images/logo.svg') }}"
                         alt="{{ config('app.name') }}"
                         width="131"
                         height="29"
+                        class="h-8 w-auto object-contain"
                     >
                 </a>
+                <span class="hidden md:inline-block h-5 w-px bg-gray-200"></span>
+                <span class="hidden md:flex items-center gap-1.5 text-xs font-semibold text-zinc-700 bg-gray-100 px-3 py-1 rounded-full border border-gray-200/60">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    متجر هايست الرسمـي | HIGEST Store
+                </span>
             </div>
 
-            @guest('customer')
-                @include('shop::checkout.login')
-            @endguest
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200/60">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    دفع آمن وتشخير 256-bit SSL
+                </div>
+
+                @guest('customer')
+                    @include('shop::checkout.login')
+                @endguest
+            </div>
         </div>
     </div>
 

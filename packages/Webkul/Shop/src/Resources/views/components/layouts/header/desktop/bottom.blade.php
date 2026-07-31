@@ -78,7 +78,7 @@
                     placeholder="@lang('shop::app.components.layouts.header.desktop.bottom.search-text')"
                     aria-label="@lang('shop::app.components.layouts.header.desktop.bottom.search-text')"
                     aria-required="true"
-                    pattern="[^\\]+"
+                    pattern="[^\x5c]+"
                     required
                 >
 

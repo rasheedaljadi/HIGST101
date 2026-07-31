@@ -12,24 +12,9 @@
                 />
             </x-shop::form.control-group>
 
-            <!-- Company Name -->
-            <x-shop::form.control-group>
-                <x-shop::form.control-group.label>
-                    @lang('shop::app.checkout.onepage.address.company-name')
-                </x-shop::form.control-group.label>
-
-                <x-shop::form.control-group.control
-                    type="text"
-                    ::name="controlName + '.company_name'"
-                    ::value="address.company_name"
-                    :placeholder="trans('shop::app.checkout.onepage.address.company-name')"
-                />
-            </x-shop::form.control-group>
-
-            {!! view_render_event('bagisto.shop.checkout.onepage.address.form.company_name.after') !!}
-
-            <!-- First Name -->
+            <!-- First Name & Last Name -->
             <div class="grid grid-cols-2 gap-x-5 max-md:grid-cols-1">
+                <!-- First Name -->
                 <x-shop::form.control-group>
                     <x-shop::form.control-group.label class="required !mt-0">
                         @lang('shop::app.checkout.onepage.address.first-name')
@@ -70,46 +55,130 @@
                 {!! view_render_event('bagisto.shop.checkout.onepage.address.form.last_name.after') !!}
             </div>
 
-            <!-- Email -->
-            <x-shop::form.control-group>
-                <x-shop::form.control-group.label class="required !mt-0">
-                    @lang('shop::app.checkout.onepage.address.email')
-                </x-shop::form.control-group.label>
-
+            <!-- Country (Hidden & Fixed to YE) -->
+            <x-shop::form.control-group class="hidden">
                 <x-shop::form.control-group.control
-                    type="email"
-                    ::name="controlName + '.email'"
-                    ::value="address.email"
-                    rules="required|email"
-                    :label="trans('shop::app.checkout.onepage.address.email')"
-                    placeholder="email@example.com"
+                    type="hidden"
+                    ::name="controlName + '.country'"
+                    value="YE"
+                    v-model="selectedCountry"
                 />
-
-                <x-shop::form.control-group.error ::name="controlName + '.email'" />
             </x-shop::form.control-group>
 
-            {!! view_render_event('bagisto.shop.checkout.onepage.address.form.email.after') !!}
+            {!! view_render_event('bagisto.shop.checkout.onepage.address.form.country.after') !!}
 
-            <!-- Vat ID -->
-            <template v-if="controlName=='billing'">
+            <!-- State & City (Governorate & District Side-by-Side) -->
+            <div class="grid grid-cols-2 gap-x-5 max-md:grid-cols-1">
+                <!-- State / Governorate -->
                 <x-shop::form.control-group>
-                    <x-shop::form.control-group.label>
-                        @lang('shop::app.checkout.onepage.address.vat-id')
+                    <x-shop::form.control-group.label class="{{ core()->isStateRequired() ? 'required' : '' }} !mt-0">
+                        @lang('shop::app.checkout.onepage.address.state')
                     </x-shop::form.control-group.label>
 
-                    <x-shop::form.control-group.control
-                        type="text"
-                        ::name="controlName + '.vat_id'"
-                        ::value="address.vat_id"
-                        :label="trans('shop::app.checkout.onepage.address.vat-id')"
-                        :placeholder="trans('shop::app.checkout.onepage.address.vat-id')"
-                    />
+                    <template v-if="states">
+                        <template v-if="haveStates">
+                            <x-shop::form.control-group.control
+                                type="select"
+                                ::name="controlName + '.state'"
+                                v-model="selectedState"
+                                rules="{{ core()->isStateRequired() ? 'required' : '' }}"
+                                ::value="address.state"
+                                :label="trans('shop::app.checkout.onepage.address.state')"
+                                :placeholder="trans('shop::app.checkout.onepage.address.state')"
+                            >
+                                <option value="">
+                                    @lang('shop::app.checkout.onepage.address.select-state')
+                                </option>
 
-                    <x-shop::form.control-group.error ::name="controlName + '.vat_id'" />
+                                <option
+                                    v-for='(state, index) in states[selectedCountry]'
+                                    :value="state.code"
+                                >
+                                    @{{ state.default_name }}
+                                </option>
+                            </x-shop::form.control-group.control>
+                        </template>
+
+                        <template v-else>
+                            <x-shop::form.control-group.control
+                                type="text"
+                                ::name="controlName + '.state'"
+                                ::value="address.state"
+                                v-model="selectedState"
+                                rules="{{ core()->isStateRequired() ? 'required' : '' }}"
+                                :label="trans('shop::app.checkout.onepage.address.state')"
+                                :placeholder="trans('shop::app.checkout.onepage.address.state')"
+                            />
+                        </template>
+                    </template>
+
+                    <x-shop::form.control-group.error ::name="controlName + '.state'" />
                 </x-shop::form.control-group>
 
-                {!! view_render_event('bagisto.shop.checkout.onepage.address.form.vat_id.after') !!}
-            </template>
+                {!! view_render_event('bagisto.shop.checkout.onepage.address.form.state.after') !!}
+
+                <!-- City / District -->
+                <x-shop::form.control-group>
+                    <x-shop::form.control-group.label class="required !mt-0">
+                        @lang('shop::app.checkout.onepage.address.city')
+                    </x-shop::form.control-group.label>
+
+                    <template v-if="selectedState && availableDistricts && availableDistricts.length">
+                        <x-shop::form.control-group.control
+                            type="select"
+                            ::name="controlName + '.city'"
+                            ::value="address.city"
+                            v-model="selectedCity"
+                            rules="required"
+                            :label="trans('shop::app.checkout.onepage.address.city')"
+                            :placeholder="trans('shop::app.checkout.onepage.address.city')"
+                        >
+                            <option value="">
+                                @lang('shop::app.checkout.onepage.address.select-city')
+                            </option>
+
+                            <option
+                                v-for="district in availableDistricts"
+                                :value="district"
+                            >
+                                @{{ district }}
+                            </option>
+                        </x-shop::form.control-group.control>
+                    </template>
+
+                    <template v-else-if="!selectedState">
+                        <x-shop::form.control-group.control
+                            type="select"
+                            ::name="controlName + '.city'"
+                            ::value="address.city"
+                            disabled
+                            rules="required"
+                            :label="trans('shop::app.checkout.onepage.address.city')"
+                            :placeholder="trans('shop::app.checkout.onepage.address.city')"
+                        >
+                            <option value="">
+                                @lang('shop::app.checkout.onepage.address.select-state-first')
+                            </option>
+                        </x-shop::form.control-group.control>
+                    </template>
+
+                    <template v-else>
+                        <x-shop::form.control-group.control
+                            type="text"
+                            ::name="controlName + '.city'"
+                            ::value="address.city"
+                            v-model="selectedCity"
+                            rules="required"
+                            :label="trans('shop::app.checkout.onepage.address.city')"
+                            :placeholder="trans('shop::app.checkout.onepage.address.city')"
+                        />
+                    </template>
+
+                    <x-shop::form.control-group.error ::name="controlName + '.city'" />
+                </x-shop::form.control-group>
+
+                {!! view_render_event('bagisto.shop.checkout.onepage.address.form.city.after') !!}
+            </div>
 
             <!-- Street Address -->
             <x-shop::form.control-group>
@@ -151,128 +220,6 @@
 
             {!! view_render_event('bagisto.shop.checkout.onepage.address.form.address.after') !!}
 
-            <div class="grid grid-cols-2 gap-x-5 max-md:grid-cols-1">
-                <!-- Country -->
-                <x-shop::form.control-group class="!mb-4">
-                    <x-shop::form.control-group.label class="{{ core()->isCountryRequired() ? 'required' : '' }} !mt-0">
-                        @lang('shop::app.checkout.onepage.address.country')
-                    </x-shop::form.control-group.label>
-
-                    <x-shop::form.control-group.control
-                        type="select"
-                        ::name="controlName + '.country'"
-                        ::value="address.country"
-                        v-model="selectedCountry"
-                        rules="{{ core()->isCountryRequired() ? 'required' : '' }}"
-                        :label="trans('shop::app.checkout.onepage.address.country')"
-                        :placeholder="trans('shop::app.checkout.onepage.address.country')"
-                    >
-                        <option value="">
-                            @lang('shop::app.checkout.onepage.address.select-country')
-                        </option>
-
-                        <option
-                            v-for="country in countries"
-                            :value="country.code"
-                        >
-                            @{{ country.name }}
-                        </option>
-                    </x-shop::form.control-group.control>
-
-                    <x-shop::form.control-group.error ::name="controlName + '.country'" />
-                </x-shop::form.control-group>
-
-                {!! view_render_event('bagisto.shop.checkout.onepage.address.form.country.after') !!}
-
-                <!-- State -->
-                <x-shop::form.control-group>
-                    <x-shop::form.control-group.label class="{{ core()->isStateRequired() ? 'required' : '' }} !mt-0">
-                        @lang('shop::app.checkout.onepage.address.state')
-                    </x-shop::form.control-group.label>
-
-                    <template v-if="states">
-                        <template v-if="haveStates">
-                            <x-shop::form.control-group.control
-                                type="select"
-                                ::name="controlName + '.state'"
-                                rules="{{ core()->isStateRequired() ? 'required' : '' }}"
-                                ::value="address.state"
-                                :label="trans('shop::app.checkout.onepage.address.state')"
-                                :placeholder="trans('shop::app.checkout.onepage.address.state')"
-                            >
-                                <option value="">
-                                    @lang('shop::app.checkout.onepage.address.select-state')
-                                </option>
-
-                                <option
-                                    v-for='(state, index) in states[selectedCountry]'
-                                    :value="state.code"
-                                >
-                                    @{{ state.default_name }}
-                                </option>
-                            </x-shop::form.control-group.control>
-                        </template>
-
-                        <template v-else>
-                            <x-shop::form.control-group.control
-                                type="text"
-                                ::name="controlName + '.state'"
-                                ::value="address.state"
-                                rules="{{ core()->isStateRequired() ? 'required' : '' }}"
-                                :label="trans('shop::app.checkout.onepage.address.state')"
-                                :placeholder="trans('shop::app.checkout.onepage.address.state')"
-                            />
-                        </template>
-                    </template>
-
-                    <x-shop::form.control-group.error ::name="controlName + '.state'" />
-                </x-shop::form.control-group>
-
-                {!! view_render_event('bagisto.shop.checkout.onepage.address.form.state.after') !!}
-            </div>
-
-            <div class="grid grid-cols-2 gap-x-5 max-md:grid-cols-1">
-                <!-- City -->
-                <x-shop::form.control-group>
-                    <x-shop::form.control-group.label class="required !mt-0">
-                        @lang('shop::app.checkout.onepage.address.city')
-                    </x-shop::form.control-group.label>
-
-                    <x-shop::form.control-group.control
-                        type="text"
-                        ::name="controlName + '.city'"
-                        ::value="address.city"
-                        rules="required"
-                        :label="trans('shop::app.checkout.onepage.address.city')"
-                        :placeholder="trans('shop::app.checkout.onepage.address.city')"
-                    />
-
-                    <x-shop::form.control-group.error ::name="controlName + '.city'" />
-                </x-shop::form.control-group>
-
-                {!! view_render_event('bagisto.shop.checkout.onepage.address.form.city.after') !!}
-
-                <!-- Postcode -->
-                <x-shop::form.control-group>
-                    <x-shop::form.control-group.label class="{{ core()->isPostCodeRequired() ? 'required' : '' }} !mt-0">
-                        @lang('shop::app.checkout.onepage.address.postcode')
-                    </x-shop::form.control-group.label>
-
-                    <x-shop::form.control-group.control
-                        type="text"
-                        ::name="controlName + '.postcode'"
-                        ::value="address.postcode"
-                        rules="{{ core()->isPostCodeRequired() ? 'required' : '' }}|postcode"
-                        :label="trans('shop::app.checkout.onepage.address.postcode')"
-                        :placeholder="trans('shop::app.checkout.onepage.address.postcode')"
-                    />
-
-                    <x-shop::form.control-group.error ::name="controlName + '.postcode'" />
-                </x-shop::form.control-group>
-
-                {!! view_render_event('bagisto.shop.checkout.onepage.address.form.postcode.after') !!}
-            </div>
-
             <!-- Phone Number -->
             <x-shop::form.control-group>
                 <x-shop::form.control-group.label class="required !mt-0">
@@ -292,6 +239,37 @@
             </x-shop::form.control-group>
 
             {!! view_render_event('bagisto.shop.checkout.onepage.address.form.phone.after') !!}
+
+            <!-- Email (Optional) -->
+            <x-shop::form.control-group>
+                <x-shop::form.control-group.label class="!mt-0">
+                    @lang('shop::app.checkout.onepage.address.email')
+                </x-shop::form.control-group.label>
+
+                <x-shop::form.control-group.control
+                    type="email"
+                    ::name="controlName + '.email'"
+                    ::value="address.email"
+                    rules="email"
+                    :label="trans('shop::app.checkout.onepage.address.email')"
+                    placeholder="email@example.com"
+                />
+
+                <x-shop::form.control-group.error ::name="controlName + '.email'" />
+            </x-shop::form.control-group>
+
+            {!! view_render_event('bagisto.shop.checkout.onepage.address.form.email.after') !!}
+
+            <!-- Hidden Postcode (Fixed to 00000) -->
+            <x-shop::form.control-group class="hidden">
+                <x-shop::form.control-group.control
+                    type="hidden"
+                    ::name="controlName + '.postcode'"
+                    value="00000"
+                />
+            </x-shop::form.control-group>
+
+            {!! view_render_event('bagisto.shop.checkout.onepage.address.form.postcode.after') !!}
         </div>
     </script>
 
@@ -326,11 +304,40 @@
 
             data() {
                 return {
-                    selectedCountry: this.address.country,
+                    selectedCountry: this.address.country || 'YE',
+
+                    selectedState: this.address.state || '',
+
+                    selectedCity: this.address.city || '',
 
                     countries: [],
 
                     states: null,
+
+                    yemenDistricts: {
+                        'SA': ['الثورة', 'التحرير', 'الصافية', 'السبعين', 'شعوب', 'بني الحارث', 'الوحدة', 'صنعاء القديمة', 'معين'],
+                        'SN': ['سنحان وبني بهلول', 'بني مطر', 'أرحب', 'همدان', 'بني حشيش', 'الحيمة الخارجية', 'الحيمة الداخلية', 'مناخة', 'صعفان', 'الطيال', 'جحانة', 'نهم', 'بلاد الروس', 'خولان'],
+                        'AD': ['صيرة (كريتر)', 'خور مكسر', 'المعلا', 'التواهي', 'الشيخ عثمان', 'المنصورة', 'دار سعد', 'البريقة'],
+                        'TA': ['القاهرة', 'المظفر', 'صالة', 'التعزية', 'شرعب الرونة', 'شرعب السلام', 'ماوية', 'المسراخ', 'جبل حبشي', 'مشرعة وحدنان', 'صبر الموادم', 'المخاء', 'ذباب (باب المندب)', 'موزع', 'الوازعية', 'الشمايتين (التربة)', 'المواسط', 'المعافر', 'سامع', 'الصلو', 'خدير', 'حيفان'],
+                        'HU': ['الحوك', 'الحالي', 'المينا', 'باجل', 'الزيدية', 'اللحية', 'الضحي', 'القناوص', 'الزهرة', 'المنيرة', 'بيت الفقيه', 'المنصورية', 'السخنة', 'الدريهمي', 'التحيتا', 'زبيد', 'الجراحي', 'جبل رأس', 'الخوخة', 'حيس', 'برع'],
+                        'IB': ['الظهار', 'المشنة', 'جبلة', 'السبرة', 'بعدان', 'الشعر', 'النادرة', 'السدة', 'يريم', 'الرضمة', 'المخادر', 'حبيش', 'القفر', 'حزم العدين', 'العدين', 'فرع العدين', 'مذيخرة', 'ذي السفال', 'السياني'],
+                        'AB': ['زنجبار', 'خنفر (جَار)', 'سباح', 'رصد', 'سرار', 'أحور', 'لودر', 'الوضيع', 'مودية', 'جيشان', 'المحفد'],
+                        'BA': ['مدينة البيضاء', 'البيضاء', 'رداع', 'مكيراس', 'الصومعة', 'الزاهر', 'ذي ناعم', 'الطفة', 'ملاجم', 'ناطع', 'نعمان', 'السوادية', 'الشرية', 'ولد ربيع', 'العرش', 'ردمان'],
+                        'SH': ['عتق', 'نصاب', 'حبان', 'الصعيد', 'الروضة', 'ميفعة', 'رضوم', 'حطيب', 'مرخة السفلى', 'مرخة العليا', 'جردان', 'دهر', 'الطلح', 'عسيلان', 'عين', 'بيحان'],
+                        'HD': ['مدينة المكلا', 'المكلا', 'غيل باوزير', 'الشحر', 'الديس الشرقية', 'الريدة وقصيعر', 'حجر', 'بروم ميفع', 'ساه', 'سيئون', 'تريم', 'شبام', 'القطن', 'حورة ووادى العين', 'حريضة', 'عمد', 'رخية', 'العبر', 'زمخ ومنخوب', 'حجر الصيعر', 'السوم'],
+                        'MR': ['الغيضة', 'حوف', 'شحن', 'حات', 'قشن', 'سيحوت', 'المسيلة', 'منعر'],
+                        'LA': ['الحوطة', 'تبن', 'القبيطة', 'المقاطرة', 'طور الباحة', 'المضاربة والعارة', 'المسيمير', 'الملاح', 'حبيل جبر', 'ردفان (الحبيلين)', 'حالمين', 'يافع لبعوس', 'يهر', 'المفلحي'],
+                        'MA': ['مدينة مأرب', 'مأرب', 'صرواح', 'مجزر', 'رغوان', 'مدغل', 'بدبدة', 'حريب', 'الجوبة', 'رحبة', 'جبل مراد', 'العبدية', 'ماهلية'],
+                        'JA': ['الحزم', 'المتون', 'المصلوب', 'الزاهر', 'الحميدات', 'الخلق', 'الغيل', 'خب والشعف', 'برط العنان', 'رجوزة', 'خراب المراشي'],
+                        'HJ': ['مدينة حجة', 'حجة', 'عبس', 'حرض', 'ميدي', 'قفل شمر', 'كحلان عفار', 'كحلان الشرف', 'الشاهل', 'المحابشة', 'كعيدنة', 'خيران المحرق', 'أفلح الشام', 'أفلح اليمن', 'مستبأ', 'بكيل المير', 'وشحة', 'الجميمة', 'كشر', 'شرس', 'المغربة', 'بني قيس'],
+                        'SD': ['مدينة صعدة', 'صعدة', 'سحار', 'مجز', 'باقم', 'قطابر', 'منبه', 'رازح', 'غمر', 'شدا', 'الظاهر', 'حيدان', 'ساقين', 'كتاف والبقع', 'الصفراء', 'الحشوة'],
+                        'MW': ['مدينة المحويت', 'المحويت', 'شبام كوكبان', 'الطويلة', 'الرجم', 'الخبت', 'ملحان', 'حفاش', 'بني سعد'],
+                        'DH': ['مدينة ذمار', 'عنس', 'الحداء', 'جهران (معبر)', 'ضوران أنس', 'جبل الشرق', 'المنار', 'عتمة', 'وصاب العالي', 'وصاب السافل'],
+                        'AM': ['عمران', 'ريدة', 'عيال سريح', 'جبل عيال يزيد', 'خمر', 'حوث', 'العشة', 'قفلة عذر', 'حرف سفيان', 'شهارة', 'مسور', 'ثلاء', 'السودة', 'السود'],
+                        'DL': ['الضالع', 'جحاف', 'الأزارق', 'الحصين', 'الشعيب', 'قعطبة', 'دمت', 'جبن', 'الحشاء'],
+                        'RY': ['الجبين', 'كسمة', 'الجعفرية', 'السلفية', 'بلاد الطعام', 'مزهر'],
+                        'SU': ['حديبو', 'قلنسية وعبد الكوري']
+                    }
                 }
             },
 
@@ -338,9 +345,30 @@
                 haveStates() {
                     return !! this.states[this.selectedCountry]?.length;
                 },
+
+                availableDistricts() {
+                    if (! this.selectedState) {
+                        return [];
+                    }
+
+                    if (this.yemenDistricts[this.selectedState]) {
+                        return this.yemenDistricts[this.selectedState];
+                    }
+
+                    const found = this.states?.['YE']?.find(s => s.code === this.selectedState || s.default_name === this.selectedState);
+                    if (found && this.yemenDistricts[found.code]) {
+                        return this.yemenDistricts[found.code];
+                    }
+
+                    return [];
+                }
             },
 
             mounted() {
+                if (! this.selectedCountry) {
+                    this.selectedCountry = 'YE';
+                }
+
                 this.getCountries();
 
                 this.getStates();

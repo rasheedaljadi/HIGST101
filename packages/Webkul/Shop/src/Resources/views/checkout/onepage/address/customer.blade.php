@@ -79,21 +79,30 @@
                                     <div class="flex items-center justify-between">
                                         <p class="text-base font-medium">
                                             @{{ address.first_name + ' ' + address.last_name }}
-
-                                            <template v-if="address.company_name">
-                                                (@{{ address.company_name }})
-                                            </template>
                                         </p>
                                     </div>
 
-                                    <p class="mt-6 text-sm text-zinc-500 max-md:mt-2 max-sm:mt-0">
+                                    <div class="mt-2 flex flex-col gap-1 text-sm font-normal text-zinc-600">
+                                        <p v-if="address.phone">
+                                            📞 @{{ address.phone }}
+                                        </p>
+                                        <p v-if="address.email">
+                                            ✉️ @{{ address.email }}
+                                        </p>
+                                    </div>
+
+                                    <p class="mt-3 text-sm text-zinc-500 max-md:mt-2 max-sm:mt-0 leading-relaxed">
                                         <template v-if="address.address">
-                                            @{{ address.address.join(', ') }},
+                                            @{{ address.address.join(', ') }}،
                                         </template>
 
-                                        @{{ address.city }},
-                                        @{{ address.state }}, @{{ address.country }},
-                                        @{{ address.postcode }}
+                                        <template v-if="address.city">
+                                            المديرية: @{{ address.city }}،
+                                        </template>
+
+                                        <template v-if="address.state">
+                                            المحافظة: @{{ getStateName(address.state) }}
+                                        </template>
                                     </p>
                                 </label>
                             </div>
@@ -199,21 +208,30 @@
                                             <div class="flex items-center justify-between">
                                                 <p class="text-base font-medium">
                                                     @{{ address.first_name + ' ' + address.last_name }}
-
-                                                    <template v-if="address.company_name">
-                                                        (@{{ address.company_name }})
-                                                    </template>
                                                 </p>
                                             </div>
 
-                                            <p class="mt-6 text-sm text-zinc-500 max-md:mt-2 max-sm:mt-0">
+                                            <div class="mt-2 flex flex-col gap-1 text-sm font-normal text-zinc-600">
+                                                <p v-if="address.phone">
+                                                    📞 @{{ address.phone }}
+                                                </p>
+                                                <p v-if="address.email">
+                                                    ✉️ @{{ address.email }}
+                                                </p>
+                                            </div>
+
+                                            <p class="mt-3 text-sm text-zinc-500 max-md:mt-2 max-sm:mt-0 leading-relaxed">
                                                 <template v-if="address.address">
-                                                    @{{ address.address.join(', ') }},
+                                                    @{{ address.address.join(', ') }}،
                                                 </template>
 
-                                                @{{ address.city }},
-                                                @{{ address.state }}, @{{ address.country }},
-                                                @{{ address.postcode }}
+                                                <template v-if="address.city">
+                                                    المديرية: @{{ address.city }}،
+                                                </template>
+
+                                                <template v-if="address.state">
+                                                    المحافظة: @{{ getStateName(address.state) }}
+                                                </template>
                                             </p>
                                         </label>
                                     </div>
@@ -301,6 +319,7 @@
                                 for="save_address"
                                 value="1"
                                 v-model="saveAddress"
+                                ::checked="!! saveAddress"
                                 @change="saveAddress = ! saveAddress"
                             />
 
@@ -349,7 +368,7 @@
 
                     selectedAddressForEdit: null,
 
-                    saveAddress: false,
+                    saveAddress: true,
 
                     selectedAddresses: {
                         billing_address_id: null,
@@ -374,6 +393,37 @@
             },
 
             methods: {
+                getStateName(stateCode) {
+                    if (! stateCode) return '';
+
+                    const statesMap = {
+                        'SA': 'أمانة العاصمة',
+                        'SN': 'صنعاء',
+                        'AD': 'عدن',
+                        'TA': 'تعز',
+                        'HU': 'الحديدة',
+                        'IB': 'إب',
+                        'AB': 'أبين',
+                        'BA': 'البيضاء',
+                        'SH': 'شبوة',
+                        'HD': 'حضرموت',
+                        'MR': 'المهرة',
+                        'LA': 'لحج',
+                        'MA': 'مأرب',
+                        'JA': 'الجوف',
+                        'HJ': 'حجة',
+                        'SD': 'صعدة',
+                        'MW': 'المحويت',
+                        'DH': 'ذمار',
+                        'AM': 'عمران',
+                        'DL': 'الضالع',
+                        'RY': 'ريمة',
+                        'SU': 'أرخبيل سقطرى'
+                    };
+
+                    return statesMap[stateCode] || stateCode;
+                },
+
                 getCustomerSavedAddresses() {
                     this.$axios.get('{{ route('shop.api.customers.account.addresses.index') }}')
                         .then(response => {
