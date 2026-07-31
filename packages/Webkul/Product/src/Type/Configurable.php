@@ -337,6 +337,33 @@ class Configurable extends AbstractType
     }
 
     /**
+     * Get product minimal price.
+     *
+     * @param  int|null  $qty
+     * @return float
+     */
+    public function getMinimalPrice($qty = null)
+    {
+        if ($priceIndex = $this->getPriceIndex()) {
+            if ((float) $priceIndex->min_price > 0) {
+                return $priceIndex->min_price;
+            }
+        }
+
+        $minPrice = null;
+
+        foreach ($this->product->variants as $variant) {
+            $variantPrice = $variant->getTypeInstance()->getFinalPrice($qty);
+
+            if ($minPrice === null || $variantPrice < $minPrice) {
+                $minPrice = $variantPrice;
+            }
+        }
+
+        return $minPrice ?? $this->product->price ?? 0;
+    }
+
+    /**
      * Get product prices.
      *
      * @return array
