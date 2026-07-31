@@ -76,6 +76,7 @@
                                             type="radio"
                                             :name="'super_attribute[' + attribute.id + ']'"
                                             :value="option.id"
+                                            v-model="attribute.selectedValue"
                                             v-slot="{ field }"
                                             rules="required"
                                             :label="attribute.label"
@@ -244,9 +245,28 @@
 
                         this.childAttributes.unshift(attribute);
                     }
+
+                    this.autoSelectFirstOptions();
                 },
 
                 methods: {
+                    autoSelectFirstOptions() {
+                        let currentAttribute = this.childAttributes[0];
+
+                        while (currentAttribute) {
+                            let realOptions = currentAttribute.options ? currentAttribute.options.filter(option => option.id) : [];
+
+                            if (realOptions.length > 0) {
+                                let firstOption = realOptions[0];
+
+                                this.configure(currentAttribute, firstOption.id);
+
+                                currentAttribute = currentAttribute.nextAttribute;
+                            } else {
+                                break;
+                            }
+                        }
+                    },
                     configure(attribute, optionId) {
                         this.possibleOptionVariant = this.getPossibleOptionVariant(attribute, optionId);
 
