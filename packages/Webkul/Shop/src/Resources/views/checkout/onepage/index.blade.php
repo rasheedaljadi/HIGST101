@@ -100,10 +100,26 @@
 
         {!! view_render_event('bagisto.shop.checkout.onepage.breadcrumbs.before') !!}
 
-        <!-- Breadcrumbs -->
-        @if ((core()->getConfigData('general.general.breadcrumbs.shop')))
-            <x-shop::breadcrumbs name="checkout" />
-        @endif
+        <!-- Premium Back Button -->
+        <div class="flex items-center justify-between my-5">
+            <a
+                href="{{ route('shop.checkout.cart.index') }}"
+                class="inline-flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 hover:text-navyBlue group"
+                title="العودة إلى عربة التسوق"
+            >
+                <div class="flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 group-hover:bg-navyBlue/10 text-slate-600 group-hover:text-navyBlue transition-colors">
+                    <svg class="w-4 h-4 transform rtl:rotate-0 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </div>
+                <span>العودة إلى سلة التسوق</span>
+            </a>
+
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-100/70 px-3 py-1.5 rounded-lg border border-slate-200/60 max-sm:hidden">
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                خطوة إتمام الطلب والدفع
+            </div>
+        </div>
 
         {!! view_render_event('bagisto.shop.checkout.onepage.breadcrumbs.after') !!}
 
