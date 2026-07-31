@@ -305,7 +305,6 @@
     @include('shop::products.view.mobile-sticky-bar')
 
     {!! view_render_event('bagisto.shop.products.view.after', ['product' => $product]) !!}
-</x-shop::layouts>
 
 @pushonce('scripts')
     <script
@@ -910,4 +909,5 @@
             {!! \Webkul\Customer\Facades\Captcha::renderJS() !!}
         @endif
     @endpushonce
+</x-shop::layouts>
 
