@@ -746,7 +746,7 @@ return [
             ],
 
             'configurable' => [
-                'as-low-as' => 'بأقل من',
+                'as-low-as' => 'السعر',
             ],
         ],
 
@@ -888,6 +888,9 @@ return [
             'review' => 'المراجعات',
             'tax-inclusive' => 'شامل للضرائب',
             'up-sell-title' => 'لقد وجدنا منتجات أخرى قد تعجبك!',
+            'in-stock' => 'متوفر وجاهز للشحن',
+            'out-of-stock' => 'غير متوفر في المخزون',
+            'limited-stock' => 'متبقي :qty فقط في المخزون',
         ],
 
         'type' => [

@@ -888,6 +888,9 @@ return [
             'review' => 'Reviews',
             'tax-inclusive' => 'Inclusive of all taxes',
             'up-sell-title' => 'We found other products you might like!',
+            'in-stock' => 'In Stock & Ready to Dispatch',
+            'out-of-stock' => 'Out of Stock',
+            'limited-stock' => 'Only :qty left in stock - order soon',
         ],
 
         'type' => [
