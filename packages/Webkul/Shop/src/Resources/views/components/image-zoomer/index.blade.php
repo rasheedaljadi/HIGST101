@@ -90,29 +90,28 @@
                                         </video>
 
                                         <template v-if="attachment.type === 'image'">
-                                            <!-- Image with hover zoom lens -->
+                                            <!-- Image container: shows normal image, on hover shows zoomed background -->
                                             <div
-                                                style="position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: crosshair;"
-                                                @mousemove="handleLensMove($event)"
-                                                @mouseenter="showLens = true"
-                                                @mouseleave="showLens = false"
+                                                style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 8px; cursor: zoom-in;"
+                                                @mousemove="handleZoomMove($event)"
+                                                @mouseenter="isHoverZooming = true"
+                                                @mouseleave="isHoverZooming = false"
                                             >
+                                                <!-- Normal image (hidden when zooming) -->
                                                 <img
-                                                    ref="zoomImage"
                                                     :src="attachment.url"
-                                                    style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 8px; user-select: none;"
+                                                    style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 8px; user-select: none; transition: opacity 0.15s ease;"
+                                                    :style="{ opacity: isHoverZooming ? 0 : 1 }"
                                                 />
 
-                                                <!-- Magnifying Lens Overlay -->
+                                                <!-- Zoomed background (visible on hover) -->
                                                 <div
-                                                    v-if="showLens"
-                                                    style="position: absolute; width: 160px; height: 160px; border-radius: 50%; border: 3px solid rgba(6,12,59,0.6); box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 8px 32px rgba(0,0,0,0.3); pointer-events: none; z-index: 50; overflow: hidden; background-repeat: no-repeat;"
+                                                    v-show="isHoverZooming"
+                                                    style="position: absolute; inset: 0; border-radius: 8px; background-repeat: no-repeat; transition: none;"
                                                     :style="{
-                                                        left: (lensX - 80) + 'px',
-                                                        top: (lensY - 80) + 'px',
                                                         backgroundImage: 'url(' + attachment.url + ')',
-                                                        backgroundSize: (imgNaturalWidth * zoomLevel) + 'px ' + (imgNaturalHeight * zoomLevel) + 'px',
-                                                        backgroundPosition: '-' + ((lensRatioX * imgNaturalWidth * zoomLevel) - 80) + 'px -' + ((lensRatioY * imgNaturalHeight * zoomLevel) - 80) + 'px',
+                                                        backgroundSize: (zoomLevel * 100) + '%',
+                                                        backgroundPosition: zoomBgPosition,
                                                     }"
                                                 ></div>
                                             </div>
@@ -207,25 +206,11 @@
                 return {
                     isOpen: this.isImageZooming,
 
-                    isDragging: false,
+                    isHoverZooming: false,
 
-                    isZooming: false,
+                    zoomLevel: 2.5,
 
-                    showLens: false,
-
-                    lensX: 0,
-
-                    lensY: 0,
-
-                    lensRatioX: 0,
-
-                    lensRatioY: 0,
-
-                    imgNaturalWidth: 0,
-
-                    imgNaturalHeight: 0,
-
-                    zoomLevel: 3,
+                    zoomBgPosition: '50% 50%',
 
                     currentIndex: 1,
                 };
@@ -235,7 +220,7 @@
                 toggle() {
                     this.isOpen = ! this.isOpen;
 
-                    this.showLens = false;
+                    this.isHoverZooming = false;
 
                     document.body.style.overflow = this.isOpen ? 'hidden' : '';
                 },
@@ -247,7 +232,7 @@
                 },
 
                 navigate(index) {
-                    this.showLens = false;
+                    this.isHoverZooming = false;
 
                     if (index > this.attachments.length) {
                         this.currentIndex = 1;
@@ -258,51 +243,15 @@
                     }
                 },
 
-                handleLensMove(event) {
+                handleZoomMove(event) {
                     const container = event.currentTarget;
-                    const img = container.querySelector('img');
+                    const rect = container.getBoundingClientRect();
 
-                    if (! img) return;
+                    // Mouse position as percentage within the container
+                    const x = ((event.clientX - rect.left) / rect.width) * 100;
+                    const y = ((event.clientY - rect.top) / rect.height) * 100;
 
-                    // Get the rendered image bounds within the container
-                    const imgRect = img.getBoundingClientRect();
-                    const containerRect = container.getBoundingClientRect();
-
-                    // Mouse position relative to the container
-                    const mouseX = event.clientX - containerRect.left;
-                    const mouseY = event.clientY - containerRect.top;
-
-                    // Check if mouse is over the actual image area
-                    const imgLeft = imgRect.left - containerRect.left;
-                    const imgTop = imgRect.top - containerRect.top;
-                    const imgWidth = imgRect.width;
-                    const imgHeight = imgRect.height;
-
-                    if (
-                        mouseX < imgLeft || mouseX > imgLeft + imgWidth ||
-                        mouseY < imgTop || mouseY > imgTop + imgHeight
-                    ) {
-                        this.showLens = false;
-                        return;
-                    }
-
-                    this.showLens = true;
-
-                    // Lens position relative to container
-                    this.lensX = mouseX;
-                    this.lensY = mouseY;
-
-                    // Ratio of mouse position within the actual image (0 to 1)
-                    this.lensRatioX = (mouseX - imgLeft) / imgWidth;
-                    this.lensRatioY = (mouseY - imgTop) / imgHeight;
-
-                    // Store natural dimensions for background-size calculation
-                    this.imgNaturalWidth = img.naturalWidth || imgWidth;
-                    this.imgNaturalHeight = img.naturalHeight || imgHeight;
-                },
-
-                handleClick(event) {
-                    this.isZooming = ! this.isZooming;
+                    this.zoomBgPosition = x + '% ' + y + '%';
                 },
             },
         });
