@@ -87,11 +87,25 @@
                 },
 
                 attachments() {
-                    return [...this.media.images, ...this.media.videos].map(media => ({
-                        url: media.type === 'videos' ? media.video_url : media.original_image_url,
-                        
-                        type: media.type === 'videos' ? 'video' : 'image',
-                    }));
+                    let seen = new Set();
+                    let items = [];
+
+                    [...this.media.images, ...this.media.videos].forEach(media => {
+                        let url = media.type === 'videos' ? media.video_url : (media.original_image_url || media.large_image_url || media.medium_image_url || media.small_image_url);
+                        if (! url) return;
+
+                        let cleanKey = media.type === 'videos' ? url : (url.split('?')[0].split('/').pop() || url);
+
+                        if (! seen.has(cleanKey)) {
+                            seen.add(cleanKey);
+                            items.push({
+                                url: url,
+                                type: media.type === 'videos' ? 'video' : 'image',
+                            });
+                        }
+                    });
+
+                    return items;
                 },
             },
 

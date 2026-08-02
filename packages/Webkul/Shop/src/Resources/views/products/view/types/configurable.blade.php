@@ -285,6 +285,14 @@
                         return null;
                     },
 
+                    getNormalizedImageUrl(img) {
+                        if (! img) return '';
+                        let url = img.original_image_url || img.large_image_url || img.medium_image_url || img.small_image_url || '';
+                        if (! url) return '';
+                        let path = url.split('?')[0];
+                        return path.split('/').pop() || path;
+                    },
+
                     initAllVariantImages() {
                         let gallery = this.$parent?.$parent?.$refs?.gallery;
 
@@ -296,7 +304,8 @@
 
                         Object.values(this.config.variant_images || {}).forEach(images => {
                             images.forEach(img => {
-                                if (! existingImages.some(existing => existing.large_image_url === img.large_image_url || existing.original_image_url === img.original_image_url)) {
+                                let imgKey = this.getNormalizedImageUrl(img);
+                                if (imgKey && ! existingImages.some(existing => this.getNormalizedImageUrl(existing) === imgKey)) {
                                     existingImages.push(img);
                                 }
                             });
@@ -476,17 +485,14 @@
 
                             if (variantImages.length > 0) {
                                 let selectedVariantImage = variantImages[0];
+                                let selectedKey = this.getNormalizedImageUrl(selectedVariantImage);
                                 let baseImages = gallery.media.images;
 
-                                let targetIndex = baseImages.findIndex(img => 
-                                    img.large_image_url === selectedVariantImage.large_image_url ||
-                                    img.original_image_url === selectedVariantImage.original_image_url ||
-                                    img.medium_image_url === selectedVariantImage.medium_image_url
-                                );
+                                let targetIndex = baseImages.findIndex(img => this.getNormalizedImageUrl(img) === selectedKey);
 
                                 if (targetIndex !== -1) {
                                     gallery.change(baseImages[targetIndex], targetIndex);
-                                } else {
+                                } else if (selectedKey) {
                                     baseImages.unshift(selectedVariantImage);
                                     gallery.change(selectedVariantImage, 0);
                                 }
