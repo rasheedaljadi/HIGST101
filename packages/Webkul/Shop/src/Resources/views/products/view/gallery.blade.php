@@ -90,17 +90,30 @@
                     let seen = new Set();
                     let items = [];
 
-                    [...this.media.images, ...this.media.videos].forEach(media => {
-                        let url = media.type === 'videos' ? media.video_url : (media.original_image_url || media.large_image_url || media.medium_image_url || media.small_image_url);
-                        if (! url) return;
+                    (this.media.images || []).forEach(img => {
+                        let src = img.large_image_url || img.original_image_url || img.medium_image_url || img.small_image_url;
+                        if (! src) return;
 
-                        let cleanKey = media.type === 'videos' ? url : (url.split('?')[0].split('/').pop() || url);
+                        let cleanKey = src.split('?')[0].split('/').pop() || src;
 
                         if (! seen.has(cleanKey)) {
                             seen.add(cleanKey);
                             items.push({
-                                url: url,
-                                type: media.type === 'videos' ? 'video' : 'image',
+                                url: src,
+                                type: 'image',
+                            });
+                        }
+                    });
+
+                    (this.media.videos || []).forEach(vid => {
+                        let src = vid.video_url;
+                        if (! src) return;
+
+                        if (! seen.has(src)) {
+                            seen.add(src);
+                            items.push({
+                                url: src,
+                                type: 'video',
                             });
                         }
                     });
