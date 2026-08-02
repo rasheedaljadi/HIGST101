@@ -95,15 +95,6 @@
 
     {!! view_render_event('bagisto.shop.products.view.before', ['product' => $product]) !!}
 
-    <!-- Breadcrumbs -->
-    @if ((core()->getConfigData('general.general.breadcrumbs.shop')))
-        <div class="flex justify-center px-7 max-lg:hidden">
-            <x-shop::breadcrumbs
-                name="product"
-                :entity="$product"
-            />
-        </div>
-    @endif
 
     <!-- Product Information Vue Component -->
     <v-product>
