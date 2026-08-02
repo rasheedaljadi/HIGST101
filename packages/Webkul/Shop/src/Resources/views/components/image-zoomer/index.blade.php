@@ -22,13 +22,13 @@
                     v-if="isOpen"
                     @click.self="toggle"
                 >
-                    <!-- Modal Card Window (AliExpress Style 70% Responsive Screen) -->
-                    <div class="relative flex h-[70vh] w-[70vw] max-sm:h-[85vh] max-sm:w-[92vw] max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100 md:flex-row transition-all duration-300">
+                    <!-- Modal Card Window (Red Frame Dimensions: w-[75vw] h-[58vh] max-w-4xl) -->
+                    <div class="relative flex h-[58vh] min-h-[360px] max-h-[520px] w-[75vw] max-w-4xl max-sm:h-[80vh] max-sm:w-[92vw] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200 md:flex-row transition-all duration-300">
                         
                         <!-- Top-Left Circular Close Button -->
                         <button
                             type="button"
-                            class="absolute left-4 top-4 z-[100] flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-gray-100/90 text-gray-700 shadow-md backdrop-blur-sm transition-all hover:bg-gray-200 hover:text-black focus:outline-none max-sm:left-3 max-sm:top-3 max-sm:h-8 max-sm:w-8"
+                            class="absolute left-3 top-3 z-[100] flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-gray-100 text-gray-700 shadow hover:bg-gray-200 hover:text-black focus:outline-none transition-all"
                             @click="toggle"
                             title="إغلاق"
                             aria-label="إغلاق"
@@ -41,17 +41,17 @@
                         <!-- Main Media Center Area -->
                         <div 
                             ref="mediaContainer" 
-                            class="relative flex flex-1 items-center justify-center overflow-hidden bg-white p-6 max-sm:p-3"
+                            class="relative flex flex-1 items-center justify-center overflow-hidden bg-white p-4 max-sm:p-2 h-full w-full"
                         >
                             <!-- Previous Arrow Button -->
                             <button
                                 type="button"
-                                class="absolute left-4 top-1/2 z-40 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/70 max-sm:left-2 max-sm:h-9 max-sm:w-9"
+                                class="absolute left-3 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/70 max-sm:left-2 max-sm:h-8 max-sm:w-8"
                                 v-if="attachments && attachments.length >= 2"
                                 @click="navigate(currentIndex - 1)"
                                 title="السابق"
                             >
-                                <svg class="h-6 w-6 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
                                 </svg>
                             </button>
@@ -59,25 +59,26 @@
                             <!-- Next Arrow Button -->
                             <button
                                 type="button"
-                                class="absolute right-4 top-1/2 z-40 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/70 max-sm:right-2 max-sm:h-9 max-sm:w-9"
+                                class="absolute right-3 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/70 max-sm:right-2 max-sm:h-8 max-sm:w-8"
                                 v-if="attachments && attachments.length >= 2"
                                 @click="navigate(currentIndex + 1)"
                                 title="التالي"
                             >
-                                <svg class="h-6 w-6 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </button>
 
-                            <!-- Slides Container -->
-                            <div class="relative flex h-full w-full items-center justify-center">
+                            <!-- Slides Container (Strictly Contained) -->
+                            <div class="relative flex h-full w-full items-center justify-center overflow-hidden">
                                 <template v-for="(attachment, index) in attachments" :key="index">
                                     <div
                                         v-show="currentIndex === index + 1"
-                                        class="flex h-full w-full items-center justify-center"
+                                        class="flex h-full w-full items-center justify-center overflow-hidden p-1"
                                     >
                                         <video 
                                             class="max-h-full max-w-full rounded-lg object-contain"
+                                            style="max-height: 100%; max-width: 100%; object-fit: contain;"
                                             controls 
                                             v-if="attachment.type === 'video'"
                                         >
@@ -87,35 +88,12 @@
                                         </video>
 
                                         <template v-if="attachment.type === 'image'">
-                                            <!-- Desktop Image -->
                                             <img
                                                 :src="attachment.url"
-                                                class="max-h-[calc(70vh-2rem)] max-w-full select-none rounded-lg object-contain transition-transform duration-300 ease-out max-md:hidden"
-                                                :class="{
-                                                    'cursor-zoom-in': ! isZooming,
-                                                    'cursor-grab': ! isDragging && isZooming,
-                                                    'cursor-grabbing': isDragging && isZooming,
-                                                }"
-                                                :style="isZooming ? { transform: `translate(${translateX}px, ${translateY}px) scale(1.8)` } : { transform: 'none' }"
+                                                class="max-h-full max-w-full select-none rounded-lg object-contain transition-transform duration-200 ease-out pointer-events-auto"
+                                                style="max-height: 100%; max-width: 100%; object-fit: contain;"
                                                 @click.stop="handleClick"
-                                                @mousedown.prevent="handleMouseDown"
-                                                @mousemove.prevent="handleMouseMove"
-                                                @mouseleave.prevent="resetImagePosition"
-                                                @mouseup.prevent="resetImagePosition"
-                                                @mousewheel="handleMouseWheel"
                                             />
-
-                                            <!-- Mobile Image -->
-                                            <img
-                                                :src="attachment.url"
-                                                class="max-h-[60vh] max-w-full select-none rounded-lg object-contain transition-transform duration-300 ease-out md:hidden"
-                                                :class="{
-                                                    'cursor-zoom-in': ! isZooming,
-                                                    'cursor-grab': ! isDragging && isZooming,
-                                                    'cursor-grabbing': isDragging && isZooming,
-                                                }"
-                                                :style="isZooming ? { transform: `translate(${translateX}px, ${translateY}px) scale(1.8)` } : { transform: 'none' }"
-                                            />    
                                         </template>
                                     </div>
                                 </template>
@@ -123,13 +101,13 @@
                         </div>
 
                         <!-- Right Sidebar for Thumbnails (AliExpress Style) -->
-                        <div class="flex shrink-0 flex-row gap-3 overflow-x-auto border-t border-gray-100 bg-gray-50/80 p-4 scrollbar-thin md:w-32 md:flex-col md:overflow-y-auto md:border-l md:border-t-0 lg:w-36">
+                        <div class="flex shrink-0 flex-row gap-2 overflow-x-auto border-t border-gray-100 bg-gray-50/90 p-3 scrollbar-thin md:w-28 md:flex-col md:overflow-y-auto md:border-l md:border-t-0 lg:w-32">
                             <template v-for="(attachment, index) in attachments" :key="index">
                                 <div
-                                    class="relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-200 hover:opacity-100 md:h-20 md:w-20"
+                                    class="relative h-14 w-14 shrink-0 cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-200 hover:opacity-100 md:h-16 md:w-16"
                                     :class="[
                                         currentIndex === index + 1
-                                            ? 'border-navyBlue ring-4 ring-navyBlue/20 shadow-md opacity-100 scale-105'
+                                            ? 'border-navyBlue ring-2 ring-navyBlue/20 shadow opacity-100 scale-105'
                                             : 'border-gray-200 opacity-60 hover:border-gray-400'
                                     ]"
                                     @click="navigate(index + 1)"
@@ -148,7 +126,7 @@
                                     />
 
                                     <div v-if="attachment.type === 'video'" class="absolute inset-0 flex items-center justify-center bg-black/30 text-white">
-                                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M8 5v14l11-7z"/>
                                         </svg>
                                     </div>
@@ -211,18 +189,6 @@
                     isZooming: false,
 
                     currentIndex: 1,
-
-                    startDragX: 0,
-
-                    startDragY: 0,
-
-                    translateX: 0,
-
-                    translateY: 0,
-
-                    isMouseMoveTriggered: false,
-
-                    isMouseDownTriggered: false,
                 };
             },
 
@@ -247,105 +213,11 @@
                     } else {
                         this.currentIndex = index;
                     }
-
-                    this.isZooming = false;
-
-                    this.resetDrag();
                 },
 
                 handleClick(event) {
-                    if (
-                        this.isMouseMoveTriggered
-                        && ! this.isMouseDownTriggered
-                    ) {
-                        return;
-                    }
-
-                    this.resetDrag();
-
+                    // Toggle zoom state if needed
                     this.isZooming = ! this.isZooming;
-                },
-
-                handleOuterClick() {
-                    if (! this.isZooming) {
-                        return;
-                    }
-
-                    this.isZooming = false;
-
-                    this.resetDrag();
-                },
-
-                handleMouseDown(event) {
-                    this.isMouseDownTriggered = true;
-
-                    this.isDragging = true;
-
-                    this.startDragX = event.clientX;
-
-                    this.startDragY = event.clientY;
-                },
-
-                handleMouseMove(event) {
-                    this.isMouseMoveTriggered = true;
-                    
-                    this.isMouseDownTriggered = false;
-
-                    if (! this.isDragging) {
-                        return;
-                    }
-
-                    const deltaX = event.clientX - this.startDragX;
-                    
-                    const deltaY = event.clientY - this.startDragY;
-                    
-                    const newTranslateY = this.translateY + deltaY;
-
-                    const remainingHeight = this.$refs.parentContainer.clientHeight - this.$refs.mediaContainer.clientHeight;
-
-                    const maxTranslateY = Math.min(0, window.innerHeight - (event.srcElement.height + remainingHeight));
-
-                    const clampedTranslateY = Math.max(maxTranslateY, Math.min(newTranslateY, 0));
-
-                    this.translateY = clampedTranslateY;
-                    
-                    this.startDragY = event.clientY;
-                    
-                    this.startDragX = event.clientX;
-
-                    this.translateX += deltaX;
-                },
-
-                handleMouseWheel(event) {
-                    const deltaY = event.clientY - this.startDragY;
-
-                    let newTranslateY = this.translateY - event.deltaY / Math.abs(event.deltaY) * 100;
-                    
-                    const remainingHeight = this.$refs.parentContainer.clientHeight - this.$refs.mediaContainer.clientHeight;
-
-                    const maxTranslateY = Math.min(0, window.innerHeight - (event.srcElement.height + remainingHeight));
-
-                    this.translateY = Math.max(maxTranslateY, Math.min(newTranslateY, 0));
-                },
-
-                resetImagePosition() {
-                    this.isDragging = false;
-
-                    this.translateX  = 0;
-
-                    this.startDragX = 0;
-                },
-
-                resetDrag() {
-                    this.isDragging = false;
-
-                    this.startDragX = 0;
-
-                    this.startDragY = 0;
-
-                    this.translateX = 0;
-
-                    this.translateY = 0;
                 },
             },
         });
