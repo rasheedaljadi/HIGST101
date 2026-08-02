@@ -22,8 +22,8 @@
                     v-if="isOpen"
                     @click.self="toggle"
                 >
-                    <!-- Modal Card Window (AliExpress Style) -->
-                    <div class="relative flex h-[88vh] max-h-[850px] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:flex-row">
+                    <!-- Modal Card Window (AliExpress Style 70% Responsive Screen) -->
+                    <div class="relative flex h-[70vh] w-[70vw] max-sm:h-[85vh] max-sm:w-[92vw] max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100 md:flex-row transition-all duration-300">
                         
                         <!-- Top-Left Circular Close Button -->
                         <button
@@ -90,13 +90,13 @@
                                             <!-- Desktop Image -->
                                             <img
                                                 :src="attachment.url"
-                                                class="max-h-full max-w-full select-none rounded-lg object-contain transition-transform duration-300 ease-out max-md:hidden"
+                                                class="max-h-[calc(70vh-2rem)] max-w-full select-none rounded-lg object-contain transition-transform duration-300 ease-out max-md:hidden"
                                                 :class="{
                                                     'cursor-zoom-in': ! isZooming,
                                                     'cursor-grab': ! isDragging && isZooming,
                                                     'cursor-grabbing': isDragging && isZooming,
                                                 }"
-                                                :style="{transform: `translate(${translateX}px, ${translateY}px)`}"
+                                                :style="isZooming ? { transform: `translate(${translateX}px, ${translateY}px) scale(1.8)` } : { transform: 'none' }"
                                                 @click.stop="handleClick"
                                                 @mousedown.prevent="handleMouseDown"
                                                 @mousemove.prevent="handleMouseMove"
@@ -108,13 +108,13 @@
                                             <!-- Mobile Image -->
                                             <img
                                                 :src="attachment.url"
-                                                class="max-h-full max-w-full select-none rounded-lg object-contain transition-transform duration-300 ease-out md:hidden"
+                                                class="max-h-[60vh] max-w-full select-none rounded-lg object-contain transition-transform duration-300 ease-out md:hidden"
                                                 :class="{
                                                     'cursor-zoom-in': ! isZooming,
                                                     'cursor-grab': ! isDragging && isZooming,
                                                     'cursor-grabbing': isDragging && isZooming,
                                                 }"
-                                                :style="{transform: `translate(${translateX}px, ${translateY}px)`}"
+                                                :style="isZooming ? { transform: `translate(${translateX}px, ${translateY}px) scale(1.8)` } : { transform: 'none' }"
                                             />    
                                         </template>
                                     </div>
