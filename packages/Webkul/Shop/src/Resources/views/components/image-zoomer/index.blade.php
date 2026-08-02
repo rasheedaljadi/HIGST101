@@ -23,15 +23,15 @@
                     v-if="isOpen"
                     @click.self="toggle"
                 >
-                    <!-- Modal Card Window — fixed inline dimensions so it works without Tailwind rebuild -->
+                    <!-- Modal Card Window -->
                     <div
                         style="position: relative; display: flex; flex-direction: row; width: 80vh; max-width: 92vw; height: 80vh; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid #e5e7eb;"
                     >
                         
-                        <!-- Close Button (top-left) -->
+                        <!-- Close Button (top-right) -->
                         <button
                             type="button"
-                            style="position: absolute; top: 12px; left: 12px; z-index: 100; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(243,244,246,0.95); color: #374151; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.2s;"
+                            style="position: absolute; top: 12px; right: 12px; z-index: 100; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(243,244,246,0.95); color: #374151; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.2s;"
                             @click="toggle"
                             title="إغلاق"
                             aria-label="إغلاق"
@@ -77,7 +77,7 @@
                                 <template v-for="(attachment, index) in attachments" :key="index">
                                     <div
                                         v-show="currentIndex === index + 1"
-                                        style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden;"
+                                        style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden; position: relative;"
                                     >
                                         <video 
                                             style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 8px;"
@@ -90,11 +90,32 @@
                                         </video>
 
                                         <template v-if="attachment.type === 'image'">
-                                            <img
-                                                :src="attachment.url"
-                                                style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 8px; user-select: none; cursor: pointer;"
-                                                @click.stop="handleClick"
-                                            />
+                                            <!-- Image with hover zoom lens -->
+                                            <div
+                                                style="position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: crosshair;"
+                                                @mousemove="handleLensMove($event)"
+                                                @mouseenter="showLens = true"
+                                                @mouseleave="showLens = false"
+                                            >
+                                                <img
+                                                    ref="zoomImage"
+                                                    :src="attachment.url"
+                                                    style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 8px; user-select: none;"
+                                                />
+
+                                                <!-- Magnifying Lens Overlay -->
+                                                <div
+                                                    v-if="showLens"
+                                                    style="position: absolute; width: 160px; height: 160px; border-radius: 50%; border: 3px solid rgba(6,12,59,0.6); box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 8px 32px rgba(0,0,0,0.3); pointer-events: none; z-index: 50; overflow: hidden; background-repeat: no-repeat;"
+                                                    :style="{
+                                                        left: (lensX - 80) + 'px',
+                                                        top: (lensY - 80) + 'px',
+                                                        backgroundImage: 'url(' + attachment.url + ')',
+                                                        backgroundSize: (imgNaturalWidth * zoomLevel) + 'px ' + (imgNaturalHeight * zoomLevel) + 'px',
+                                                        backgroundPosition: '-' + ((lensRatioX * imgNaturalWidth * zoomLevel) - 80) + 'px -' + ((lensRatioY * imgNaturalHeight * zoomLevel) - 80) + 'px',
+                                                    }"
+                                                ></div>
+                                            </div>
                                         </template>
                                     </div>
                                 </template>
@@ -190,6 +211,22 @@
 
                     isZooming: false,
 
+                    showLens: false,
+
+                    lensX: 0,
+
+                    lensY: 0,
+
+                    lensRatioX: 0,
+
+                    lensRatioY: 0,
+
+                    imgNaturalWidth: 0,
+
+                    imgNaturalHeight: 0,
+
+                    zoomLevel: 3,
+
                     currentIndex: 1,
                 };
             },
@@ -197,6 +234,8 @@
             methods: {
                 toggle() {
                     this.isOpen = ! this.isOpen;
+
+                    this.showLens = false;
 
                     document.body.style.overflow = this.isOpen ? 'hidden' : '';
                 },
@@ -208,6 +247,8 @@
                 },
 
                 navigate(index) {
+                    this.showLens = false;
+
                     if (index > this.attachments.length) {
                         this.currentIndex = 1;
                     } else if (index < 1) {
@@ -215,6 +256,49 @@
                     } else {
                         this.currentIndex = index;
                     }
+                },
+
+                handleLensMove(event) {
+                    const container = event.currentTarget;
+                    const img = container.querySelector('img');
+
+                    if (! img) return;
+
+                    // Get the rendered image bounds within the container
+                    const imgRect = img.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+
+                    // Mouse position relative to the container
+                    const mouseX = event.clientX - containerRect.left;
+                    const mouseY = event.clientY - containerRect.top;
+
+                    // Check if mouse is over the actual image area
+                    const imgLeft = imgRect.left - containerRect.left;
+                    const imgTop = imgRect.top - containerRect.top;
+                    const imgWidth = imgRect.width;
+                    const imgHeight = imgRect.height;
+
+                    if (
+                        mouseX < imgLeft || mouseX > imgLeft + imgWidth ||
+                        mouseY < imgTop || mouseY > imgTop + imgHeight
+                    ) {
+                        this.showLens = false;
+                        return;
+                    }
+
+                    this.showLens = true;
+
+                    // Lens position relative to container
+                    this.lensX = mouseX;
+                    this.lensY = mouseY;
+
+                    // Ratio of mouse position within the actual image (0 to 1)
+                    this.lensRatioX = (mouseX - imgLeft) / imgWidth;
+                    this.lensRatioY = (mouseY - imgTop) / imgHeight;
+
+                    // Store natural dimensions for background-size calculation
+                    this.imgNaturalWidth = img.naturalWidth || imgWidth;
+                    this.imgNaturalHeight = img.naturalHeight || imgHeight;
                 },
 
                 handleClick(event) {
