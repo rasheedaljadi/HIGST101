@@ -6,129 +6,162 @@
         id="v-gallery-zoomer-template"
     >
         <transition
-            tag="div"
-            class="bg-white"
-            name="modal-content"
-            enter-class="duration-300 ease-out"
-            enter-from-class="translate-y-4 opacity-0 md:translate-y-0 md:scale-95"
-            enter-to-class="translate-y-0 opacity-100 md:scale-100"
-            leave-class="duration-200 ease-in"
-            leave-from-class="translate-y-0 opacity-100 md:scale-100"
-            leave-to-class="translate-y-4 opacity-0 md:translate-y-0 md:scale-95"
+            name="modal-fade"
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
         >
+            <!-- Overlay Backdrop -->
             <div
-                ref="parentContainer" 
-                class="fixed inset-0 z-10 flex transform flex-col gap-4 overflow-y-auto transition"
+                ref="parentContainer"
+                class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm transition-all max-sm:p-2"
                 v-show="isOpen"
+                @click.self="toggle"
             >
-                <!-- Close -->
-                <span
-                    class="icon-cancel absolute top-3 z-[1000] cursor-pointer text-3xl ltr:right-3 rtl:left-3"
-                    @click="toggle"
-                >
-                </span>
-
-                <span
-                    class="icon-arrow-left fixed left-2.5 top-1/2 z-10 -mt-12 w-auto cursor-pointer rounded-full bg-[rgba(0,0,0,0.8)] p-3 text-2xl font-bold text-white opacity-30 transition-all hover:opacity-100"
-                    v-if="attachments.length >= 2"
-                    @click="navigate(currentIndex -= 1)"
-                >
-                </span>
-
-                <span
-                    class="icon-arrow-right fixed right-2.5 top-1/2 z-10 -mt-12 w-auto cursor-pointer rounded-full bg-[rgba(0,0,0,0.8)] p-3 text-2xl font-bold text-white opacity-30 transition-all hover:opacity-100"
-                    v-if="attachments.length >= 2"
-                    @click="navigate(currentIndex += 1)"
-                >
-                </span>
+                <!-- Modal Card Window (AliExpress Style) -->
+                <div class="relative flex h-[88vh] max-h-[850px] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:flex-row">
                     
-                <!-- Main Image -->
-                <div 
-                    ref="mediaContainer" 
-                    class="h-full w-full overflow-hidden"
-                >
-                    <div
-                        class="relative m-auto flex w-full items-center justify-center"
-                        :class="{
-                            'h-full': ! isZooming,
-                            'h-auto': isZooming
-                        }"
+                    <!-- Top-Left Circular Close Button -->
+                    <button
+                        type="button"
+                        class="absolute left-4 top-4 z-50 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-gray-100/90 text-gray-700 shadow-md backdrop-blur-sm transition-all hover:bg-gray-200 hover:text-black focus:outline-none max-sm:left-3 max-sm:top-3 max-sm:h-8 max-sm:w-8"
+                        @click="toggle"
+                        title="إغلاق"
+                        aria-label="إغلاق"
                     >
-                        <div
-                            v-for="(attachment, index) in attachments"
-                            class="h-full items-center justify-center"
-                            ref="slides"
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Main Media Center Area -->
+                    <div 
+                        ref="mediaContainer" 
+                        class="relative flex flex-1 items-center justify-center overflow-hidden bg-white p-6 max-sm:p-3"
+                    >
+                        <!-- Previous Arrow Button -->
+                        <button
+                            type="button"
+                            class="absolute left-4 top-1/2 z-40 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/70 max-sm:left-2 max-sm:h-9 max-sm:w-9"
+                            v-if="attachments.length >= 2"
+                            @click="navigate(currentIndex - 1)"
+                            title="السابق"
                         >
-                            <video 
-                                class="max-h-full max-w-full transition-transform duration-300 ease-out"
-                                controls 
-                                v-if="attachment.type == 'video'"
+                            <svg class="h-6 w-6 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+
+                        <!-- Next Arrow Button -->
+                        <button
+                            type="button"
+                            class="absolute right-4 top-1/2 z-40 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/70 max-sm:right-2 max-sm:h-9 max-sm:w-9"
+                            v-if="attachments.length >= 2"
+                            @click="navigate(currentIndex + 1)"
+                            title="التالي"
+                        >
+                            <svg class="h-6 w-6 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+
+                        <!-- Slides Container -->
+                        <div
+                            class="relative flex h-full w-full items-center justify-center"
+                            :class="{
+                                'h-full': ! isZooming,
+                                'h-auto': isZooming
+                            }"
+                        >
+                            <div
+                                v-for="(attachment, index) in attachments"
+                                class="flex h-full w-full items-center justify-center"
+                                ref="slides"
+                                :key="index"
                             >
-                                <source :src="attachment.url" type="video/mp4">
-                                <source :src="attachment.url" type="video/ogg">
-                                    Your browser does not support HTML video.
-                            </video>
+                                <video 
+                                    class="max-h-full max-w-full rounded-lg object-contain transition-transform duration-300 ease-out"
+                                    controls 
+                                    v-if="attachment.type == 'video'"
+                                >
+                                    <source :src="attachment.url" type="video/mp4">
+                                    <source :src="attachment.url" type="video/ogg">
+                                    متصفحك لا يدعم تشغيل الفيديو.
+                                </video>
 
-                            <template v-if="attachment.type === 'image'">
-                                <!-- For Desktop -->
-                                <img
-                                    :src="attachment.url"
-                                    class="max-h-full max-w-full transition-transform duration-300 ease-out max-md:hidden"
-                                    :class="{
-                                        'cursor-zoom-in': ! isZooming,
-                                        'cursor-grab': ! isDragging && isZooming,
-                                        'cursor-grabbing': isDragging && isZooming,
-                                    }"
-                                    :style="{transform: `translate(${translateX}px, ${translateY}px)`}"
-                                    @click.stop="handleClick"
-                                    @mousedown.prevent="handleMouseDown"
-                                    @mousemove.prevent="handleMouseMove"
-                                    @mouseleave.prevent="resetImagePosition"
-                                    @mouseup.prevent="resetImagePosition"
-                                    @mousewheel="handleMouseWheel"
-                                />
+                                <template v-if="attachment.type === 'image'">
+                                    <!-- Desktop Image -->
+                                    <img
+                                        :src="attachment.url"
+                                        class="max-h-full max-w-full select-none rounded-lg object-contain transition-transform duration-300 ease-out max-md:hidden"
+                                        :class="{
+                                            'cursor-zoom-in': ! isZooming,
+                                            'cursor-grab': ! isDragging && isZooming,
+                                            'cursor-grabbing': isDragging && isZooming,
+                                        }"
+                                        :style="{transform: `translate(${translateX}px, ${translateY}px)`}"
+                                        @click.stop="handleClick"
+                                        @mousedown.prevent="handleMouseDown"
+                                        @mousemove.prevent="handleMouseMove"
+                                        @mouseleave.prevent="resetImagePosition"
+                                        @mouseup.prevent="resetImagePosition"
+                                        @mousewheel="handleMouseWheel"
+                                    />
 
-                                <!-- For Mobile -->
-                                <img
-                                    :src="attachment.url"
-                                    class="max-h-full max-w-full transition-transform duration-300 ease-out md:hidden"
-                                    :class="{
-                                        'cursor-zoom-in': ! isZooming,
-                                        'cursor-grab': ! isDragging && isZooming,
-                                        'cursor-grabbing': isDragging && isZooming,
-                                    }"
-                                    :style="{transform: `translate(${translateX}px, ${translateY}px)`}"
-                                />    
-                            </template>
+                                    <!-- Mobile Image -->
+                                    <img
+                                        :src="attachment.url"
+                                        class="max-h-full max-w-full select-none rounded-lg object-contain transition-transform duration-300 ease-out md:hidden"
+                                        :class="{
+                                            'cursor-zoom-in': ! isZooming,
+                                            'cursor-grab': ! isDragging && isZooming,
+                                            'cursor-grabbing': isDragging && isZooming,
+                                        }"
+                                        :style="{transform: `translate(${translateX}px, ${translateY}px)`}"
+                                    />    
+                                </template>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Thumbnails -->
-                <div class="mb-4 flex justify-center gap-x-2">
-                    <template v-for="(attachment, index) in attachments">
-                        <img
-                            class="h-16 w-16 transform cursor-pointer rounded-md border border-navyBlue border-transparent object-cover transition-transform hover:!border-navyBlue"
-                            :class="{
-                                '!border-navyBlue': currentIndex === index + 1,
-                            }"
-                            :src="attachment.url"
-                            :key="index"
-                            v-if="attachment.type === 'image'"
-                            @click="navigate(currentIndex = index + 1)"
-                        />
+                    <!-- Right Sidebar for Thumbnails List (AliExpress Style) -->
+                    <div class="flex shrink-0 flex-row gap-3 overflow-x-auto border-t border-gray-100 bg-gray-50/70 p-4 scrollbar-thin md:w-32 md:flex-col md:overflow-y-auto md:border-l md:border-t-0 lg:w-36">
+                        <template v-for="(attachment, index) in attachments">
+                            <div
+                                class="relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-200 hover:opacity-100 md:h-20 md:w-20"
+                                :class="[
+                                    currentIndex === index + 1
+                                        ? 'border-navyBlue ring-4 ring-navyBlue/20 shadow-md opacity-100 scale-105'
+                                        : 'border-gray-200 opacity-60 hover:border-gray-400'
+                                ]"
+                                :key="index"
+                                @click="navigate(index + 1)"
+                            >
+                                <img
+                                    class="h-full w-full object-cover"
+                                    :src="attachment.url"
+                                    v-if="attachment.type === 'image'"
+                                    alt="thumbnail"
+                                />
 
-                        <video
-                            class="h-16 w-16 transform cursor-pointer rounded-md border border-navyBlue border-transparent object-cover transition-transform hover:!border-navyBlue"
-                            :class="{
-                                '!border-navyBlue': currentIndex === index + 1,
-                            }"
-                            :src="attachment.url"
-                            :key="index"
-                            v-if="attachment.type === 'video'"
-                            @click="navigate(currentIndex = index + 1)"
-                        />
-                    </template>
+                                <video
+                                    class="h-full w-full object-cover"
+                                    :src="attachment.url"
+                                    v-if="attachment.type === 'video'"
+                                />
+
+                                <div v-if="attachment.type === 'video'" class="absolute inset-0 flex items-center justify-center bg-black/30 text-white">
+                                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
                 </div>
             </div>
         </transition>
@@ -164,9 +197,11 @@
                 isImageZooming(newVal, oldVal) {  
                     this.currentIndex = parseInt(this.initialIndex.split('_').pop()) + 1;
 
-                    this.navigate(this.currentIndex);
-
                     this.toggle();
+
+                    this.$nextTick(() => {
+                        this.navigate(this.currentIndex);
+                    });
                 },
             },
         
@@ -199,34 +234,46 @@
                     this.isOpen = ! this.isOpen;
 
                     document.body.style.overflow = this.isOpen ? 'hidden' : '';
+
+                    if (this.isOpen) {
+                        this.$nextTick(() => {
+                            this.navigate(this.currentIndex);
+                        });
+                    }
                 },
 
                 open() {
                     this.isOpen = true;
 
                     document.body.style.overflow = 'hidden';
+
+                    this.$nextTick(() => {
+                        this.navigate(this.currentIndex);
+                    });
                 },
 
                 navigate(index) {
                     if (index > this.attachments.length) {
                         this.currentIndex = 1;
-                    }
-
-                    if (index < 1) {
+                    } else if (index < 1) {
                         this.currentIndex = this.attachments.length;
+                    } else {
+                        this.currentIndex = index;
                     }
 
-                    let slides = this.$refs.slides;
+                    this.$nextTick(() => {
+                        let slides = this.$refs.slides;
 
-                    for (let i = 0; i < slides.length; i++) {
-                        if (i == this.currentIndex - 1) {
-                            continue;
+                        if (slides) {
+                            for (let i = 0; i < slides.length; i++) {
+                                if (i == this.currentIndex - 1) {
+                                    slides[i].style.display = 'flex';
+                                } else {
+                                    slides[i].style.display = 'none';
+                                }
+                            }
                         }
-
-                        slides[i].style.display = 'none';
-                    }
-                    
-                    slides[this.currentIndex - 1].style.display = 'flex';
+                    });
 
                     this.isZooming = false;
 
@@ -253,7 +300,7 @@
 
                     this.isZooming = false;
 
-                    resetDrag();
+                    this.resetDrag();
                 },
 
                 handleMouseDown(event) {
