@@ -25,7 +25,7 @@
                 >
                     <!-- Modal Card Window — fixed inline dimensions so it works without Tailwind rebuild -->
                     <div
-                        style="position: relative; display: flex; flex-direction: row; width: 72vw; height: 55vh; max-width: 900px; max-height: 500px; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid #e5e7eb;"
+                        style="position: relative; display: flex; flex-direction: row; width: 92vw; height: 80vh; max-width: 1400px; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid #e5e7eb;"
                     >
                         
                         <!-- Close Button (top-left) -->
