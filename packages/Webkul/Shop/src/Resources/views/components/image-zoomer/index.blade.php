@@ -18,22 +18,25 @@
                 <!-- Full Screen Overlay Backdrop -->
                 <div
                     ref="parentContainer"
-                    class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md transition-all max-sm:p-2"
+                    class="fixed inset-0 z-[99999] flex items-center justify-center backdrop-blur-md transition-all"
+                    style="background: rgba(0,0,0,0.7); padding: 40px;"
                     v-if="isOpen"
                     @click.self="toggle"
                 >
-                    <!-- Modal Card Window (Red Frame Dimensions: w-[75vw] h-[58vh] max-w-4xl) -->
-                    <div class="relative flex h-[58vh] min-h-[360px] max-h-[520px] w-[75vw] max-w-4xl max-sm:h-[80vh] max-sm:w-[92vw] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200 md:flex-row transition-all duration-300">
+                    <!-- Modal Card Window — fixed inline dimensions so it works without Tailwind rebuild -->
+                    <div
+                        style="position: relative; display: flex; flex-direction: row; width: 72vw; height: 55vh; max-width: 900px; max-height: 500px; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid #e5e7eb;"
+                    >
                         
-                        <!-- Top-Left Circular Close Button -->
+                        <!-- Close Button (top-left) -->
                         <button
                             type="button"
-                            class="absolute left-3 top-3 z-[100] flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-gray-100 text-gray-700 shadow hover:bg-gray-200 hover:text-black focus:outline-none transition-all"
+                            style="position: absolute; top: 12px; left: 12px; z-index: 100; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(243,244,246,0.95); color: #374151; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.2s;"
                             @click="toggle"
                             title="إغلاق"
                             aria-label="إغلاق"
                         >
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
@@ -41,17 +44,17 @@
                         <!-- Main Media Center Area -->
                         <div 
                             ref="mediaContainer" 
-                            class="relative flex flex-1 items-center justify-center overflow-hidden bg-white p-4 max-sm:p-2 h-full w-full"
+                            style="position: relative; flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; padding: 16px; min-width: 0;"
                         >
                             <!-- Previous Arrow Button -->
                             <button
                                 type="button"
-                                class="absolute left-3 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/70 max-sm:left-2 max-sm:h-8 max-sm:w-8"
+                                style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); z-index: 40; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.4); color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s;"
                                 v-if="attachments && attachments.length >= 2"
                                 @click="navigate(currentIndex - 1)"
                                 title="السابق"
                             >
-                                <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg style="width:20px;height:20px;" class="rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
                                 </svg>
                             </button>
@@ -59,26 +62,25 @@
                             <!-- Next Arrow Button -->
                             <button
                                 type="button"
-                                class="absolute right-3 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/70 max-sm:right-2 max-sm:h-8 max-sm:w-8"
+                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 40; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.4); color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s;"
                                 v-if="attachments && attachments.length >= 2"
                                 @click="navigate(currentIndex + 1)"
                                 title="التالي"
                             >
-                                <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg style="width:20px;height:20px;" class="rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </button>
 
-                            <!-- Slides Container (Strictly Contained) -->
-                            <div class="relative flex h-full w-full items-center justify-center overflow-hidden">
+                            <!-- Slides Container -->
+                            <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden;">
                                 <template v-for="(attachment, index) in attachments" :key="index">
                                     <div
                                         v-show="currentIndex === index + 1"
-                                        class="flex h-full w-full items-center justify-center overflow-hidden p-1"
+                                        style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden;"
                                     >
                                         <video 
-                                            class="max-h-full max-w-full rounded-lg object-contain"
-                                            style="max-height: 100%; max-width: 100%; object-fit: contain;"
+                                            style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 8px;"
                                             controls 
                                             v-if="attachment.type === 'video'"
                                         >
@@ -90,8 +92,7 @@
                                         <template v-if="attachment.type === 'image'">
                                             <img
                                                 :src="attachment.url"
-                                                class="max-h-full max-w-full select-none rounded-lg object-contain transition-transform duration-200 ease-out pointer-events-auto"
-                                                style="max-height: 100%; max-width: 100%; object-fit: contain;"
+                                                style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 8px; user-select: none; cursor: pointer;"
                                                 @click.stop="handleClick"
                                             />
                                         </template>
@@ -100,33 +101,34 @@
                             </div>
                         </div>
 
-                        <!-- Right Sidebar for Thumbnails (AliExpress Style) -->
-                        <div class="flex shrink-0 flex-row gap-2 overflow-x-auto border-t border-gray-100 bg-gray-50/90 p-3 scrollbar-thin md:w-28 md:flex-col md:overflow-y-auto md:border-l md:border-t-0 lg:w-32">
+                        <!-- Right Sidebar for Thumbnails -->
+                        <div style="flex-shrink: 0; width: 110px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; overflow-x: hidden; border-left: 1px solid #f3f4f6; background: rgba(249,250,251,0.9); padding: 12px 8px;">
                             <template v-for="(attachment, index) in attachments" :key="index">
                                 <div
-                                    class="relative h-14 w-14 shrink-0 cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-200 hover:opacity-100 md:h-16 md:w-16"
-                                    :class="[
-                                        currentIndex === index + 1
-                                            ? 'border-navyBlue ring-2 ring-navyBlue/20 shadow opacity-100 scale-105'
-                                            : 'border-gray-200 opacity-60 hover:border-gray-400'
-                                    ]"
+                                    style="position: relative; width: 90px; height: 90px; flex-shrink: 0; cursor: pointer; overflow: hidden; border-radius: 12px; transition: all 0.2s;"
+                                    :style="{
+                                        border: currentIndex === index + 1 ? '3px solid #060C3B' : '2px solid #e5e7eb',
+                                        opacity: currentIndex === index + 1 ? '1' : '0.6',
+                                        transform: currentIndex === index + 1 ? 'scale(1.05)' : 'scale(1)',
+                                        boxShadow: currentIndex === index + 1 ? '0 2px 8px rgba(6,12,59,0.2)' : 'none',
+                                    }"
                                     @click="navigate(index + 1)"
                                 >
                                     <img
-                                        class="h-full w-full object-cover"
+                                        style="width: 100%; height: 100%; object-fit: cover;"
                                         :src="attachment.url"
                                         v-if="attachment.type === 'image'"
                                         alt="thumbnail"
                                     />
 
                                     <video
-                                        class="h-full w-full object-cover"
+                                        style="width: 100%; height: 100%; object-fit: cover;"
                                         :src="attachment.url"
                                         v-if="attachment.type === 'video'"
                                     />
 
-                                    <div v-if="attachment.type === 'video'" class="absolute inset-0 flex items-center justify-center bg-black/30 text-white">
-                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <div v-if="attachment.type === 'video'" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); color: #fff;">
+                                        <svg style="width:20px;height:20px;" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M8 5v14l11-7z"/>
                                         </svg>
                                     </div>
@@ -216,7 +218,6 @@
                 },
 
                 handleClick(event) {
-                    // Toggle zoom state if needed
                     this.isZooming = ! this.isZooming;
                 },
             },
