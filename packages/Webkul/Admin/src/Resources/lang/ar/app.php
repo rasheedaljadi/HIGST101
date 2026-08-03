@@ -5140,6 +5140,8 @@ return [
             'sidebar' => [
                 'attribute-families' => 'مجموعات الخصائص',
                 'attributes' => 'الخصائص',
+                'audit-logs' => 'سجلات التدقيق',
+                'price-audit-log' => 'سجل تدقيق الأسعار',
                 'booking-product' => 'حجوزات المنتجات',
                 'campaigns' => 'الحملات التسويقية',
                 'catalog' => 'إدارة المنتجــات',

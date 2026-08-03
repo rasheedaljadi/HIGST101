@@ -104,6 +104,10 @@ class ReserveAllocationHandler
                         ]);
                         $snapshotHash = hash('sha256', $hashSource);
 
+                        $sellingPrice = $orderItem ? (float) $orderItem->price : 0.00;
+                        $offer = DB::table('higest_supplier_offers')->where('variant_id', $variantProductId)->first();
+                        $lastCalc = DB::table('higest_calculated_price_histories')->where('variant_id', $variantProductId)->latest('id')->first();
+
                         $supplierSnapshot = [
                             'supplier_product_id' => $supplierProductId,
                             'supplier_sku_id' => $supplierSkuId,
@@ -111,11 +115,14 @@ class ReserveAllocationHandler
                             'supplier_currency' => $supplierCurrency,
                             'exchange_rate' => $exchangeRate,
                             'landed_cost' => $landedCost,
+                            'selling_price' => $sellingPrice,
+                            'applied_rule_id' => $lastCalc?->pricing_rule_id,
+                            'applied_rule_version' => $lastCalc?->rule_version,
                             'supplier_title' => $payload['title'] ?? '',
                             'supplier_variant' => $optionsText,
                             'supplier_image' => $supplierImage,
                             'snapshot_hash' => $snapshotHash,
-                            'snapshot_version' => '1.0.0',
+                            'snapshot_version' => '2.0.0',
                         ];
                     }
                 }

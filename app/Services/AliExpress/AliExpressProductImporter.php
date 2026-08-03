@@ -2,13 +2,21 @@
 
 namespace App\Services\AliExpress;
 
+use App\Enums\PricingTrigger;
 use App\Exceptions\AliExpress\AliExpressImportException;
 use App\Models\AliExpressProductImport;
 use App\Models\AliExpressToken;
 use App\Models\ExternalVariantProjection;
+use App\Models\HigestPricingRule;
+use App\Models\HigestSourceOffer;
 use App\Services\AliExpress\DTO\NormalizedProduct;
 use App\Services\AliExpress\DTO\NormalizedVariant;
 use App\Services\AliExpress\DTO\ResolvedAxes;
+use App\Services\Pricing\CatalogPriceWriter;
+use App\Services\Pricing\DTO\PricingContext;
+use App\Services\Pricing\PricingEngine;
+use App\Services\Pricing\PricingRuleResolver;
+use App\Services\Pricing\SourceOfferRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -88,6 +96,10 @@ class AliExpressProductImporter
         protected InventoryIndexer $inventoryIndexer,
         protected PriceIndexer $priceIndexer,
         protected AliExpressFreightService $freightService,
+        protected PricingEngine $pricingEngine,
+        protected PricingRuleResolver $pricingRuleResolver,
+        protected SourceOfferRecorder $sourceOfferRecorder,
+        protected CatalogPriceWriter $catalogPriceWriter,
     ) {}
 
     /**
@@ -255,14 +267,9 @@ class AliExpressProductImporter
         } else {
             $data['inventories'] = $created['inventories'];
 
-            // Discount: when the AliExpress SKU has an original/list price
-            // higher than the sale price, store the list price as the regular
-            // price and the sale price as Bagisto's special_price so the
-            // storefront shows a struck-through original + discounted price.
-            if (! empty($created['special_price'])) {
-                $data['price'] = $created['regular_price'];
-                $data['special_price'] = $created['special_price'];
-            }
+            // Pricing Engine: supplier discounts are NOT passed to special_price.
+            // The supplier sale price becomes the cost basis for margin calculation.
+            // special_price is reserved exclusively for HIGEST promotions.
         }
 
         $this->reportProgress('content', 70, 'يتم استيراد الوصف والسعر والمخزون...');
@@ -275,14 +282,12 @@ class AliExpressProductImporter
         // touching prices, inventories, variants, or images.
         $this->storeLocalizedText($product, $dto, $urlKey, $primaryLocale);
 
-        // Persist per-variant special_price directly (configurable only).
-        // Bagisto's Configurable::updateVariant() ignores special_price (it is
-        // not in its fillable variant codes), so the unified update above can't
-        // carry it. Write it straight to the variants' attribute values so the
-        // discounted sale price is shown alongside the struck-through original.
-        if ($type === 'configurable' && ! empty($created['variant_special_prices'])) {
-            $this->applyVariantSpecialPrices($created['variant_special_prices']);
-        }
+        // Pricing Engine: supplier discount special_prices are no longer written.
+        // The applyVariantSpecialPrices() method is preserved but only used when
+        // HIGEST creates its own promotional discounts (not from supplier data).
+
+        // Record supplier prices and calculate selling prices with merchant margin.
+        $this->applyPricingEngine($dto, $product, $type, $created);
 
         // Save aliexpress_sku_id EAV and create external_variant_projections
         if ($type === 'configurable') {
@@ -1111,6 +1116,200 @@ class AliExpressProductImporter
                     'error' => $e->getMessage(),
                 ]);
             }
+        }
+    }
+
+    /**
+     * Record supplier prices and calculate selling prices with the HIGEST
+     * Pricing Engine for an imported product.
+     *
+     * For each variant (configurable) or the single SKU (simple), this method:
+     *   1. Records the supplier acquisition cost to higest_supplier_prices.
+     *   2. Resolves the applicable pricing rule (product → category → global).
+     *   3. Calculates the selling price = supplier cost × (1 + margin%).
+     *   4. Writes the selling price to Bagisto EAV (price attribute).
+     *   5. Clears any supplier discount artifact from special_price.
+     *   6. Logs the calculation in higest_price_calculation_logs.
+     *
+     * Supplier discounts (originalPrice vs price) are stored in
+     * higest_supplier_prices for reference but are NEVER propagated to
+     * Bagisto's special_price. That field is reserved for HIGEST promotions.
+     *
+     * @param  array<string, mixed>  $created  The return from createConfigurableProduct/createSimpleProduct.
+     */
+    protected function applyPricingEngine(NormalizedProduct $dto, Product $product, string $type, array $created): void
+    {
+        $categoryId = $this->pricingRuleResolver->resolveCategoryId($product->id);
+        $rule = $this->pricingRuleResolver->resolve($product->id, $categoryId);
+
+        if ($rule === null) {
+            Log::channel('aliexpress')->warning('PricingEngine: no pricing rule found during import; prices stored at raw supplier cost', [
+                'product_id' => $product->id,
+                'aliexpress_product_id' => $dto->aliexpressProductId,
+            ]);
+
+            $this->recordSupplierPricesOnly($dto, $product, $type, $created);
+
+            return;
+        }
+
+        $context = new PricingContext(provider: 'aliexpress', currency: $dto->currency);
+
+        if ($type === 'configurable') {
+            $product = Product::with(['variants'])->findOrFail($product->id);
+
+            foreach ($dto->variants as $aeVariant) {
+                $projection = ExternalVariantProjection::where('external_sku_id', $aeVariant->skuId)
+                    ->where('product_id', $product->id)
+                    ->first();
+
+                if ($projection === null) {
+                    continue;
+                }
+
+                $variantId = $projection->variant_product_id;
+                $supplierCost = (float) $aeVariant->price;
+                $supplierOriginalCost = $aeVariant->originalPrice !== null ? (float) $aeVariant->originalPrice : null;
+
+                // 1. Record variant supplier offer
+                $this->supplierOfferRecorder->record(
+                    variantId: $variantId,
+                    productId: $product->id,
+                    supplierCost: $supplierCost,
+                    supplierOriginalCost: $supplierOriginalCost,
+                    supplierCurrency: $dto->currency,
+                    providerSkuId: $aeVariant->skuId,
+                    provider: 'aliexpress',
+                    trigger: 'import',
+                );
+
+                // 2. Calculate selling price via pipeline
+                $variantContext = new PricingContext(
+                    provider: 'aliexpress',
+                    currency: $dto->currency,
+                    supplierOriginalCost: $supplierOriginalCost,
+                );
+
+                $result = $this->pricingEngine->calculate($supplierCost, $rule, $variantContext);
+
+                // 3. Write to Bagisto EAV + record history log
+                $this->catalogPriceWriter->write(
+                    variantId: $variantId,
+                    productId: $product->id,
+                    result: $result,
+                    specialPrice: $result->specialPrice,
+                    oldSupplierCost: null,
+                    rule: $rule,
+                    trigger: PricingTrigger::IMPORT,
+                );
+            }
+
+            $this->updateParentRepresentativePrice($product, $rule, new PricingContext(provider: 'aliexpress', currency: $dto->currency));
+        } else {
+            // Simple product: single SKU (variant_id = product_id)
+            $variant = $dto->variants[0];
+            $supplierCost = (float) $variant->price;
+            $supplierOriginalCost = $variant->originalPrice !== null ? (float) $variant->originalPrice : null;
+
+            // 1. Record supplier offer
+            $this->supplierOfferRecorder->record(
+                variantId: $product->id,
+                productId: $product->id,
+                supplierCost: $supplierCost,
+                supplierOriginalCost: $supplierOriginalCost,
+                supplierCurrency: $dto->currency,
+                providerSkuId: $variant->skuId,
+                provider: 'aliexpress',
+                trigger: 'import',
+            );
+
+            // 2. Calculate selling price via pipeline
+            $simpleContext = new PricingContext(
+                provider: 'aliexpress',
+                currency: $dto->currency,
+                supplierOriginalCost: $supplierOriginalCost,
+            );
+
+            $result = $this->pricingEngine->calculate($supplierCost, $rule, $simpleContext);
+
+            // 3. Write to Bagisto EAV + record history log
+            $this->catalogPriceWriter->write(
+                variantId: $product->id,
+                productId: $product->id,
+                result: $result,
+                specialPrice: $result->specialPrice,
+                oldSupplierCost: null,
+                rule: $rule,
+                trigger: PricingTrigger::IMPORT,
+            );
+        }
+
+        Log::channel('aliexpress')->info('PricingEngine: selling prices calculated for imported product', [
+            'product_id' => $product->id,
+            'aliexpress_product_id' => $dto->aliexpressProductId,
+            'rule_id' => $rule->id,
+            'rule_version' => $rule->version,
+            'rule_type' => $rule->type,
+            'rule_value' => $rule->value,
+        ]);
+    }
+
+    protected function recordSupplierPricesOnly(NormalizedProduct $dto, Product $product, string $type, array $created): void
+    {
+        if ($type === 'configurable') {
+            foreach ($dto->variants as $aeVariant) {
+                $projection = ExternalVariantProjection::where('external_sku_id', $aeVariant->skuId)
+                    ->where('product_id', $product->id)
+                    ->first();
+
+                if ($projection === null) {
+                    continue;
+                }
+
+                $this->sourceOfferRecorder->record(
+                    variantId: $projection->variant_product_id,
+                    productId: $product->id,
+                    acquisitionCost: (float) $aeVariant->price,
+                    acquisitionOriginalCost: $aeVariant->originalPrice !== null ? (float) $aeVariant->originalPrice : null,
+                    sourceCurrency: $dto->currency,
+                    sourceSkuId: $aeVariant->skuId,
+                    sourceProvider: 'aliexpress',
+                    trigger: 'import',
+                );
+            }
+        } else {
+            $variant = $dto->variants[0];
+            $this->sourceOfferRecorder->record(
+                variantId: $product->id,
+                productId: $product->id,
+                acquisitionCost: (float) $variant->price,
+                acquisitionOriginalCost: $variant->originalPrice !== null ? (float) $variant->originalPrice : null,
+                sourceCurrency: $dto->currency,
+                sourceSkuId: $variant->skuId,
+                sourceProvider: 'aliexpress',
+                trigger: 'import',
+            );
+        }
+    }
+
+    protected function updateParentRepresentativePrice(Product $product, HigestPricingRule $rule, PricingContext $context): void
+    {
+        $minResult = HigestSourceOffer::where('product_id', $product->id)
+            ->get()
+            ->map(fn ($offer) => $this->pricingEngine->calculate((float) $offer->acquisition_cost, $rule, $context))
+            ->sortBy('sellingPrice')
+            ->first();
+
+        if ($minResult !== null && $minResult->sellingPrice > 0) {
+            $this->catalogPriceWriter->write(
+                variantId: $product->id,
+                productId: $product->id,
+                result: $minResult,
+                specialPrice: null,
+                oldAcquisitionCost: null,
+                rule: $rule,
+                trigger: PricingTrigger::IMPORT,
+            );
         }
     }
 

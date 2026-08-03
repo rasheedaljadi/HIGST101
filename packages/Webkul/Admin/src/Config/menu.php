@@ -468,4 +468,21 @@ return [
         'sort' => 11,
         'icon' => 'icon-configuration',
     ],
+
+    /**
+     * Audit Logs.
+     */
+    [
+        'key' => 'audit_logs',
+        'name' => 'admin::app.components.layouts.sidebar.audit-logs',
+        'route' => 'admin.audit-logs.pricing.index',
+        'sort' => 12,
+        'icon' => 'icon-report',
+    ], [
+        'key' => 'audit_logs.pricing_history',
+        'name' => 'admin::app.components.layouts.sidebar.price-audit-log',
+        'route' => 'admin.audit-logs.pricing.index',
+        'sort' => 1,
+        'icon' => '',
+    ],
 ];

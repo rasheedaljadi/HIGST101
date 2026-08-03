@@ -2,6 +2,12 @@
 
 namespace Webkul\Fulfillment\Listeners;
 
+use App\Enums\PricingTrigger;
+use App\Services\Pricing\CatalogPriceWriter;
+use App\Services\Pricing\DTO\PricingContext;
+use App\Services\Pricing\PricingEngine;
+use App\Services\Pricing\PricingRuleResolver;
+use App\Services\Pricing\SourceOfferRecorder;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -19,11 +25,15 @@ class CatalogProjectionListener
      */
     public function __construct(
         protected PriceIndexer $priceIndexer,
-        protected FlatIndexer $flatIndexer
+        protected FlatIndexer $flatIndexer,
+        protected PricingEngine $pricingEngine,
+        protected PricingRuleResolver $pricingRuleResolver,
+        protected SourceOfferRecorder $sourceOfferRecorder,
+        protected CatalogPriceWriter $catalogPriceWriter,
     ) {}
 
     /**
-     * Handle supplier price change events.
+     * Handle source acquisition price change events.
      */
     public function handle(string $eventName, array $payload, string $correlationId, string $causationId, ?string $outboxEventId = null): void
     {
@@ -97,24 +107,46 @@ class CatalogProjectionListener
                 }
             }
 
-            Log::channel('aliexpress')->info("Catalog projection update for Variant ID {$variantId}: Price={$newPrice}");
+            Log::channel('aliexpress')->info("Catalog projection sync update for Variant ID {$variantId}: Acquisition Cost={$newPrice}");
 
-            // Update product price EAV attribute
-            $priceAttrId = (int) (Attribute::where('code', 'price')->value('id') ?? 0);
-            if ($priceAttrId > 0) {
-                $uniqueId = "||{$variantId}|{$priceAttrId}";
-                DB::table('product_attribute_values')->updateOrInsert(
-                    [
-                        'product_id' => $variantId,
-                        'attribute_id' => $priceAttrId,
-                        'channel' => null,
-                        'locale' => null,
-                    ],
-                    [
-                        'float_value' => $newPrice,
-                        'unique_id' => $uniqueId,
-                    ]
+            $variantProduct = Product::find($variantId);
+            $parentId = $variantProduct?->parent_id ?? $variantId;
+
+            // 1. Record source offer update & track history
+            $offer = $this->sourceOfferRecorder->record(
+                variantId: $variantId,
+                productId: $parentId,
+                acquisitionCost: (float) $newPrice,
+                acquisitionOriginalCost: null,
+                sourceCurrency: $payload['currency'] ?? 'USD',
+                sourceSkuId: $payload['supplier_sku_id'] ?? null,
+                sourceProvider: 'aliexpress',
+                trigger: 'sync',
+            );
+
+            // 2. Resolve rule & calculate selling price via pipeline
+            $categoryId = $this->pricingRuleResolver->resolveCategoryId($parentId);
+            $rule = $this->pricingRuleResolver->resolve($parentId, $categoryId);
+
+            if ($rule !== null) {
+                $context = new PricingContext(sourceProvider: 'aliexpress', currency: $offer->source_currency);
+                $result = $this->pricingEngine->calculate((float) $newPrice, $rule, $context);
+
+                // 3. Write selling price to Bagisto EAV + record price history
+                $this->catalogPriceWriter->write(
+                    variantId: $variantId,
+                    productId: $parentId,
+                    result: $result,
+                    specialPrice: null,
+                    oldAcquisitionCost: (float) ($payload['old_price'] ?? 0),
+                    rule: $rule,
+                    trigger: PricingTrigger::SYNC,
                 );
+            } else {
+                Log::channel('aliexpress')->warning('CatalogProjectionListener: no pricing rule found during sync', [
+                    'variant_id' => $variantId,
+                    'acquisition_cost' => $newPrice,
+                ]);
             }
 
             // Update projection table
@@ -129,21 +161,7 @@ class CatalogProjectionListener
             Log::channel('aliexpress')->info('Metric counter incremented: [projection_events_processed]');
 
             // Reindex price and flat table
-            $product = Product::find($variantId);
-            if ($product) {
-                $toIndex = [$product];
-                if ($product->parent_id) {
-                    $parent = Product::find($product->parent_id);
-                    if ($parent) {
-                        $toIndex[] = $parent;
-                    }
-                }
-
-                $this->priceIndexer->reindexBatch($toIndex);
-                foreach ($toIndex as $indexable) {
-                    $this->flatIndexer->refresh($indexable);
-                }
-            }
+            $this->catalogPriceWriter->reindex($parentId);
         });
     }
 }

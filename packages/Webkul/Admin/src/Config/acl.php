@@ -961,4 +961,24 @@ return [
         'route' => 'admin.configuration.index',
         'sort' => 9,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Audit Logs
+    |--------------------------------------------------------------------------
+    |
+    | All ACLs related to audit logs will be placed here.
+    |
+    */
+    [
+        'key' => 'audit_logs',
+        'name' => 'admin::app.components.layouts.sidebar.audit-logs',
+        'route' => 'admin.audit-logs.pricing.index',
+        'sort' => 10,
+    ], [
+        'key' => 'audit_logs.pricing_history',
+        'name' => 'admin::app.components.layouts.sidebar.price-audit-log',
+        'route' => 'admin.audit-logs.pricing.index',
+        'sort' => 1,
+    ],
 ];

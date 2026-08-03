@@ -5141,6 +5141,8 @@ return [
             'sidebar' => [
                 'attribute-families' => 'Attribute Families',
                 'attributes' => 'Attributes',
+                'audit-logs' => 'Audit Logs',
+                'price-audit-log' => 'Price Audit Log',
                 'booking-product' => 'Bookings',
                 'campaigns' => 'Campaigns',
                 'catalog' => 'Catalog',

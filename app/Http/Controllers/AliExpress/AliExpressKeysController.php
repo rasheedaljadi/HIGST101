@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AliExpress;
 
 use App\Http\Controllers\Controller;
 use App\Models\AliExpressSetting;
+use App\Models\HigestPricingRule;
 use App\Services\AliExpress\AliExpressOAuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,6 +44,16 @@ class AliExpressKeysController extends Controller
             ->where('code', 'default')
             ->first();
 
+        $pricingRules = HigestPricingRule::orderByDesc('priority')
+            ->orderByDesc('updated_at')
+            ->get();
+
+        $pricingCategories = DB::table('categories')
+            ->join('category_translations', 'categories.id', '=', 'category_translations.category_id')
+            ->where('category_translations.locale', core()->getDefaultLocaleCodeFromDefaultChannel())
+            ->select('categories.id', 'category_translations.name')
+            ->get();
+
         return view('aliexpress.keys', [
             'settings' => $settings,
             'callbackUrl' => $this->oauth->resolveRedirectUri(),
@@ -50,6 +61,8 @@ class AliExpressKeysController extends Controller
             'tokenAccount' => $token?->account,
             'tokenExpiresAt' => $token?->access_token_expires_at,
             'warehouse' => $warehouse,
+            'pricingRules' => $pricingRules,
+            'pricingCategories' => $pricingCategories,
         ]);
     }
 
