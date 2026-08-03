@@ -65,7 +65,7 @@ class ImageCache
 
             if (is_a($cache, 'Illuminate\Cache\CacheManager')) {
                 $cacheDriver = config('imagecache.cache_driver');
-                $this->cache = $cacheDriver ? $cache->driver($cacheDriver) : $cache;
+                $this->cache = $cache->store($cacheDriver);
             } else {
                 $path = $this->config['cache']['path'] ?? __DIR__.'/../../storage/cache';
 
