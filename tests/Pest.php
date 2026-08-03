@@ -13,6 +13,10 @@ use Webkul\Shop\Tests\ShopTestCase;
 
 ini_set('memory_limit', '1024M');
 
+if (! class_exists('TestCase')) {
+    class_alias(TestCase::class, 'TestCase');
+}
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -33,7 +37,8 @@ uses(PaymentTestCase::class)->in('../packages/Webkul/Payment/tests');
 uses(PayUTestCase::class)->in('../packages/Webkul/PayU/tests');
 uses(RazorpayTestCase::class)->in('../packages/Webkul/Razorpay/tests');
 uses(ShopTestCase::class)->in('../packages/Webkul/Shop/tests');
-uses(TestCase::class)->in('Unit', 'Feature');
+uses(TestCase::class)->in('../packages/Webkul/Wallet/tests');
+uses(TestCase::class)->in('Feature/Wallet');
 
 /*
 |--------------------------------------------------------------------------

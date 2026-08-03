@@ -655,12 +655,18 @@ abstract class DataGrid
             foreach ($this->actions as $index => $action) {
                 $getUrl = $action->url;
 
+                $url = is_callable($getUrl) ? $getUrl($record) : $getUrl;
+
+                if (empty($url)) {
+                    continue;
+                }
+
                 $record->actions[] = [
                     'index' => ! empty($action->index) ? $action->index : 'action_'.$index + 1,
                     'icon' => $action->icon,
                     'title' => $action->title,
                     'method' => $action->method,
-                    'url' => $getUrl($record),
+                    'url' => $url,
                 ];
             }
         }

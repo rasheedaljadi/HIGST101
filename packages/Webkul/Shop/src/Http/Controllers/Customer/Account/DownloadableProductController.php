@@ -6,7 +6,6 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Webkul\Sales\Repositories\DownloadableLinkPurchasedRepository;
-use Webkul\Shop\DataGrids\DownloadableProductDataGrid;
 use Webkul\Shop\Http\Controllers\Controller;
 
 class DownloadableProductController extends Controller
@@ -25,11 +24,7 @@ class DownloadableProductController extends Controller
      */
     public function index()
     {
-        if (request()->ajax()) {
-            return datagrid(DownloadableProductDataGrid::class)->process();
-        }
-
-        return view('shop::customers.account.downloadable_products.index');
+        return redirect()->route('shop.customers.account.profile.index');
     }
 
     /**

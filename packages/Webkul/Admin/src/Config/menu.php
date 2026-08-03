@@ -207,37 +207,6 @@ return [
     ],
 
     /**
-     * Wallet.
-     */
-    /*
-    [
-        'key' => 'wallet',
-        'name' => 'admin::app.components.layouts.sidebar.wallet',
-        'route' => 'admin.wallet.deposits.index',
-        'sort' => 6,
-        'icon' => 'icon-refund',
-    ], [
-        'key' => 'wallet.deposits',
-        'name' => 'admin::app.components.layouts.sidebar.wallet-deposits',
-        'route' => 'admin.wallet.deposits.index',
-        'sort' => 1,
-        'icon' => '',
-    ], [
-        'key' => 'wallet.withdrawals',
-        'name' => 'admin::app.components.layouts.sidebar.wallet-withdrawals',
-        'route' => 'admin.wallet.withdrawals.index',
-        'sort' => 2,
-        'icon' => '',
-    ], [
-        'key' => 'wallet.settings',
-        'name' => 'admin::app.components.layouts.sidebar.wallet-settings',
-        'route' => 'admin.wallet.settings.index',
-        'sort' => 3,
-        'icon' => '',
-    ],
-    */
-
-    /**
      * CMS.
      */
     [

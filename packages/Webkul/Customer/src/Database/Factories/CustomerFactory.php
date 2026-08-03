@@ -34,12 +34,12 @@ class CustomerFactory extends Factory
     public function definition(): array
     {
         return [
-            'first_name' => preg_replace('/[^a-zA-Z ]/', '', $this->faker->firstName()),
-            'last_name' => preg_replace('/[^a-zA-Z ]/', '', $this->faker->lastName()),
+            'first_name' => 'TestCustomer',
+            'last_name' => 'User',
             'gender' => Arr::random(['male', 'female', 'other']),
-            'email' => $this->faker->safeEmail(),
+            'email' => 'customer_'.rand(1000, 999999).'@example.com',
             'status' => 1,
-            'password' => Hash::make($this->faker->password),
+            'password' => Hash::make('password123'),
             'customer_group_id' => 2,
             'channel_id' => 1,
             'is_verified' => 1,

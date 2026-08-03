@@ -3,7 +3,6 @@
 namespace Webkul\Admin\Listeners;
 
 use Webkul\Admin\Mail\Order\RefundedNotification;
-use Webkul\Paypal\Payment\SmartButton;
 
 class Refund extends Base
 {
@@ -31,30 +30,16 @@ class Refund extends Base
     /**
      * After Refund is created
      *
+     * [HIGEST WALLET — D-003] Gateway refund disabled intentionally.
+     * All refunds are credited to HIGEST Wallet via CreditWalletOnRefundCreated listener.
+     * Do NOT re-enable PayPal refund here — it would cause double-refund (PayPal + Wallet).
+     *
      * @param  \Webkul\Sales\Contracts\Refund  $refund
      * @return void
      */
     public function refundOrder($refund)
     {
-        $order = $refund->order;
-
-        if ($order->payment->method === 'paypal_smart_button') {
-            /* getting smart button instance */
-            $smartButton = new SmartButton;
-
-            /* getting paypal oder id */
-            $paypalOrderID = $order->payment->additional['orderID'];
-
-            /* getting capture id by paypal order id */
-            $captureID = $smartButton->getCaptureId($paypalOrderID);
-
-            /* now refunding order on the basis of capture id and refund data */
-            $smartButton->refundOrder($captureID, [
-                'amount' => [
-                    'value' => round($refund->grand_total, 2),
-                    'currency_code' => $refund->order_currency_code,
-                ],
-            ]);
-        }
+        // Disabled: PayPal gateway refund removed per HIGEST Wallet D-003 decision.
+        // All refunds are now credited to customer's HIGEST Wallet automatically.
     }
 }

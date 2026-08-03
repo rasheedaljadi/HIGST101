@@ -53,6 +53,14 @@ return [
                 'payment_point' => 'نقطة دفع',
             ],
         ],
+        'destinations' => [
+            'title' => 'وجهات الحساب والعملات',
+            'destination-row' => 'وجهة تحويل',
+            'remove' => 'إزالة',
+            'select-currency' => 'اختر العملة',
+            'swift-code' => 'رمز السويفت (SWIFT / BIC)',
+            'add-destination' => 'إضافة وجهة حساب جديدة',
+        ],
         'acl' => [
             'title' => 'حسابات الدفع اليدوي',
             'create' => 'إضافة حساب',

@@ -51,5 +51,6 @@ return [
         Webkul\Tax\Providers\ModuleServiceProvider::class,
         Webkul\Theme\Providers\ModuleServiceProvider::class,
         Webkul\User\Providers\ModuleServiceProvider::class,
+        Webkul\Wallet\Providers\ModuleServiceProvider::class,
     ],
 ];

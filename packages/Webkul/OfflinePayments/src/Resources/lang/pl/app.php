@@ -53,6 +53,14 @@ return [
                 'payment_point' => 'Payment Point',
             ],
         ],
+        'destinations' => [
+            'title' => 'Account Destinations & Currencies',
+            'destination-row' => 'Transfer Destination',
+            'remove' => 'Remove',
+            'select-currency' => 'Select Currency',
+            'swift-code' => 'SWIFT / BIC Code',
+            'add-destination' => 'Add New Destination',
+        ],
         'acl' => [
             'title' => 'Offline Payments',
             'create' => 'Create Account',

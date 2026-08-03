@@ -1,7 +1,6 @@
 <?php
 
 use Webkul\Payment\Payment\CashOnDelivery;
-use Webkul\Payment\Payment\MoneyTransfer;
 
 return [
     'cashondelivery' => [
@@ -12,15 +11,5 @@ return [
         'active' => true,
         'generate_invoice' => false,
         'sort' => 6,
-    ],
-
-    'moneytransfer' => [
-        'class' => MoneyTransfer::class,
-        'code' => 'moneytransfer',
-        'title' => 'Money Transfer',
-        'description' => 'Money Transfer',
-        'active' => true,
-        'generate_invoice' => false,
-        'sort' => 7,
     ],
 ];

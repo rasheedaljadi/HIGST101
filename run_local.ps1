@@ -6,4 +6,4 @@ Write-Host " Starting Bagisto Local Server (PHP 8.3) " -ForegroundColor Cyan
 Write-Host " Local URL: http://127.0.0.1:8000 " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 
-& $Php83 artisan serve --port=8000
+& $Php83 -S 127.0.0.1:8000 -t public server.php

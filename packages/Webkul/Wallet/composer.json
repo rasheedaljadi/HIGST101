@@ -1,0 +1,26 @@
+﻿{
+    "name": "webkul/wallet",
+    "description": "HIGEST Wallet Domain — Customer digital wallet with ledger-based balance management",
+    "type": "library",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "HIGEST Engineering Team"
+        }
+    ],
+    "require": {
+        "php": ">=8.3",
+        "konekt/concord": "^1.14",
+        "webkul/core": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Webkul\\Wallet\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Webkul\\Wallet\\Tests\\": "tests/"
+        }
+    }
+}

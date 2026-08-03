@@ -5203,6 +5203,10 @@ return [
                 'transactions' => 'Transactions',
                 'url-rewrites' => 'URL Rewrites',
                 'users' => 'Users',
+                'wallet' => 'Wallet',
+                'wallet-deposits' => 'Wallet Deposits',
+                'wallet-settings' => 'Wallet Settings',
+                'wallet-withdrawals' => 'Wallet Withdrawals',
             ],
 
             'powered-by' => [

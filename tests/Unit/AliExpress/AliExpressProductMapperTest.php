@@ -5,9 +5,6 @@ use App\Services\AliExpress\AliExpressProductMapper;
 use App\Services\AliExpress\DTO\NormalizedProduct;
 use App\Services\AliExpress\DTO\NormalizedVariant;
 use App\Services\AliExpress\DTO\NormalizedVariantAxis;
-use Tests\Unit\AliExpress\MapperTestCase;
-
-uses(MapperTestCase::class);
 
 /*
 |--------------------------------------------------------------------------
