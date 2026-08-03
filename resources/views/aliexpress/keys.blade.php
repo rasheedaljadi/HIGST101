@@ -635,13 +635,9 @@
                                                 تعديل
                                             </button>
 
-                                            <form action="{{ route('admin.dropshipping.pricing.rules.destroy', $rule->id) }}" method="POST" onsubmit="return confirm('هل أنت تأكد من حذف قاعدة التسعير هذه؟');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-400 text-xs font-bold cursor-pointer">
-                                                    حذف
-                                                </button>
-                                            </form>
+                                            <button type="button" onclick="openDeleteRuleModal({{ $rule->id }}, '{{ addslashes($rule->name) }}')" class="text-red-600 hover:text-red-800 dark:text-red-400 text-xs font-bold cursor-pointer transition-all">
+                                                حذف
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -658,12 +654,15 @@
             </div>
         </div>
 
-        {{-- Edit Rule Modal --}}
-        <div id="editRuleModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 w-full max-w-lg overflow-hidden transition-all transform">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-                    <h3 class="text-base font-bold text-gray-800 dark:text-white font-sans">✏️ تعديل قاعدة التسعير</h3>
-                    <button type="button" onclick="closeEditRuleModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold">&times;</button>
+        {{-- Edit Rule Modal Overlay --}}
+        <div id="editRuleModal" class="fixed inset-0 z-[99999] hidden overflow-y-auto bg-gray-900/70 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-lg overflow-hidden transition-all transform font-sans my-auto">
+                <div class="flex items-center justify-between px-6 py-4 bg-slate-900 dark:bg-slate-950 text-white">
+                    <h3 class="text-base font-bold flex items-center gap-2">
+                        <span>✏️</span>
+                        <span>تعديل قاعدة التسعير</span>
+                    </h3>
+                    <button type="button" onclick="closeEditRuleModal()" class="text-gray-400 hover:text-white text-xl font-bold transition-all cursor-pointer">&times;</button>
                 </div>
 
                 <form id="editRuleForm" method="POST" action="" class="p-6 flex flex-col gap-4">
@@ -672,13 +671,13 @@
 
                     <div>
                         <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">اسم القاعدة</label>
-                        <input type="text" id="edit_rule_name" name="name" required class="w-full border rounded-md px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans" />
+                        <input type="text" id="edit_rule_name" name="name" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans" />
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">النطاق (Scope)</label>
-                            <select id="edit_rule_scope" name="scope" required onchange="toggleEditScopeField()" class="w-full border rounded-md px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans">
+                            <select id="edit_rule_scope" name="scope" required onchange="toggleEditScopeField()" class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
                                 <option value="global">عام (Global)</option>
                                 <option value="category" disabled class="text-gray-400">فئة معينة (Category) — (ميزة مستقبلية ⏳)</option>
                             </select>
@@ -686,7 +685,7 @@
 
                         <div id="edit_scope_id_wrapper" class="hidden">
                             <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">الفئة المعنية</label>
-                            <select id="edit_rule_scope_id" name="scope_id" class="w-full border rounded-md px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans">
+                            <select id="edit_rule_scope_id" name="scope_id" class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
                                 <option value="">-- اختر الفئة --</option>
                                 @foreach($pricingCategories as $category)
                                     <option value="{{ $category->id }}">{{ $category->name }} (ID: {{ $category->id }})</option>
@@ -698,7 +697,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">نوع الهامش</label>
-                            <select id="edit_rule_type" name="type" required class="w-full border rounded-md px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans">
+                            <select id="edit_rule_type" name="type" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
                                 <option value="percentage">نسبة مئوية (%)</option>
                                 <option value="fixed">مبلغ ثابت ($)</option>
                             </select>
@@ -706,13 +705,13 @@
 
                         <div>
                             <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">القيمة</label>
-                            <input type="number" step="0.01" id="edit_rule_value" name="value" required class="w-full border rounded-md px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans" />
+                            <input type="number" step="0.01" id="edit_rule_value" name="value" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans" />
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">سياسة خصم المصدر (AliExpress Source Discount Policy)</label>
-                        <select id="edit_rule_source_discount_policy" name="source_discount_policy" required class="w-full border rounded-md px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans">
+                        <select id="edit_rule_source_discount_policy" name="source_discount_policy" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
                             <option value="PASS_TO_CUSTOMER">تمرير الخصم للعميل (عرض التخفيض PASS_TO_CUSTOMER)</option>
                             <option value="ABSORB_BY_HIGEST">امتصاص الخصم لـ HIGEST (سعر صافي ABSORB_BY_HIGEST)</option>
                         </select>
@@ -721,12 +720,12 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">الأولوية</label>
-                            <input type="number" id="edit_rule_priority" name="priority" value="0" class="w-full border rounded-md px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans" />
+                            <input type="number" id="edit_rule_priority" name="priority" value="0" class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans" />
                         </div>
 
                         <div>
                             <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">الحالة</label>
-                            <select id="edit_rule_status" name="status" required class="w-full border rounded-md px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans">
+                            <select id="edit_rule_status" name="status" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
                                 <option value="1">نشط</option>
                                 <option value="0">معطل</option>
                             </select>
@@ -734,13 +733,39 @@
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800 mt-2">
-                        <button type="button" onclick="closeEditRuleModal()" class="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md font-sans">
+                        <button type="button" onclick="closeEditRuleModal()" class="px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all font-sans cursor-pointer">
                             إلغاء
                         </button>
-                        <button type="submit" class="primary-button px-5 py-2 text-sm font-semibold rounded-md font-sans">
+                        <button type="submit" class="primary-button px-5 py-2.5 text-sm font-semibold rounded-xl font-sans shadow-md cursor-pointer">
                             حفظ التغييرات
                         </button>
                     </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- System Delete Confirmation Modal Overlay --}}
+        <div id="deleteRuleModal" class="fixed inset-0 z-[99999] hidden overflow-y-auto bg-gray-900/70 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-md overflow-hidden transform transition-all p-6 text-center font-sans my-auto">
+                <div class="w-14 h-14 bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">
+                    🗑️
+                </div>
+
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">تأكيد حذف قاعدة التسعير</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                    هل أنت تأكد من حذف قاعدة التسعير <span id="delete_rule_name_display" class="font-bold text-gray-900 dark:text-white"></span>؟<br>
+                    <span class="text-xs text-red-500 font-semibold block mt-1">تنبيه: لا يمكن التراجع عن هذا الإجراء وسيتراجع النظام لتكلفة المصدر (هامش 0%).</span>
+                </p>
+
+                <form id="deleteRuleForm" method="POST" action="" class="flex items-center justify-center gap-3">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button" onclick="closeDeleteRuleModal()" class="w-1/2 py-2.5 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all cursor-pointer">
+                        إلغاء
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 px-4 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-xl shadow-md shadow-red-600/30 transition-all cursor-pointer">
+                        تأكيد الحذف
+                    </button>
                 </form>
             </div>
         </div>
@@ -850,10 +875,30 @@
                 toggleEditScopeField();
                 
                 modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
             }
 
             function closeEditRuleModal() {
-                document.getElementById('editRuleModal').classList.add('hidden');
+                const modal = document.getElementById('editRuleModal');
+                if (modal) modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+
+            function openDeleteRuleModal(id, name) {
+                const modal = document.getElementById('deleteRuleModal');
+                const form = document.getElementById('deleteRuleForm');
+                
+                form.action = "{{ url('admin/dropshipping/pricing/rules') }}/" + id;
+                document.getElementById('delete_rule_name_display').innerText = '"' + name + '"';
+                
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeDeleteRuleModal() {
+                const modal = document.getElementById('deleteRuleModal');
+                if (modal) modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
             }
         </script>
     </div>
