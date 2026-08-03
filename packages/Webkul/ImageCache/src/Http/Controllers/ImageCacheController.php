@@ -74,11 +74,26 @@ class ImageCacheController extends Controller
 
                 $content = (string) $image->encodeByMediaType();
 
+                $targetPath = public_path('cache/' . $template . '/' . $filename);
+                $targetDir = dirname($targetPath);
+                if (! file_exists($targetDir)) {
+                    @mkdir($targetDir, 0777, true);
+                }
+                @file_put_contents($targetPath, $content);
+
                 return $this->buildResponse($content);
             } catch (Exception) {
                 // If filter processing fails, fall through to raw file or placeholder
                 if (file_exists($path)) {
-                    return $this->buildResponse(file_get_contents($path));
+                    $rawContent = file_get_contents($path);
+                    $targetPath = public_path('cache/' . $template . '/' . $filename);
+                    $targetDir = dirname($targetPath);
+                    if (! file_exists($targetDir)) {
+                        @mkdir($targetDir, 0777, true);
+                    }
+                    @file_put_contents($targetPath, $rawContent);
+
+                    return $this->buildResponse($rawContent);
                 }
             }
         }
