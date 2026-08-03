@@ -642,8 +642,8 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-                                        لا توجد قواعد تسعير معرفة حالياً. (تم استخدام افتراضي 30%).
+                                    <td colspan="10" class="p-6 text-center text-gray-500 dark:text-gray-400 text-sm font-sans">
+                                        لا توجد قواعد تسعير معرفة حالياً (الهامش الافتراضي عند عدم وجود قواعد هو 0%).
                                     </td>
                                 </tr>
                             @endforelse

@@ -2,6 +2,7 @@
 
 namespace App\Services\Pricing;
 
+use App\Enums\SourceDiscountPolicy;
 use App\Models\HigestPricingRule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -60,13 +61,34 @@ class PricingRuleResolver
             ->first();
 
         if ($rule === null) {
-            Log::channel('aliexpress')->warning('PricingRuleResolver: no pricing rule found', [
+            Log::channel('aliexpress')->info('PricingRuleResolver: no active pricing rule found in database, defaulting to 0% margin fallback', [
                 'product_id' => $productId,
                 'category_id' => $categoryId,
             ]);
+
+            return $this->getZeroMarginFallbackRule();
         }
 
         return $rule;
+    }
+
+    /**
+     * Get default 0% margin fallback pricing rule.
+     */
+    public function getZeroMarginFallbackRule(): HigestPricingRule
+    {
+        return new HigestPricingRule([
+            'id' => 0,
+            'name' => 'Default 0% Margin Fallback',
+            'scope' => 'global',
+            'scope_id' => null,
+            'type' => 'percentage',
+            'value' => 0.0,
+            'priority' => 0,
+            'version' => 1,
+            'status' => true,
+            'source_discount_policy' => SourceDiscountPolicy::PASS_TO_CUSTOMER,
+        ]);
     }
 
     /**

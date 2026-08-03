@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class HigestSeedDefaultPricingRule extends Command
 {
-    protected $signature = 'higest:pricing:seed-default-rule {--margin=30 : Default margin percentage}';
+    protected $signature = 'higest:pricing:seed-default-rule {--margin=0 : Default margin percentage}';
 
     protected $description = 'Seed default global pricing rule if no active global rule exists';
 
@@ -24,7 +24,7 @@ class HigestSeedDefaultPricingRule extends Command
         }
 
         $rule = HigestPricingRule::create([
-            'name' => 'Default Global Margin',
+            'name' => 'Default 0% Margin',
             'scope' => 'global',
             'scope_id' => null,
             'type' => 'percentage',
