@@ -135,9 +135,34 @@ class CatalogProjectionListener
                 trigger: 'sync',
             );
 
-            // 2. Resolve rule & calculate selling price via pipeline (C3)
+            // 2. Resolve rule & classify change event
             $categoryId = $this->pricingRuleResolver->resolveCategoryId($parentId);
             $rule = $this->pricingRuleResolver->resolve($parentId, $categoryId);
+
+            $costChanged = ($oldAcquisitionCost === null) || ($oldAcquisitionCost !== (float) $newPrice);
+            $onlyOriginalCostChanged = ! $costChanged && ($existingOffer?->acquisition_original_cost !== $newOriginalCost);
+            $policy = $rule?->source_discount_policy?->value ?? 'PASS_TO_CUSTOMER';
+
+            // Event Classification Optimization: If ONLY original cost changed under ABSORB_BY_HIGEST,
+            // source offer facts are updated above, but storefront customer price is unaffected.
+            // Skip unnecessary catalog writes & reindexing.
+            if ($onlyOriginalCostChanged && $policy === 'ABSORB_BY_HIGEST') {
+                Log::channel('aliexpress')->info('CatalogProjectionListener: original cost changed under ABSORB_BY_HIGEST. Source facts updated; catalog write skipped.', [
+                    'variant_id' => $variantId,
+                    'old_original_cost' => $existingOffer?->acquisition_original_cost,
+                    'new_original_cost' => $newOriginalCost,
+                ]);
+
+                DB::table('external_variant_projections')
+                    ->where('variant_product_id', $variantId)
+                    ->update([
+                        'external_variant_version' => $payload['external_variant_version'] ?? ($projection ? $projection->external_variant_version : null),
+                        'provider_updated_at' => isset($payload['provider_updated_at']) ? new Carbon($payload['provider_updated_at']) : ($projection ? $projection->provider_updated_at : null),
+                        'updated_at' => now(),
+                    ]);
+
+                return null;
+            }
 
             if ($rule !== null) {
                 $context = new PricingContext(
@@ -147,6 +172,8 @@ class CatalogProjectionListener
                 );
                 $result = $this->pricingEngine->calculate((float) $newPrice, $rule, $context);
 
+                $trigger = $onlyOriginalCostChanged ? 'sync_source_discount_change' : PricingTrigger::SYNC;
+
                 // 3. Write selling price to Bagisto EAV + record price history
                 $this->catalogPriceWriter->write(
                     variantId: $variantId,
@@ -155,7 +182,7 @@ class CatalogProjectionListener
                     specialPrice: $result->specialPrice,
                     oldAcquisitionCost: $oldAcquisitionCost,
                     rule: $rule,
-                    trigger: PricingTrigger::SYNC,
+                    trigger: $trigger,
                 );
             } else {
                 Log::channel('aliexpress')->warning('CatalogProjectionListener: no pricing rule found during sync', [
