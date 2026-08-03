@@ -733,10 +733,10 @@
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800 mt-2">
-                        <button type="button" onclick="closeEditRuleModal()" class="px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all font-sans cursor-pointer">
+                        <button type="button" onclick="closeEditRuleModal()" style="background-color: #f3f4f6 !important; color: #374151 !important; font-weight: 600 !important;" class="px-4 py-2.5 text-sm font-semibold rounded-xl transition-all font-sans cursor-pointer">
                             إلغاء
                         </button>
-                        <button type="submit" class="primary-button px-5 py-2.5 text-sm font-semibold rounded-xl font-sans shadow-md cursor-pointer">
+                        <button type="submit" style="background-color: #d97706 !important; color: #ffffff !important; font-weight: 700 !important;" class="px-5 py-2.5 text-sm font-semibold rounded-xl font-sans shadow-md cursor-pointer transition-all">
                             حفظ التغييرات
                         </button>
                     </div>
@@ -745,7 +745,7 @@
         </div>
 
         {{-- System Delete Confirmation Modal Overlay --}}
-        <div id="deleteRuleModal" class="fixed inset-0 z-[99999] hidden overflow-y-auto bg-gray-900/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div id="deleteRuleModal" class="fixed inset-0 z-[999999] hidden overflow-y-auto bg-gray-900/75 backdrop-blur-md flex items-center justify-center p-4">
             <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-md overflow-hidden transform transition-all p-6 text-center font-sans my-auto">
                 <div class="w-14 h-14 bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">
                     🗑️
@@ -760,10 +760,10 @@
                 <form id="deleteRuleForm" method="POST" action="" class="flex items-center justify-center gap-3">
                     @csrf
                     @method('DELETE')
-                    <button type="button" onclick="closeDeleteRuleModal()" class="w-1/2 py-2.5 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all cursor-pointer">
+                    <button type="button" onclick="closeDeleteRuleModal()" style="background-color: #f3f4f6 !important; color: #374151 !important; font-weight: 600 !important;" class="w-1/2 py-2.5 px-4 text-sm font-semibold rounded-xl transition-all cursor-pointer">
                         إلغاء
                     </button>
-                    <button type="submit" class="w-1/2 py-2.5 px-4 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-xl shadow-md shadow-red-600/30 transition-all cursor-pointer">
+                    <button type="submit" style="background-color: #dc2626 !important; color: #ffffff !important; font-weight: 700 !important;" class="w-1/2 py-2.5 px-4 text-sm font-semibold rounded-xl shadow-md cursor-pointer transition-all">
                         تأكيد الحذف
                     </button>
                 </form>
@@ -874,7 +874,13 @@
                 
                 toggleEditScopeField();
                 
-                modal.classList.remove('hidden');
+                if (modal && modal.parentNode !== document.body) {
+                    document.body.appendChild(modal);
+                }
+
+                if (modal) {
+                    modal.classList.remove('hidden');
+                }
                 document.body.style.overflow = 'hidden';
             }
 
