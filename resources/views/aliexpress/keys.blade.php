@@ -655,8 +655,8 @@
         </div>
 
         {{-- Edit Rule Modal Overlay --}}
-        <div id="editRuleModal" class="fixed inset-0 z-[99999] hidden overflow-y-auto bg-gray-900/70 backdrop-blur-md flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-lg overflow-hidden transition-all transform font-sans my-auto">
+        <div id="editRuleModal" class="hidden">
+            <div id="editRuleModalCard" class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden font-sans transition-all">
                 <div class="flex items-center justify-between px-6 py-4 bg-slate-900 dark:bg-slate-950 text-white">
                     <h3 class="text-base font-bold flex items-center gap-2">
                         <span>✏️</span>
@@ -745,8 +745,8 @@
         </div>
 
         {{-- System Delete Confirmation Modal Overlay --}}
-        <div id="deleteRuleModal" class="fixed inset-0 z-[999999] hidden overflow-y-auto bg-gray-900/75 backdrop-blur-md flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-md overflow-hidden transform transition-all p-6 text-center font-sans my-auto">
+        <div id="deleteRuleModal" class="hidden">
+            <div id="deleteRuleModalCard" class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 text-center font-sans transition-all">
                 <div class="w-14 h-14 bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">
                     🗑️
                 </div>
@@ -859,6 +859,7 @@
             function openEditRuleModal(rule) {
                 const modal = document.getElementById('editRuleModal');
                 const form = document.getElementById('editRuleForm');
+                const card = document.getElementById('editRuleModalCard');
                 
                 form.action = "{{ url('admin/dropshipping/pricing/rules') }}/" + rule.id;
                 
@@ -874,36 +875,91 @@
                 
                 toggleEditScopeField();
                 
-                if (modal && modal.parentNode !== document.body) {
-                    document.body.appendChild(modal);
-                }
-
                 if (modal) {
+                    if (modal.parentNode !== document.body) {
+                        document.body.appendChild(modal);
+                    }
+                    modal.style.position = 'fixed';
+                    modal.style.top = '0';
+                    modal.style.left = '0';
+                    modal.style.right = '0';
+                    modal.style.bottom = '0';
+                    modal.style.width = '100vw';
+                    modal.style.height = '100vh';
+                    modal.style.zIndex = '9999999';
+                    modal.style.display = 'flex';
+                    modal.style.alignItems = 'center';
+                    modal.style.justifyContent = 'center';
+                    modal.style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
+                    modal.style.backdropFilter = 'blur(8px)';
+                    modal.style.webkitBackdropFilter = 'blur(8px)';
                     modal.classList.remove('hidden');
                 }
+
+                if (card) {
+                    card.style.maxWidth = '540px';
+                    card.style.width = '90%';
+                    card.style.margin = 'auto';
+                    card.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.5)';
+                }
+
                 document.body.style.overflow = 'hidden';
             }
 
             function closeEditRuleModal() {
                 const modal = document.getElementById('editRuleModal');
-                if (modal) modal.classList.add('hidden');
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.classList.add('hidden');
+                }
                 document.body.style.overflow = 'auto';
             }
 
             function openDeleteRuleModal(id, name) {
                 const modal = document.getElementById('deleteRuleModal');
                 const form = document.getElementById('deleteRuleForm');
+                const card = document.getElementById('deleteRuleModalCard');
                 
                 form.action = "{{ url('admin/dropshipping/pricing/rules') }}/" + id;
                 document.getElementById('delete_rule_name_display').innerText = '"' + name + '"';
                 
-                modal.classList.remove('hidden');
+                if (modal) {
+                    if (modal.parentNode !== document.body) {
+                        document.body.appendChild(modal);
+                    }
+                    modal.style.position = 'fixed';
+                    modal.style.top = '0';
+                    modal.style.left = '0';
+                    modal.style.right = '0';
+                    modal.style.bottom = '0';
+                    modal.style.width = '100vw';
+                    modal.style.height = '100vh';
+                    modal.style.zIndex = '9999999';
+                    modal.style.display = 'flex';
+                    modal.style.alignItems = 'center';
+                    modal.style.justifyContent = 'center';
+                    modal.style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
+                    modal.style.backdropFilter = 'blur(8px)';
+                    modal.style.webkitBackdropFilter = 'blur(8px)';
+                    modal.classList.remove('hidden');
+                }
+
+                if (card) {
+                    card.style.maxWidth = '440px';
+                    card.style.width = '90%';
+                    card.style.margin = 'auto';
+                    card.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.5)';
+                }
+
                 document.body.style.overflow = 'hidden';
             }
 
             function closeDeleteRuleModal() {
                 const modal = document.getElementById('deleteRuleModal');
-                if (modal) modal.classList.add('hidden');
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.classList.add('hidden');
+                }
                 document.body.style.overflow = 'auto';
             }
         </script>
