@@ -6,6 +6,7 @@ use App\Enums\PricingTrigger;
 use App\Models\HigestPricingRule;
 use App\Models\HigestSourceOffer;
 use App\Services\Pricing\DTO\PricingContext;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -105,6 +106,8 @@ class PriceRecalculationService
      */
     protected function recalculateBatch($query, PricingTrigger|string $trigger): int
     {
+        $this->syncMissingCatalogOffers();
+
         $count = 0;
         $reindexProductIds = [];
 
@@ -150,5 +153,78 @@ class PriceRecalculationService
         ]);
 
         return $count;
+    }
+
+    /**
+     * Ensure all catalog products have a corresponding source offer record.
+     */
+    public function syncMissingCatalogOffers(): int
+    {
+        $missingProducts = DB::table('products as p')
+            ->leftJoin('higest_source_offers as hso', 'p.id', '=', 'hso.variant_id')
+            ->leftJoin('product_flat as pf', function ($join) {
+                $join->on('p.id', '=', 'pf.product_id')
+                    ->where('pf.channel', '=', 'default')
+                    ->where('pf.locale', '=', 'ar');
+            })
+            ->whereNull('hso.id')
+            ->where('p.type', '!=', 'configurable')
+            ->select(
+                'p.id as variant_id',
+                DB::raw('COALESCE(p.parent_id, p.id) as product_id'),
+                'pf.price',
+                'pf.special_price'
+            )
+            ->groupBy('p.id')
+            ->get();
+
+        if ($missingProducts->isEmpty()) {
+            return 0;
+        }
+
+        $now = Carbon::now();
+        $insertData = [];
+        $batchSize = 1000;
+        $totalInserted = 0;
+
+        foreach ($missingProducts as $prod) {
+            $price = (float) ($prod->price ?? 0);
+            $specialPrice = $prod->special_price !== null ? (float) $prod->special_price : null;
+
+            if ($specialPrice !== null && $specialPrice > 0 && $specialPrice < $price) {
+                $acqCost = $specialPrice;
+                $acqOrigCost = $price;
+            } else {
+                $acqCost = $price > 0 ? $price : 0.00;
+                $acqOrigCost = null;
+            }
+
+            $insertData[] = [
+                'variant_id' => $prod->variant_id,
+                'product_id' => $prod->product_id,
+                'source_provider' => 'aliexpress',
+                'source_sku_id' => null,
+                'acquisition_cost' => $acqCost,
+                'acquisition_original_cost' => $acqOrigCost,
+                'source_currency' => 'USD',
+                'captured_at' => $now,
+                'synced_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+
+            if (count($insertData) >= $batchSize) {
+                DB::table('higest_source_offers')->insertOrIgnore($insertData);
+                $totalInserted += count($insertData);
+                $insertData = [];
+            }
+        }
+
+        if (! empty($insertData)) {
+            DB::table('higest_source_offers')->insertOrIgnore($insertData);
+            $totalInserted += count($insertData);
+        }
+
+        return $totalInserted;
     }
 }
