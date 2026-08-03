@@ -81,6 +81,57 @@ class AliExpressImageImporter
             $product,
             'images'
         );
+
+        // Pre-generate imagecache thumbnails for Nginx static serving
+        try {
+            foreach ($product->fresh()->images as $image) {
+                $this->pregenerateImageCache($image->path);
+            }
+        } catch (Throwable $e) {
+            Log::channel('aliexpress')->warning('Failed to pregenerate image cache for product', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Pre-generate imagecache thumbnails (small, medium, large, original)
+     * so Nginx static file handling serves them directly without 404s.
+     */
+    protected function pregenerateImageCache(string $path): void
+    {
+        $templates = array_keys(config('imagecache.templates', [
+            'small' => '',
+            'medium' => '',
+            'large' => '',
+            'original' => '',
+        ]));
+
+        $imageCache = app('imagecache');
+
+        foreach ($templates as $template) {
+            try {
+                $cacheDir = public_path('cache/'.$template.'/'.dirname($path));
+
+                if (! file_exists($cacheDir)) {
+                    mkdir($cacheDir, 0755, true);
+                }
+
+                $targetPath = public_path('cache/'.$template.'/'.$path);
+
+                if (! file_exists($targetPath)) {
+                    $img = $imageCache->get($path, $template);
+                    file_put_contents($targetPath, (string) $img->response('webp', 90)->getContent());
+                }
+            } catch (Throwable $e) {
+                Log::channel('aliexpress')->warning('Pregenerate imagecache thumbnail failed', [
+                    'path' => $path,
+                    'template' => $template,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     /**
