@@ -35,9 +35,11 @@ Route::prefix('marketing')->group(function () {
 
             Route::get('edit/{id}', 'edit')->name('admin.marketing.promotions.cart_rules.edit');
 
-            Route::put('edit/{id}', 'update')->name('admin.marketing.promotions.cart_rules.update');
+            Route::match(['put', 'post'], 'edit/{id}', 'update')->name('admin.marketing.promotions.cart_rules.update');
 
-            Route::delete('edit/{id}', 'destroy')->name('admin.marketing.promotions.cart_rules.delete');
+            Route::match(['delete', 'post'], 'edit/{id}', 'destroy')->name('admin.marketing.promotions.cart_rules.delete');
+
+            Route::match(['delete', 'post'], 'delete/{id}', 'destroy')->name('admin.marketing.promotions.cart_rules.delete.alias');
         });
 
         /**

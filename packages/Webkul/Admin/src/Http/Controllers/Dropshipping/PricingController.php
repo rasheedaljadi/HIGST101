@@ -93,7 +93,16 @@ class PricingController extends Controller
         // Recalculate affected products (rule version was auto-incremented by model boot)
         $affectedCount = $this->recalculationService->recalculateForRule($rule);
 
-        session()->flash('success', "تم تحديث قاعدة التسعير (النسخة {$rule->version}) وإعادة حساب {$affectedCount} منتج.");
+        $message = "تم تحديث قاعدة التسعير (النسخة {$rule->version}) وإعادة حساب {$affectedCount} منتج.";
+
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'message' => $message,
+                'status' => true,
+            ]);
+        }
+
+        session()->flash('success', $message);
 
         return redirect()->back();
     }
@@ -109,7 +118,16 @@ class PricingController extends Controller
         // Recalculate all prices (fallback rules will be resolved)
         $affectedCount = $this->recalculationService->recalculateAll(PricingTrigger::RULE_CHANGE);
 
-        session()->flash('success', "تم حذف قاعدة التسعير وإعادة حساب {$affectedCount} منتج.");
+        $message = "تم حذف قاعدة التسعير وإعادة حساب {$affectedCount} منتج.";
+
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'message' => $message,
+                'status' => true,
+            ]);
+        }
+
+        session()->flash('success', $message);
 
         return redirect()->back();
     }
