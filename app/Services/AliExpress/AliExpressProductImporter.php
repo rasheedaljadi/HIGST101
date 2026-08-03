@@ -1159,16 +1159,16 @@ class AliExpressProductImporter
         if ($type === 'configurable') {
             $product = Product::with(['variants'])->findOrFail($product->id);
 
-            foreach ($dto->variants as $aeVariant) {
-                $projection = ExternalVariantProjection::where('external_sku_id', $aeVariant->skuId)
+            foreach ($dto->variants as $index => $aeVariant) {
+                $projection = ExternalVariantProjection::where('external_sku_id', (string) $aeVariant->skuId)
                     ->where('product_id', $product->id)
                     ->first();
 
-                if ($projection === null) {
+                $variantId = $projection?->variant_product_id ?? ($product->variants->values()[$index]->id ?? null);
+
+                if ($variantId === null) {
                     continue;
                 }
-
-                $variantId = $projection->variant_product_id;
                 $supplierCost = (float) $aeVariant->price;
                 $supplierOriginalCost = $aeVariant->originalPrice !== null ? (float) $aeVariant->originalPrice : null;
 
@@ -1258,17 +1258,19 @@ class AliExpressProductImporter
     protected function recordSupplierPricesOnly(NormalizedProduct $dto, Product $product, string $type, array $created): void
     {
         if ($type === 'configurable') {
-            foreach ($dto->variants as $aeVariant) {
-                $projection = ExternalVariantProjection::where('external_sku_id', $aeVariant->skuId)
+            foreach ($dto->variants as $index => $aeVariant) {
+                $projection = ExternalVariantProjection::where('external_sku_id', (string) $aeVariant->skuId)
                     ->where('product_id', $product->id)
                     ->first();
 
-                if ($projection === null) {
+                $variantId = $projection?->variant_product_id ?? ($product->variants->values()[$index]->id ?? null);
+
+                if ($variantId === null) {
                     continue;
                 }
 
                 $this->sourceOfferRecorder->record(
-                    variantId: $projection->variant_product_id,
+                    variantId: $variantId,
                     productId: $product->id,
                     acquisitionCost: (float) $aeVariant->price,
                     acquisitionOriginalCost: $aeVariant->originalPrice !== null ? (float) $aeVariant->originalPrice : null,
