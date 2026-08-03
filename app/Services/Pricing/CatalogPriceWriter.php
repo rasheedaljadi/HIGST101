@@ -74,6 +74,10 @@ class CatalogPriceWriter
         // Write special_price (transformed promotional sale price if source discount exists)
         $this->writeEavSpecialPrice($variantId, $appliedSpecialPrice);
 
+        // Write acquisition cost to Bagisto's native 'cost' field so it is
+        // visible in the admin product form and usable in Bagisto profit reports.
+        $this->writeEavCost($variantId, $result->acquisitionCost);
+
         // Record domain price calculation history
         $this->recordHistory(
             variantId: $variantId,
@@ -122,7 +126,7 @@ class CatalogPriceWriter
             return;
         }
 
-        $toIndex = [$product];
+        $toIndex = collect([$product])->merge($product->variants)->all();
 
         if ($product->parent_id) {
             $parent = Product::with([
@@ -142,7 +146,7 @@ class CatalogPriceWriter
             ])->find($product->parent_id);
 
             if ($parent !== null) {
-                $toIndex[] = $parent;
+                $toIndex = collect($toIndex)->merge([$parent])->merge($parent->variants)->unique('id')->all();
             }
         }
 
@@ -221,6 +225,37 @@ class CatalogPriceWriter
         );
     }
 
+    /**
+     * Write the supplier acquisition cost into Bagisto's native `cost` EAV
+     * attribute so it is visible in the admin product form and usable in
+     * Bagisto's built-in profit/margin reports.
+     *
+     * The `cost` attribute is non-scoped (channel=null, locale=null), exactly
+     * like `price` and `special_price`, so the unique_id format matches.
+     */
+    protected function writeEavCost(int $variantId, float $acquisitionCost): void
+    {
+        $attributeId = $this->costAttributeId();
+        if ($attributeId === null) {
+            return;
+        }
+
+        $uniqueId = "||{$variantId}|{$attributeId}";
+
+        ProductAttributeValue::updateOrCreate(
+            [
+                'product_id' => $variantId,
+                'attribute_id' => $attributeId,
+                'channel' => null,
+                'locale' => null,
+            ],
+            [
+                'float_value' => $acquisitionCost,
+                'unique_id' => $uniqueId,
+            ]
+        );
+    }
+
     protected function recordHistory(
         int $variantId,
         int $productId,
@@ -263,6 +298,16 @@ class CatalogPriceWriter
         static $id;
         if ($id === null) {
             $id = (int) (Attribute::where('code', 'special_price')->value('id') ?? 0);
+        }
+
+        return $id > 0 ? $id : null;
+    }
+
+    protected function costAttributeId(): ?int
+    {
+        static $id;
+        if ($id === null) {
+            $id = (int) (Attribute::where('code', 'cost')->value('id') ?? 0);
         }
 
         return $id > 0 ? $id : null;

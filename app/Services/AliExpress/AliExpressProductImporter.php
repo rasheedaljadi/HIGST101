@@ -286,15 +286,16 @@ class AliExpressProductImporter
         // The applyVariantSpecialPrices() method is preserved but only used when
         // HIGEST creates its own promotional discounts (not from supplier data).
 
-        // Record supplier prices and calculate selling prices with merchant margin.
-        $this->applyPricingEngine($dto, $product, $type, $created);
-
-        // Save aliexpress_sku_id EAV and create external_variant_projections
+        // Save aliexpress_sku_id EAV and create external_variant_projections FIRST so
+        // applyPricingEngine can resolve external_sku_id -> variant_product_id.
         if ($type === 'configurable') {
             $this->applyVariantSkuIdsAndProjections($product, $created['resolved_axes'], $dto);
         } else {
             $this->applySimpleSkuIdAndProjection($product, $dto);
         }
+
+        // Record supplier prices and calculate selling prices with merchant margin.
+        $this->applyPricingEngine($dto, $product, $type, $created);
 
         // Gallery images are attached AFTER the shared-field update: that
         // update re-syncs images from its own payload and would otherwise wipe
@@ -1153,7 +1154,7 @@ class AliExpressProductImporter
             return;
         }
 
-        $context = new PricingContext(provider: 'aliexpress', currency: $dto->currency);
+        $context = new PricingContext(sourceProvider: 'aliexpress', currency: $dto->currency);
 
         if ($type === 'configurable') {
             $product = Product::with(['variants'])->findOrFail($product->id);
@@ -1172,22 +1173,22 @@ class AliExpressProductImporter
                 $supplierOriginalCost = $aeVariant->originalPrice !== null ? (float) $aeVariant->originalPrice : null;
 
                 // 1. Record variant supplier offer
-                $this->supplierOfferRecorder->record(
+                $this->sourceOfferRecorder->record(
                     variantId: $variantId,
                     productId: $product->id,
-                    supplierCost: $supplierCost,
-                    supplierOriginalCost: $supplierOriginalCost,
-                    supplierCurrency: $dto->currency,
-                    providerSkuId: $aeVariant->skuId,
-                    provider: 'aliexpress',
+                    acquisitionCost: $supplierCost,
+                    acquisitionOriginalCost: $supplierOriginalCost,
+                    sourceCurrency: $dto->currency,
+                    sourceSkuId: $aeVariant->skuId,
+                    sourceProvider: 'aliexpress',
                     trigger: 'import',
                 );
 
                 // 2. Calculate selling price via pipeline
                 $variantContext = new PricingContext(
-                    provider: 'aliexpress',
+                    sourceProvider: 'aliexpress',
                     currency: $dto->currency,
-                    supplierOriginalCost: $supplierOriginalCost,
+                    acquisitionOriginalCost: $supplierOriginalCost,
                 );
 
                 $result = $this->pricingEngine->calculate($supplierCost, $rule, $variantContext);
@@ -1198,13 +1199,13 @@ class AliExpressProductImporter
                     productId: $product->id,
                     result: $result,
                     specialPrice: $result->specialPrice,
-                    oldSupplierCost: null,
+                    oldAcquisitionCost: null,
                     rule: $rule,
                     trigger: PricingTrigger::IMPORT,
                 );
             }
 
-            $this->updateParentRepresentativePrice($product, $rule, new PricingContext(provider: 'aliexpress', currency: $dto->currency));
+            $this->updateParentRepresentativePrice($product, $rule, new PricingContext(sourceProvider: 'aliexpress', currency: $dto->currency));
         } else {
             // Simple product: single SKU (variant_id = product_id)
             $variant = $dto->variants[0];
@@ -1212,22 +1213,22 @@ class AliExpressProductImporter
             $supplierOriginalCost = $variant->originalPrice !== null ? (float) $variant->originalPrice : null;
 
             // 1. Record supplier offer
-            $this->supplierOfferRecorder->record(
+            $this->sourceOfferRecorder->record(
                 variantId: $product->id,
                 productId: $product->id,
-                supplierCost: $supplierCost,
-                supplierOriginalCost: $supplierOriginalCost,
-                supplierCurrency: $dto->currency,
-                providerSkuId: $variant->skuId,
-                provider: 'aliexpress',
+                acquisitionCost: $supplierCost,
+                acquisitionOriginalCost: $supplierOriginalCost,
+                sourceCurrency: $dto->currency,
+                sourceSkuId: $variant->skuId,
+                sourceProvider: 'aliexpress',
                 trigger: 'import',
             );
 
             // 2. Calculate selling price via pipeline
             $simpleContext = new PricingContext(
-                provider: 'aliexpress',
+                sourceProvider: 'aliexpress',
                 currency: $dto->currency,
-                supplierOriginalCost: $supplierOriginalCost,
+                acquisitionOriginalCost: $supplierOriginalCost,
             );
 
             $result = $this->pricingEngine->calculate($supplierCost, $rule, $simpleContext);
@@ -1238,7 +1239,7 @@ class AliExpressProductImporter
                 productId: $product->id,
                 result: $result,
                 specialPrice: $result->specialPrice,
-                oldSupplierCost: null,
+                oldAcquisitionCost: null,
                 rule: $rule,
                 trigger: PricingTrigger::IMPORT,
             );
@@ -1305,7 +1306,7 @@ class AliExpressProductImporter
                 variantId: $product->id,
                 productId: $product->id,
                 result: $minResult,
-                specialPrice: null,
+                specialPrice: $minResult->specialPrice,
                 oldAcquisitionCost: null,
                 rule: $rule,
                 trigger: PricingTrigger::IMPORT,

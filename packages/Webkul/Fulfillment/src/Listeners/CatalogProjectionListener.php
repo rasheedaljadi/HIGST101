@@ -3,6 +3,7 @@
 namespace Webkul\Fulfillment\Listeners;
 
 use App\Enums\PricingTrigger;
+use App\Models\HigestSourceOffer;
 use App\Services\Pricing\CatalogPriceWriter;
 use App\Services\Pricing\DTO\PricingContext;
 use App\Services\Pricing\PricingEngine;
@@ -38,13 +39,13 @@ class CatalogProjectionListener
     public function handle(string $eventName, array $payload, string $correlationId, string $causationId, ?string $outboxEventId = null): void
     {
         $variantId = $payload['variant_id'] ?? null;
-        $newPrice = $payload['new_price'] ?? 0;
+        $newPrice = $payload['new_cost'] ?? $payload['new_price'] ?? 0;
 
         if (! $variantId) {
             return;
         }
 
-        DB::transaction(function () use ($variantId, $newPrice, $payload) {
+        $reindexParentId = DB::transaction(function () use ($variantId, $newPrice, $payload) {
             $projection = DB::table('external_variant_projections')
                 ->where('variant_product_id', $variantId)
                 ->lockForUpdate()
@@ -94,7 +95,7 @@ class CatalogProjectionListener
 
                         Log::channel('aliexpress')->info('Metric counter incremented: [projection_events_review]');
 
-                        return;
+                        return null;
                     }
 
                     if ($decision->status === ProjectionDecision::STATUS_STALE) {
@@ -103,7 +104,7 @@ class CatalogProjectionListener
                         Log::channel('aliexpress')->info('Metric counter incremented: [projection_events_replayed]');
                     }
 
-                    return;
+                    return null;
                 }
             }
 
@@ -112,24 +113,38 @@ class CatalogProjectionListener
             $variantProduct = Product::find($variantId);
             $parentId = $variantProduct?->parent_id ?? $variantId;
 
-            // 1. Record source offer update & track history
+            // Load existing offer to get real old cost and fallback original cost
+            $existingOffer = HigestSourceOffer::forVariant($variantId, 'aliexpress')->first();
+            $oldAcquisitionCost = isset($payload['old_cost'])
+                ? (float) $payload['old_cost']
+                : ($existingOffer?->acquisition_cost !== null ? (float) $existingOffer->acquisition_cost : null);
+
+            $newOriginalCost = isset($payload['new_original_cost'])
+                ? (float) $payload['new_original_cost']
+                : ($payload['original_price'] ?? ($existingOffer?->acquisition_original_cost !== null ? (float) $existingOffer->acquisition_original_cost : null));
+
+            // 1. Record source offer update & track history (C2, C4)
             $offer = $this->sourceOfferRecorder->record(
                 variantId: $variantId,
                 productId: $parentId,
                 acquisitionCost: (float) $newPrice,
-                acquisitionOriginalCost: null,
+                acquisitionOriginalCost: $newOriginalCost,
                 sourceCurrency: $payload['currency'] ?? 'USD',
                 sourceSkuId: $payload['supplier_sku_id'] ?? null,
                 sourceProvider: 'aliexpress',
                 trigger: 'sync',
             );
 
-            // 2. Resolve rule & calculate selling price via pipeline
+            // 2. Resolve rule & calculate selling price via pipeline (C3)
             $categoryId = $this->pricingRuleResolver->resolveCategoryId($parentId);
             $rule = $this->pricingRuleResolver->resolve($parentId, $categoryId);
 
             if ($rule !== null) {
-                $context = new PricingContext(sourceProvider: 'aliexpress', currency: $offer->source_currency);
+                $context = new PricingContext(
+                    sourceProvider: 'aliexpress',
+                    currency: $offer->source_currency,
+                    acquisitionOriginalCost: $offer->acquisition_original_cost !== null ? (float) $offer->acquisition_original_cost : null,
+                );
                 $result = $this->pricingEngine->calculate((float) $newPrice, $rule, $context);
 
                 // 3. Write selling price to Bagisto EAV + record price history
@@ -137,8 +152,8 @@ class CatalogProjectionListener
                     variantId: $variantId,
                     productId: $parentId,
                     result: $result,
-                    specialPrice: null,
-                    oldAcquisitionCost: (float) ($payload['old_price'] ?? 0),
+                    specialPrice: $result->specialPrice,
+                    oldAcquisitionCost: $oldAcquisitionCost,
                     rule: $rule,
                     trigger: PricingTrigger::SYNC,
                 );
@@ -160,8 +175,12 @@ class CatalogProjectionListener
 
             Log::channel('aliexpress')->info('Metric counter incremented: [projection_events_processed]');
 
-            // Reindex price and flat table
-            $this->catalogPriceWriter->reindex($parentId);
+            return $parentId;
         });
+
+        // Reindex price and flat table OUTSIDE transaction (C6)
+        if ($reindexParentId) {
+            $this->catalogPriceWriter->reindex($reindexParentId);
+        }
     }
 }

@@ -33,7 +33,7 @@ class AliExpressStockListener
             return;
         }
 
-        DB::transaction(function () use ($variantId, $newStock, $payload) {
+        $reindexVariantId = DB::transaction(function () use ($variantId, $newStock, $payload) {
             $projection = DB::table('external_variant_projections')
                 ->where('variant_product_id', $variantId)
                 ->lockForUpdate()
@@ -83,7 +83,7 @@ class AliExpressStockListener
 
                         Log::channel('aliexpress')->info('Metric counter incremented: [projection_events_review]');
 
-                        return;
+                        return null;
                     }
 
                     if ($decision->status === ProjectionDecision::STATUS_STALE) {
@@ -92,7 +92,7 @@ class AliExpressStockListener
                         Log::channel('aliexpress')->info('Metric counter incremented: [projection_events_replayed]');
                     }
 
-                    return;
+                    return null;
                 }
             }
 
@@ -135,8 +135,12 @@ class AliExpressStockListener
 
             Log::channel('aliexpress')->info('Metric counter incremented: [projection_events_processed]');
 
-            // Reindex
-            $product = Product::find($variantId);
+            return $variantId;
+        });
+
+        // Reindex OUTSIDE transaction (C6)
+        if ($reindexVariantId) {
+            $product = Product::find($reindexVariantId);
             if ($product) {
                 $toIndex = [$product];
                 if ($product->parent_id) {
@@ -147,7 +151,7 @@ class AliExpressStockListener
                 }
                 $this->inventoryIndexer->reindexBatch($toIndex);
             }
-        });
+        }
     }
 
     protected function defaultInventorySourceId(): int

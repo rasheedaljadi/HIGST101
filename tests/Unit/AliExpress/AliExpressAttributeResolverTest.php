@@ -3,7 +3,6 @@
 use App\Services\AliExpress\AliExpressAttributeResolver;
 use App\Services\AliExpress\DTO\NormalizedVariantAxis;
 use App\Services\AliExpress\DTO\ResolvedAxes;
-use Tests\TestCase;
 use Webkul\Attribute\Models\Attribute;
 use Webkul\Attribute\Repositories\AttributeOptionRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
@@ -22,10 +21,7 @@ use Webkul\Attribute\Repositories\AttributeRepository;
 | These tests touch the database (AttributeRepository / AttributeOptionRepository),
 | so they boot the application and run inside a transaction via Tests\TestCase
 | (DatabaseTransactions) — the project's established DB test convention.
-|
 */
-
-uses(TestCase::class);
 
 /**
  * Generate a unique-enough axis code suffix so repeated test runs against the

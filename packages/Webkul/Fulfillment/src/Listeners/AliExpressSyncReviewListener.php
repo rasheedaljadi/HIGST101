@@ -79,13 +79,13 @@ class AliExpressSyncReviewListener
                 $setting = AliExpressSetting::current();
                 $limit = $setting->price_change_limit ?? 20.00;
 
-                if ($priceChangePct >= $limit) {
-                    Log::channel('aliexpress')->warning("Supplier Price Changed beyond limit ({$priceChangePct}% >= {$limit}%): Variant ID {$variantId}. Flagging for review.", $payload);
+                if (abs($priceChangePct) >= $limit) {
+                    Log::channel('aliexpress')->warning('Supplier Price Changed beyond limit ('.abs($priceChangePct)."% >= {$limit}%): Variant ID {$variantId}. Flagging for review.", $payload);
 
                     $this->setNeedsReview($variantId, $attributeId, true);
                     $this->disableVariant($variantId);
                 } else {
-                    Log::channel('aliexpress')->info("Supplier Price Changed within limit ({$priceChangePct}% < {$limit}%): Variant ID {$variantId}.", $payload);
+                    Log::channel('aliexpress')->info('Supplier Price Changed within limit ('.abs($priceChangePct)."% < {$limit}%): Variant ID {$variantId}.", $payload);
                 }
             }
 

@@ -2,6 +2,7 @@
 
 namespace Webkul\Fulfillment\Services\Application;
 
+use App\Models\HigestSourceOffer;
 use Illuminate\Support\Facades\DB;
 use Webkul\Fulfillment\DataObjects\ChangeSet;
 use Webkul\Product\Models\Product;
@@ -53,17 +54,33 @@ class ChangeDetector
                 continue;
             }
 
-            // Compare Price
-            $localPrice = (float) $localVariant->price;
-            $newPrice = (float) ($aeVariant['price'] ?? 0);
-            if ($localPrice !== $newPrice) {
-                $pct = $localPrice > 0 ? (($newPrice - $localPrice) / $localPrice) * 100 : 0;
+            // Compare Acquisition Cost (C1, C2, C7)
+            $sourceOffer = HigestSourceOffer::forVariant($variantId, $provider)->first();
+            $oldCost = $sourceOffer?->acquisition_cost !== null ? (float) $sourceOffer->acquisition_cost : null;
+            $oldOriginalCost = $sourceOffer?->acquisition_original_cost !== null ? (float) $sourceOffer->acquisition_original_cost : null;
+
+            $newCost = (float) ($aeVariant['price'] ?? $aeVariant['offer_sale_price'] ?? $aeVariant['sale_price'] ?? 0);
+            $newOriginalCost = isset($aeVariant['original_price'])
+                ? (float) $aeVariant['original_price']
+                : (isset($aeVariant['originalPrice'])
+                    ? (float) $aeVariant['originalPrice']
+                    : (isset($aeVariant['sku_price']) ? (float) $aeVariant['sku_price'] : null));
+
+            $costChanged = ($oldCost === null) || ($oldCost !== $newCost) || ($newOriginalCost !== null && $oldOriginalCost !== $newOriginalCost);
+
+            if ($costChanged) {
+                $pct = ($oldCost !== null && $oldCost > 0) ? (($newCost - $oldCost) / $oldCost) * 100 : 0;
                 $changeSet->addChange('priceChanged', $variantId, [
                     'product_id' => $productId,
                     'variant_id' => $variantId,
-                    'old_price' => $localPrice,
-                    'new_price' => $newPrice,
+                    'old_price' => $oldCost ?? (float) $localVariant->price,
+                    'new_price' => $newCost,
+                    'old_cost' => $oldCost,
+                    'new_cost' => $newCost,
+                    'old_original_cost' => $oldOriginalCost,
+                    'new_original_cost' => $newOriginalCost,
                     'price_change_percentage' => round($pct, 2),
+                    'currency' => $aeVariant['currency'] ?? 'USD',
                     'supplier_product_id' => $supplierProductId,
                     'supplier_sku_id' => $skuId,
                     'external_variant_version' => $aeVariant['version'] ?? null,

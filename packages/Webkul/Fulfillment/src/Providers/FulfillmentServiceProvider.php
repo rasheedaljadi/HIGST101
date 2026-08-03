@@ -12,6 +12,7 @@ use Webkul\Fulfillment\Console\Commands\RecoverSyncRunsCommand;
 use Webkul\Fulfillment\Console\Commands\SmokeTestFulfillmentCommand;
 use Webkul\Fulfillment\Console\Commands\SoakTestSyncCommand;
 use Webkul\Fulfillment\Jobs\PollSupplierOrdersJob;
+use Webkul\Fulfillment\Jobs\SyncProductBatchJob;
 use Webkul\Fulfillment\Providers\AliExpress\AliExpressHttpClient;
 use Webkul\Fulfillment\Services\Application\InboxEventProcessor;
 use Webkul\Fulfillment\Services\Application\OutboxEventProcessor;
@@ -73,6 +74,10 @@ class FulfillmentServiceProvider extends ServiceProvider
 
             if (config('fulfillment.poll.enabled', true)) {
                 $schedule->job(new PollSupplierOrdersJob)->everyFifteenMinutes();
+            }
+
+            if (config('fulfillment.sync.enabled', true)) {
+                $schedule->job(new SyncProductBatchJob('aliexpress'))->hourly()->withoutOverlapping()->onOneServer();
             }
             $schedule->call(function () {
                 app(ReconciliationEngine::class)->reconcile();
