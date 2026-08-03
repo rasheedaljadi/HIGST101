@@ -514,7 +514,7 @@
                 <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <h3 class="text-sm font-bold mb-3 text-gray-800 dark:text-white font-sans">➕ إضافة قاعدة تسعير جديدة</h3>
 
-                    <form action="{{ route('admin.dropshipping.pricing.rules.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
+                    <form action="{{ route('admin.dropshipping.pricing.rules.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 items-end">
                         @csrf
 
                         <div>
@@ -559,6 +559,11 @@
                                 <option value="PASS_TO_CUSTOMER">تمرير للعميل (عرض التخفيض)</option>
                                 <option value="ABSORB_BY_HIGEST">امتصاص HIGEST (سعر صافي)</option>
                             </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">الأولوية</label>
+                            <input type="number" name="priority" value="0" min="0" placeholder="0" class="w-full border rounded-md px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans" />
                         </div>
 
                         <div>
