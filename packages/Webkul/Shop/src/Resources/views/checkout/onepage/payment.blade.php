@@ -187,6 +187,7 @@
             methods: {
                 selectOfflineAccount(dest) {
                     this.selectedOfflineAccountId = dest.id;
+                    this.$emitter.emit('offline-account-selected', dest.id);
                     const offlineMethod = this.methods.find(m => m.method === 'offline_payments' || m.method === 'moneytransfer');
                     if (offlineMethod) {
                         offlineMethod.selected_offline_destination_id = dest.id;

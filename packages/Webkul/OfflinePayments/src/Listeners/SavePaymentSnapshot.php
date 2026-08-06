@@ -21,7 +21,7 @@ class SavePaymentSnapshot
     {
         $payment = $order->payment;
 
-        if (! $payment || $payment->method !== 'offline_payments') {
+        if (! $payment || ! in_array($payment->method, ['offline_payments', 'moneytransfer'])) {
             return;
         }
 
