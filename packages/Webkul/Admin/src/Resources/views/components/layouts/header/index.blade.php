@@ -571,26 +571,36 @@
                     <a
                         class="flex items-start gap-1.5 border-b p-3 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950"
                         v-for="notification in notifications"
-                        :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id)"
+                        :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id || notification.id)"
                     >
                         <!-- Notification Icon -->
                         <span
-                            v-if="notification.order.status in notificationStatusIcon"
+                            v-if="notification.order && notification.order.status && (notification.order.status in notificationStatusIcon)"
                             class="h-fit"
                             :class="notificationStatusIcon[notification.order.status]"
+                        >
+                        </span>
+                        <span
+                            v-else
+                            class="h-fit icon-information rounded-full bg-blue-100 text-2xl text-blue-600 dark:!text-blue-600"
                         >
                         </span>
 
                         <div class="grid">
                             <!-- Order Id & Status -->
                             <p class="text-gray-800 dark:text-white">
-                                #@{{ notification.order.id }}
-                                @{{ orderTypeMessages[notification.order.status] }}
+                                <template v-if="notification.order">
+                                    #@{{ notification.order.id }}
+                                    @{{ orderTypeMessages[notification.order.status] || '' }}
+                                </template>
+                                <template v-else>
+                                    #إشعار @{{ notification.id }}
+                                </template>
                             </p>
 
-                            <!-- Created Date In humand Readable Format -->
+                            <!-- Created Date In human Readable Format -->
                             <p class="text-xs text-gray-600 dark:text-gray-300">
-                                @{{ notification.order.datetime }}
+                                @{{ notification.order ? notification.order.datetime : (notification.created_at || '') }}
                             </p>
                         </div>
                     </a>

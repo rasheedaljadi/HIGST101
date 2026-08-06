@@ -5,11 +5,13 @@ namespace Webkul\Wallet\Http\Controllers\Shop;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Webkul\Wallet\Http\Requests\Shop\StoreWithdrawalRequest;
 use Webkul\Wallet\Models\WalletTransaction;
 use Webkul\Wallet\Models\WalletWithdrawalRequest;
 use Webkul\Wallet\Repositories\WalletAccountRepository;
+use Webkul\Wallet\Repositories\WalletWithdrawalMethodRepository;
 use Webkul\Wallet\Repositories\WalletWithdrawalRequestRepository;
 use Webkul\Wallet\Services\WalletService;
 
@@ -21,6 +23,7 @@ class WalletCustomerWithdrawalController extends Controller
     public function __construct(
         protected WalletAccountRepository $walletAccountRepository,
         protected WalletWithdrawalRequestRepository $withdrawalRepository,
+        protected WalletWithdrawalMethodRepository $withdrawalMethodRepository,
         protected WalletService $walletService
     ) {}
 
@@ -39,12 +42,25 @@ class WalletCustomerWithdrawalController extends Controller
 
         $availableBalance = $wallet ? (float) $wallet->available_balance : 0.00;
 
-        $methods = [
-            'bank_transfer' => 'تحويل بنكي (IBAN / حساب)',
-            'kuraimi' => 'بنك الكريمي (حاسب)',
-            'floosak' => 'محفظة فلوسك الإلكترونية',
-            'wallet' => 'محفظة جوال إلكترونية',
-        ];
+        $activeMethods = $this->withdrawalMethodRepository
+            ->where('status', 1)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $methods = [];
+        if ($activeMethods->isNotEmpty()) {
+            foreach ($activeMethods as $method) {
+                $methods[$method->name] = $method->name;
+            }
+        } else {
+            $methods = [
+                'مصرف الكريمي (حاسب)' => 'مصرف الكريمي (حاسب)',
+                'محفظة فلوسك الإلكترونية' => 'محفظة فلوسك الإلكترونية',
+                'تحويل بنكي (IBAN / حساب)' => 'تحويل بنكي (IBAN / حساب)',
+                'محفظة جوال إلكترونية' => 'محفظة جوال إلكترونية',
+            ];
+        }
 
         $recentWithdrawalsQuery = $wallet
             ? $wallet->withdrawalRequests()->latest('id')->take(5)->get()
@@ -111,6 +127,20 @@ class WalletCustomerWithdrawalController extends Controller
                 referenceType: WalletWithdrawalRequest::class,
                 referenceId: $withdrawalRequest->id
             );
+
+            try {
+                DB::table('notifications')->insert([
+                    'type' => 'wallet_withdrawal',
+                    'read' => 0,
+                    'order_id' => null,
+                    'entity_type' => WalletWithdrawalRequest::class,
+                    'entity_id' => $withdrawalRequest->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('Admin notification creation failed for withdrawal: '.$e->getMessage());
+            }
         });
 
         session()->flash('success', trans('wallet::app.shop.withdraw.submitted') ?? 'تم تقديم طلب السحب بنجاح.');

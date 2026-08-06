@@ -55,26 +55,38 @@ class WalletWithdrawalController extends Controller
         $withdrawalModel = $this->withdrawalRepository->find($id);
 
         if ($withdrawalModel) {
+            $bankDetails = $withdrawalModel->bank_details ?? [];
+            if (is_string($bankDetails)) {
+                try {
+                    $decrypted = decrypt($bankDetails);
+                    $bankDetails = is_array($decrypted) ? $decrypted : json_decode($decrypted, true);
+                } catch (\Throwable $e) {
+                    $bankDetails = json_decode($bankDetails, true) ?: [];
+                }
+            }
+
             $withdrawal = [
                 'raw_id' => $withdrawalModel->id,
-                'id' => '#REQ-'.$withdrawalModel->id,
+                'id' => '#WD-'.$withdrawalModel->id,
                 'customer' => $withdrawalModel->wallet && $withdrawalModel->wallet->customer ? ($withdrawalModel->wallet->customer->first_name.' '.$withdrawalModel->wallet->customer->last_name) : 'Customer #'.$withdrawalModel->wallet_id,
                 'amount' => core()->formatBasePrice((float) $withdrawalModel->amount),
-                'method' => 'Bank Transfer',
-                'bank_name' => $withdrawalModel->bank_details['bank_name'] ?? 'Al Kuraimi Bank',
-                'account_name' => $withdrawalModel->bank_details['account_name'] ?? 'Customer Account',
-                'masked_iban' => $withdrawalModel->bank_details['iban'] ? (substr($withdrawalModel->bank_details['iban'], 0, 2).'****'.substr($withdrawalModel->bank_details['iban'], -4)) : 'SA****7519',
+                'method' => $bankDetails['bank_name'] ?? $bankDetails['method'] ?? '—',
+                'bank_name' => $bankDetails['bank_name'] ?? $bankDetails['method'] ?? '—',
+                'account_name' => $bankDetails['account_name'] ?? '—',
+                'account_number' => $bankDetails['iban'] ?? $bankDetails['account_number'] ?? '—',
+                'masked_iban' => $bankDetails['iban'] ?? $bankDetails['account_number'] ?? '—',
             ];
         } else {
             $withdrawal = [
                 'raw_id' => $id,
-                'id' => '#REQ-'.$id,
-                'customer' => 'Ahmed Mohammed',
-                'amount' => '$300.00',
-                'method' => 'Bank Transfer',
-                'bank_name' => 'Al Kuraimi Bank',
-                'account_name' => 'Ahmed Mohammed',
-                'masked_iban' => 'SA****7519',
+                'id' => '#WD-'.$id,
+                'customer' => '—',
+                'amount' => '$0.00',
+                'method' => '—',
+                'bank_name' => '—',
+                'account_name' => '—',
+                'account_number' => '—',
+                'masked_iban' => '—',
             ];
         }
 
@@ -196,10 +208,12 @@ class WalletWithdrawalController extends Controller
                 referenceId: $withdrawal->id
             );
 
+            $reason = $request->rejection_reason ?? $request->admin_notes ?? 'تم الرفض بواسطة الإدارة';
+
             $withdrawal->update([
                 'status' => WalletWithdrawalRequest::STATUS_REJECTED,
                 'admin_user_id' => auth()->guard('admin')->id(),
-                'rejection_reason' => $request->rejection_reason ?? 'تم الرفض بواسطة الإدارة',
+                'rejection_reason' => $reason,
                 'rejected_at' => now(),
             ]);
 

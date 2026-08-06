@@ -25,6 +25,7 @@ class RejectWithdrawalRequest extends FormRequest
     {
         return [
             'rejection_reason' => 'nullable|string|max:500',
+            'admin_notes' => 'nullable|string|max:500',
         ];
     }
 }

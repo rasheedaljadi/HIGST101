@@ -30,6 +30,8 @@ class WalletTopUp extends Model implements WalletTopUpContract
     ];
 
     // Status Constants
+    const STATUS_PENDING = 'pending';
+
     const STATUS_PENDING_PAYMENT = 'pending_payment';
 
     const STATUS_PAYMENT_RECEIVED = 'payment_received';
@@ -47,11 +49,12 @@ class WalletTopUp extends Model implements WalletTopUpContract
     /**
      * Valid status transitions.
      *
-     * Allow admin approval directly from pending_payment, payment_received, or under_review.
+     * Allow admin approval directly from pending, pending_payment, payment_received, or under_review.
      *
      * @var array<string, array<string>>
      */
     public static array $transitions = [
+        'pending' => ['payment_received', 'under_review', 'completed', 'failed', 'cancelled', 'expired'],
         'pending_payment' => ['payment_received', 'under_review', 'completed', 'failed', 'cancelled', 'expired'],
         'payment_received' => ['under_review', 'completed', 'failed', 'cancelled'],
         'under_review' => ['completed', 'failed', 'cancelled'],
@@ -64,6 +67,32 @@ class WalletTopUp extends Model implements WalletTopUpContract
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(WalletAccountProxy::modelClass(), 'wallet_id');
+    }
+
+    public function getPaymentMethodTitleAttribute(): string
+    {
+        $methods = [
+            'cashondelivery' => 'الدفع عند الاستلام',
+            'moneytransfer' => 'تحويل بنكي / إيداع مباشر',
+            'paypal' => 'بايبال (PayPal)',
+            'stripe' => 'بطاقة ائتمانية (Stripe)',
+            'razorpay' => 'Razorpay',
+            'payu' => 'PayU',
+        ];
+
+        return $methods[$this->payment_method] ?? core()->getConfigData("sales.payment_methods.{$this->payment_method}.title") ?? $this->payment_method ?? 'غير محدد';
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'pending', 'pending_payment', 'under_review' => 'قيد المراجعة والانتظار',
+            'completed', 'payment_received' => 'مكتمل ومضاف للمحفظة',
+            'failed' => 'مرفوض',
+            'cancelled' => 'ملغي',
+            'expired' => 'منتهي الصلاحية',
+            default => $this->status,
+        };
     }
 
     public function isCompleted(): bool

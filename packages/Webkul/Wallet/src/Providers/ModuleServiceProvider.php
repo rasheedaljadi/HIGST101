@@ -8,6 +8,7 @@ use Webkul\Wallet\Models\WalletPendingCredit;
 use Webkul\Wallet\Models\WalletReconciliation;
 use Webkul\Wallet\Models\WalletTopUp;
 use Webkul\Wallet\Models\WalletTransaction;
+use Webkul\Wallet\Models\WalletWithdrawalMethod;
 use Webkul\Wallet\Models\WalletWithdrawalRequest;
 
 class ModuleServiceProvider extends CoreModuleServiceProvider
@@ -24,5 +25,6 @@ class ModuleServiceProvider extends CoreModuleServiceProvider
         WalletWithdrawalRequest::class,
         WalletPendingCredit::class,
         WalletReconciliation::class,
+        WalletWithdrawalMethod::class,
     ];
 }

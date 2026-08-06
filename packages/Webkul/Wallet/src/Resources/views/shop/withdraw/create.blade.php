@@ -110,16 +110,16 @@
                             />
                         </div>
 
-                        {{-- Account Number / IBAN Input --}}
+                        {{-- Account Number Input --}}
                         <div>
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                                رقم الحساب أو الآيبان (IBAN) / رقم المحفظة <span class="text-red-500">*</span>
+                                رقم الحساب <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 name="account_number"
                                 id="withdraw-account-number"
-                                placeholder="رقم الآيبان أو رقم الحساب البنكي أو رقم المحفظة"
+                                placeholder="أدخل رقم الحساب هنا"
                                 class="w-full rounded-xl border border-zinc-300 bg-white p-3 text-sm text-zinc-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                                 oninput="validateWithdrawalForm()"
                                 required

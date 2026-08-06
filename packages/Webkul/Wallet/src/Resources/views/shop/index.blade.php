@@ -44,6 +44,71 @@
             </div>
         </div>
 
+        {{-- Customer Wallet Status Notifications Banner --}}
+        @if ((isset($pendingTopups) && $pendingTopups->count()) || (isset($rejectedTopups) && $rejectedTopups->count()) || (isset($pendingWithdrawals) && $pendingWithdrawals->count()) || (isset($rejectedWithdrawals) && $rejectedWithdrawals->count()))
+            <div class="mt-6 flex flex-col gap-3.5">
+                {{-- Pending Topups --}}
+                @foreach ($pendingTopups as $pendingTopup)
+                    <div class="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-200 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-white font-bold text-sm shadow-sm">⏳</span>
+                            <div>
+                                <p class="font-bold text-sm">طلب إيداع رصيد #{{ $pendingTopup->id }} قيد المراجعة والاعتماد</p>
+                                <p class="text-xs text-amber-700 dark:text-amber-300 mt-0.5">المبلغ: <strong>{{ core()->formatBasePrice($pendingTopup->amount) }}</strong> | طريقة الدفع: {{ $pendingTopup->payment_method_title }}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-semibold bg-amber-200/80 dark:bg-amber-900/60 px-3 py-1 rounded-full text-amber-800 dark:text-amber-200">قيد المراجعة</span>
+                    </div>
+                @endforeach
+
+                {{-- Rejected Topups --}}
+                @foreach ($rejectedTopups as $rejectedTopup)
+                    <div class="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-200 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500 text-white font-bold text-sm shadow-sm">✕</span>
+                            <div>
+                                <p class="font-bold text-sm">تم رفض طلب الإيداع #{{ $rejectedTopup->id }} ({{ core()->formatBasePrice($rejectedTopup->amount) }})</p>
+                                @if ($rejectedTopup->admin_notes)
+                                    <p class="text-xs text-rose-700 dark:text-rose-300 font-bold mt-0.5">سبب الرفض: {{ $rejectedTopup->admin_notes }}</p>
+                                @endif
+                            </div>
+                        </div>
+                        <span class="text-xs font-semibold bg-rose-200/80 dark:bg-rose-900/60 px-3 py-1 rounded-full text-rose-800 dark:text-rose-200">مرفوض</span>
+                    </div>
+                @endforeach
+
+                {{-- Pending Withdrawals --}}
+                @foreach ($pendingWithdrawals as $pendingWithdrawal)
+                    <div class="flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-blue-200 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 text-white font-bold text-sm shadow-sm">📤</span>
+                            <div>
+                                <p class="font-bold text-sm">طلب سحب رصيد #WD-{{ $pendingWithdrawal->id }} قيد المعالجة</p>
+                                <p class="text-xs text-blue-700 dark:text-blue-300 mt-0.5">المبلغ المحجوز: <strong>{{ core()->formatBasePrice($pendingWithdrawal->amount) }}</strong></p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-semibold bg-blue-200/80 dark:bg-blue-900/60 px-3 py-1 rounded-full text-blue-800 dark:text-blue-200">قيد الانتظار</span>
+                    </div>
+                @endforeach
+
+                {{-- Rejected Withdrawals --}}
+                @foreach ($rejectedWithdrawals as $rejectedWithdrawal)
+                    <div class="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-200 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500 text-white font-bold text-sm shadow-sm">↩️</span>
+                            <div>
+                                <p class="font-bold text-sm">تم رفض طلب السحب #WD-{{ $rejectedWithdrawal->id }} وإعادة المبلغ للمحفظة</p>
+                                @if ($rejectedWithdrawal->rejection_reason)
+                                    <p class="text-xs text-rose-700 dark:text-rose-300 font-bold mt-0.5">سبب الرفض: {{ $rejectedWithdrawal->rejection_reason }}</p>
+                                @endif
+                            </div>
+                        </div>
+                        <span class="text-xs font-semibold bg-rose-200/80 dark:bg-rose-900/60 px-3 py-1 rounded-full text-rose-800 dark:text-rose-200">تم إلغاء السحب</span>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
         {{-- Wallet Summary Main Card --}}
         <div class="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 max-md:mt-5 max-md:p-4">
             <!-- Top Balance Section -->
@@ -86,6 +151,75 @@
                     </p>
                     <p class="mt-1 text-xs text-amber-600/80 dark:text-amber-400/80">مبالغ قيد مراجعة طلبات السحب</p>
                 </div>
+            </div>
+        </div>
+
+        {{-- Deposit Requests Section --}}
+        <div class="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 max-md:mt-5 max-md:p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-zinc-900 dark:text-white">طلبات إيداع الرصيد الأخيرة</h3>
+                @if (isset($topups) && $topups->count())
+                    <span class="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-gray-800 dark:text-gray-300">
+                        {{ $topups->count() }} طلبات
+                    </span>
+                @endif
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-sm">
+                    <thead>
+                        <tr class="border-b border-zinc-200 text-xs font-medium text-zinc-500 dark:border-gray-800 dark:text-gray-400">
+                            <th class="py-3 px-4">رقم الطلب</th>
+                            <th class="py-3 px-4">طريقة الدفع</th>
+                            <th class="py-3 px-4">التاريخ</th>
+                            <th class="py-3 px-4">الحالة</th>
+                            <th class="py-3 px-4 text-left">المبلغ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-gray-800">
+                        @forelse ($topups as $topup)
+                            <tr class="transition-colors hover:bg-zinc-50/60 dark:hover:bg-gray-800/60">
+                                <td class="py-4 px-4 font-mono font-bold text-zinc-900 dark:text-white">#{{ $topup->id }}</td>
+                                <td class="py-4 px-4 font-medium text-zinc-700 dark:text-gray-300">{{ $topup->payment_method_title }}</td>
+                                <td class="py-4 px-4 text-xs text-zinc-500 dark:text-gray-400">{{ $topup->created_at->format('d/m/Y H:i') }}</td>
+                                <td class="py-4 px-4">
+                                    @if (in_array($topup->status, ['pending', 'pending_payment', 'under_review']))
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800">
+                                            <span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                            قيد المراجعة والانتظار
+                                        </span>
+                                    @elseif (in_array($topup->status, ['completed', 'payment_received']))
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
+                                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                            مكتمل ومضاف للمحفظة
+                                        </span>
+                                    @elseif ($topup->status === 'failed')
+                                        <div>
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
+                                                <span class="h-2 w-2 rounded-full bg-rose-500"></span>
+                                                مرفوض
+                                            </span>
+                                            @if ($topup->admin_notes)
+                                                <p class="mt-1 text-xs text-rose-600 font-medium dark:text-rose-400">سبب الرفض: {{ $topup->admin_notes }}</p>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-300">
+                                            {{ $topup->status_label }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="py-4 px-4 text-left font-bold text-emerald-600 dark:text-emerald-400">
+                                    +{{ core()->formatBasePrice($topup->amount) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-zinc-400">لا توجد طلبات إيداع رصيد مسجلة حتى الآن.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
 

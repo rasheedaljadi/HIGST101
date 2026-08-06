@@ -137,8 +137,8 @@
                 <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
                     @foreach ($child->getFields() as $field)
                         @if (
-                            $field->getType() == 'blade'
-                            && view()->exists($path = $field->getPath())
+                            ($field->getType() == 'blade' || $field->getName() == 'withdrawal_methods')
+                            && view()->exists($path = ($field->getPath() ?: 'wallet::admin.configuration.withdrawal-methods'))
                         )
                             {!! view($path, compact('field', 'child'))->render() !!}
                         @else 

@@ -35,7 +35,15 @@ class WalletController extends Controller
                 'held' => core()->formatBasePrice($wallet->held_balance),
             ];
 
-            $transactions = $wallet->transactions()->latest()->take(5)->get();
+            $transactions = $wallet->transactions()->latest()->take(10)->get();
+            $topups = $wallet->topups()->latest()->take(10)->get();
+            $withdrawals = $wallet->withdrawalRequests()->latest()->take(10)->get();
+
+            $pendingTopups = $wallet->topups()->whereIn('status', ['pending', 'pending_payment', 'under_review'])->latest()->get();
+            $rejectedTopups = $wallet->topups()->where('status', 'failed')->latest()->take(3)->get();
+
+            $pendingWithdrawals = $wallet->withdrawalRequests()->where('status', 'pending')->latest()->get();
+            $rejectedWithdrawals = $wallet->withdrawalRequests()->where('status', 'rejected')->latest()->take(3)->get();
         } else {
             $balances = [
                 'total' => core()->formatBasePrice(0),
@@ -45,9 +53,18 @@ class WalletController extends Controller
             ];
 
             $transactions = collect();
+            $topups = collect();
+            $withdrawals = collect();
+            $pendingTopups = collect();
+            $rejectedTopups = collect();
+            $pendingWithdrawals = collect();
+            $rejectedWithdrawals = collect();
         }
 
-        return view('wallet::shop.index', compact('balances', 'transactions'));
+        return view('wallet::shop.index', compact(
+            'balances', 'transactions', 'topups', 'withdrawals',
+            'pendingTopups', 'rejectedTopups', 'pendingWithdrawals', 'rejectedWithdrawals'
+        ));
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Webkul\Wallet\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Log;
 use Webkul\Wallet\DataGrids\WalletTopUpsDataGrid;
 use Webkul\Wallet\Exceptions\InvalidWalletTransitionException;
 use Webkul\Wallet\Models\WalletTopUp;
@@ -81,7 +82,11 @@ class WalletTopUpController extends Controller
         ]);
 
         if ($wallet?->customer) {
-            $wallet->customer->notify(new WalletTopUpApprovedNotification($topup));
+            try {
+                $wallet->customer->notify(new WalletTopUpApprovedNotification($topup));
+            } catch (\Throwable $e) {
+                Log::error('Mail send error on topup approval: '.$e->getMessage());
+            }
         }
 
         $message = trans('wallet::app.admin.wallet.deposits.approved') ?? 'تم الموافقة على طلب الإيداع وإضافة الرصيد بنجاح.';
@@ -128,7 +133,11 @@ class WalletTopUpController extends Controller
         $wallet = $this->walletAccountRepository->find($topup->wallet_id);
 
         if ($wallet?->customer) {
-            $wallet->customer->notify(new WalletTopUpRejectedNotification($topup));
+            try {
+                $wallet->customer->notify(new WalletTopUpRejectedNotification($topup));
+            } catch (\Throwable $e) {
+                Log::error('Mail send error on topup rejection: '.$e->getMessage());
+            }
         }
 
         $message = trans('wallet::app.admin.wallet.deposits.rejected') ?? 'تم رفض طلب الإيداع بنجاح.';

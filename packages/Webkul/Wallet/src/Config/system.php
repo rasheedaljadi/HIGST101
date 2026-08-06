@@ -63,6 +63,12 @@ return [
                 'channel_based' => false,
                 'locale_based' => false,
             ],
+            [
+                'name' => 'withdrawal_methods',
+                'title' => 'wallet::app.admin.configuration.index.wallet.withdrawal-methods',
+                'type' => 'blade',
+                'path' => 'wallet::admin.configuration.withdrawal-methods',
+            ],
         ],
     ],
 ];

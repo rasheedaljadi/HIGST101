@@ -4,6 +4,8 @@ namespace Webkul\Admin\Http\Controllers;
 
 use Illuminate\View\View;
 use Webkul\Notification\Repositories\NotificationRepository;
+use Webkul\Wallet\Models\WalletTopUp;
+use Webkul\Wallet\Models\WalletWithdrawalRequest;
 
 class NotificationController extends Controller
 {
@@ -39,6 +41,46 @@ class NotificationController extends Controller
 
         $results = isset($searchResults['notifications']) ? $searchResults['notifications'] : $searchResults;
 
+        $items = isset($results->items) ? $results->items() : (is_iterable($results) ? $results : []);
+
+        foreach ($items as $notification) {
+            if ($notification->type === 'wallet_topup') {
+                $topupId = $notification->entity_id ?? $notification->id;
+                $topup = class_exists(WalletTopUp::class)
+                    ? WalletTopUp::find($notification->entity_id)
+                    : null;
+
+                $amountStr = $topup ? core()->formatBasePrice($topup->amount) : '';
+
+                $syntheticOrder = [
+                    'id' => 'إيداع محفظة #'.$topupId.($amountStr ? ' ('.$amountStr.')' : ''),
+                    'status' => 'pending',
+                    'datetime' => $notification->created_at ? $notification->created_at->diffForHumans() : 'الآن',
+                ];
+
+                $notification->setAttribute('order', $syntheticOrder);
+                $notification->setRelation('order', (object) $syntheticOrder);
+                $notification->order_id = $notification->id;
+            } elseif ($notification->type === 'wallet_withdrawal') {
+                $withdrawalId = $notification->entity_id ?? $notification->id;
+                $withdrawal = class_exists(WalletWithdrawalRequest::class)
+                    ? WalletWithdrawalRequest::find($notification->entity_id)
+                    : null;
+
+                $amountStr = $withdrawal ? core()->formatBasePrice($withdrawal->amount) : '';
+
+                $syntheticOrder = [
+                    'id' => 'سحب محفظة #'.$withdrawalId.($amountStr ? ' ('.$amountStr.')' : ''),
+                    'status' => 'pending',
+                    'datetime' => $notification->created_at ? $notification->created_at->diffForHumans() : 'الآن',
+                ];
+
+                $notification->setAttribute('order', $syntheticOrder);
+                $notification->setRelation('order', (object) $syntheticOrder);
+                $notification->order_id = $notification->id;
+            }
+        }
+
         $statusCount = isset($searchResults['status_counts']) ? $searchResults['status_counts'] : '';
 
         return [
@@ -49,19 +91,33 @@ class NotificationController extends Controller
     }
 
     /**
-     * Update the notification is reade or not.
+     * Update the notification is read or not.
      *
-     * @param  int  $orderId
-     * @return View
+     * @param  int  $id
+     * @return mixed
      */
-    public function viewedNotifications($orderId)
+    public function viewedNotifications($id)
     {
-        if ($notification = $this->notificationRepository->where('order_id', $orderId)->first()) {
-            $notification->read = 1;
+        $notification = $this->notificationRepository->find($id)
+            ?? $this->notificationRepository->where('order_id', $id)->first();
 
+        if ($notification) {
+            $notification->read = 1;
             $notification->save();
 
-            return redirect()->route('admin.sales.orders.view', $orderId);
+            if ($notification->type === 'wallet_topup') {
+                return redirect()->route('admin.wallet.deposits.index');
+            }
+
+            if ($notification->type === 'wallet_withdrawal') {
+                return redirect()->route('admin.wallet.withdrawals.index');
+            }
+
+            if ($notification->order_id) {
+                return redirect()->route('admin.sales.orders.view', $notification->order_id);
+            }
+
+            return redirect()->back();
         }
 
         abort(404);

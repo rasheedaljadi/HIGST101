@@ -7,6 +7,7 @@ use Webkul\Wallet\Http\Controllers\Admin\WalletDashboardController;
 use Webkul\Wallet\Http\Controllers\Admin\WalletReportController;
 use Webkul\Wallet\Http\Controllers\Admin\WalletTopUpController;
 use Webkul\Wallet\Http\Controllers\Admin\WalletWithdrawalController;
+use Webkul\Wallet\Http\Controllers\Admin\WalletWithdrawalMethodController;
 
 Route::group(['prefix' => 'wallet'], function () {
 
@@ -69,6 +70,24 @@ Route::group(['prefix' => 'wallet'], function () {
      */
     Route::get('reports', [WalletReportController::class, 'index'])
         ->name('admin.wallet.reports.index');
+
+    /**
+     * Withdrawal Methods Management.
+     */
+    Route::get('withdrawal-methods', [WalletWithdrawalMethodController::class, 'index'])
+        ->name('admin.wallet.withdrawal_methods.index');
+
+    Route::post('withdrawal-methods', [WalletWithdrawalMethodController::class, 'store'])
+        ->name('admin.wallet.withdrawal_methods.store');
+
+    Route::put('withdrawal-methods/{id}', [WalletWithdrawalMethodController::class, 'update'])
+        ->name('admin.wallet.withdrawal_methods.update');
+
+    Route::post('withdrawal-methods/{id}/toggle', [WalletWithdrawalMethodController::class, 'toggle'])
+        ->name('admin.wallet.withdrawal_methods.toggle');
+
+    Route::delete('withdrawal-methods/{id}', [WalletWithdrawalMethodController::class, 'destroy'])
+        ->name('admin.wallet.withdrawal_methods.destroy');
 
     /**
      * Settings.

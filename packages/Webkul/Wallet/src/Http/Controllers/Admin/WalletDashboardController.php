@@ -49,7 +49,12 @@ class WalletDashboardController extends Controller
             'pendingWithdrawalsAmount' => $pendingWithdrawalsAmount,
         ];
 
-        $pendingTopups = WalletTopUp::where('status', WalletTopUp::STATUS_PENDING_PAYMENT)->count();
+        $pendingTopups = WalletTopUp::whereIn('status', [
+            WalletTopUp::STATUS_PENDING,
+            WalletTopUp::STATUS_PENDING_PAYMENT,
+            WalletTopUp::STATUS_PAYMENT_RECEIVED,
+            WalletTopUp::STATUS_UNDER_REVIEW,
+        ])->count();
 
         $failedOperations = [
             'refunds' => 0,

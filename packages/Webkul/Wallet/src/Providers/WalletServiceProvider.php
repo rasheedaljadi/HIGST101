@@ -8,6 +8,7 @@ use Webkul\Wallet\Console\Commands\VerifyWalletLedgerCommand;
 use Webkul\Wallet\Repositories\WalletAccountRepository;
 use Webkul\Wallet\Repositories\WalletTopUpRepository;
 use Webkul\Wallet\Repositories\WalletTransactionRepository;
+use Webkul\Wallet\Repositories\WalletWithdrawalMethodRepository;
 use Webkul\Wallet\Repositories\WalletWithdrawalRequestRepository;
 use Webkul\Wallet\Services\WalletService;
 
@@ -56,6 +57,7 @@ class WalletServiceProvider extends ServiceProvider
         $this->app->bind(WalletTransactionRepository::class);
         $this->app->bind(WalletTopUpRepository::class);
         $this->app->bind(WalletWithdrawalRequestRepository::class);
+        $this->app->bind(WalletWithdrawalMethodRepository::class);
     }
 
     /**
