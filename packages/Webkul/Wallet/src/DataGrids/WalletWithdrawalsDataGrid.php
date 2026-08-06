@@ -194,7 +194,7 @@ class WalletWithdrawalsDataGrid extends DataGrid
     {
         $this->addAction([
             'index' => 'edit',
-            'icon' => 'icon-eye',
+            'icon' => 'icon-view',
             'title' => 'عرض تفاصيل طلب السحب',
             'method' => 'GET',
             'url' => fn ($row) => route('admin.wallet.withdrawals.edit', $row->id),

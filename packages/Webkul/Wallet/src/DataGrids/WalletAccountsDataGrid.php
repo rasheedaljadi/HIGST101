@@ -112,8 +112,8 @@ class WalletAccountsDataGrid extends DataGrid
     {
         $this->addAction([
             'index' => 'show',
-            'icon' => 'icon-eye',
-            'title' => trans('wallet::app.admin.wallet.accounts.view'),
+            'icon' => 'icon-view',
+            'title' => trans('wallet::app.admin.wallet.accounts.view') ?? 'عرض التفاصيل',
             'method' => 'GET',
             'url' => function ($row) {
                 return route('admin.wallet.accounts.show', $row->id);
