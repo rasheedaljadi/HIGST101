@@ -61,6 +61,21 @@ return [
                 'balance-after' => 'Balance After',
                 'description' => 'Description',
                 'date' => 'Date',
+                'types' => [
+                    'credit_topup' => 'Top-Up Deposit',
+                    'hold_withdrawal' => 'Withdrawal Hold',
+                    'release_hold' => 'Release Hold (Refund)',
+                    'debit_withdrawal' => 'Withdrawal Completed',
+                    'credit_refund' => 'Order Refund',
+                    'credit_cancel' => 'Transaction Cancelled',
+                    'release_payment' => 'Payment Release',
+                    'debit_payment' => 'Wallet Purchase',
+                    'adjustment' => 'Admin Adjustment',
+                    'suspension_freeze' => 'Account Freeze',
+                    'suspension_release' => 'Account Unfreeze',
+                    'credit_promotion' => 'Promotional Bonus',
+                    'hold_partial_payment' => 'Partial Payment Hold',
+                ],
             ],
 
             'deposits' => [

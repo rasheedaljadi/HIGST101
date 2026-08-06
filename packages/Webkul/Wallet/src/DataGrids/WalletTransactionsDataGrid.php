@@ -33,8 +33,30 @@ class WalletTransactionsDataGrid extends DataGrid
 
     public function prepareColumns()
     {
-        $this->addColumn(['index' => 'id', 'label' => '#', 'type' => 'integer', 'sortable' => true]);
-        $this->addColumn(['index' => 'type', 'label' => trans('wallet::app.admin.wallet.transactions.type'), 'type' => 'string', 'filterable' => true]);
+        $this->addColumn([
+            'index' => 'type',
+            'label' => trans('wallet::app.admin.wallet.transactions.type'),
+            'type' => 'string',
+            'filterable' => true,
+            'closure' => function ($row) {
+                return match ($row->type) {
+                    'CREDIT_TOPUP' => 'إيداع رصيد',
+                    'HOLD_WITHDRAWAL' => 'حجز طلب سحب',
+                    'RELEASE_HOLD' => 'إلغاء حجز (إعادة رصيد)',
+                    'DEBIT_WITHDRAWAL' => 'إتمام سحب بنكي',
+                    'CREDIT_REFUND' => 'استرداد رصيد',
+                    'CREDIT_CANCEL' => 'إلغاء وإعادة رصيد',
+                    'RELEASE_PAYMENT' => 'إلغاء حجز دفع',
+                    'DEBIT_PAYMENT' => 'مشتريات عبر المحفظة',
+                    'ADJUSTMENT' => 'تعديل رصيد إداري',
+                    'SUSPENSION_FREEZE' => 'تجميد رصيد',
+                    'SUSPENSION_RELEASE' => 'إلغاء تجميد رصيد',
+                    'CREDIT_PROMOTION' => 'رصيد ترويجي (مكافأة)',
+                    'HOLD_PARTIAL_PAYMENT' => 'حجز دفع جزئي',
+                    default => $row->type,
+                };
+            },
+        ]);
         $this->addColumn(['index' => 'direction', 'label' => trans('wallet::app.admin.wallet.transactions.direction'), 'type' => 'string']);
         $this->addColumn([
             'index' => 'amount',

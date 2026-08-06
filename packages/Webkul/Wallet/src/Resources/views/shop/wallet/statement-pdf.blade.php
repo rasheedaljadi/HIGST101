@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -49,7 +49,7 @@
             @foreach ($transactions as $txn)
             <tr>
                 <td>{{ $txn->created_at->format('Y-m-d H:i') }}</td>
-                <td>{{ $txn->type }}</td>
+                <td>{{ $txn->type_label }}</td>
                 <td>{{ $txn->description }}</td>
                 <td class="{{ $txn->isCredit() ? 'credit' : 'debit' }}">
                     {{ $txn->isCredit() ? '+' : '-' }}{{ core()->formatBasePrice($txn->amount) }}

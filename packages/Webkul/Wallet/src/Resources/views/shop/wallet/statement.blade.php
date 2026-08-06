@@ -58,7 +58,7 @@
         @forelse ($transactions as $txn)
         <div class="flex items-center justify-between p-4">
             <div>
-                <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ $txn->type }}</p>
+                <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ $txn->type_label }}</p>
                 <p class="text-xs text-gray-500">{{ $txn->description }}</p>
                 <p class="text-xs text-gray-400">{{ $txn->created_at->format('Y-m-d H:i') }}</p>
             </div>

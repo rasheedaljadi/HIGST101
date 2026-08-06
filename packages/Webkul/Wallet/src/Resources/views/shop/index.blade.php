@@ -264,7 +264,7 @@
                         @forelse ($transactions as $tx)
                             <tr class="transition-colors hover:bg-zinc-50/60 dark:hover:bg-gray-800/60">
                                 <td class="py-4 px-4 font-mono font-bold text-zinc-900 dark:text-white">#{{ $tx->id }}</td>
-                                <td class="py-4 px-4 font-medium text-zinc-700 dark:text-gray-300">{{ $tx->type }}</td>
+                                <td class="py-4 px-4 font-medium text-zinc-700 dark:text-gray-300">{{ $tx->type_label }}</td>
                                 <td class="py-4 px-4 text-xs text-zinc-500 dark:text-gray-400">{{ $tx->created_at->format('d/m/Y H:i') }}</td>
                                 <td class="py-4 px-4">
                                     <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">مكتمل</span>

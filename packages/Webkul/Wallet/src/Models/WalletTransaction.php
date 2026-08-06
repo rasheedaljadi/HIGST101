@@ -131,4 +131,27 @@ class WalletTransaction extends Model implements WalletTransactionContract
     {
         return $this->direction === 'debit';
     }
+
+    /**
+     * Get human-readable localized label for transaction type.
+     */
+    public function getTypeLabelAttribute(): string
+    {
+        return match ($this->type) {
+            self::TYPE_CREDIT_TOPUP => trans('wallet::app.transactions.types.credit_topup') ?? 'إيداع رصيد',
+            self::TYPE_HOLD_WITHDRAWAL => trans('wallet::app.transactions.types.hold_withdrawal') ?? 'حجز طلب سحب',
+            self::TYPE_RELEASE_HOLD => trans('wallet::app.transactions.types.release_hold') ?? 'إلغاء حجز (إعادة رصيد)',
+            self::TYPE_DEBIT_WITHDRAWAL => trans('wallet::app.transactions.types.debit_withdrawal') ?? 'إتمام سحب بنكي',
+            self::TYPE_CREDIT_REFUND => trans('wallet::app.transactions.types.credit_refund') ?? 'استرداد رصيد',
+            self::TYPE_CREDIT_CANCEL => trans('wallet::app.transactions.types.credit_cancel') ?? 'إلغاء وإعادة رصيد',
+            self::TYPE_RELEASE_PAYMENT => trans('wallet::app.transactions.types.release_payment') ?? 'إلغاء حجز دفع',
+            self::TYPE_DEBIT_PAYMENT => trans('wallet::app.transactions.types.debit_payment') ?? 'مشتريات عبر المحفظة',
+            self::TYPE_ADJUSTMENT => trans('wallet::app.transactions.types.adjustment') ?? 'تعديل رصيد إداري',
+            self::TYPE_SUSPENSION_FREEZE => trans('wallet::app.transactions.types.suspension_freeze') ?? 'تجميد رصيد',
+            self::TYPE_SUSPENSION_RELEASE => trans('wallet::app.transactions.types.suspension_release') ?? 'إلغاء تجميد رصيد',
+            self::TYPE_CREDIT_PROMOTION => trans('wallet::app.transactions.types.credit_promotion') ?? 'رصيد ترويجي (مكافأة)',
+            self::TYPE_HOLD_PARTIAL_PAYMENT => trans('wallet::app.transactions.types.hold_partial_payment') ?? 'حجز دفع جزئي',
+            default => $this->type,
+        };
+    }
 }
