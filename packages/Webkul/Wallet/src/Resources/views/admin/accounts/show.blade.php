@@ -71,8 +71,8 @@
             </div>
         </div>
 
-        {{-- 3-Column Balance Cards Grid (Proposed Wave Design) --}}
-        <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+        {{-- 3-Column Balance Cards Grid (Always in 1 Single Row) --}}
+        <div class="grid grid-cols-3 gap-5 max-md:gap-3">
             <x-wallet::stat-card
                 :title="trans('إجمالي الرصيد')"
                 subtitle="إجمالي الأموال في المحفظة"
