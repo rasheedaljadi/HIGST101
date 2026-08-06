@@ -186,10 +186,15 @@
                                 $bankDetails = $withdrawal->bank_details ?? [];
                                 if (is_string($bankDetails)) {
                                     try {
-                                        $decrypted = decrypt($bankDetails);
+                                        $decrypted = \Illuminate\Support\Facades\Crypt::decrypt($bankDetails, false);
                                         $bankDetails = is_array($decrypted) ? $decrypted : (json_decode($decrypted, true) ?: []);
                                     } catch (\Throwable $e) {
-                                        $bankDetails = json_decode($bankDetails, true) ?: [];
+                                        try {
+                                            $decrypted = \Illuminate\Support\Facades\Crypt::decrypt($bankDetails, true);
+                                            $bankDetails = is_array($decrypted) ? $decrypted : (json_decode($decrypted, true) ?: []);
+                                        } catch (\Throwable $ex) {
+                                            $bankDetails = json_decode($bankDetails, true) ?: [];
+                                        }
                                     }
                                 }
                                 $methodTitle = $bankDetails['bank_name'] ?? $bankDetails['method'] ?? '—';

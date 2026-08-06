@@ -2,6 +2,7 @@
 
 namespace Webkul\Wallet\DataGrids;
 
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Webkul\DataGrid\DataGrid;
 
@@ -47,22 +48,41 @@ class WalletWithdrawalsDataGrid extends DataGrid
                 return $row->bank_details;
             }
 
+            $raw = $row->bank_details;
+
             try {
-                $decrypted = decrypt($row->bank_details);
-                if (is_array($decrypted)) {
-                    return $decrypted;
+                $decryptedStr = Crypt::decrypt($raw, false);
+                if (is_string($decryptedStr)) {
+                    $json = json_decode($decryptedStr, true);
+                    if (is_array($json)) {
+                        return $json;
+                    }
                 }
-                $json = json_decode($decrypted, true);
+            } catch (\Throwable $e) {
+            }
+
+            try {
+                $decryptedStr = Crypt::decrypt($raw, true);
+                if (is_array($decryptedStr)) {
+                    return $decryptedStr;
+                }
+                if (is_string($decryptedStr)) {
+                    $json = json_decode($decryptedStr, true);
+                    if (is_array($json)) {
+                        return $json;
+                    }
+                }
+            } catch (\Throwable $e) {
+            }
+
+            if (is_string($raw)) {
+                $json = json_decode($raw, true);
                 if (is_array($json)) {
                     return $json;
                 }
-            } catch (\Throwable $e) {
-                // Fallback for raw json string
             }
 
-            $json = json_decode($row->bank_details, true);
-
-            return is_array($json) ? $json : [];
+            return [];
         };
 
         $this->addColumn(['index' => 'id', 'label' => '#', 'type' => 'integer', 'sortable' => true]);

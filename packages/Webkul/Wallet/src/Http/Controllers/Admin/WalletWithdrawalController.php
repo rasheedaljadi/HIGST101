@@ -3,6 +3,7 @@
 namespace Webkul\Wallet\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Webkul\Wallet\DataGrids\WalletWithdrawalsDataGrid;
@@ -58,10 +59,15 @@ class WalletWithdrawalController extends Controller
             $bankDetails = $withdrawalModel->bank_details ?? [];
             if (is_string($bankDetails)) {
                 try {
-                    $decrypted = decrypt($bankDetails);
-                    $bankDetails = is_array($decrypted) ? $decrypted : json_decode($decrypted, true);
+                    $decrypted = Crypt::decrypt($bankDetails, false);
+                    $bankDetails = is_array($decrypted) ? $decrypted : (json_decode($decrypted, true) ?: []);
                 } catch (\Throwable $e) {
-                    $bankDetails = json_decode($bankDetails, true) ?: [];
+                    try {
+                        $decrypted = Crypt::decrypt($bankDetails, true);
+                        $bankDetails = is_array($decrypted) ? $decrypted : (json_decode($decrypted, true) ?: []);
+                    } catch (\Throwable $ex) {
+                        $bankDetails = json_decode($bankDetails, true) ?: [];
+                    }
                 }
             }
 
