@@ -89,30 +89,7 @@
         </div>
 
         {{-- Interactive Filterable Transactions Table Section --}}
-        <div
-            class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
-            x-data="{
-                search: '',
-                filterType: 'all',
-                transactions: {{ json_encode($transactions) }},
-                get filteredTransactions() {
-                    return this.transactions.filter(tx => {
-                        const q = this.search.toLowerCase().trim();
-                        const matchesSearch = !q || 
-                            tx.id.toString().includes(q) || 
-                            tx.type.toLowerCase().includes(q) || 
-                            tx.desc.toLowerCase().includes(q) ||
-                            tx.date.includes(q);
-                        
-                        const matchesFilter = this.filterType === 'all' || 
-                            (this.filterType === 'credit' && tx.direction === 'credit') || 
-                            (this.filterType === 'debit' && tx.direction === 'debit');
-
-                        return matchesSearch && matchesFilter;
-                    });
-                }
-            }"
-        >
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-bold text-gray-800 dark:text-white">
@@ -129,7 +106,8 @@
                     <div class="relative min-w-[240px]">
                         <input
                             type="text"
-                            x-model="search"
+                            id="walletTxSearchInput"
+                            oninput="filterWalletTxTable()"
                             placeholder="بحث (رقم الحركة، نوع، تفاصيل)..."
                             class="w-full rounded-xl border border-gray-300 dark:border-gray-700 py-2 px-3 text-xs focus:border-blue-500 focus:outline-none dark:bg-gray-800 dark:text-white"
                         />
@@ -137,7 +115,8 @@
 
                     {{-- Filter Dropdown --}}
                     <select
-                        x-model="filterType"
+                        id="walletTxFilterSelect"
+                        onchange="filterWalletTxTable()"
                         class="rounded-xl border border-gray-300 dark:border-gray-700 py-2 px-3 text-xs focus:border-blue-500 focus:outline-none dark:bg-gray-800 dark:text-white font-bold"
                     >
                         <option value="all">جميع الحركات</option>
@@ -146,7 +125,7 @@
                     </select>
 
                     <span class="rounded-lg bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-600 dark:text-gray-300">
-                        العدد: <span x-text="filteredTransactions.length"></span>
+                        العدد: <span id="walletTxCountDisplay">{{ count($transactions) }}</span>
                     </span>
                 </div>
             </div>
@@ -166,54 +145,82 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                        <template x-for="tx in filteredTransactions" :key="tx.id">
-                            <tr class="transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/60">
+                        @forelse ($transactions as $tx)
+                            <tr
+                                class="wallet-tx-row transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/60"
+                                data-tx-direction="{{ $tx['direction'] }}"
+                                data-tx-search="{{ mb_strtolower($tx['id'].' '.$tx['type'].' '.$tx['desc'].' '.$tx['date']) }}"
+                            >
                                 <td class="py-4 px-4 font-mono font-bold text-gray-900 dark:text-white">
-                                    #<span x-text="tx.id"></span>
+                                    #{{ $tx['id'] }}
                                 </td>
                                 <td class="py-4 px-4 font-bold text-gray-800 dark:text-gray-200">
-                                    <span x-text="tx.type"></span>
+                                    {{ $tx['type'] }}
                                 </td>
                                 <td class="py-4 px-4 text-gray-600 dark:text-gray-300 font-medium">
-                                    <span x-text="tx.desc"></span>
+                                    {{ $tx['desc'] }}
                                 </td>
                                 <td class="py-4 px-4 font-mono font-bold text-gray-700 dark:text-gray-300">
-                                    <span x-text="tx.running_balance_formatted"></span>
+                                    {{ $tx['running_balance_formatted'] }}
                                 </td>
                                 <td class="py-4 px-4 text-gray-500 dark:text-gray-400 font-mono text-[11px]">
-                                    <span x-text="tx.date"></span>
+                                    {{ $tx['date'] }}
                                 </td>
                                 <td class="py-4 px-4">
-                                    <template x-if="tx.direction === 'credit'">
+                                    @if ($tx['direction'] === 'credit')
                                         <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
                                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                                             إيداع (+)
                                         </span>
-                                    </template>
-                                    <template x-if="tx.direction === 'debit'">
+                                    @else
                                         <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
                                             <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
                                             خصم (-)
                                         </span>
-                                    </template>
+                                    @endif
                                 </td>
-                                <td class="py-4 px-4 text-left font-mono font-extrabold text-sm" :class="tx.direction === 'credit' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
-                                    <span x-text="tx.amount_formatted"></span>
+                                <td class="py-4 px-4 text-left font-mono font-extrabold text-sm {{ $tx['direction'] === 'credit' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }}">
+                                    {{ $tx['amount_formatted'] }}
                                 </td>
                             </tr>
-                        </template>
-
-                        <template x-if="filteredTransactions.length === 0">
-                            <tr>
+                        @empty
+                            <tr id="walletTxNoRecords">
                                 <td colspan="7" class="py-10 text-center text-gray-400 dark:text-gray-500 font-medium">
-                                    لا توجد حركات مالية مطابقة لشروط البحث والفلترة.
+                                    لا توجد حركات مالية مسجلة في المحفظة حتى الآن.
                                 </td>
                             </tr>
-                        </template>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <script>
+            function filterWalletTxTable() {
+                const q = (document.getElementById('walletTxSearchInput')?.value || '').toLowerCase().trim();
+                const type = document.getElementById('walletTxFilterSelect')?.value || 'all';
+                const rows = document.querySelectorAll('.wallet-tx-row');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const searchData = row.getAttribute('data-tx-search') || '';
+                    const direction = row.getAttribute('data-tx-direction') || '';
+                    
+                    const matchesSearch = !q || searchData.includes(q);
+                    const matchesFilter = type === 'all' || (type === 'credit' && direction === 'credit') || (type === 'debit' && direction === 'debit');
+
+                    if (matchesSearch && matchesFilter) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                const countEl = document.getElementById('walletTxCountDisplay');
+                if (countEl) countEl.textContent = visibleCount;
+            }
+        </script>
 
         {{-- Modal 1: Adjust Balance Modal --}}
         <x-admin::modal ref="adjustBalanceModal">
