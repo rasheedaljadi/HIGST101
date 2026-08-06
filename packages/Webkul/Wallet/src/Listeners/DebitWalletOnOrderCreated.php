@@ -2,7 +2,9 @@
 
 namespace Webkul\Wallet\Listeners;
 
+use Illuminate\Support\Facades\Log;
 use Webkul\Sales\Contracts\Order;
+use Webkul\Sales\Repositories\InvoiceRepository;
 use Webkul\Wallet\Exceptions\InsufficientWalletBalanceException;
 use Webkul\Wallet\Models\WalletTransaction;
 use Webkul\Wallet\Repositories\WalletAccountRepository;
@@ -73,6 +75,20 @@ class DebitWalletOnOrderCreated
                 createdByType: 'customer',
                 createdById: $order->customer_id
             );
+
+            // Auto-create paid invoice for HIGEST Wallet payments so payment status is automatically confirmed (Paid)
+            if ($order->canInvoice()) {
+                try {
+                    $invoiceRepository = app(InvoiceRepository::class);
+                    $invoiceData = ['order_id' => $order->id];
+                    foreach ($order->items as $item) {
+                        $invoiceData['invoice']['items'][$item->id] = $item->qty_to_invoice;
+                    }
+                    $invoiceRepository->create($invoiceData, 'paid', 'processing');
+                } catch (\Throwable $e) {
+                    Log::error('Auto invoice creation failed for wallet order #'.$order->id.': '.$e->getMessage());
+                }
+            }
         } catch (InsufficientWalletBalanceException $e) {
             // H-01: Throw translatable exception for Bagisto checkout error display
             throw new \RuntimeException(

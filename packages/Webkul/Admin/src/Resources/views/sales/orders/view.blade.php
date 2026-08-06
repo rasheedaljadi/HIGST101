@@ -17,6 +17,19 @@
                 <span class="label-{{ $order->status }} text-sm mx-1.5">
                     @lang("admin::app.sales.orders.view.$order->status")
                 </span>
+
+                <!-- Payment Status Badge -->
+                @if ($order->payment->method === 'wallet' || $order->total_due == 0 || $order->invoices->count() > 0)
+                    <span class="px-3 py-1 text-xs font-bold text-emerald-800 bg-emerald-100 rounded-full border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 inline-flex items-center gap-1.5 shadow-xs">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                        حالة الدفع: مؤكدة (مدفوع)
+                    </span>
+                @else
+                    <span class="px-3 py-1 text-xs font-bold text-amber-800 bg-amber-100 rounded-full border border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800 inline-flex items-center gap-1.5 shadow-xs">
+                        <span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        حالة الدفع: غير مؤكدة (معلقة)
+                    </span>
+                @endif
             </div>
 
             {!! view_render_event('bagisto.admin.sales.order.title.after', ['order' => $order]) !!}

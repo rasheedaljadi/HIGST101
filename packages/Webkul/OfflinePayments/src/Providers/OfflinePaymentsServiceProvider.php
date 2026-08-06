@@ -39,7 +39,7 @@ class OfflinePaymentsServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'offline_payments');
 
         Event::listen('bagisto.admin.sales.order.payment-method.after', function ($viewRenderEventManager) {
-            $viewRenderEventManager->addTemplate('offline_payments::admin.sales.orders.payment-snapshot');
+            $viewRenderEventManager->addTemplate('offline_payments::admin.orders.payment-snapshot');
         });
 
         Event::listen('bagisto.shop.customers.account.orders.view.payment_method.after', function ($viewRenderEventManager) {
