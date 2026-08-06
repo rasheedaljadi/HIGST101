@@ -52,12 +52,13 @@
             </div>
         @endif
 
-        {{-- Customer Receipt Screenshot --}}
-        @if (! empty($additional['receipt_path']))
-            <div class="pt-2">
-                <p class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
-                    🖼️ <span>إشعار / وصل التحويل المالي المرفق من العميل:</span>
-                </p>
+        {{-- Customer Receipt Screenshot & Admin Upload Box --}}
+        <div class="pt-2">
+            <p class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+                🖼️ <span>إشعار / وصل التحويل المالي:</span>
+            </p>
+
+            @if (! empty($additional['receipt_path']))
                 <div class="relative group inline-block">
                     <a href="{{ Storage::url($additional['receipt_path']) }}" target="_blank" title="اضغط لفتح الصورة بالحجم الكامل">
                         <img src="{{ Storage::url($additional['receipt_path']) }}" class="max-h-48 max-w-full rounded-xl border-2 border-blue-200 dark:border-gray-700 object-contain shadow-md hover:opacity-90 transition-opacity bg-white p-1" alt="إشعار التحويل المالي">
@@ -66,30 +67,64 @@
                         </span>
                     </a>
                 </div>
-            </div>
-        @endif
+            @else
+                <div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/60 flex flex-col gap-2">
+                    <p class="text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                        ⚠️ <span>لم يتم إرفاق إشعار تحويل مالي من قبل العميل عند تقديم هذا الطلب.</span>
+                    </p>
 
-        {{-- Admin Payment Control Form --}}
-        @if (! $isPaid && $order->canInvoice())
-            <div class="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
+                    <form method="POST" action="{{ route('admin.sales.orders.upload_receipt', $order->id) }}" enctype="multipart/form-data" class="flex items-center gap-2 mt-1">
+                        @csrf
+                        <input type="file" name="receipt" accept="image/*" required class="text-xs text-gray-600 dark:text-gray-300 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                        <button type="submit" class="text-xs py-1 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors">
+                            إرفاق صورة الإشعار
+                        </button>
+                    </form>
+                </div>
+            @endif
+        </div>
+
+        {{-- Admin Payment Control Form (Confirm OR Reject) --}}
+        @if (! $isPaid)
+            <div class="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2.5">
                 <p class="text-xs font-bold text-gray-700 dark:text-gray-300">
-                    التحكم في حالة الدفع وإدارة الطلب:
+                    إجراءات الأدمن لإدارة حالة الدفع:
                 </p>
 
-                <form method="POST" action="{{ route('admin.sales.invoices.store', $order->id) }}" class="flex items-center gap-3 flex-wrap">
-                    @csrf
-                    @foreach ($order->items as $item)
-                        <input type="hidden" name="invoice[items][{{ $item->id }}]" value="{{ $item->qty_to_invoice }}" />
-                    @endforeach
+                <div class="flex items-center gap-3 flex-wrap">
+                    {{-- 1. Confirm & Accept Payment Button --}}
+                    @if ($order->canInvoice())
+                        <form method="POST" action="{{ route('admin.sales.invoices.store', $order->id) }}">
+                            @csrf
+                            <input type="hidden" name="can_create_transaction" value="1" />
+                            @foreach ($order->items as $item)
+                                <input type="hidden" name="invoice[items][{{ $item->id }}]" value="{{ $item->qty_to_invoice }}" />
+                            @endforeach
 
-                    <button
-                        type="submit"
-                        class="primary-button text-xs py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm"
-                        onclick="return confirm('هل أنت تأكد من اعتماد ومطابقة إشعار التحويل المالي لتأكيد دفع الطلب؟')"
-                    >
-                        <span>🚀 اعتماد وتأكيد الدفع (تحديث الحالة لمؤكدة)</span>
-                    </button>
-                </form>
+                            <button
+                                type="submit"
+                                class="primary-button text-xs py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm"
+                                onclick="return confirm('هل أنت متأكد من اعتماد ومطابقة إشعار التحويل المالي لتأكيد دفع الطلب؟')"
+                            >
+                                <span>🚀 اعتماد وتأكيد الدفع (تحديث الحالة لمؤكدة)</span>
+                            </button>
+                        </form>
+                    @endif
+
+                    {{-- 2. Reject Payment & Cancel Order Button --}}
+                    @if ($order->canCancel())
+                        <form method="POST" action="{{ route('admin.sales.orders.cancel', $order->id) }}">
+                            @csrf
+                            <button
+                                type="submit"
+                                class="transparent-button text-xs py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm transition-colors"
+                                onclick="return confirm('هل أنت متأكد من رفض عملية الدفع وإلغاء هذا الطلب؟')"
+                            >
+                                <span>✕ رفض عملية الدفع وإلغاء الطلب</span>
+                            </button>
+                        </form>
+                    @endif
+                </div>
             </div>
         @endif
     </div>
