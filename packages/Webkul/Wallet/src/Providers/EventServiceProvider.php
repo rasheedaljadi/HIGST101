@@ -7,9 +7,7 @@ use Webkul\Wallet\Listeners\ApplyWalletCashbackListener;
 use Webkul\Wallet\Listeners\CreateWalletOnCustomerRegistered;
 use Webkul\Wallet\Listeners\CreditWalletOnOrderCanceled;
 use Webkul\Wallet\Listeners\CreditWalletOnRefundCreated;
-use Webkul\Wallet\Listeners\CustomerRegistrationListener;
 use Webkul\Wallet\Listeners\DebitWalletOnOrderCreated;
-use Webkul\Wallet\Listeners\RefundEventListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -24,11 +22,10 @@ class EventServiceProvider extends ServiceProvider
          */
         'customer.create.after' => [
             [CreateWalletOnCustomerRegistered::class, 'handle'],
-            [CustomerRegistrationListener::class, 'handle'],
         ],
 
         'customer.registration.after' => [
-            [CustomerRegistrationListener::class, 'handle'],
+            [CreateWalletOnCustomerRegistered::class, 'handle'],
         ],
 
         /**
@@ -50,7 +47,6 @@ class EventServiceProvider extends ServiceProvider
          */
         'sales.refund.save.after' => [
             [CreditWalletOnRefundCreated::class, 'handle'],
-            [RefundEventListener::class, 'handle'],
         ],
 
         /**

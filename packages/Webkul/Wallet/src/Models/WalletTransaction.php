@@ -137,6 +137,18 @@ class WalletTransaction extends Model implements WalletTransactionContract
      */
     public function getTypeLabelAttribute(): string
     {
+        if (empty($this->type)) {
+            if (! empty($this->description)) {
+                if (stripos($this->description, 'cashback') !== false) {
+                    return 'رصيد ترويجي (مكافأة كاشباك)';
+                }
+
+                return $this->description;
+            }
+
+            return 'حركة مالية';
+        }
+
         $key = match ($this->type) {
             self::TYPE_CREDIT_TOPUP => 'credit_topup',
             self::TYPE_HOLD_WITHDRAWAL => 'hold_withdrawal',
@@ -180,13 +192,13 @@ class WalletTransaction extends Model implements WalletTransactionContract
                 'adjustment' => 'تعديل رصيد إداري',
                 'suspension_freeze' => 'تجميد رصيد',
                 'suspension_release' => 'إلغاء تجميد رصيد',
-                'credit_promotion' => 'رصيد ترويجي (مكافأة)',
+                'credit_promotion' => 'رصيد ترويجي (مكافأة كاشباك)',
                 'hold_partial_payment' => 'حجز دفع جزئي',
             ];
 
             return $fallbackMap[$key] ?? $this->type;
         }
 
-        return $this->type;
+        return $this->type ?: 'حركة مالية';
     }
 }
