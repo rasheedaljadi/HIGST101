@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ConvertEasternArabicNumbers;
 use App\Http\Middleware\EncryptCookies;
 use App\Models\AliExpressSetting;
 use Illuminate\Console\Scheduling\Schedule;
@@ -37,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->append(SecureHeaders::class);
         $middleware->append(CanInstall::class);
+        $middleware->append(ConvertEasternArabicNumbers::class);
 
         /**
          * Add the overridden middleware at the end of the list.

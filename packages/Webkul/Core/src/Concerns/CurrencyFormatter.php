@@ -8,6 +8,17 @@ use Webkul\Core\Enums\CurrencyPositionEnum;
 trait CurrencyFormatter
 {
     /**
+     * Replace Eastern Arabic numerals (٠١٢٣٤٥٦٧٨٩) with Western Arabic numerals (0123456789).
+     */
+    public function replaceEasternArabicDigits(string $string): string
+    {
+        $eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        $western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+        return str_replace($eastern, $western, $string);
+    }
+
+    /**
      * Format currency.
      */
     public function formatCurrency(?float $price, Currency $currency): string
@@ -18,10 +29,12 @@ trait CurrencyFormatter
             || ! empty($currency->group_separator)
             || ! empty($currency->decimal_separator)
         ) {
-            return $this->useCustomCurrencyFormatter($price, $currency);
+            $formatted = $this->useCustomCurrencyFormatter($price, $currency);
+        } else {
+            $formatted = $this->useDefaultCurrencyFormatter($price, $currency);
         }
 
-        return $this->useDefaultCurrencyFormatter($price, $currency);
+        return $this->replaceEasternArabicDigits($formatted);
     }
 
     /**
@@ -29,7 +42,8 @@ trait CurrencyFormatter
      */
     public function useDefaultCurrencyFormatter(?float $price, Currency $currency): string
     {
-        $formatter = new \NumberFormatter(app()->getLocale(), \NumberFormatter::CURRENCY);
+        $locale = app()->getLocale().'@numbers=latn';
+        $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
 
         if (! is_null($currency->decimal)) {
             $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, (int) $currency->decimal);
@@ -37,15 +51,15 @@ trait CurrencyFormatter
 
         if ($currency->symbol) {
             if ($this->currencySymbol($currency) == $currency->symbol && is_null($currency->decimal)) {
-                return $formatter->formatCurrency($price, $currency->code);
+                return $this->replaceEasternArabicDigits($formatter->formatCurrency($price, $currency->code));
             }
 
             $formatter->setSymbol(\NumberFormatter::CURRENCY_SYMBOL, $currency->symbol);
 
-            return $formatter->format($price);
+            return $this->replaceEasternArabicDigits($formatter->format($price));
         }
 
-        return $formatter->formatCurrency($price, $currency->code);
+        return $this->replaceEasternArabicDigits($formatter->formatCurrency($price, $currency->code));
     }
 
     /**
@@ -53,7 +67,8 @@ trait CurrencyFormatter
      */
     public function useCustomCurrencyFormatter(?float $price, Currency $currency): string
     {
-        $formatter = new \NumberFormatter(app()->getLocale(), \NumberFormatter::CURRENCY);
+        $locale = app()->getLocale().'@numbers=latn';
+        $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
 
         $formatter->setSymbol(\NumberFormatter::CURRENCY_SYMBOL, '');
 
@@ -62,6 +77,7 @@ trait CurrencyFormatter
         $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, $decimalDigits);
 
         $formattedCurrency = preg_replace('/^\s+|\s+$/u', '', $formatter->format($price));
+        $formattedCurrency = $this->replaceEasternArabicDigits($formattedCurrency);
 
         if (! empty($currency->group_separator)) {
             $formattedCurrency = str_replace(
@@ -86,13 +102,15 @@ trait CurrencyFormatter
             ? $currency->symbol
             : $currency->code;
 
-        return match ($currency->currency_position) {
+        $result = match ($currency->currency_position) {
             CurrencyPositionEnum::LEFT->value => $symbol.$formattedCurrency,
             CurrencyPositionEnum::LEFT_WITH_SPACE->value => $symbol.' '.$formattedCurrency,
             CurrencyPositionEnum::RIGHT->value => $formattedCurrency.$symbol,
             CurrencyPositionEnum::RIGHT_WITH_SPACE->value => $formattedCurrency.' '.$symbol,
             default => $formattedCurrency.' '.$symbol,
         };
+
+        return $this->replaceEasternArabicDigits($result);
     }
 
     /**
@@ -103,8 +121,9 @@ trait CurrencyFormatter
     public function currencySymbol($currency): string
     {
         $code = $currency instanceof Currency ? $currency->code : $currency;
+        $locale = app()->getLocale().'@currency='.$code;
 
-        $formatter = new \NumberFormatter(app()->getLocale().'@currency='.$code, \NumberFormatter::CURRENCY);
+        $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
 
         return $formatter->getSymbol(\NumberFormatter::CURRENCY_SYMBOL);
     }

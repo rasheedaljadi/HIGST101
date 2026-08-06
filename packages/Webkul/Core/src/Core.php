@@ -645,7 +645,11 @@ class Core
 
         $date->setTimezone($timezone);
 
-        return $date->translatedFormat($format);
+        $formatted = $date->translatedFormat($format);
+        $eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        $western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+        return str_replace($eastern, $western, $formatted);
     }
 
     /**
