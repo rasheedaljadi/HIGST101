@@ -3,6 +3,7 @@
 namespace Webkul\Fulfillment\Handlers;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Webkul\Fulfillment\Commands\ReserveAllocationCommand;
 use Webkul\Fulfillment\Models\OrderAllocation;
@@ -105,8 +106,12 @@ class ReserveAllocationHandler
                         $snapshotHash = hash('sha256', $hashSource);
 
                         $sellingPrice = $orderItem ? (float) $orderItem->price : 0.00;
-                        $offer = DB::table('higest_supplier_offers')->where('variant_id', $variantProductId)->first();
-                        $lastCalc = DB::table('higest_calculated_price_histories')->where('variant_id', $variantProductId)->latest('id')->first();
+                        $offer = Schema::hasTable('higest_supplier_offers')
+                            ? DB::table('higest_supplier_offers')->where('variant_id', $variantProductId)->first()
+                            : null;
+                        $lastCalc = Schema::hasTable('higest_calculated_price_histories')
+                            ? DB::table('higest_calculated_price_histories')->where('variant_id', $variantProductId)->latest('id')->first()
+                            : null;
 
                         $supplierSnapshot = [
                             'supplier_product_id' => $supplierProductId,
