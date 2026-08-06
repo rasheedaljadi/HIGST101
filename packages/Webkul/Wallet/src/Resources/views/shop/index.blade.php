@@ -223,6 +223,93 @@
             </div>
         </div>
 
+        {{-- Withdrawal Requests Section --}}
+        <div class="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 max-md:mt-5 max-md:p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-zinc-900 dark:text-white">طلبات السحب الأخيرة</h3>
+                @if (isset($withdrawals) && $withdrawals->count())
+                    <span class="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-gray-800 dark:text-gray-300">
+                        {{ $withdrawals->count() }} طلبات
+                    </span>
+                @endif
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-sm">
+                    <thead>
+                        <tr class="border-b border-zinc-200 text-xs font-medium text-zinc-500 dark:border-gray-800 dark:text-gray-400">
+                            <th class="py-3 px-4">رقم الطلب</th>
+                            <th class="py-3 px-4">طريقة / حساب السحب</th>
+                            <th class="py-3 px-4">التاريخ</th>
+                            <th class="py-3 px-4">الحالة</th>
+                            <th class="py-3 px-4 text-left">المبلغ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-gray-800">
+                        @forelse ($withdrawals as $withdrawal)
+                            @php
+                                $bankDetails = $withdrawal->bank_details ?? [];
+                                if (is_string($bankDetails)) {
+                                    try {
+                                        $decrypted = decrypt($bankDetails);
+                                        $bankDetails = is_array($decrypted) ? $decrypted : (json_decode($decrypted, true) ?: []);
+                                    } catch (\Throwable $e) {
+                                        $bankDetails = json_decode($bankDetails, true) ?: [];
+                                    }
+                                }
+                                $methodTitle = $bankDetails['bank_name'] ?? $bankDetails['method'] ?? '—';
+                                $accountName = $bankDetails['account_name'] ?? '';
+                            @endphp
+                            <tr class="transition-colors hover:bg-zinc-50/60 dark:hover:bg-gray-800/60">
+                                <td class="py-4 px-4 font-mono font-bold text-zinc-900 dark:text-white">#WD-{{ $withdrawal->id }}</td>
+                                <td class="py-4 px-4 font-medium text-zinc-700 dark:text-gray-300">
+                                    {{ $methodTitle }}
+                                    @if ($accountName)
+                                        <span class="block text-xs text-zinc-400 font-normal">{{ $accountName }}</span>
+                                    @endif
+                                </td>
+                                <td class="py-4 px-4 text-xs text-zinc-500 dark:text-gray-400">{{ $withdrawal->created_at->format('d/m/Y H:i') }}</td>
+                                <td class="py-4 px-4">
+                                    @if ($withdrawal->status === 'pending')
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800">
+                                            <span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                            قيد المراجعة والانتظار
+                                        </span>
+                                    @elseif ($withdrawal->status === 'completed')
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
+                                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                            مكتمل وتحول المبلغ
+                                        </span>
+                                    @elseif ($withdrawal->status === 'rejected')
+                                        <div>
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
+                                                <span class="h-2 w-2 rounded-full bg-rose-500"></span>
+                                                مرفوض
+                                            </span>
+                                            @if ($withdrawal->rejection_reason)
+                                                <p class="mt-1 text-xs text-rose-600 font-medium dark:text-rose-400">سبب الرفض: {{ $withdrawal->rejection_reason }}</p>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-300">
+                                            {{ $withdrawal->status }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="py-4 px-4 text-left font-bold text-rose-600 dark:text-rose-400">
+                                    -{{ core()->formatBasePrice($withdrawal->amount) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-zinc-400">لا توجد طلبات سحب مسجلة حتى الآن.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         {{-- Recent Transactions Section --}}
         <div class="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 max-md:mt-5 max-md:p-4">
             <h3 class="text-lg font-medium text-zinc-900 dark:text-white mb-4">أحدث الحركات المالية</h3>
