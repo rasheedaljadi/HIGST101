@@ -84,7 +84,7 @@
                 </p>
 
                 <div class="flex items-center gap-3 flex-wrap">
-                    {{-- 1. Confirm & Accept Payment Button --}}
+                    {{-- 1. Confirm & Accept Payment Button (HIGEST Navy) --}}
                     @if ($order->canInvoice())
                         <form method="POST" action="{{ route('admin.sales.invoices.store', $order->id) }}">
                             @csrf
@@ -95,24 +95,24 @@
 
                             <button
                                 type="submit"
-                                class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl transition-all shadow-sm cursor-pointer border-0"
+                                style="background-color: #0b2545 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #134074 !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(11,37,69,0.3) !important;"
                                 onclick="return confirm('هل أنت متأكد من صحة ومطابقة إشعار التحويل لتأكيد عملية الدفع؟')"
                             >
-                                <span>🚀 اعتماد وتأكيد الدفع (تحديث الحالة لمؤكدة)</span>
+                                <span style="color: #ffffff !important; font-weight: 700 !important;">🚀 اعتماد وتأكيد الدفع (تحديث الحالة لمؤكدة)</span>
                             </button>
                         </form>
                     @endif
 
-                    {{-- 2. Reject Payment & Cancel Order Button --}}
+                    {{-- 2. Reject Payment & Cancel Order Button (Crimson Red) --}}
                     @if ($order->canCancel())
                         <form method="POST" action="{{ route('admin.sales.orders.cancel', $order->id) }}">
                             @csrf
                             <button
                                 type="submit"
-                                class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-xl transition-all shadow-sm cursor-pointer border-0"
+                                style="background-color: #dc2626 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #b91c1c !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(220,38,38,0.3) !important;"
                                 onclick="return confirm('هل أنت متأكد من عدم صحة الإشعار ورفض عملية الدفع وإلغاء هذا الطلب؟')"
                             >
-                                <span>✕ رفض عملية الدفع وإلغاء الطلب</span>
+                                <span style="color: #ffffff !important; font-weight: 700 !important;">✕ رفض عملية الدفع وإلغاء الطلب</span>
                             </button>
                         </form>
                     @endif
