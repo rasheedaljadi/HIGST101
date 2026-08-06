@@ -179,4 +179,22 @@ return [
             'line' => 'تم رفض طلب السحب بمبلغ :amount وإعادة الرصيد المحجوز إلى محفظتك. السبب: :reason',
         ],
     ],
+
+    'transactions' => [
+        'types' => [
+            'credit_topup' => 'إيداع رصيد',
+            'hold_withdrawal' => 'حجز طلب سحب',
+            'release_hold' => 'إلغاء حجز (إعادة رصيد)',
+            'debit_withdrawal' => 'إتمام سحب بنكي',
+            'credit_refund' => 'استرداد رصيد',
+            'credit_cancel' => 'إلغاء وإعادة رصيد',
+            'release_payment' => 'إلغاء حجز دفع',
+            'debit_payment' => 'مشتريات عبر المحفظة',
+            'adjustment' => 'تعديل رصيد إداري',
+            'suspension_freeze' => 'تجميد رصيد',
+            'suspension_release' => 'إلغاء تجميد رصيد',
+            'credit_promotion' => 'رصيد ترويجي (مكافأة)',
+            'hold_partial_payment' => 'حجز دفع جزئي',
+        ],
+    ],
 ];

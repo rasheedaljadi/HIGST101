@@ -179,4 +179,22 @@ return [
             'line' => 'Your withdrawal request of :amount was rejected and the held balance has been released back to your wallet. Reason: :reason',
         ],
     ],
+
+    'transactions' => [
+        'types' => [
+            'credit_topup' => 'Credit Top-Up',
+            'hold_withdrawal' => 'Withdrawal Hold',
+            'release_hold' => 'Release Hold (Refund)',
+            'debit_withdrawal' => 'Bank Withdrawal Completed',
+            'credit_refund' => 'Order Refund',
+            'credit_cancel' => 'Cancel & Refund',
+            'release_payment' => 'Release Payment Hold',
+            'debit_payment' => 'Wallet Purchase',
+            'adjustment' => 'Admin Adjustment',
+            'suspension_freeze' => 'Account Freeze',
+            'suspension_release' => 'Account Unfreeze',
+            'credit_promotion' => 'Promotional Bonus',
+            'hold_partial_payment' => 'Partial Payment Hold',
+        ],
+    ],
 ];
