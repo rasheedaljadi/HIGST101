@@ -2,6 +2,7 @@
 
 namespace Webkul\Wallet\Payment;
 
+use Illuminate\Support\Facades\Storage;
 use Webkul\Payment\Payment\Payment;
 use Webkul\Wallet\Repositories\WalletAccountRepository;
 
