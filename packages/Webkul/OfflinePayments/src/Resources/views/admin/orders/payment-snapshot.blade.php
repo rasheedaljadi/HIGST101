@@ -86,35 +86,54 @@
                 <div class="flex items-center gap-3 flex-wrap">
                     {{-- 1. Confirm & Accept Payment Button (HIGEST Navy) --}}
                     @if ($order->canInvoice())
-                        <form method="POST" action="{{ route('admin.sales.invoices.store', $order->id) }}">
+                        <form
+                            method="POST"
+                            ref="confirmPaymentForm_{{ $order->id }}"
+                            action="{{ route('admin.sales.invoices.store', $order->id) }}"
+                        >
                             @csrf
                             <input type="hidden" name="can_create_transaction" value="1" />
                             @foreach ($order->items as $item)
                                 <input type="hidden" name="invoice[items][{{ $item->id }}]" value="{{ $item->qty_to_invoice }}" />
                             @endforeach
-
-                            <button
-                                type="submit"
-                                style="background-color: #0b2545 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #134074 !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(11,37,69,0.3) !important;"
-                                onclick="return confirm('هل أنت متأكد من صحة ومطابقة إشعار التحويل لتأكيد عملية الدفع؟')"
-                            >
-                                <span style="color: #ffffff !important; font-weight: 700 !important;">🚀 اعتماد وتأكيد الدفع (تحديث الحالة لمؤكدة)</span>
-                            </button>
                         </form>
+
+                        <button
+                            type="button"
+                            style="background-color: #0b2545 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #134074 !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(11,37,69,0.3) !important;"
+                            @click="$emitter.emit('open-confirm-modal', {
+                                message: 'هل أنت متأكد من صحة ومطابقة إشعار التحويل لتأكيد عملية الدفع؟',
+                                agree: () => {
+                                    $refs['confirmPaymentForm_{{ $order->id }}'].submit()
+                                }
+                            })"
+                        >
+                            <span style="color: #ffffff !important; font-weight: 700 !important;">🚀 اعتماد وتأكيد الدفع (تحديث الحالة لمؤكدة)</span>
+                        </button>
                     @endif
 
                     {{-- 2. Reject Payment & Cancel Order Button (Crimson Red) --}}
                     @if ($order->canCancel())
-                        <form method="POST" action="{{ route('admin.sales.orders.cancel', $order->id) }}">
+                        <form
+                            method="POST"
+                            ref="rejectPaymentForm_{{ $order->id }}"
+                            action="{{ route('admin.sales.orders.cancel', $order->id) }}"
+                        >
                             @csrf
-                            <button
-                                type="submit"
-                                style="background-color: #dc2626 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #b91c1c !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(220,38,38,0.3) !important;"
-                                onclick="return confirm('هل أنت متأكد من عدم صحة الإشعار ورفض عملية الدفع وإلغاء هذا الطلب؟')"
-                            >
-                                <span style="color: #ffffff !important; font-weight: 700 !important;">✕ رفض عملية الدفع وإلغاء الطلب</span>
-                            </button>
                         </form>
+
+                        <button
+                            type="button"
+                            style="background-color: #dc2626 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #b91c1c !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(220,38,38,0.3) !important;"
+                            @click="$emitter.emit('open-confirm-modal', {
+                                message: 'هل أنت متأكد من عدم صحة الإشعار ورفض عملية الدفع وإلغاء هذا الطلب؟',
+                                agree: () => {
+                                    $refs['rejectPaymentForm_{{ $order->id }}'].submit()
+                                }
+                            })"
+                        >
+                            <span style="color: #ffffff !important; font-weight: 700 !important;">✕ رفض عملية الدفع وإلغاء الطلب</span>
+                        </button>
                     @endif
                 </div>
             </div>
