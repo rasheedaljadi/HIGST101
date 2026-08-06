@@ -4,39 +4,46 @@
     </x-slot:title>
 
     <div class="flex flex-col gap-6 p-6">
-        {{-- Header Section with Customer Info & Quick Actions --}}
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 dark:border-gray-800 pb-5">
-            <div class="flex items-center gap-3">
-                <div>
-                    <div class="flex items-center gap-3 flex-wrap">
-                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
-                            تفاصيل محفظة العميل: {{ $customer['name'] }}
-                        </h1>
+        {{-- Header Section (Centered Clean Proposed Layout) --}}
+        <div class="flex flex-col items-center justify-center text-center gap-3 py-6 px-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
+            {{-- Status Badge (Top Corner) --}}
+            <div class="absolute top-4 right-4 sm:right-6">
+                @if (strtolower($customer['status']) === 'active')
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                        نشط
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
+                        <span class="h-2 w-2 rounded-full bg-rose-500"></span>
+                        مجمد
+                    </span>
+                @endif
+            </div>
 
-                        @if (strtolower($customer['status']) === 'active')
-                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
-                                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                                نشط
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
-                                <span class="h-2 w-2 rounded-full bg-rose-500"></span>
-                                مجمد
-                            </span>
-                        @endif
-                    </div>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">
-                        {{ $customer['email'] }}
-                    </p>
-                </div>
+            {{-- Title & Email --}}
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mt-2">
+                تفاصيل محفظة العميل: {{ $customer['name'] }}
+            </h1>
+
+            <div class="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-mono">
+                <span>{{ $customer['email'] }}</span>
+                <button
+                    type="button"
+                    onclick="navigator.clipboard.writeText('{{ $customer['email'] }}'); alert('تم نسخ البريد الإلكتروني!')"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1"
+                    title="نسخ البريد الإلكتروني"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 012-2v-8a2 2 0 01-2-2h-8a2 2 0 01-2 2v8a2 2 0 012 2z"></path></svg>
+                </button>
             </div>
 
             {{-- Action Buttons --}}
-            <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex items-center justify-center gap-3.5 mt-2 flex-wrap">
                 {{-- Adjustment Modal Button --}}
                 <button
                     type="button"
-                    style="background-color: #0b2545 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #134074 !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(11,37,69,0.3) !important;"
+                    style="background-color: #1d4ed8 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 14px !important; padding: 10px 22px !important; border-radius: 12px !important; border: 1px solid #1e40af !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; gap: 8px !important; box-shadow: 0 4px 6px -1px rgba(29,78,216,0.2) !important;"
                     @click="$refs['adjustBalanceModal'].open()"
                 >
                     <span style="color: #ffffff !important; font-weight: 700 !important;">تعديل الرصيد يدويًا +</span>
@@ -46,7 +53,7 @@
                     {{-- Suspend Modal Button --}}
                     <button
                         type="button"
-                        style="background-color: #dc2626 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #b91c1c !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(220,38,38,0.3) !important;"
+                        style="background-color: #dc2626 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 14px !important; padding: 10px 22px !important; border-radius: 12px !important; border: 1px solid #b91c1c !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; gap: 8px !important; box-shadow: 0 4px 6px -1px rgba(220,38,38,0.2) !important;"
                         @click="$refs['suspendWalletModal'].open()"
                     >
                         <span style="color: #ffffff !important; font-weight: 700 !important;">تجميد المحفظة ❄️</span>
@@ -55,7 +62,7 @@
                     {{-- Reactivate Modal Button --}}
                     <button
                         type="button"
-                        style="background-color: #10b981 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #059669 !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(16,185,129,0.3) !important;"
+                        style="background-color: #10b981 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 14px !important; padding: 10px 22px !important; border-radius: 12px !important; border: 1px solid #059669 !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; gap: 8px !important; box-shadow: 0 4px 6px -1px rgba(16,185,129,0.2) !important;"
                         @click="$refs['reactivateWalletModal'].open()"
                     >
                         <span style="color: #ffffff !important; font-weight: 700 !important;">إعادة تنشيط المحفظة ⚡</span>
@@ -64,27 +71,36 @@
             </div>
         </div>
 
-        {{-- 3-Column Balance Cards Grid --}}
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {{-- 3-Column Balance Cards Grid (Proposed Wave Design) --}}
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
             <x-wallet::stat-card
                 :title="trans('إجمالي الرصيد')"
+                subtitle="إجمالي الأموال في المحفظة"
                 :value="core()->formatBasePrice($balances['total'])"
-                icon="icon-dollar"
+                icon="wallet-blue"
                 colorClass="text-blue-600 dark:text-blue-400"
+                bgCircleClass="bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400"
+                waveColor="#3b82f6"
             />
 
             <x-wallet::stat-card
                 :title="trans('الرصيد المتاح')"
+                subtitle="المبلغ المتاح للاستخدام"
                 :value="core()->formatBasePrice($balances['available'])"
-                icon="icon-wallet"
+                icon="wallet-green"
                 colorClass="text-emerald-600 dark:text-emerald-400"
+                bgCircleClass="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
+                waveColor="#10b981"
             />
 
             <x-wallet::stat-card
                 :title="trans('الرصيد المحجوز')"
+                subtitle="المبلغ المحجوز مؤقتًا"
                 :value="core()->formatBasePrice($balances['held'])"
-                icon="icon-lock"
+                icon="lock-orange"
                 colorClass="text-amber-600 dark:text-amber-400"
+                bgCircleClass="bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
+                waveColor="#f59e0b"
             />
         </div>
 
