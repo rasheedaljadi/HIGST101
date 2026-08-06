@@ -104,36 +104,62 @@
                             </div>
                         </div>
 
-                        <!-- Sub-selector for Offline Payment Destinations -->
-                        <div v-if="selectedMethodCode === 'offline_payments' && offlineAccounts.length > 0" class="mt-6 p-5 border border-zinc-200 rounded-xl bg-white dark:bg-gray-900 dark:border-gray-800">
-                            <h3 class="text-lg font-medium text-zinc-800 dark:text-white mb-4">@lang('offline_payments::app.shop.checkout.select-account')</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Sub-selector for Offline Payment Destinations (Matches Top-Up Screen Design) -->
+                        <div v-if="(selectedMethodCode === 'offline_payments' || selectedMethodCode === 'moneytransfer') && offlineAccounts.length > 0" class="mt-6 p-5 rounded-2xl border border-zinc-200 bg-zinc-50/60 dark:border-gray-800 dark:bg-gray-900/60 flex flex-col gap-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-bold text-zinc-900 dark:text-white">
+                                    اختر حساب التحويل المالي:
+                                </h3>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div 
                                     v-for="dest in offlineAccounts" 
                                     :key="dest.id"
-                                    class="flex items-start gap-4 p-4 border rounded-xl cursor-pointer transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                                    :class="[selectedOfflineAccountId === dest.id ? 'border-navyBlue bg-zinc-50 dark:bg-zinc-800 ring-2 ring-navyBlue/20 dark:border-navyBlue' : 'border-zinc-200 dark:border-gray-800']"
+                                    class="relative flex flex-col items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-200 shadow-sm"
+                                    :style="selectedOfflineAccountId === dest.id ? 'border: 3px solid #2563eb; background-color: #eff6ff; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);' : 'border: 2px solid #e4e4e7; background-color: #ffffff;'"
                                     @click="selectOfflineAccount(dest)"
                                 >
-                                    <div class="flex-shrink-0 mt-0.5">
+                                    {{-- Top row: Visible Radio + Selection Badge --}}
+                                    <div class="w-full flex items-center justify-between mb-2">
                                         <span 
                                             class="text-xl"
-                                            :class="[selectedOfflineAccountId === dest.id ? 'icon-radio-select text-navyBlue' : 'icon-radio-unselect text-zinc-400']"
+                                            :class="[selectedOfflineAccountId === dest.id ? 'icon-radio-select text-blue-600' : 'icon-radio-unselect text-zinc-400']"
                                         ></span>
+
+                                        <span 
+                                            v-if="selectedOfflineAccountId === dest.id"
+                                            class="text-xs font-bold text-blue-700 bg-blue-100 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-sm"
+                                        >
+                                            ✓ محدد
+                                        </span>
                                     </div>
-                                    <img v-if="dest.account && dest.account.logo_path" :src="'/storage/' + dest.account.logo_path" class="h-10 w-10 object-cover rounded border bg-white flex-shrink-0">
-                                    <div class="flex-grow">
-                                        <p class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">@{{ dest.account ? dest.account.display_name : '' }}</p>
-                                        <p class="text-xs text-zinc-500 mt-1">
-                                            <strong>@{{ dest.account ? dest.account.provider_name : '' }}:</strong> @{{ dest.account_identifier }}
+
+                                    {{-- Account Logo --}}
+                                    <div class="flex h-16 w-full items-center justify-center my-2 pointer-events-none">
+                                        <img v-if="dest.account && dest.account.logo_path" :src="'/storage/' + dest.account.logo_path" class="max-h-14 max-w-[120px] object-contain" :alt="dest.account ? dest.account.display_name : ''">
+                                        <span v-else class="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 text-2xl dark:bg-gray-700">💳</span>
+                                    </div>
+
+                                    {{-- Account Name & Info --}}
+                                    <div class="text-center w-full pointer-events-none">
+                                        <p class="text-sm font-bold text-zinc-900 dark:text-white line-clamp-2">
+                                            @{{ dest.account ? (dest.account.display_name || dest.account.provider_name) : '' }}
                                         </p>
-                                        <p class="text-xs text-zinc-500" v-if="dest.account">
-                                            <strong>@lang('offline_payments::app.admin.form.recipient-name'):</strong> @{{ dest.account.recipient_name }}
+
+                                        <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1 font-medium">
+                                            <strong>@{{ dest.account ? dest.account.provider_name : 'الحساب' }}:</strong> @{{ dest.account_identifier }}
                                         </p>
-                                        <p class="text-xs text-zinc-500" v-if="dest.swift_code">
+
+                                        <p class="text-xs text-zinc-500 mt-0.5" v-if="dest.account && dest.account.recipient_name">
+                                            <strong>اسم المستلم:</strong> @{{ dest.account.recipient_name }}
+                                        </p>
+
+                                        <p class="text-xs text-zinc-500 mt-0.5" v-if="dest.swift_code">
                                             <strong>SWIFT:</strong> @{{ dest.swift_code }}
                                         </p>
-                                        <div v-if="dest.transfer_instructions" class="text-xs text-zinc-600 dark:text-zinc-400 mt-2 border-t pt-2 border-zinc-100 dark:border-zinc-800 whitespace-pre-line">
+
+                                        <div v-if="dest.transfer_instructions" class="text-xs text-zinc-600 dark:text-zinc-400 mt-2 border-t pt-2 border-zinc-200 dark:border-zinc-800 whitespace-pre-line text-center">
                                             @{{ dest.transfer_instructions }}
                                         </div>
                                     </div>
@@ -179,7 +205,7 @@
             methods: {
                 selectOfflineAccount(dest) {
                     this.selectedOfflineAccountId = dest.id;
-                    const offlineMethod = this.methods.find(m => m.method === 'offline_payments');
+                    const offlineMethod = this.methods.find(m => m.method === 'offline_payments' || m.method === 'moneytransfer');
                     if (offlineMethod) {
                         offlineMethod.selected_offline_destination_id = dest.id;
                         offlineMethod.selected_offline_account_id = dest.id;
@@ -190,7 +216,7 @@
                 store(selectedMethod) {
                     this.selectedMethodCode = selectedMethod.method;
 
-                    if (selectedMethod.method === 'offline_payments') {
+                    if (selectedMethod.method === 'offline_payments' || selectedMethod.method === 'moneytransfer') {
                         if (! this.selectedOfflineAccountId && this.offlineAccounts.length > 0) {
                             this.selectedOfflineAccountId = this.offlineAccounts[0].id;
                         }
