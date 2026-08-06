@@ -4,7 +4,6 @@ namespace Webkul\Wallet\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Webkul\Wallet\DataGrids\WalletAccountsDataGrid;
 use Webkul\Wallet\Models\WalletTransaction;
@@ -60,35 +59,35 @@ class WalletAccountController extends Controller
             'held' => (float) $wallet->held_balance,
         ];
 
-        $recentTransactions = $wallet->transactions()
+        $transactions = $wallet->transactions()
             ->latest('id')
-            ->take(15)
-            ->get();
+            ->get()
+            ->map(function ($tx) {
+                $isCredit = $tx->direction === 'credit';
 
-        $timeline = $recentTransactions->map(function ($tx) {
-            $isCredit = $tx->direction === 'credit';
-            $prefix = $isCredit ? '+' : '-';
-            $amountFormatted = $prefix.core()->formatBasePrice((float) $tx->amount);
+                $desc = $tx->description;
+                if ($desc) {
+                    $desc = str_replace(
+                        ['Refund for Order #', 'Payment for Order #', 'Cashback Reward', 'for Order #', 'Withdrawal #', 'completed (Ref:', 'Wallet suspended by admin:', 'Wallet reactivated by admin:'],
+                        ['استرداد للطلب #', 'دفع للطلب #', 'مكافأة كاشباك', 'للطلب #', 'طلب سحب #', 'مكتمل (مرجع:', 'تجميد بواسطة الأدمن:', 'تنشيط بواسطة الأدمن:'],
+                        $desc
+                    );
+                }
 
-            $icon = match ($tx->type) {
-                'CREDIT_REFUND' => 'icon-down-stat',
-                'CREDIT_TOPUP' => 'icon-down-stat',
-                'DEBIT_PAYMENT' => 'icon-up-stat',
-                'DEBIT_WITHDRAWAL' => 'icon-up-stat',
-                default => $isCredit ? 'icon-star' : 'icon-up-stat',
-            };
+                return [
+                    'id' => $tx->id,
+                    'date' => $tx->created_at ? $tx->created_at->format('Y/m/d H:i') : '—',
+                    'type' => $tx->type_label ?: 'حركة مالية',
+                    'direction' => $tx->direction,
+                    'direction_label' => $isCredit ? 'إيداع (+)' : 'خصم (-)',
+                    'amount' => (float) $tx->amount,
+                    'amount_formatted' => ($isCredit ? '+' : '-').core()->formatBasePrice((float) $tx->amount),
+                    'running_balance_formatted' => core()->formatBasePrice((float) $tx->running_balance),
+                    'desc' => $desc ?: '—',
+                ];
+            })->toArray();
 
-            return [
-                'date' => $tx->created_at ? $tx->created_at->format('d M Y') : '—',
-                'type' => $tx->type_label ?: Str::title(str_replace('_', ' ', $tx->type ?? '')),
-                'amount' => $amountFormatted,
-                'color' => $isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
-                'desc' => $tx->description ?: ($tx->reference_type ? class_basename($tx->reference_type).' #'.$tx->reference_id : 'System Entry'),
-                'icon' => $icon,
-            ];
-        })->toArray();
-
-        return view('wallet::admin.accounts.show', compact('wallet', 'customer', 'balances', 'timeline'));
+        return view('wallet::admin.accounts.show', compact('wallet', 'customer', 'balances', 'transactions'));
     }
 
     /**
