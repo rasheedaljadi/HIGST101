@@ -168,12 +168,7 @@ class OnepageController extends APIController
 
         if (request()->hasFile('receipt')) {
             $receiptPath = request()->file('receipt')->store('offline_payments/receipts', 'public');
-            if ($cart && $cart->payment) {
-                $additional = is_array($cart->payment->additional) ? $cart->payment->additional : [];
-                $additional['receipt_path'] = $receiptPath;
-                $cart->payment->additional = $additional;
-                $cart->payment->save();
-            }
+            session(['checkout_receipt_path' => $receiptPath]);
         }
 
         if ($redirectUrl = Payment::getRedirectUrl($cart)) {

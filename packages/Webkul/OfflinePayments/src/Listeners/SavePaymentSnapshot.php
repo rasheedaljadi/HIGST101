@@ -25,56 +25,54 @@ class SavePaymentSnapshot
             return;
         }
 
-        $additional = $payment->additional;
-        $destinationId = null;
+        $additional = is_array($payment->additional) ? $payment->additional : [];
 
-        if (is_array($additional)) {
-            $destinationId = $additional['selected_offline_destination_id']
-                ?? $additional['selected_offline_account_id']
-                ?? null;
+        $receiptPath = session('checkout_receipt_path');
+        if ($receiptPath) {
+            session()->forget('checkout_receipt_path');
+            $additional['receipt_path'] = $receiptPath;
         }
 
-        if (! $destinationId) {
-            return;
+        $destinationId = $additional['selected_offline_destination_id']
+            ?? $additional['selected_offline_account_id']
+            ?? null;
+
+        if ($destinationId) {
+            $destination = $this->destinationRepository->find($destinationId);
+
+            if ($destination && $destination->account) {
+                $account = $destination->account;
+
+                // Build self-contained versioned snapshot array (Schema Version 2)
+                $snapshot = [
+                    'snapshot_type' => 'offline_payment',
+                    'schema_version' => 2,
+                    'account' => [
+                        'id' => $account->id,
+                        'code' => $account->code,
+                        'display_name' => $account->display_name,
+                        'provider_name' => $account->provider_name,
+                        'recipient_name' => $account->recipient_name,
+                        'logo_path' => $account->logo_path,
+                    ],
+                    'destination' => [
+                        'id' => $destination->id,
+                        'account_identifier' => $destination->account_identifier,
+                        'swift_code' => $destination->swift_code,
+                        'transfer_instructions' => $destination->transfer_instructions,
+                    ],
+                    'currency' => [
+                        'id' => $destination->currency?->id,
+                        'code' => $destination->currency?->code,
+                        'name' => $destination->currency?->name,
+                    ],
+                ];
+
+                $additional['offline_payment_snapshot'] = $snapshot;
+            }
         }
 
-        $destination = $this->destinationRepository->find($destinationId);
-
-        if (! $destination || ! $destination->account) {
-            return;
-        }
-
-        $account = $destination->account;
-
-        // Build self-contained versioned snapshot array (Schema Version 2)
-        $snapshot = [
-            'snapshot_type' => 'offline_payment',
-            'schema_version' => 2,
-            'account' => [
-                'id' => $account->id,
-                'code' => $account->code,
-                'display_name' => $account->display_name,
-                'provider_name' => $account->provider_name,
-                'recipient_name' => $account->recipient_name,
-                'logo_path' => $account->logo_path,
-            ],
-            'destination' => [
-                'id' => $destination->id,
-                'account_identifier' => $destination->account_identifier,
-                'swift_code' => $destination->swift_code,
-                'transfer_instructions' => $destination->transfer_instructions,
-            ],
-            'currency' => [
-                'id' => $destination->currency?->id,
-                'code' => $destination->currency?->code,
-                'name' => $destination->currency?->name,
-            ],
-        ];
-
-        $payment->additional = array_merge(is_array($additional) ? $additional : [], [
-            'offline_payment_snapshot' => $snapshot,
-        ]);
-
+        $payment->additional = $additional;
         $payment->save();
     }
 }
