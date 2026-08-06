@@ -1,10 +1,14 @@
 <?php
 
+use Webkul\Wallet\Payment\WalletPayment;
+
 return [
     'wallet' => [
         'code' => 'wallet',
-        'title' => 'HIGEST Wallet',
-        'class' => 'Webkul\Wallet\Payment\WalletPayment',
-        'sort' => 10,
+        'title' => 'محفظة هايست الإلكترونية',
+        'description' => 'الدفع المباشر عبر رصيد محفظة هايست المتاح',
+        'class' => WalletPayment::class,
+        'active' => true,
+        'sort' => 1,
     ],
 ];

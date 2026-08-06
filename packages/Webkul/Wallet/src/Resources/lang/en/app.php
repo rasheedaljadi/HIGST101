@@ -34,6 +34,18 @@ return [
             ],
         ],
 
+        'system' => [
+            'payment-methods' => [
+                'wallet-title' => 'HIGEST Wallet',
+                'wallet-info' => 'Manage payment options and settings for HIGEST Wallet checkout.',
+                'status' => 'Status',
+                'method-title' => 'Method Title',
+                'description' => 'Description',
+                'logo' => 'Default Logo',
+                'sort-order' => 'Sort Order',
+            ],
+        ],
+
         'wallet' => [
             'back' => 'Back',
 

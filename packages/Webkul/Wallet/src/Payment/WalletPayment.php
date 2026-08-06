@@ -24,9 +24,15 @@ class WalletPayment extends Payment
      *  4. Available balance >= order grand total (V1: no partial payment)
      *  5. Currency matches store base currency
      */
+    /**
+     * Determine if the payment method is available at checkout.
+     */
     public function isAvailable(): bool
     {
-        if (! core()->getConfigData('sales.wallet.active')) {
+        $isActive = (bool) $this->getConfigData('active');
+        $isGlobalActive = (bool) core()->getConfigData('sales.wallet.active');
+
+        if (! $isActive && ! $isGlobalActive) {
             return false;
         }
 
@@ -45,7 +51,6 @@ class WalletPayment extends Payment
             return false;
         }
 
-        // Sprint 0.5 — Currency check (ملاحظة 7)
         if ($wallet->currency_code !== core()->getBaseCurrencyCode()) {
             return false;
         }
@@ -53,10 +58,9 @@ class WalletPayment extends Payment
         $cartTotal = (float) cart()->getCart()?->base_grand_total ?? 0.0;
 
         if ($cartTotal <= 0) {
-            return true; // Zero-amount orders are always allowed
+            return true;
         }
 
-        // Phase 5 — Partial Payment Architecture: Allow payment if balance >= cartTotal or if partial payment is enabled with available_balance > 0
         $allowPartial = (bool) core()->getConfigData('sales.payment_methods.wallet.allow_partial') ?? true;
 
         if ($allowPartial && $wallet->available_balance > 0) {
@@ -76,12 +80,25 @@ class WalletPayment extends Payment
     }
 
     /**
+     * Get custom title configured in admin.
+     */
+    public function getTitle(): string
+    {
+        return $this->getConfigData('title') ?: 'محفظة هايست الإلكترونية';
+    }
+
+    /**
      * Get balance description to show in checkout.
      */
     public function getDescription(): string
     {
+        $customDesc = $this->getConfigData('description');
+        if ($customDesc) {
+            return $customDesc;
+        }
+
         if (! auth()->guard('customer')->check()) {
-            return '';
+            return 'الدفع المباشر والسريع من رصيد محفظتك المتاح لدى هايست';
         }
 
         $customerId = auth()->guard('customer')->id();
@@ -91,11 +108,21 @@ class WalletPayment extends Payment
             ->first();
 
         if (! $wallet) {
-            return '';
+            return 'الدفع المباشر والسريع من رصيد محفظتك المتاح لدى هايست';
         }
 
         return trans('wallet::app.shop.checkout.balance', [
             'balance' => core()->formatBasePrice($wallet->available_balance),
         ]);
+    }
+
+    /**
+     * Get payment method image.
+     */
+    public function getImage(): string
+    {
+        $url = $this->getConfigData('image');
+
+        return $url ? Storage::url($url) : '';
     }
 }
