@@ -5,6 +5,7 @@ namespace Webkul\Wallet\Listeners;
 use Illuminate\Support\Facades\Log;
 use Webkul\Sales\Contracts\Order;
 use Webkul\Sales\Repositories\InvoiceRepository;
+use Webkul\Sales\Repositories\OrderTransactionRepository;
 use Webkul\Wallet\Exceptions\InsufficientWalletBalanceException;
 use Webkul\Wallet\Models\WalletTransaction;
 use Webkul\Wallet\Repositories\WalletAccountRepository;
@@ -84,7 +85,19 @@ class DebitWalletOnOrderCreated
                     foreach ($order->items as $item) {
                         $invoiceData['invoice']['items'][$item->id] = $item->qty_to_invoice;
                     }
-                    $invoiceRepository->create($invoiceData, 'paid', 'processing');
+                    $invoice = $invoiceRepository->create($invoiceData, 'paid', 'processing');
+
+                    // Create transaction record for Sales Transactions (/admin/sales/transactions)
+                    $transactionRepository = app(OrderTransactionRepository::class);
+                    $transactionRepository->create([
+                        'transaction_id' => 'WLT-'.strtoupper(bin2hex(random_bytes(6))),
+                        'status' => 'paid',
+                        'type' => 'wallet',
+                        'payment_method' => 'wallet',
+                        'order_id' => $order->id,
+                        'invoice_id' => $invoice->id,
+                        'amount' => $invoice->grand_total,
+                    ]);
                 } catch (\Throwable $e) {
                     Log::error('Auto invoice creation failed for wallet order #'.$order->id.': '.$e->getMessage());
                 }
