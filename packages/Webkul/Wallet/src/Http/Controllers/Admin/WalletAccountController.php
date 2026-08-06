@@ -4,6 +4,7 @@ namespace Webkul\Wallet\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Webkul\Wallet\DataGrids\WalletAccountsDataGrid;
 use Webkul\Wallet\Models\WalletTransaction;
@@ -79,7 +80,7 @@ class WalletAccountController extends Controller
 
             return [
                 'date' => $tx->created_at ? $tx->created_at->format('d M Y') : '—',
-                'type' => str_replace('_', ' ', title_case($tx->type)),
+                'type' => $tx->type_label ?: Str::title(str_replace('_', ' ', $tx->type ?? '')),
                 'amount' => $amountFormatted,
                 'color' => $isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
                 'desc' => $tx->description ?: ($tx->reference_type ? class_basename($tx->reference_type).' #'.$tx->reference_id : 'System Entry'),
