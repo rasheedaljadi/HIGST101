@@ -29,45 +29,18 @@ class WalletPayment extends Payment
      */
     public function isAvailable(): bool
     {
-        $isActive = (bool) $this->getConfigData('active');
-        $isGlobalActive = (bool) core()->getConfigData('sales.wallet.active');
+        $isActive = $this->getConfigData('active');
+        $isGlobalActive = core()->getConfigData('sales.wallet.active');
 
-        if (! $isActive && ! $isGlobalActive) {
+        if ($isActive === '0' || $isActive === 0 || $isActive === false) {
             return false;
         }
 
-        if (! auth()->guard('customer')->check()) {
+        if (($isActive === null || $isActive === '') && ($isGlobalActive === '0' || $isGlobalActive === 0 || $isGlobalActive === false)) {
             return false;
         }
 
-        $customerId = auth()->guard('customer')->id();
-
-        $wallet = app(WalletAccountRepository::class)
-            ->where('customer_id', $customerId)
-            ->where('status', 'active')
-            ->first();
-
-        if (! $wallet) {
-            return false;
-        }
-
-        if ($wallet->currency_code !== core()->getBaseCurrencyCode()) {
-            return false;
-        }
-
-        $cartTotal = (float) cart()->getCart()?->base_grand_total ?? 0.0;
-
-        if ($cartTotal <= 0) {
-            return true;
-        }
-
-        $allowPartial = (bool) core()->getConfigData('sales.payment_methods.wallet.allow_partial') ?? true;
-
-        if ($allowPartial && $wallet->available_balance > 0) {
-            return true;
-        }
-
-        return $wallet->available_balance >= $cartTotal;
+        return true;
     }
 
     /**

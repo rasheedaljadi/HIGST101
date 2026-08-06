@@ -40,12 +40,22 @@ class DebitWalletOnOrderCreated
 
         $wallet = $this->walletAccountRepository
             ->where('customer_id', $order->customer_id)
-            ->where('status', 'active')
             ->first();
 
-        if (! $wallet) {
+        if (! $wallet && $order->customer_id) {
+            $wallet = $this->walletAccountRepository->create([
+                'customer_id' => $order->customer_id,
+                'total_balance' => 0.00,
+                'available_balance' => 0.00,
+                'held_balance' => 0.00,
+                'currency_code' => core()->getBaseCurrencyCode(),
+                'status' => 'active',
+            ]);
+        }
+
+        if (! $wallet || $wallet->status !== 'active') {
             throw new \RuntimeException(
-                trans('wallet::app.shop.checkout.wallet-unavailable')
+                trans('wallet::app.shop.checkout.wallet-unavailable') ?? 'حساب المحفظة غير متاح أو معلق حالياً.'
             );
         }
 
