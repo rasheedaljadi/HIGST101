@@ -351,7 +351,7 @@
 
                         <div
                             class="flex justify-end"
-                            v-if="canPlaceOrder"
+                            v-if="canPlaceOrder && !manualStep2Active"
                         >
                             <template v-if="cart.payment_method == 'paypal_smart_button'">
                                 {!! view_render_event('bagisto.shop.checkout.onepage.summary.paypal_smart_button.before') !!}
