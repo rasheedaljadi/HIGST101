@@ -95,7 +95,7 @@
 
                             <button
                                 type="submit"
-                                class="primary-button text-xs py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm"
+                                class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl transition-all shadow-sm cursor-pointer border-0"
                                 onclick="return confirm('هل أنت متأكد من صحة ومطابقة إشعار التحويل لتأكيد عملية الدفع؟')"
                             >
                                 <span>🚀 اعتماد وتأكيد الدفع (تحديث الحالة لمؤكدة)</span>
@@ -109,7 +109,7 @@
                             @csrf
                             <button
                                 type="submit"
-                                class="transparent-button text-xs py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm transition-colors"
+                                class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-xl transition-all shadow-sm cursor-pointer border-0"
                                 onclick="return confirm('هل أنت متأكد من عدم صحة الإشعار ورفض عملية الدفع وإلغاء هذا الطلب؟')"
                             >
                                 <span>✕ رفض عملية الدفع وإلغاء الطلب</span>
