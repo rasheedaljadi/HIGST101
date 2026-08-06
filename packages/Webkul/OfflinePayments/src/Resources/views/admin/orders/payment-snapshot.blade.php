@@ -52,34 +52,26 @@
             </div>
         @endif
 
-        {{-- Customer Receipt Screenshot & Admin Upload Box --}}
+        {{-- Customer Uploaded Receipt Screenshot --}}
         <div class="pt-2">
             <p class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
-                🖼️ <span>إشعار / وصل التحويل المالي:</span>
+                🖼️ <span>إشعار / وصل التحويل المالي المرفق من العميل:</span>
             </p>
 
             @if (! empty($additional['receipt_path']))
                 <div class="relative group inline-block">
                     <a href="{{ Storage::url($additional['receipt_path']) }}" target="_blank" title="اضغط لفتح الصورة بالحجم الكامل">
-                        <img src="{{ Storage::url($additional['receipt_path']) }}" class="max-h-48 max-w-full rounded-xl border-2 border-blue-200 dark:border-gray-700 object-contain shadow-md hover:opacity-90 transition-opacity bg-white p-1" alt="إشعار التحويل المالي">
-                        <span class="mt-1 block text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline">
-                            🔍 معاينة الصورة بالحجم الكامل ↗
+                        <img src="{{ Storage::url($additional['receipt_path']) }}" class="max-h-56 max-w-full rounded-xl border-2 border-blue-200 dark:border-gray-700 object-contain shadow-md hover:opacity-95 transition-opacity bg-white p-1" alt="إشعار التحويل المالي">
+                        <span class="mt-1.5 block text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                            🔍 معاينة إشعار العميل بالحجم الكامل ↗
                         </span>
                     </a>
                 </div>
             @else
-                <div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/60 flex flex-col gap-2">
+                <div class="p-3.5 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/60">
                     <p class="text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                        ⚠️ <span>لم يتم إرفاق إشعار تحويل مالي من قبل العميل عند تقديم هذا الطلب.</span>
+                        ⚠️ <span>لم يتم إرفاق صورة إشعار تحويل مالي من قبل العميل عند تقديم هذا الطلب.</span>
                     </p>
-
-                    <form method="POST" action="{{ route('admin.sales.orders.upload_receipt', $order->id) }}" enctype="multipart/form-data" class="flex items-center gap-2 mt-1">
-                        @csrf
-                        <input type="file" name="receipt" accept="image/*" required class="text-xs text-gray-600 dark:text-gray-300 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                        <button type="submit" class="text-xs py-1 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors">
-                            إرفاق صورة الإشعار
-                        </button>
-                    </form>
                 </div>
             @endif
         </div>
@@ -88,7 +80,7 @@
         @if (! $isPaid)
             <div class="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2.5">
                 <p class="text-xs font-bold text-gray-700 dark:text-gray-300">
-                    إجراءات الأدمن لإدارة حالة الدفع:
+                    إجراءات الأدمن لمعالجة الطلب بعد معاينة الإشعار:
                 </p>
 
                 <div class="flex items-center gap-3 flex-wrap">
@@ -103,8 +95,8 @@
 
                             <button
                                 type="submit"
-                                class="primary-button text-xs py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm"
-                                onclick="return confirm('هل أنت متأكد من اعتماد ومطابقة إشعار التحويل المالي لتأكيد دفع الطلب؟')"
+                                class="primary-button text-xs py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm"
+                                onclick="return confirm('هل أنت متأكد من صحة ومطابقة إشعار التحويل لتأكيد عملية الدفع؟')"
                             >
                                 <span>🚀 اعتماد وتأكيد الدفع (تحديث الحالة لمؤكدة)</span>
                             </button>
@@ -117,8 +109,8 @@
                             @csrf
                             <button
                                 type="submit"
-                                class="transparent-button text-xs py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm transition-colors"
-                                onclick="return confirm('هل أنت متأكد من رفض عملية الدفع وإلغاء هذا الطلب؟')"
+                                class="transparent-button text-xs py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm transition-colors"
+                                onclick="return confirm('هل أنت متأكد من عدم صحة الإشعار ورفض عملية الدفع وإلغاء هذا الطلب؟')"
                             >
                                 <span>✕ رفض عملية الدفع وإلغاء الطلب</span>
                             </button>

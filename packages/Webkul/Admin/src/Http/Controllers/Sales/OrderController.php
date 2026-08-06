@@ -3,7 +3,6 @@
 namespace Webkul\Admin\Http\Controllers\Sales;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -224,36 +223,6 @@ class OrderController extends Controller
         Event::dispatch('sales.order.comment.create.after', $comment);
 
         session()->flash('success', trans('admin::app.sales.orders.view.comment-success'));
-
-        return redirect()->route('admin.sales.orders.view', $id);
-    }
-
-    /**
-     * Upload/attach payment receipt screenshot for an order.
-     *
-     * @return RedirectResponse
-     */
-    public function uploadReceipt(int $id)
-    {
-        $order = $this->orderRepository->findOrFail($id);
-
-        $this->validate(request(), [
-            'receipt' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
-        ]);
-
-        if (request()->hasFile('receipt') && $order->payment) {
-            $receiptPath = request()->file('receipt')->store('offline_payments/receipts', 'public');
-
-            $additional = is_array($order->payment->additional) ? $order->payment->additional : [];
-            $additional['receipt_path'] = $receiptPath;
-
-            $order->payment->additional = $additional;
-            $order->payment->save();
-
-            session()->flash('success', 'تم رفع وصيف إشعار التحويل المالي وإرفاقه بالطلب بنجاح.');
-        } else {
-            session()->flash('error', 'حدث خطأ أثناء رفع إشعار التحويل.');
-        }
 
         return redirect()->route('admin.sales.orders.view', $id);
     }

@@ -14,6 +14,11 @@ class EventServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(
+            'checkout.order.save.after',
+            [SavePaymentSnapshot::class, 'handle']
+        );
+
+        Event::listen(
             'sales.order.place.after',
             [SavePaymentSnapshot::class, 'handle']
         );

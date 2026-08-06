@@ -55,8 +55,6 @@ Route::prefix('sales')->group(function () {
 
         Route::post('comment/{order_id}', 'comment')->name('admin.sales.orders.comment');
 
-        Route::post('upload-receipt/{id}', 'uploadReceipt')->name('admin.sales.orders.upload_receipt');
-
         Route::get('search', 'search')->name('admin.sales.orders.search');
     });
 
