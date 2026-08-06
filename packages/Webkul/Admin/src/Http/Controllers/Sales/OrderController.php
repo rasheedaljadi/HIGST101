@@ -168,6 +168,15 @@ class OrderController extends Controller
         $result = $this->orderRepository->cancel($id);
 
         if ($result) {
+            $reason = request()->input('reason') ?: request()->input('comment');
+            if ($reason) {
+                $this->orderCommentRepository->create([
+                    'comment' => 'سبب رفض الدفع وإلغاء الطلب: '.$reason,
+                    'customer_notified' => 1,
+                    'order_id' => $id,
+                ]);
+            }
+
             session()->flash('success', trans('admin::app.sales.orders.view.cancel-success'));
         } else {
             session()->flash('error', trans('admin::app.sales.orders.view.create-error'));

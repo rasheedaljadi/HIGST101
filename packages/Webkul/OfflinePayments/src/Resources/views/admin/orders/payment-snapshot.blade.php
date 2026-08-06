@@ -112,28 +112,72 @@
                         </button>
                     @endif
 
-                    {{-- 2. Reject Payment & Cancel Order Button (Crimson Red) --}}
+                    {{-- 2. Reject Payment & Cancel Order Button (Crimson Red with System Modal) --}}
                     @if ($order->canCancel())
-                        <form
-                            method="POST"
-                            ref="rejectPaymentForm_{{ $order->id }}"
-                            action="{{ route('admin.sales.orders.cancel', $order->id) }}"
-                        >
-                            @csrf
-                        </form>
-
                         <button
                             type="button"
                             style="background-color: #dc2626 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #b91c1c !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; box-shadow: 0 2px 5px rgba(220,38,38,0.3) !important;"
-                            @click="$emitter.emit('open-confirm-modal', {
-                                message: 'هل أنت متأكد من عدم صحة الإشعار ورفض عملية الدفع وإلغاء هذا الطلب؟',
-                                agree: () => {
-                                    $refs['rejectPaymentForm_{{ $order->id }}'].submit()
-                                }
-                            })"
+                            @click="$refs['rejectOrderModal_{{ $order->id }}'].open()"
                         >
                             <span style="color: #ffffff !important; font-weight: 700 !important;">✕ رفض عملية الدفع وإلغاء الطلب</span>
                         </button>
+
+                        <x-admin::modal ref="rejectOrderModal_{{ $order->id }}">
+                            <x-slot:header>
+                                <p class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                                    ⚠️ <span>رفض عملية الدفع وإلغاء الطلب</span>
+                                </p>
+                            </x-slot:header>
+
+                            <x-slot:content>
+                                <form
+                                    method="POST"
+                                    action="{{ route('admin.sales.orders.cancel', $order->id) }}"
+                                    id="rejectOrderForm_{{ $order->id }}"
+                                    class="px-4 py-2 flex flex-col gap-4"
+                                >
+                                    @csrf
+
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">
+                                        هل أنت متأكد من عدم صحة إشعار التحويل المالي ورفض عملية الدفع لهذا الطلب؟ يرجى إدخال سبب الرفض لتوضيحه للعميل:
+                                    </p>
+
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-xs font-bold text-gray-700 dark:text-gray-300 required">
+                                            سبب رفض الدفع *
+                                        </label>
+
+                                        <textarea
+                                            name="reason"
+                                            required
+                                            rows="4"
+                                            class="w-full rounded-xl border border-gray-300 dark:border-gray-700 p-3 text-sm focus:border-red-500 focus:outline-none dark:bg-gray-800 dark:text-white"
+                                            placeholder="أدخل سبب عدم مطابقة أو قبول إشعار التحويل المالي..."
+                                        ></textarea>
+                                    </div>
+                                </form>
+                            </x-slot:content>
+
+                            <x-slot:footer>
+                                <div class="flex items-center gap-2.5">
+                                    <button
+                                        type="submit"
+                                        form="rejectOrderForm_{{ $order->id }}"
+                                        style="background-color: #dc2626 !important; color: #ffffff !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px 18px !important; border-radius: 12px !important; border: 1px solid #b91c1c !important; cursor: pointer !important;"
+                                    >
+                                        <span style="color: #ffffff !important; font-weight: 700 !important;">تأكيد الرفض وإلغاء الطلب</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="transparent-button"
+                                        @click="$refs['rejectOrderModal_{{ $order->id }}'].close()"
+                                    >
+                                        إلغاء
+                                    </button>
+                                </div>
+                            </x-slot:footer>
+                        </x-admin::modal>
                     @endif
                 </div>
             </div>
