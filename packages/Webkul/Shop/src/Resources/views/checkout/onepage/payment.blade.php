@@ -108,11 +108,11 @@
                         <div v-if="(selectedMethodCode === 'offline_payments' || selectedMethodCode === 'moneytransfer') && offlineAccounts.length > 0" class="mt-6 p-5 rounded-2xl border border-zinc-200 bg-zinc-50/60 dark:border-gray-800 dark:bg-gray-900/60 flex flex-col gap-4">
                             <div class="flex items-center justify-between">
                                 <h3 class="text-sm font-bold text-zinc-900 dark:text-white">
-                                    اختر حساب التحويل المالي:
+                                    اختر حساب التحويل:
                                 </h3>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                 <div 
                                     v-for="dest in offlineAccounts" 
                                     :key="dest.id"
@@ -120,7 +120,7 @@
                                     :style="selectedOfflineAccountId === dest.id ? 'border: 3px solid #2563eb; background-color: #eff6ff; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);' : 'border: 2px solid #e4e4e7; background-color: #ffffff;'"
                                     @click="selectOfflineAccount(dest)"
                                 >
-                                    {{-- Top row: Visible Radio + Selection Badge --}}
+                                    {{-- Top row: Radio + Selection Badge --}}
                                     <div class="w-full flex items-center justify-between mb-2">
                                         <span 
                                             class="text-xl"
@@ -141,28 +141,10 @@
                                         <span v-else class="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 text-2xl dark:bg-gray-700">💳</span>
                                     </div>
 
-                                    {{-- Account Name & Info --}}
-                                    <div class="text-center w-full pointer-events-none">
-                                        <p class="text-sm font-bold text-zinc-900 dark:text-white line-clamp-2">
-                                            @{{ dest.account ? (dest.account.display_name || dest.account.provider_name) : '' }}
-                                        </p>
-
-                                        <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1 font-medium">
-                                            <strong>@{{ dest.account ? dest.account.provider_name : 'الحساب' }}:</strong> @{{ dest.account_identifier }}
-                                        </p>
-
-                                        <p class="text-xs text-zinc-500 mt-0.5" v-if="dest.account && dest.account.recipient_name">
-                                            <strong>اسم المستلم:</strong> @{{ dest.account.recipient_name }}
-                                        </p>
-
-                                        <p class="text-xs text-zinc-500 mt-0.5" v-if="dest.swift_code">
-                                            <strong>SWIFT:</strong> @{{ dest.swift_code }}
-                                        </p>
-
-                                        <div v-if="dest.transfer_instructions" class="text-xs text-zinc-600 dark:text-zinc-400 mt-2 border-t pt-2 border-zinc-200 dark:border-zinc-800 whitespace-pre-line text-center">
-                                            @{{ dest.transfer_instructions }}
-                                        </div>
-                                    </div>
+                                    {{-- Account Name ONLY --}}
+                                    <span class="text-sm font-bold text-zinc-900 dark:text-white text-center line-clamp-2 mt-1 pointer-events-none">
+                                        @{{ dest.account ? (dest.account.display_name || dest.account.provider_name) : '' }}
+                                    </span>
                                 </div>
                             </div>
                         </div>
