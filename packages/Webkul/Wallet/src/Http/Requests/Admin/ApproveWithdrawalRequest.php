@@ -24,8 +24,10 @@ class ApproveWithdrawalRequest extends FormRequest
     public function rules()
     {
         return [
-            'bank_reference_id' => 'nullable|string|min:3|max:100',
-            'bank_transaction_reference' => 'nullable|string|min:3|max:100',
+            'bank_transaction_reference' => 'nullable|string|max:100',
+            'bank_reference_id' => 'nullable|string|max:100',
+            'receipt' => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf|max:5120',
+            'proof' => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf|max:5120',
             'admin_notes' => 'nullable|string|max:500',
         ];
     }

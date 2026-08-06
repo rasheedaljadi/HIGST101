@@ -4,6 +4,7 @@ namespace Webkul\Wallet\DataGrids;
 
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Webkul\DataGrid\DataGrid;
 
 class WalletWithdrawalsDataGrid extends DataGrid
@@ -30,6 +31,8 @@ class WalletWithdrawalsDataGrid extends DataGrid
                 'wr.status',
                 'wr.status as raw_status',
                 'wr.bank_details',
+                'wr.bank_transaction_reference',
+                'wr.proof_path',
                 'wr.rejection_reason',
                 DB::raw("COALESCE(a.name, '—') as admin_name"),
                 'wr.transferred_at',
@@ -139,6 +142,24 @@ class WalletWithdrawalsDataGrid extends DataGrid
                 }
 
                 return '<span class="font-mono font-extrabold text-xs px-2.5 py-1 rounded bg-gray-100 text-gray-900 border border-gray-300 dark:bg-gray-800 dark:text-white dark:border-gray-700 tracking-wider select-all">'.e($number).'</span>';
+            },
+        ]);
+
+        $this->addColumn([
+            'index' => 'receipt',
+            'label' => 'إشعار التحويل',
+            'type' => 'string',
+            'closure' => function ($row) {
+                $html = '';
+                if (! empty($row->bank_transaction_reference)) {
+                    $html .= '<div class="font-mono text-xs font-bold text-gray-800 dark:text-gray-200" title="رقم مرجع التحويل">المرجع: '.e($row->bank_transaction_reference).'</div>';
+                }
+                if (! empty($row->proof_path)) {
+                    $url = Storage::url($row->proof_path);
+                    $html .= '<a href="'.$url.'" target="_blank" class="inline-flex items-center gap-1 font-bold text-blue-600 hover:underline bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 rounded-md text-xs mt-1">🖼️ الإشعار</a>';
+                }
+
+                return $html ?: '<span class="text-gray-400">—</span>';
             },
         ]);
 

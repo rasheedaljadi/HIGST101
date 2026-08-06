@@ -62,7 +62,7 @@
                                                 :class="action.icon"
                                                 :title="action.title"
                                                 v-text="! action.icon ? action.title : ''"
-                                                @click="action.index === 'reject' ? openRejectModal(action) : performAction(action)"
+                                                @click="action.index === 'reject' ? openRejectModal(action) : (action.index === 'complete' ? openApproveModal(action) : performAction(action))"
                                             >
                                             </span>
                                         </template>
@@ -78,6 +78,82 @@
                         </template>
                     </template>
                 </x-admin::datagrid>
+
+                <!-- Withdrawal Approval Modal Form -->
+                <x-admin::form
+                    v-slot="{ meta, errors, handleSubmit }"
+                    as="div"
+                >
+                    <form @submit="handleSubmit($event, submitApproveForm)">
+                        <x-admin::modal ref="approveModal">
+                            <x-slot:header>
+                                <p class="text-lg font-bold text-gray-800 dark:text-white">
+                                    ✓ تأكيد إتمام وتنفيذ طلب السحب
+                                </p>
+                            </x-slot:header>
+
+                            <x-slot:content>
+                                <div class="px-4 py-2 flex flex-col gap-4">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">
+                                        يرجى إدخال رقم العملية المرجعية للحوالة وإرفاق صورة الإشعار (إن وجدت) لإبلاغ العميل وإتمام العملية:
+                                    </p>
+
+                                    {{-- Mandatory Transaction Reference Field --}}
+                                    <x-admin::form.control-group>
+                                        <x-admin::form.control-group.label class="required">
+                                            رقم مرجع التحويل / رقم العملية
+                                        </x-admin::form.control-group.label>
+
+                                        <x-admin::form.control-group.control
+                                            type="text"
+                                            name="bank_transaction_reference"
+                                            rules="required"
+                                            v-model="bankTransactionReference"
+                                            placeholder="مثال: TR-998124589"
+                                        />
+
+                                        <x-admin::form.control-group.error control-name="bank_transaction_reference" />
+                                    </x-admin::form.control-group>
+
+                                    {{-- Optional Receipt Image Field --}}
+                                    <x-admin::form.control-group>
+                                        <x-admin::form.control-group.label>
+                                            صورة إشعار التحويل / لقطة الشاشة (اختياري)
+                                        </x-admin::form.control-group.label>
+
+                                        <input
+                                            type="file"
+                                            name="receipt"
+                                            accept="image/*,.pdf"
+                                            class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:text-gray-300 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                                            @change="onReceiptFileChange"
+                                        />
+                                    </x-admin::form.control-group>
+                                </div>
+                            </x-slot:content>
+
+                            <x-slot:footer>
+                                <div class="flex items-center gap-2.5">
+                                    <button
+                                        type="submit"
+                                        class="primary-button bg-emerald-600 border-emerald-600 hover:bg-emerald-700 text-white"
+                                        :disabled="isSubmitting"
+                                    >
+                                        تأكيد وإتمام السحب
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="transparent-button"
+                                        @click="closeApproveModal"
+                                    >
+                                        {{ __('wallet::app.admin.wallet.withdrawals.cancel') ?? 'إلغاء' }}
+                                    </button>
+                                </div>
+                            </x-slot:footer>
+                        </x-admin::modal>
+                    </form>
+                </x-admin::form>
 
                 <!-- Rejection Reason Modal Form -->
                 <x-admin::form
@@ -150,36 +226,94 @@
                     return {
                         selectedRejectAction: null,
                         rejectReason: '',
+
+                        selectedApproveAction: null,
+                        bankTransactionReference: '',
+                        approveReceiptFile: null,
+
                         isSubmitting: false,
                     };
                 },
 
                 methods: {
+                    openApproveModal(action) {
+                        this.selectedApproveAction = action;
+                        this.bankTransactionReference = '';
+                        this.approveReceiptFile = null;
+
+                        let modal = this.$refs.approveModal;
+                        if (Array.isArray(modal)) modal = modal[0];
+                        if (modal && typeof modal.open === 'function') modal.open();
+                        else if (modal && typeof modal.toggle === 'function') modal.toggle();
+                    },
+
+                    closeApproveModal() {
+                        let modal = this.$refs.approveModal;
+                        if (Array.isArray(modal)) modal = modal[0];
+                        if (modal && typeof modal.close === 'function') modal.close();
+                        else if (modal && typeof modal.toggle === 'function') modal.toggle();
+                    },
+
+                    onReceiptFileChange(event) {
+                        if (event.target.files && event.target.files.length) {
+                            this.approveReceiptFile = event.target.files[0];
+                        } else {
+                            this.approveReceiptFile = null;
+                        }
+                    },
+
+                    submitApproveForm(params, { resetForm }) {
+                        if (! this.selectedApproveAction) return;
+
+                        this.isSubmitting = true;
+
+                        let formData = new FormData();
+                        formData.append('bank_transaction_reference', this.bankTransactionReference);
+                        formData.append('bank_reference_id', this.bankTransactionReference);
+
+                        if (this.approveReceiptFile) {
+                            formData.append('receipt', this.approveReceiptFile);
+                            formData.append('proof', this.approveReceiptFile);
+                        }
+
+                        this.$axios.post(this.selectedApproveAction.url, formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        })
+                        .then(response => {
+                            this.isSubmitting = false;
+                            this.closeApproveModal();
+                            this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+
+                            let datagrid = this.$refs.datagrid;
+                            if (Array.isArray(datagrid)) datagrid = datagrid[0];
+                            if (datagrid && typeof datagrid.get === 'function') datagrid.get();
+
+                            if (typeof resetForm === 'function') resetForm();
+                        })
+                        .catch(error => {
+                            this.isSubmitting = false;
+                            const msg = error.response?.data?.message || 'حدث خطأ أثناء إتمام عملية السحب.';
+                            this.$emitter.emit('add-flash', { type: 'error', message: msg });
+                        });
+                    },
+
                     openRejectModal(action) {
                         this.selectedRejectAction = action;
                         this.rejectReason = '';
 
                         let modal = this.$refs.rejectModal;
-                        if (Array.isArray(modal)) {
-                            modal = modal[0];
-                        }
-                        if (modal && typeof modal.open === 'function') {
-                            modal.open();
-                        } else if (modal && typeof modal.toggle === 'function') {
-                            modal.toggle();
-                        }
+                        if (Array.isArray(modal)) modal = modal[0];
+                        if (modal && typeof modal.open === 'function') modal.open();
+                        else if (modal && typeof modal.toggle === 'function') modal.toggle();
                     },
 
                     closeRejectModal() {
                         let modal = this.$refs.rejectModal;
-                        if (Array.isArray(modal)) {
-                            modal = modal[0];
-                        }
-                        if (modal && typeof modal.close === 'function') {
-                            modal.close();
-                        } else if (modal && typeof modal.toggle === 'function') {
-                            modal.toggle();
-                        }
+                        if (Array.isArray(modal)) modal = modal[0];
+                        if (modal && typeof modal.close === 'function') modal.close();
+                        else if (modal && typeof modal.toggle === 'function') modal.toggle();
                     },
 
                     submitRejectForm(params, { resetForm }) {
@@ -197,16 +331,10 @@
                             this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
 
                             let datagrid = this.$refs.datagrid;
-                            if (Array.isArray(datagrid)) {
-                                datagrid = datagrid[0];
-                            }
-                            if (datagrid && typeof datagrid.get === 'function') {
-                                datagrid.get();
-                            }
+                            if (Array.isArray(datagrid)) datagrid = datagrid[0];
+                            if (datagrid && typeof datagrid.get === 'function') datagrid.get();
 
-                            if (typeof resetForm === 'function') {
-                                resetForm();
-                            }
+                            if (typeof resetForm === 'function') resetForm();
                         })
                         .catch(error => {
                             this.isSubmitting = false;

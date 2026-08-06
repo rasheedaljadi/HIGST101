@@ -18,6 +18,7 @@ class WalletWithdrawalRequest extends Model implements WalletWithdrawalRequestCo
         'bank_details',
         'admin_user_id',
         'bank_transaction_reference',
+        'proof_path',
         'transferred_at',
         'admin_notes',
         'rejected_at',

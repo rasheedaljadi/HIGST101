@@ -216,10 +216,18 @@
                                             قيد المراجعة والانتظار
                                         </span>
                                     @elseif ($withdrawal->status === 'completed')
-                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
-                                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                                            مكتمل وتحول المبلغ
-                                        </span>
+                                        <div>
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
+                                                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                                مكتمل وتحول المبلغ
+                                            </span>
+                                            @if ($withdrawal->bank_transaction_reference)
+                                                <p class="mt-1 font-mono text-[11px] font-bold text-zinc-600 dark:text-zinc-300">مرجع التحويل: {{ $withdrawal->bank_transaction_reference }}</p>
+                                            @endif
+                                            @if ($withdrawal->proof_path)
+                                                <a href="{{ \Illuminate\Support\Facades\Storage::url($withdrawal->proof_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:underline bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800 mt-1">🖼️ إشعار التحويل</a>
+                                            @endif
+                                        </div>
                                     @elseif ($withdrawal->status === 'rejected')
                                         <div>
                                             <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">

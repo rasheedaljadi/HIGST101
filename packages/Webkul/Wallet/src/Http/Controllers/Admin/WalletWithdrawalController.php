@@ -130,15 +130,31 @@ class WalletWithdrawalController extends Controller
             return redirect()->route('admin.wallet.withdrawals.index');
         }
 
-        $bankRef = $request->bank_reference_id ?? $request->bank_transaction_reference ?? 'REF-'.time();
+        $bankRef = $request->bank_transaction_reference ?? $request->bank_reference_id;
+        if (! $bankRef) {
+            $msg = 'رقم العملية المرجعي إجباري قبل إتمام السحب.';
+            if (request()->ajax()) {
+                return response()->json(['message' => $msg], 422);
+            }
+            session()->flash('error', $msg);
 
-        DB::transaction(function () use ($request, $withdrawal, $bankRef) {
+            return redirect()->back();
+        }
+
+        $proofPath = null;
+        if ($request->hasFile('receipt')) {
+            $proofPath = $request->file('receipt')->store('wallet/withdrawals', 'public');
+        } elseif ($request->hasFile('proof')) {
+            $proofPath = $request->file('proof')->store('wallet/withdrawals', 'public');
+        }
+
+        DB::transaction(function () use ($request, $withdrawal, $bankRef, $proofPath) {
             $wallet = $this->walletAccountRepository->find($withdrawal->wallet_id);
 
             $this->walletService->completeWithdrawal(
                 wallet: $wallet,
                 amount: $withdrawal->amount,
-                description: 'Withdrawal #'.$withdrawal->id.' completed (Bank Ref: '.$bankRef.')',
+                description: 'Withdrawal #'.$withdrawal->id.' completed (Ref: '.$bankRef.')',
                 referenceType: WalletWithdrawalRequest::class,
                 referenceId: $withdrawal->id,
                 createdByType: 'admin',
@@ -149,6 +165,7 @@ class WalletWithdrawalController extends Controller
                 'status' => WalletWithdrawalRequest::STATUS_COMPLETED,
                 'admin_user_id' => auth()->guard('admin')->id(),
                 'bank_transaction_reference' => $bankRef,
+                'proof_path' => $proofPath ?? $withdrawal->proof_path,
                 'admin_notes' => $request->admin_notes,
                 'transferred_at' => now(),
             ]);
