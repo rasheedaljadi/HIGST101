@@ -14,7 +14,7 @@ print("Connected successfully!")
 project_dir = "/home/highest-ye/htdocs/highest-ye.store"
 print(f"Target directory: {project_dir}")
 
-deploy_cmd = f"cd '{project_dir}' && git fetch origin main && git reset --hard origin/main && php artisan migrate --force && php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache"
+deploy_cmd = f"cd '{project_dir}' && git fetch origin main && git reset --hard origin/main && composer dump-autoload --optimize && php artisan migrate --force && php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache"
 
 print(f"Executing deployment command on production server...")
 stdin, stdout, stderr = client.exec_command(deploy_cmd)
