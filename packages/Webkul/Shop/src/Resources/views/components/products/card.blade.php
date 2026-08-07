@@ -14,16 +14,18 @@
             class="1180:transtion-all group w-full rounded-md 1180:relative 1180:grid 1180:content-start 1180:overflow-hidden 1180:duration-300 1180:hover:shadow-[0_5px_10px_rgba(0,0,0,0.1)]"
             v-if="mode != 'list'"
         >
-            <div class="relative max-h-[300px] max-w-[291px] overflow-hidden max-md:max-h-60 max-md:max-w-full max-md:rounded-lg max-sm:max-h-[200px] max-sm:max-w-full">
+            <div class="relative w-full aspect-[16/9] overflow-hidden rounded-lg bg-zinc-100 flex items-center justify-center" style="aspect-ratio: 16 / 9;">
                 {!! view_render_event('bagisto.shop.components.products.card.image.before') !!}
 
                 <!-- Product Image -->
                 <a
                     :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)"
                     :aria-label="product.name + ' '"
+                    class="w-full h-full flex items-center justify-center overflow-hidden"
                 >
                     <x-shop::media.images.lazy
-                        class="after:content-[' '] relative bg-zinc-100 transition-all duration-300 after:block after:pb-[calc(100%+9px)] group-hover:scale-105"
+                        class="w-full h-full object-contain bg-zinc-100 transition-all duration-300 group-hover:scale-105"
+                        style="aspect-ratio: 16 / 9; object-fit: contain;"
                         ::src="product.base_image.medium_image_url"
                         ::srcset="`
                             ${product.base_image.small_image_url} 150w,
@@ -33,7 +35,7 @@
                         ::key="product.id"
                         ::index="product.id"
                         width="291"
-                        height="300"
+                        height="164"
                         ::alt="product.name"
                     />
                 </a>
@@ -194,18 +196,19 @@
             class="relative flex max-w-max grid-cols-2 gap-4 overflow-hidden rounded max-sm:flex-wrap"
             v-else
         >
-            <div class="group relative max-h-[258px] max-w-[250px] overflow-hidden">
+            <div class="group relative w-[250px] aspect-[16/9] overflow-hidden rounded-lg bg-zinc-100 flex items-center justify-center" style="aspect-ratio: 16 / 9;">
 
                 {!! view_render_event('bagisto.shop.components.products.card.image.before') !!}
 
-                <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)">
+                <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full flex items-center justify-center overflow-hidden">
                     <x-shop::media.images.lazy
-                        class="after:content-[' '] relative min-w-[250px] bg-zinc-100 transition-all duration-300 after:block after:pb-[calc(100%+9px)] group-hover:scale-105"
+                        class="w-full h-full object-contain bg-zinc-100 transition-all duration-300 group-hover:scale-105"
+                        style="aspect-ratio: 16 / 9; object-fit: contain;"
                         ::src="product.base_image.medium_image_url"
                         ::key="product.id"
                         ::index="product.id"
-                        width="291"
-                        height="300"
+                        width="250"
+                        height="141"
                         ::alt="product.name"
                     />
                 </a>

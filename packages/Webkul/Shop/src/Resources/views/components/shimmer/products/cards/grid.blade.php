@@ -2,8 +2,7 @@
 
 @for ($i = 0;  $i < $count; $i++)
     <div class="grid gap-2.5 relative w-full max-w-[291px] max-sm:grid-cols-1 {{ $attributes["class"] }}">
-        <div class="shimmer relative w-full rounded max-sm:!rounded-lg">
-            <div class="after:content-[' '] relative after:block after:pb-[calc(100%+9px)]"></div>
+        <div class="shimmer relative w-full aspect-[16/9] rounded max-sm:!rounded-lg" style="aspect-ratio: 16 / 9;">
         </div>
 
         <div class="grid content-start gap-2.5 max-sm:gap-1">
