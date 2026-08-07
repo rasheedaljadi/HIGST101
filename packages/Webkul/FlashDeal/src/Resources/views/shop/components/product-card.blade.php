@@ -72,11 +72,11 @@
         ])
     </div>
 
-    <!-- Product Image (Fixed 16:9 Aspect Ratio Container, Containing Entire Image) -->
+    <!-- Product Image (Fixed 9:16 Aspect Ratio Container, Containing Entire Image) -->
     <a 
         href="{{ $productUrl }}" 
         class="w-full mb-3 flex items-center justify-center p-2 group bg-gray-50/80 dark:bg-gray-800/40 rounded-xl overflow-hidden"
-        style="aspect-ratio: 16 / 9; width: 100%;"
+        style="aspect-ratio: 9 / 16; width: 100%;"
     >
         <img 
             src="{{ $imageUrl }}" 
