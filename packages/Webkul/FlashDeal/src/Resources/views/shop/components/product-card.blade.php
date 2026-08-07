@@ -84,9 +84,13 @@
 
     <!-- Product Content & Pricing -->
     <div class="text-center">
-        <!-- Title up to 3 lines (line-clamp-3) -->
-        <a href="{{ $productUrl }}" class="block mb-3 min-h-[3.6rem] flex items-center justify-center">
-            <h3 class="text-base font-medium max-sm:text-sm text-gray-800 dark:text-gray-100 line-clamp-3 leading-snug hover:text-[#001A54] dark:hover:text-[#FFC000] transition-colors" title="{{ $cleanName }}">
+        <!-- Title strictly limited to maximum 3 lines with ellipsis -->
+        <a href="{{ $productUrl }}" class="block mb-3 min-h-[4.2rem] flex items-center justify-center">
+            <h3 
+                class="text-base font-medium max-sm:text-sm text-gray-800 dark:text-gray-100 hover:text-[#001A54] dark:hover:text-[#FFC000] transition-colors text-center" 
+                title="{{ $cleanName }}"
+                style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-height: 4.2rem; line-height: 1.4rem;"
+            >
                 {{ $cleanName }}
             </h3>
         </a>
