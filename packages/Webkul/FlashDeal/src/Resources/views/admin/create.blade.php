@@ -172,12 +172,19 @@
                                 <!-- Hidden Input for Form Submission -->
                                 <input type="hidden" :name="'products[' + index + '][product_id]'" :value="item.product_id" required />
 
-                                <!-- Selected State View -->
+                                <!-- Selected State View with Image & Full Title -->
                                 <div v-if="item.product_id && getProduct(item.product_id)" class="flex items-center justify-between bg-white dark:bg-gray-900 border border-amber-500/40 rounded-xl p-2.5 text-xs font-semibold shadow-sm">
-                                    <div class="truncate pr-2">
-                                        <span class="text-amber-600 dark:text-amber-400 font-bold">#@{{ getProduct(item.product_id).id }}</span>
-                                        <span class="text-gray-800 dark:text-gray-200 mx-1.5 font-bold">@{{ getProduct(item.product_id).name }}</span>
-                                        <span class="text-gray-400 text-[11px]">(SKU: @{{ getProduct(item.product_id).sku }})</span>
+                                    <div class="flex items-center gap-3 truncate pr-1">
+                                        <img 
+                                            :src="getProduct(item.product_id).image" 
+                                            class="w-10 h-10 object-cover rounded-lg border border-gray-200 dark:border-gray-700 bg-white shrink-0" 
+                                        />
+                                        <div class="truncate">
+                                            <p class="font-extrabold text-gray-900 dark:text-white truncate">@{{ getProduct(item.product_id).name }}</p>
+                                            <p class="text-[11px] text-gray-400 font-semibold mt-0.5">
+                                                <span class="text-amber-600 dark:text-amber-400 font-bold">#@{{ getProduct(item.product_id).id }}</span> | SKU: @{{ getProduct(item.product_id).sku }}
+                                            </p>
+                                        </div>
                                     </div>
                                     <button 
                                         type="button" 
@@ -202,23 +209,33 @@
                                         <span v-if="isSearching[index]" class="absolute left-3 top-3 text-xs text-amber-500 animate-spin">⌛</span>
                                     </div>
 
-                                    <!-- Fast Compact Dropdown List -->
+                                    <!-- Fast Compact Dropdown List with Thumbnail Images -->
                                     <div 
                                         v-if="activeDropdown === index && getDropdownProducts(index).length > 0"
-                                        class="absolute z-50 w-full mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl p-1 divide-y divide-gray-100 dark:divide-gray-800"
+                                        class="absolute z-50 w-full mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl p-1.5 divide-y divide-gray-100 dark:divide-gray-800"
                                     >
                                         <div 
                                             v-for="p in getDropdownProducts(index)" 
                                             :key="p.id"
                                             @click="selectProduct(index, p)"
-                                            class="p-2.5 hover:bg-amber-500/10 dark:hover:bg-amber-500/20 rounded-lg cursor-pointer transition-colors flex items-center justify-between text-xs"
+                                            class="p-2.5 hover:bg-amber-500/10 dark:hover:bg-amber-500/20 rounded-xl cursor-pointer transition-colors flex items-center justify-between text-xs gap-3 border-b border-gray-100 dark:border-gray-800/60"
                                         >
-                                            <div class="truncate">
-                                                <span class="font-bold text-amber-600 dark:text-amber-400">#@{{ p.id }}</span>
-                                                <span class="font-semibold text-gray-800 dark:text-gray-200 mx-1.5">@{{ p.name }}</span>
-                                                <span class="text-gray-400 text-[10px]">(@{{ p.sku }})</span>
+                                            <div class="flex items-center gap-2.5 truncate">
+                                                <img 
+                                                    :src="p.image" 
+                                                    class="w-10 h-10 object-cover rounded-lg border border-gray-200 dark:border-gray-700 bg-white shrink-0" 
+                                                    alt="product"
+                                                />
+                                                <div class="truncate">
+                                                    <p class="font-extrabold text-gray-900 dark:text-white truncate">@{{ p.name }}</p>
+                                                    <p class="text-[11px] text-gray-400 font-semibold mt-0.5">
+                                                        <span class="text-amber-600 dark:text-amber-400 font-bold">#@{{ p.id }}</span> | SKU: @{{ p.sku }}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <span class="text-emerald-600 dark:text-emerald-400 font-extrabold text-[11px] shrink-0 ml-2">$@{{ p.price }}</span>
+                                            <span class="text-emerald-600 dark:text-emerald-400 font-black text-xs shrink-0 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 ml-2">
+                                                $@{{ p.price }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>

@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Webkul\FlashDeal\DataGrids\FlashDealDataGrid;
 use Webkul\FlashDeal\Repositories\FlashDealProductRepository;
@@ -138,42 +139,50 @@ class FlashDealController extends Controller
     }
 
     /**
-     * Search products for flash deal form autocomplete.
+     * Search products for flash deal form autocomplete with image & name fallback.
      */
     public function searchProducts(Request $request): JsonResponse
     {
         $term = trim($request->get('query', ''));
 
-        try {
-            $locale = core()->getRequestedLocaleCode();
-        } catch (\Throwable $e) {
-            $locale = app()->getLocale();
+        $query = DB::table('products')
+            ->leftJoin('product_flat', 'products.id', '=', 'product_flat.product_id')
+            ->leftJoin('product_attribute_values as name_vals', function ($join) {
+                $join->on('products.id', '=', 'name_vals.product_id')
+                    ->where('name_vals.attribute_id', 1);
+            })
+            ->leftJoin('product_images', 'products.id', '=', 'product_images.product_id')
+            ->select(
+                'products.id',
+                'products.sku',
+                DB::raw('COALESCE(NULLIF(product_flat.name, ""), NULLIF(name_vals.text_value, ""), products.sku) as name'),
+                DB::raw('COALESCE(MAX(product_flat.price), 0) as price'),
+                DB::raw('MIN(product_images.path) as image_path')
+            )
+            ->groupBy('products.id', 'products.sku', 'product_flat.name', 'name_vals.text_value');
+
+        if (! empty($term)) {
+            $query->where(function ($q) use ($term) {
+                $q->where('products.id', 'like', "%{$term}%")
+                  ->orWhere('products.sku', 'like', "%{$term}%")
+                  ->orWhere('product_flat.name', 'like', "%{$term}%")
+                  ->orWhere('name_vals.text_value', 'like', "%{$term}%");
+            });
         }
 
-        $products = DB::table('products')
-            ->leftJoin('product_flat', function ($join) use ($locale) {
-                $join->on('products.id', '=', 'product_flat.product_id')
-                    ->where('product_flat.locale', '=', $locale);
-            })
-            ->when($term, function ($query, $term) {
-                $query->where(function ($q) use ($term) {
-                    $q->where('products.id', 'like', "%{$term}%")
-                      ->orWhere('products.sku', 'like', "%{$term}%")
-                      ->orWhere('product_flat.name', 'like', "%{$term}%");
-                });
-            })
-            ->select('products.id', 'products.sku', 'product_flat.name', 'product_flat.price')
-            ->distinct()
-            ->limit(50)
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id'    => $product->id,
-                    'sku'   => $product->sku,
-                    'name'  => ! empty($product->name) ? $product->name : $product->sku,
-                    'price' => (float) ($product->price ?? 0),
-                ];
-            });
+        $products = $query->limit(50)->get()->map(function ($product) {
+            $imageUrl = ! empty($product->image_path)
+                ? Storage::url($product->image_path)
+                : bagisto_asset('images/small-product-placeholder.webp', 'shop');
+
+            return [
+                'id'    => $product->id,
+                'sku'   => $product->sku,
+                'name'  => $product->name,
+                'price' => (float) $product->price,
+                'image' => $imageUrl,
+            ];
+        });
 
         return response()->json($products);
     }
@@ -197,19 +206,21 @@ class FlashDealController extends Controller
      */
     protected function getAvailableProducts(array $includeIds = [])
     {
-        try {
-            $locale = core()->getRequestedLocaleCode();
-        } catch (\Throwable $e) {
-            $locale = app()->getLocale();
-        }
-
         $query = DB::table('products')
-            ->leftJoin('product_flat', function ($join) use ($locale) {
-                $join->on('products.id', '=', 'product_flat.product_id')
-                    ->where('product_flat.locale', '=', $locale);
+            ->leftJoin('product_flat', 'products.id', '=', 'product_flat.product_id')
+            ->leftJoin('product_attribute_values as name_vals', function ($join) {
+                $join->on('products.id', '=', 'name_vals.product_id')
+                    ->where('name_vals.attribute_id', 1);
             })
-            ->select('products.id', 'products.sku', 'product_flat.name', 'product_flat.price')
-            ->distinct();
+            ->leftJoin('product_images', 'products.id', '=', 'product_images.product_id')
+            ->select(
+                'products.id',
+                'products.sku',
+                DB::raw('COALESCE(NULLIF(product_flat.name, ""), NULLIF(name_vals.text_value, ""), products.sku) as name'),
+                DB::raw('COALESCE(MAX(product_flat.price), 0) as price'),
+                DB::raw('MIN(product_images.path) as image_path')
+            )
+            ->groupBy('products.id', 'products.sku', 'product_flat.name', 'name_vals.text_value');
 
         if (! empty($includeIds)) {
             $query->whereIn('products.id', $includeIds);
@@ -217,14 +228,18 @@ class FlashDealController extends Controller
             $query->limit(50);
         }
 
-        return $query->get()
-            ->map(function ($product) {
-                return [
-                    'id'    => $product->id,
-                    'sku'   => $product->sku,
-                    'name'  => ! empty($product->name) ? $product->name : $product->sku,
-                    'price' => (float) ($product->price ?? 0),
-                ];
-            });
+        return $query->get()->map(function ($product) {
+            $imageUrl = ! empty($product->image_path)
+                ? Storage::url($product->image_path)
+                : bagisto_asset('images/small-product-placeholder.webp', 'shop');
+
+            return [
+                'id'    => $product->id,
+                'sku'   => $product->sku,
+                'name'  => $product->name,
+                'price' => (float) $product->price,
+                'image' => $imageUrl,
+            ];
+        });
     }
 }
