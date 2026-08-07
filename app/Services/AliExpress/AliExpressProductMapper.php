@@ -239,15 +239,34 @@ class AliExpressProductMapper
     }
 
     /**
-     * Extract the main gallery image URLs from the multimedia info node.
-     *
-     * AliExpress returns these as a single `;`-separated string.
+     * Extract the main gallery image URLs from the multimedia info node,
+     * prioritizing the clean product main thumbnail (main_image_url / sku_image)
+     * at position 1 so Bagisto sets it as the default product card thumbnail.
      *
      * @param  array<string, mixed>  $body
      * @return string[]
      */
     protected function extractGalleryImages(array $body): array
     {
+        $urls = [];
+
+        // 1. Try to extract clean main image / thumbnail URL from AliExpress base info node
+        $mainImage = $this->firstOf($body, [
+            'result.ae_item_base_info_dto.main_image_url',
+            'ae_item_base_info_dto.main_image_url',
+            'result.ae_item_base_info_dto.summary_image_url',
+            'ae_item_base_info_dto.summary_image_url',
+            'result.aeop_ae_product.product_main_image_url',
+            'aeop_ae_product.product_main_image_url',
+            'result.ae_multimedia_info_dto.main_image_url',
+            'ae_multimedia_info_dto.main_image_url',
+        ]);
+
+        if (is_string($mainImage) && trim($mainImage) !== '') {
+            $urls[] = trim($mainImage);
+        }
+
+        // 2. Extract standard multimedia gallery images string
         $imageString = $this->firstOf($body, [
             'result.ae_multimedia_info_dto.image_urls',
             'ae_multimedia_info_dto.image_urls',
@@ -255,13 +274,49 @@ class AliExpressProductMapper
             'ae_multimedia_info_dto.image_url',
         ]);
 
-        if (! is_string($imageString) || $imageString === '') {
-            return [];
+        if (is_string($imageString) && $imageString !== '') {
+            foreach (explode(';', $imageString) as $url) {
+                $trimmed = trim($url);
+                if ($trimmed !== '') {
+                    $urls[] = $trimmed;
+                }
+            }
         }
 
-        $urls = array_map('trim', explode(';', $imageString));
+        // 3. Extract SKU variant images (often clean thumbnail product shots)
+        $skuList = $this->firstOf($body, [
+            'result.ae_item_sku_info_dtos.ae_item_sku_info_d_t_o',
+            'ae_item_sku_info_dtos.ae_item_sku_info_d_t_o',
+            'result.aeop_ae_product_s_k_us.aeop_ae_product_sku',
+            'aeop_ae_product_s_k_us.aeop_ae_product_sku',
+        ]);
 
-        return array_values(array_unique(array_filter($urls, fn ($url) => $url !== '')));
+        if (is_array($skuList)) {
+            foreach ($this->normalizeList($skuList) as $sku) {
+                if (! is_array($sku)) {
+                    continue;
+                }
+
+                $properties = $this->normalizeList($this->firstOf($sku, [
+                    'ae_sku_property_dtos.ae_sku_property_d_t_o',
+                    'aeop_s_k_u_property.aeop_sku_property',
+                ]));
+
+                foreach ($properties as $property) {
+                    if (! is_array($property)) {
+                        continue;
+                    }
+
+                    $skuImage = $this->nullableString($this->firstOf($property, ['sku_image', 'image']));
+
+                    if ($skuImage !== null && trim($skuImage) !== '') {
+                        $urls[] = trim($skuImage);
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique(array_filter($urls, fn ($url) => is_string($url) && trim($url) !== '')));
     }
 
     /**

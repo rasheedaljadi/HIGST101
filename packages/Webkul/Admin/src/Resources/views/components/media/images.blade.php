@@ -358,6 +358,15 @@
 
     <script type="text/x-template" id="v-media-image-item-template">
         <div class="group relative grid max-h-[120px] min-w-[120px] justify-items-center overflow-hidden rounded transition-all hover:border-gray-400">
+            <!-- Primary Thumbnail Indicator Badge -->
+            <span 
+                v-if="index === 0" 
+                class="absolute top-1 left-1 z-10 bg-amber-400 text-black font-extrabold text-[10px] px-1.5 py-0.5 rounded shadow whitespace-nowrap"
+                title="هذه هي الصورة المصغرة الغلافية للمنتج على بطاقات المتجر"
+            >
+                ⭐ الصورة المصغرة الرئيسية
+            </span>
+
             <!-- Image Preview -->
             <img
                 :src="image.url"

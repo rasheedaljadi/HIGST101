@@ -11,6 +11,10 @@
             <p class="text-xs font-medium text-gray-500 dark:text-gray-300">
                 @lang('admin::app.catalog.products.edit.images.info')
             </p>
+            <p class="text-xs font-bold text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                <span>⭐</span>
+                <span>تنبيه: الصورة الأولى في القائمة تمثل "الصورة المصغرة الرئيسية" التي تظهر على بطاقة المنتج في المتجر. يمكنك سحب وإفلات أي صورة لوضعها في البداية لتصبح هي الصورة المصغرة.</span>
+            </p>
         </div>
     </div>
 
