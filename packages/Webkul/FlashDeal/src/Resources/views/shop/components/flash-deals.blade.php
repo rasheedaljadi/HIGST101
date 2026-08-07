@@ -8,6 +8,7 @@
 
 @if ($activeDeal && $activeDeal->products->count() > 0)
     <div 
+        v-pre
         class="w-full py-10 select-none overflow-hidden relative"
         style="background-color: #f8fafc; background-image: radial-gradient(#e2e8f0 1px, transparent 1px); background-size: 20px 20px;"
     >
@@ -41,8 +42,8 @@
                 </section>
             </div>
 
-            <!-- Static 5-Product Grid Section (Forced 5 Columns on Desktop) -->
-            <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12 flash-deals-5cols-grid">
+            <!-- Static 5-Product Grid Section (Forced 5 Columns Always) -->
+            <section class="grid grid-cols-5 gap-4 md:gap-6 mb-12 flash-deals-5cols-grid">
                 @foreach ($activeDeal->products->take(5) as $index => $dealProduct)
                     @if (! $dealProduct->product) @continue @endif
 
@@ -69,27 +70,25 @@
         </div>
     </div>
 
-    <!-- Scoped CSS forcing exactly 5 columns per row on Desktop -->
+    <!-- Scoped CSS forcing exactly 5 columns per row permanently -->
     <style>
-        @media (min-width: 992px) {
+        .flash-deals-5cols-grid {
+            display: grid !important;
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 1.25rem !important;
+        }
+        @media (max-width: 1024px) {
             .flash-deals-5cols-grid {
                 display: grid !important;
                 grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-                gap: 1.5rem !important;
+                gap: 0.75rem !important;
             }
         }
-        @media (min-width: 768px) and (max-width: 991px) {
-            .flash-deals-5cols-grid {
-                display: grid !important;
-                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-                gap: 1.25rem !important;
-            }
-        }
-        @media (min-width: 480px) and (max-width: 767px) {
+        @media (max-width: 640px) {
             .flash-deals-5cols-grid {
                 display: grid !important;
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-                gap: 1rem !important;
+                gap: 0.75rem !important;
             }
         }
     </style>
