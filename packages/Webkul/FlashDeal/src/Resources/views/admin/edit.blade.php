@@ -138,182 +138,211 @@
 
             <!-- Right Side: Interactive Products Manager (8 cols) -->
             <div class="lg:col-span-8">
-                <div 
-                    v-pre
-                    x-data="{
-                        productsList: {{ json_encode($products) }},
-                        items: {{ json_encode($initialItems) }},
-                        addItem() {
-                            this.items.push({ product_id: '', flash_price: '', allocation_qty: 50, sold_qty: 0 });
-                        },
-                        removeItem(index) {
-                            if (this.items.length > 1) {
-                                this.items.splice(index, 1);
-                            }
-                        },
-                        getProduct(id) {
-                            return this.productsList.find(p => p.id == id);
-                        },
-                        getOriginalPrice(id) {
-                            const p = this.getProduct(id);
-                            return p ? p.price : 0;
-                        },
-                        getDiscountPercent(id, flashPrice) {
-                            const orig = this.getOriginalPrice(id);
-                            if (orig > 0 && flashPrice > 0 && orig > flashPrice) {
-                                return Math.round(((orig - flashPrice) / orig) * 100);
-                            }
-                            return 0;
-                        }
-                    }"
-                    class="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800"
-                >
-                    <div class="flex items-center justify-between border-b dark:border-gray-800 pb-4 mb-6">
-                        <div>
-                            <h2 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                                </svg>
-                                <span>المنتجات المشمولة في العرض السريع</span>
-                            </h2>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                حدد المنتجات وسعر الخصم والكمية المتاحة للعرض (FOMO Allocation)
-                            </p>
-                        </div>
-
-                        <button 
-                            type="button" 
-                            @click="addItem()"
-                            class="inline-flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-extrabold text-xs py-2 px-4 rounded-xl transition-all border border-amber-500/30"
-                        >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-                            </svg>
-                            <span>إضافة منتج آخر</span>
-                        </button>
-                    </div>
-
-                    <!-- Products List Container -->
-                    <div class="space-y-4">
-                        <template x-for="(item, index) in items" :key="index">
-                            <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 relative hover:border-amber-500/50 transition-colors">
-                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                                    
-                                    <!-- Product Select (4 cols) -->
-                                    <div class="md:col-span-4">
-                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
-                                            اختيار المنتج <span class="text-red-500">*</span>
-                                        </label>
-                                        <select 
-                                            :name="`products[${index}][product_id]`" 
-                                            x-model="item.product_id" 
-                                            required
-                                            class="w-full text-xs font-semibold border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 shadow-sm"
-                                        >
-                                            <option value="">-- اختر منتجاً من القائمة --</option>
-                                            <template x-for="p in productsList" :key="p.id">
-                                                <option :value="p.id" x-text="`#${p.id} - ${p.name} (${p.sku})`"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-
-                                    <!-- Flash Price Input (3 cols) -->
-                                    <div class="md:col-span-3">
-                                        <div class="flex items-center justify-between mb-1.5">
-                                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300">
-                                                سعر العرض <span class="text-red-500">*</span>
-                                            </label>
-                                            <span 
-                                                x-show="item.product_id && getOriginalPrice(item.product_id)"
-                                                class="text-[10px] text-gray-400 line-through"
-                                                x-text="`الأصلي: $${getOriginalPrice(item.product_id)}`"
-                                            ></span>
-                                        </div>
-                                        <div class="relative">
-                                            <input 
-                                                type="number" 
-                                                step="0.01" 
-                                                :name="`products[${index}][flash_price]`" 
-                                                x-model="item.flash_price" 
-                                                placeholder="0.00" 
-                                                required
-                                                class="w-full text-xs font-bold border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-amber-600 dark:text-amber-400 rounded-xl p-3 pl-8 focus:ring-2 focus:ring-amber-500 shadow-sm"
-                                            >
-                                            <span class="absolute left-3 top-3 text-xs font-bold text-gray-400">$</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Allocation Quota Input (3 cols) -->
-                                    <div class="md:col-span-3">
-                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
-                                            الكمية (Quota) <span class="text-red-500">*</span>
-                                        </label>
-                                        <input 
-                                            type="number" 
-                                            :name="`products[${index}][allocation_qty]`" 
-                                            x-model="item.allocation_qty" 
-                                            placeholder="مثال: 50" 
-                                            required
-                                            class="w-full text-xs font-bold border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 shadow-sm"
-                                        >
-                                    </div>
-
-                                    <!-- Sold Counter Badge & Hidden input (1 col) -->
-                                    <div class="md:col-span-1 text-center pb-2">
-                                        <span class="text-[11px] font-extrabold text-emerald-600 block" title="الكمية المباعة حالياً">
-                                            <span x-text="item.sold_qty || 0"></span>/<span x-text="item.allocation_qty || 0"></span>
-                                        </span>
-                                        <input type="hidden" :name="`products[${index}][sold_qty]`" :value="item.sold_qty || 0">
-                                    </div>
-
-                                    <!-- Delete Button (1 col) -->
-                                    <div class="md:col-span-1 flex justify-center pb-1">
-                                        <button 
-                                            type="button" 
-                                            @click="removeItem(index)"
-                                            :disabled="items.length === 1"
-                                            class="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                                            title="حذف هذا المنتج"
-                                        >
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                </div>
-
-                                <!-- Calculated Discount Preview Ribbon -->
-                                <div 
-                                    x-show="item.product_id && item.flash_price && getDiscountPercent(item.product_id, item.flash_price) > 0"
-                                    class="mt-3 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-extrabold px-3 py-1 rounded-lg"
-                                >
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    <span>خصم قدره: <strong x-text="getDiscountPercent(item.product_id, item.flash_price) + '%'"></strong> عن السعر الأصلي</span>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Bottom Add Button -->
-                    <div class="mt-6 text-center">
-                        <button 
-                            type="button" 
-                            @click="addItem()"
-                            class="inline-flex items-center gap-2 border border-dashed border-amber-500/50 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs py-3 px-8 rounded-xl transition-all"
-                        >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-                            </svg>
-                            <span>إضافة منتج إضافي للعرض السريع</span>
-                        </button>
-                    </div>
-
-                </div>
+                <v-flash-deal-items 
+                    :products-list="{{ json_encode($products) }}"
+                    :initial-items="{{ json_encode($initialItems) }}"
+                ></v-flash-deal-items>
             </div>
 
         </div>
     </x-admin::form>
+
+    @pushOnce('scripts')
+        <script type="text/x-template" id="v-flash-deal-items-template">
+            <div class="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
+                <div class="flex items-center justify-between border-b dark:border-gray-800 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                            </svg>
+                            <span>المنتجات المشمولة في العرض السريع</span>
+                        </h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            حدد المنتجات وسعر الخصم والكمية المتاحة للعرض (FOMO Allocation)
+                        </p>
+                    </div>
+
+                    <button 
+                        type="button" 
+                        @click="addItem"
+                        class="inline-flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-extrabold text-xs py-2 px-4 rounded-xl transition-all border border-amber-500/30 cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                        </svg>
+                        <span>إضافة منتج آخر</span>
+                    </button>
+                </div>
+
+                <!-- Products List Container -->
+                <div class="space-y-4">
+                    <div 
+                        v-for="(item, index) in items" 
+                        :key="index"
+                        class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 relative hover:border-amber-500/50 transition-colors"
+                    >
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                            
+                            <!-- Product Select (5 cols) -->
+                            <div class="md:col-span-5">
+                                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                                    اختيار المنتج <span class="text-red-500">*</span>
+                                </label>
+                                <select 
+                                    :name="'products[' + index + '][product_id]'" 
+                                    v-model="item.product_id" 
+                                    required
+                                    class="w-full text-xs font-semibold border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 shadow-sm"
+                                >
+                                    <option value="">-- اختر منتجاً من القائمة --</option>
+                                    <option v-for="p in productsList" :key="p.id" :value="p.id">
+                                        #{{ p.id }} - {{ p.name }} ({{ p.sku }})
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Flash Price Input (3 cols) -->
+                            <div class="md:col-span-3">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                                        سعر العرض السريع <span class="text-red-500">*</span>
+                                    </label>
+                                    <span 
+                                        v-if="item.product_id && getOriginalPrice(item.product_id)"
+                                        class="text-[10px] text-gray-400 line-through"
+                                    >
+                                        الأصلي: ${{ getOriginalPrice(item.product_id) }}
+                                    </span>
+                                </div>
+                                <div class="relative">
+                                    <input 
+                                        type="number" 
+                                        step="0.01" 
+                                        :name="'products[' + index + '][flash_price]'" 
+                                        v-model="item.flash_price" 
+                                        placeholder="0.00" 
+                                        required
+                                        class="w-full text-xs font-bold border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-amber-600 dark:text-amber-400 rounded-xl p-3 pl-8 focus:ring-2 focus:ring-amber-500 shadow-sm"
+                                    >
+                                    <span class="absolute left-3 top-3 text-xs font-bold text-gray-400">$</span>
+                                </div>
+                            </div>
+
+                            <!-- Allocation Quota Input (3 cols) -->
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                                    الكمية المخصصة (Quota) <span class="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    :name="'products[' + index + '][allocation_qty]'" 
+                                    v-model="item.allocation_qty" 
+                                    placeholder="مثال: 50" 
+                                    required
+                                    class="w-full text-xs font-bold border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 shadow-sm"
+                                >
+                                <input type="hidden" :name="'products[' + index + '][sold_qty]'" :value="item.sold_qty || 0">
+                            </div>
+
+                            <!-- Delete Button (1 col) -->
+                            <div class="md:col-span-1 flex justify-center pb-1">
+                                <button 
+                                    type="button" 
+                                    @click="removeItem(index)"
+                                    :disabled="items.length === 1"
+                                    class="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                    title="حذف هذا المنتج"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <!-- Calculated Discount Preview Ribbon -->
+                        <div 
+                            v-if="item.product_id && item.flash_price && getDiscountPercent(item.product_id, item.flash_price) > 0"
+                            class="mt-3 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-extrabold px-3 py-1 rounded-lg"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>وفر للعميل خصم قدره: <strong>{{ getDiscountPercent(item.product_id, item.flash_price) }}%</strong> عن السعر الأصلي</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Add Button -->
+                <div class="mt-6 text-center">
+                    <button 
+                        type="button" 
+                        @click="addItem"
+                        class="inline-flex items-center gap-2 border border-dashed border-amber-500/50 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs py-3 px-8 rounded-xl transition-all cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                        </svg>
+                        <span>إضافة منتج إضافي للعرض السريع</span>
+                    </button>
+                </div>
+            </div>
+        </script>
+
+        <script type="module">
+            app.component('v-flash-deal-items', {
+                template: '#v-flash-deal-items-template',
+
+                props: {
+                    productsList: {
+                        type: Array,
+                        default: () => []
+                    },
+                    initialItems: {
+                        type: Array,
+                        default: () => []
+                    }
+                },
+
+                data() {
+                    return {
+                        items: this.initialItems && this.initialItems.length ? JSON.parse(JSON.stringify(this.initialItems)) : [
+                            { product_id: '', flash_price: '', allocation_qty: 50, sold_qty: 0 }
+                        ]
+                    };
+                },
+
+                methods: {
+                    addItem() {
+                        this.items.push({ product_id: '', flash_price: '', allocation_qty: 50, sold_qty: 0 });
+                    },
+
+                    removeItem(index) {
+                        if (this.items.length > 1) {
+                            this.items.splice(index, 1);
+                        }
+                    },
+
+                    getProduct(id) {
+                        return this.productsList.find(p => p.id == id);
+                    },
+
+                    getOriginalPrice(id) {
+                        const p = this.getProduct(id);
+                        return p ? p.price : 0;
+                    },
+
+                    getDiscountPercent(id, flashPrice) {
+                        const orig = this.getOriginalPrice(id);
+                        if (orig > 0 && flashPrice > 0 && orig > flashPrice) {
+                            return Math.round(((orig - flashPrice) / orig) * 100);
+                        }
+                        return 0;
+                    }
+                }
+            });
+        </script>
+    @endPushOnce
 </x-admin::layouts>
