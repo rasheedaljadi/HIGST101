@@ -37,7 +37,17 @@ class FlashDealController extends Controller
      */
     public function create(): View
     {
-        $products = $this->productRepository->all(['id', 'type', 'sku']);
+        $products = $this->productRepository->getModel()
+            ->where('status', 1)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id'    => $product->id,
+                    'sku'   => $product->sku,
+                    'name'  => $product->name ?? $product->sku,
+                    'price' => (float) $product->price,
+                ];
+            });
 
         return view('flash_deal::admin.create', compact('products'));
     }
@@ -48,30 +58,30 @@ class FlashDealController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'status' => 'required|boolean',
-            'starts_at' => 'required|date',
-            'ends_at' => 'required|date|after:starts_at',
-            'products' => 'required|array|min:1',
+            'title'                 => 'required|string|max:255',
+            'status'                => 'required|boolean',
+            'starts_at'             => 'required|date',
+            'ends_at'               => 'required|date|after:starts_at',
+            'products'              => 'required|array|min:1',
             'products.*.product_id' => 'required|integer|exists:products,id',
-            'products.*.flash_price' => 'required|numeric|min:0',
+            'products.*.flash_price'=> 'required|numeric|min:0',
             'products.*.allocation_qty' => 'required|integer|min:1',
         ]);
 
         $deal = $this->flashDealRepository->create([
-            'title' => $validated['title'],
-            'status' => $validated['status'],
+            'title'     => $validated['title'],
+            'status'    => $validated['status'],
             'starts_at' => $validated['starts_at'],
-            'ends_at' => $validated['ends_at'],
+            'ends_at'   => $validated['ends_at'],
         ]);
 
         foreach ($validated['products'] as $productData) {
             $this->flashDealProductRepository->create([
-                'flash_deal_id' => $deal->id,
-                'product_id' => $productData['product_id'],
-                'flash_price' => $productData['flash_price'],
+                'flash_deal_id'  => $deal->id,
+                'product_id'     => $productData['product_id'],
+                'flash_price'    => $productData['flash_price'],
                 'allocation_qty' => $productData['allocation_qty'],
-                'sold_qty' => 0,
+                'sold_qty'       => 0,
             ]);
         }
 
@@ -86,7 +96,18 @@ class FlashDealController extends Controller
     public function edit(int $id): View
     {
         $deal = $this->flashDealRepository->with(['products.product'])->findOrFail($id);
-        $products = $this->productRepository->all(['id', 'type', 'sku']);
+
+        $products = $this->productRepository->getModel()
+            ->where('status', 1)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id'    => $product->id,
+                    'sku'   => $product->sku,
+                    'name'  => $product->name ?? $product->sku,
+                    'price' => (float) $product->price,
+                ];
+            });
 
         return view('flash_deal::admin.edit', compact('deal', 'products'));
     }
@@ -97,23 +118,23 @@ class FlashDealController extends Controller
     public function update(Request $request, int $id): RedirectResponse
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'status' => 'required|boolean',
-            'starts_at' => 'required|date',
-            'ends_at' => 'required|date|after:starts_at',
-            'products' => 'required|array|min:1',
+            'title'                 => 'required|string|max:255',
+            'status'                => 'required|boolean',
+            'starts_at'             => 'required|date',
+            'ends_at'               => 'required|date|after:starts_at',
+            'products'              => 'required|array|min:1',
             'products.*.product_id' => 'required|integer|exists:products,id',
-            'products.*.flash_price' => 'required|numeric|min:0',
+            'products.*.flash_price'=> 'required|numeric|min:0',
             'products.*.allocation_qty' => 'required|integer|min:1',
         ]);
 
         $deal = $this->flashDealRepository->findOrFail($id);
 
         $this->flashDealRepository->update([
-            'title' => $validated['title'],
-            'status' => $validated['status'],
+            'title'     => $validated['title'],
+            'status'    => $validated['status'],
             'starts_at' => $validated['starts_at'],
-            'ends_at' => $validated['ends_at'],
+            'ends_at'   => $validated['ends_at'],
         ], $id);
 
         // Sync deal products
@@ -121,11 +142,11 @@ class FlashDealController extends Controller
 
         foreach ($validated['products'] as $productData) {
             $this->flashDealProductRepository->create([
-                'flash_deal_id' => $deal->id,
-                'product_id' => $productData['product_id'],
-                'flash_price' => $productData['flash_price'],
+                'flash_deal_id'  => $deal->id,
+                'product_id'     => $productData['product_id'],
+                'flash_price'    => $productData['flash_price'],
                 'allocation_qty' => $productData['allocation_qty'],
-                'sold_qty' => $productData['sold_qty'] ?? 0,
+                'sold_qty'       => $productData['sold_qty'] ?? 0,
             ]);
         }
 
