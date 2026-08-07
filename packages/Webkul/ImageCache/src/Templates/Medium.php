@@ -14,12 +14,12 @@ class Medium
     /**
      * The width for medium images.
      */
-    protected int $width = 300;
+    protected int $width = 400;
 
     /**
      * The height for medium images.
      */
-    protected int $height = 300;
+    protected int $height = 500;
 
     /**
      * Apply the filter to the image.
