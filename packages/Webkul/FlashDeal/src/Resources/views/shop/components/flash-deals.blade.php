@@ -41,8 +41,8 @@
                 </section>
             </div>
 
-            <!-- Static 5-Product Grid Section (No Scrollbar / No Carousel Slider) -->
-            <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
+            <!-- Static 5-Product Grid Section (Forced 5 Columns on Desktop) -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12 flash-deals-5cols-grid">
                 @foreach ($activeDeal->products->take(5) as $index => $dealProduct)
                     @if (! $dealProduct->product) @continue @endif
 
@@ -68,4 +68,29 @@
 
         </div>
     </div>
+
+    <!-- Scoped CSS forcing exactly 5 columns per row on Desktop -->
+    <style>
+        @media (min-width: 992px) {
+            .flash-deals-5cols-grid {
+                display: grid !important;
+                grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+                gap: 1.5rem !important;
+            }
+        }
+        @media (min-width: 768px) and (max-width: 991px) {
+            .flash-deals-5cols-grid {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 1.25rem !important;
+            }
+        }
+        @media (min-width: 480px) and (max-width: 767px) {
+            .flash-deals-5cols-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 1rem !important;
+            }
+        }
+    </style>
 @endif
