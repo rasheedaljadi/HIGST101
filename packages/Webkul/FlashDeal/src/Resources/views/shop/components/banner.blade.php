@@ -1,54 +1,96 @@
 @props([
-    'title' => 'العروض السريعة',
+    'title' => 'عرض الصيف',
     'subtitle' => 'عروض محدودة لفترة قصيرة ..',
     'description' => 'اغتنم الفرصة قبل انتهاء الوقت!',
     'bannerImage' => null,
     'backgroundImage' => null,
-    'accentColor' => '#fbbf24',
-    'secondaryColor' => '#1e3a8a',
+    'accentColor' => '#FFC000',
+    'secondaryColor' => '#001A54',
 ])
 
+@php
+    $formattedTitle = $title;
+    if (! str_contains($title, '<span')) {
+        $words = explode(' ', trim($title));
+        if (count($words) >= 2) {
+            $lastWord = array_pop($words);
+            $formattedTitle = implode(' ', $words) . ' <span class="text-[#FFC000]">' . $lastWord . '</span>';
+        } else {
+            $formattedTitle = '<span class="text-[#FFC000]">' . $title . '</span>';
+        }
+    }
+@endphp
+
 <div 
-    class="w-full p-6 md:p-8 relative overflow-hidden shadow-xl text-white flex items-center min-h-[190px] border border-white/10"
-    style="background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%); border-radius: 1rem 4rem 4rem 1rem;"
+    class="w-full p-6 md:p-8 relative overflow-hidden shadow-2xl text-white flex items-center justify-between min-h-[200px] border border-white/10 rounded-[2.2rem]"
+    style="background: linear-gradient(135deg, #001238 0%, #001A54 50%, #072870 100%);"
 >
     <!-- Background Glow Blurs -->
-    <div class="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl pointer-events-none"></div>
-    <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-[#fbbf24] opacity-10 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="absolute -right-10 -top-10 w-44 h-44 bg-white opacity-5 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -left-10 -bottom-10 w-44 h-44 bg-[#FFC000] opacity-10 rounded-full blur-3xl pointer-events-none"></div>
 
     @if ($backgroundImage)
         <div class="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-overlay pointer-events-none" style="background-image: url('{{ $backgroundImage }}');"></div>
     @endif
 
-    <div class="flex-1 text-right pr-2 md:pr-6 z-10">
-        <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 text-[#fbbf24] drop-shadow-md leading-tight">
-            {!! $title !!}
-        </h1>
-        <p class="text-lg md:text-xl mb-1 text-gray-200 font-medium">
-            {{ $subtitle }}
-        </p>
-        @if ($description)
-            <p class="text-base md:text-lg text-gray-300 font-normal">
-                {{ $description }}
+    <div class="relative z-10 w-full flex items-center justify-between gap-6">
+        
+        <!-- Text Side (RTL Start / Right) -->
+        <div class="flex-1 text-right pr-2 md:pr-4">
+            <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-3 text-white drop-shadow-md leading-tight">
+                {!! $formattedTitle !!}
+            </h1>
+            <p class="text-base md:text-lg mb-1 text-gray-200 font-medium">
+                {{ $subtitle }}
             </p>
-        @endif
-    </div>
+            @if ($description)
+                <p class="text-base md:text-lg text-gray-300 font-medium">
+                    {{ $description }}
+                </p>
+            @endif
+        </div>
 
-    <div class="w-1/3 relative flex justify-center items-center h-40 md:h-48 shrink-0">
-        @if ($bannerImage)
-            <img 
-                src="{{ $bannerImage }}" 
-                alt="{{ strip_tags($title) }}" 
-                class="max-h-36 md:max-h-44 object-contain z-10 drop-shadow-2xl"
-                loading="lazy"
-            />
-        @else
-            <div class="text-[#fbbf24] text-7xl md:text-8xl drop-shadow-lg z-10 absolute animate-pulse">
-                ⚡
-            </div>
-            <div class="text-white text-5xl md:text-6xl opacity-80 absolute right-2 top-2 md:right-4 md:top-4 drop-shadow-md z-0">
-                🕒
-            </div>
-        @endif
+        <!-- Graphic Side (RTL End / Left): 3D Stop Clock + Yellow Bolt with Speed Lines -->
+        <div class="shrink-0 relative flex items-center justify-center w-36 h-36 md:w-44 md:h-44">
+            @if ($bannerImage)
+                <img 
+                    src="{{ $bannerImage }}" 
+                    alt="{{ strip_tags($title) }}" 
+                    class="max-h-36 md:max-h-44 object-contain z-10 drop-shadow-2xl"
+                    loading="lazy"
+                />
+            @else
+                <!-- 3D Stop Clock & Yellow Bolt Graphic Matching Image Proposal -->
+                <div class="relative w-36 h-36 md:w-44 md:h-44 flex items-center justify-center">
+                    <!-- Clock Circle Base -->
+                    <div class="w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-blue-300/40 bg-gradient-to-br from-blue-900 to-blue-950 flex items-center justify-center shadow-2xl relative">
+                        <!-- Top Alarm Buttons -->
+                        <div class="absolute -top-3 left-4 w-4 h-3 bg-blue-300 rounded-t-sm transform -rotate-45"></div>
+                        <div class="absolute -top-3 right-4 w-4 h-3 bg-blue-300 rounded-t-sm transform rotate-45"></div>
+                        <!-- Clock Dial & Red Hands -->
+                        <div class="w-20 h-20 md:w-28 md:h-28 rounded-full bg-white flex items-center justify-center relative shadow-inner">
+                            <div class="w-1.5 h-1.5 rounded-full bg-gray-900 z-20"></div>
+                            <!-- Hour hand -->
+                            <div class="absolute top-4 w-1 h-6 bg-red-600 rounded-full origin-bottom transform rotate-45 z-10"></div>
+                            <!-- Minute hand -->
+                            <div class="absolute top-2 w-0.5 h-8 bg-[#001A54] rounded-full origin-bottom transform -rotate-30 z-10"></div>
+                            <!-- Ticks -->
+                            <div class="absolute top-1 w-1 h-1.5 bg-gray-400"></div>
+                            <div class="absolute bottom-1 w-1 h-1.5 bg-gray-400"></div>
+                            <div class="absolute left-1 w-1.5 h-1 bg-gray-400"></div>
+                            <div class="absolute right-1 w-1.5 h-1 bg-gray-400"></div>
+                        </div>
+                    </div>
+
+                    <!-- Glowing 3D Yellow Lightning Bolt in front with Speed Lines -->
+                    <div class="absolute -right-2 bottom-0 z-20 transform rotate-12 drop-shadow-[0_12px_24px_rgba(255,192,0,0.5)]">
+                        <svg class="w-24 h-24 md:w-28 md:h-28 text-[#FFC000] fill-current" viewBox="0 0 24 24">
+                            <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+                        </svg>
+                    </div>
+                </div>
+            @endif
+        </div>
+
     </div>
 </div>

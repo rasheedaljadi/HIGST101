@@ -44,20 +44,20 @@
         }
     }"
     x-init="initTimer()"
-    class="w-full flex flex-col items-center pl-0 lg:pl-6"
+    class="w-full flex flex-col items-center pl-0 lg:pl-4"
 >
-    <!-- Title -->
-    <h2 class="text-2xl font-bold text-[#1e3a8a] dark:text-white mb-6 flex items-center gap-2">
-        <span class="text-[#fbbf24]">⚡</span>
+    <!-- Header Title with Lightning Bolts -->
+    <h2 class="text-2xl font-bold text-[#001A54] dark:text-white mb-6 flex items-center gap-2">
+        <span class="text-[#FFC000]">⚡</span>
         <span>{{ $sectionTitle }}</span>
-        <span class="text-[#fbbf24]">⚡</span>
+        <span class="text-[#FFC000]">⚡</span>
     </h2>
 
-    <!-- 4 Timer Boxes (LTR structure for numbers: Days, Hours, Minutes, Seconds) -->
+    <!-- 4 Countdown Box Widgets (Days, Hours, Minutes, Seconds) -->
     <div class="flex gap-3 md:gap-4 mb-6 text-center" dir="ltr">
         <!-- Days -->
         <div class="flex flex-col items-center">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#1e3a8a] dark:text-[#fbbf24] border border-gray-100 dark:border-gray-700 font-mono" x-text="days">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="days">
                 02
             </div>
             <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">يوم</span>
@@ -65,7 +65,7 @@
 
         <!-- Hours -->
         <div class="flex flex-col items-center">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#1e3a8a] dark:text-[#fbbf24] border border-gray-100 dark:border-gray-700 font-mono" x-text="hours">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="hours">
                 14
             </div>
             <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">ساعة</span>
@@ -73,7 +73,7 @@
 
         <!-- Minutes -->
         <div class="flex flex-col items-center">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#1e3a8a] dark:text-[#fbbf24] border border-gray-100 dark:border-gray-700 font-mono" x-text="minutes">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="minutes">
                 36
             </div>
             <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">دقيقة</span>
@@ -81,18 +81,18 @@
 
         <!-- Seconds -->
         <div class="flex flex-col items-center">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#1e3a8a] dark:text-[#fbbf24] border border-gray-100 dark:border-gray-700 font-mono" x-text="seconds">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="seconds">
                 58
             </div>
             <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">ثانية</span>
         </div>
     </div>
 
-    <!-- Progress Track with Flash Indicator -->
+    <!-- Progress Track with Lightning Indicator on left -->
     <div class="w-full flex items-center gap-4 relative mt-2 max-w-xs md:max-w-sm">
         <div class="relative w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-visible">
-            <div class="h-full bg-[#fbbf24] rounded-full w-4/5"></div>
-            <div class="absolute left-0 top-1/2 -translate-y-1/2 -ml-2 w-8 h-8 bg-[#fbbf24] rounded-full shadow-md flex items-center justify-center text-white text-sm font-bold">
+            <div class="h-full bg-[#FFC000] rounded-full w-4/5"></div>
+            <div class="absolute left-0 top-1/2 -translate-y-1/2 -ml-2 w-8 h-8 bg-[#FFC000] rounded-full shadow-md flex items-center justify-center text-white text-sm font-bold">
                 ⚡
             </div>
         </div>
