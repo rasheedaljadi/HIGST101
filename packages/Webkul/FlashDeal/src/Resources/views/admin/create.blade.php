@@ -176,7 +176,7 @@
                                 >
                                     <option value="">-- اختر منتجاً من القائمة --</option>
                                     <option v-for="p in productsList" :key="p.id" :value="p.id">
-                                        #{{ p.id }} - {{ p.name }} ({{ p.sku }})
+                                        #@{{ p.id }} - @{{ p.name }} (@{{ p.sku }})
                                     </option>
                                 </select>
                             </div>
@@ -191,7 +191,7 @@
                                         v-if="item.product_id && getOriginalPrice(item.product_id)"
                                         class="text-[10px] text-gray-400 line-through"
                                     >
-                                        الأصلي: ${{ getOriginalPrice(item.product_id) }}
+                                        الأصلي: $@{{ getOriginalPrice(item.product_id) }}
                                     </span>
                                 </div>
                                 <div class="relative">
@@ -249,7 +249,7 @@
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            <span>وفر للعميل خصم قدره: <strong>{{ getDiscountPercent(item.product_id, item.flash_price) }}%</strong> عن السعر الأصلي</span>
+                            <span>وفر للعميل خصم قدره: <strong>@{{ getDiscountPercent(item.product_id, item.flash_price) }}%</strong> عن السعر الأصلي</span>
                         </div>
                     </div>
                 </div>
