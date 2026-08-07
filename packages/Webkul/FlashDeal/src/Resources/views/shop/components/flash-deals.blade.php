@@ -98,7 +98,7 @@
                         $product = $dealProduct->product;
                         if (! $product) continue;
 
-                        $imageUrl = $productImageHelper->getProductBaseImage($product)['medium_image_url'] ?? asset('themes/default/assets/images/placeholder.png');
+                        $imageUrl = $productImageHelper->getProductBaseImage($product)['medium_image_url'] ?? bagisto_asset('images/medium-product-placeholder.webp', 'shop');
                         $productUrl = route('shop.product_or_category.index', $product->url_key);
                         
                         $originalPrice = $product->price;

@@ -139,9 +139,10 @@
             <!-- Right Side: Interactive Products Manager (8 cols) -->
             <div class="lg:col-span-8">
                 <div 
+                    v-pre
                     x-data="{
-                        productsList: @json($products),
-                        items: @json($initialItems),
+                        productsList: {{ json_encode($products) }},
+                        items: {{ json_encode($initialItems) }},
                         addItem() {
                             this.items.push({ product_id: '', flash_price: '', allocation_qty: 50, sold_qty: 0 });
                         },
