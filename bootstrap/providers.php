@@ -17,6 +17,7 @@ use Webkul\DataTransfer\Providers\DataTransferServiceProvider;
 use Webkul\DebugBar\Providers\DebugBarServiceProvider;
 use Webkul\FPC\Providers\FPCServiceProvider;
 use Webkul\Fulfillment\Providers\FulfillmentServiceProvider;
+use Webkul\FlashDeal\Providers\FlashDealServiceProvider;
 use Webkul\GDPR\Providers\GDPRServiceProvider;
 use Webkul\ImageCache\Providers\ImageCacheServiceProvider;
 use Webkul\Installer\Providers\InstallerServiceProvider;
