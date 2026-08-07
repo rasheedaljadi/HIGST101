@@ -14,7 +14,7 @@
             class="1180:transtion-all group w-full rounded-md 1180:relative 1180:grid 1180:content-start 1180:overflow-hidden 1180:duration-300 1180:hover:shadow-[0_5px_10px_rgba(0,0,0,0.1)]"
             v-if="mode != 'list'"
         >
-            <div class="relative w-full aspect-[9/16] overflow-hidden rounded-lg bg-zinc-100 flex items-center justify-center" style="aspect-ratio: 9 / 16;">
+            <div class="relative w-full aspect-[4/6] overflow-hidden rounded-lg bg-zinc-100 flex items-center justify-center" style="aspect-ratio: 4 / 6;">
                 {!! view_render_event('bagisto.shop.components.products.card.image.before') !!}
 
                 <!-- Product Image -->
@@ -25,7 +25,7 @@
                 >
                     <x-shop::media.images.lazy
                         class="w-full h-full object-cover bg-zinc-100 transition-all duration-300 group-hover:scale-105"
-                        style="aspect-ratio: 9 / 16; object-fit: cover;"
+                        style="aspect-ratio: 4 / 6; object-fit: cover;"
                         ::src="product.base_image.medium_image_url"
                         ::srcset="`
                             ${product.base_image.small_image_url} 150w,
@@ -35,7 +35,7 @@
                         ::key="product.id"
                         ::index="product.id"
                         width="291"
-                        height="517"
+                        height="436"
                         ::alt="product.name"
                     />
                 </a>

@@ -48,7 +48,8 @@
     x-show="!expired"
     x-transition:leave="transition ease-in duration-300 transform scale-95 opacity-0"
     @countdown-expired.window="$event.detail.productId == '{{ $productEntity->id }}' ? expired = true : null"
-    class="w-full bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between h-full min-h-[460px]"
+    class="w-full bg-white dark:bg-gray-900 rounded-3xl p-3.5 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden"
+    style="aspect-ratio: 9 / 16; width: 100%;"
 >
     <!-- Featured "Best Seller" Badge -->
     @if ($badgeText || $isBestSeller)
@@ -59,8 +60,8 @@
     @endif
 
     <!-- Top Header Bar: Limited Offer Badge & Countdown -->
-    <div class="flex justify-between items-center mb-3 {{ ($badgeText || $isBestSeller) ? 'mt-2' : '' }}">
-        <div class="bg-[#FFF9E6] dark:bg-amber-950/40 text-[#D97706] dark:text-amber-400 font-bold px-3 py-1 rounded-full text-xs flex items-center gap-1">
+    <div class="flex justify-between items-center mb-2 {{ ($badgeText || $isBestSeller) ? 'mt-2' : '' }}">
+        <div class="bg-[#FFF9E6] dark:bg-amber-950/40 text-[#D97706] dark:text-amber-400 font-bold px-2.5 py-0.5 rounded-full text-[11px] flex items-center gap-1">
             <span>⚡</span>
             <span>عرض محدود</span>
         </div>
@@ -71,10 +72,10 @@
         ])
     </div>
 
-    <!-- Product Image (9:16 Aspect Ratio with Top-Left Discount Badge) -->
-    <div class="relative w-full mb-3 rounded-2xl overflow-hidden group">
+    <!-- Product Image (4:6 Aspect Ratio with Top-Left Discount Badge) -->
+    <div class="relative w-full mb-2 rounded-2xl overflow-hidden group shrink-0">
         @if ($discountPercent > 0)
-            <span class="absolute top-3 left-3 z-10 bg-[#FFC000] text-black font-extrabold px-3 py-1.5 rounded-2xl text-xs shadow-sm">
+            <span class="absolute top-2.5 left-2.5 z-10 bg-[#FFC000] text-black font-extrabold px-2.5 py-1 rounded-xl text-xs shadow-sm">
                 -{{ $discountPercent }}%
             </span>
         @endif
@@ -82,7 +83,7 @@
         <a 
             href="{{ $productUrl }}" 
             class="w-full flex items-center justify-center bg-gray-50/80 dark:bg-gray-800/40 overflow-hidden"
-            style="aspect-ratio: 9 / 16; width: 100%;"
+            style="aspect-ratio: 4 / 6; width: 100%;"
         >
             <img 
                 src="{{ $imageUrl }}" 
