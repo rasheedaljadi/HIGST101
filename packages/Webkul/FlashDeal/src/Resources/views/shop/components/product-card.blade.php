@@ -82,17 +82,16 @@
         />
     </a>
 
-    <!-- Product Content & Pricing (Font size matching standard product cards text-base font-medium) -->
+    <!-- Product Content & Pricing -->
     <div class="text-center">
-        <a href="{{ $productUrl }}" class="block mb-1">
-            <h3 class="text-base font-medium max-sm:text-sm text-gray-800 dark:text-gray-100 mb-1 line-clamp-1 hover:text-[#001A54] dark:hover:text-[#FFC000] transition-colors" title="{{ $cleanName }}">
+        <!-- Title up to 3 lines (line-clamp-3) -->
+        <a href="{{ $productUrl }}" class="block mb-3 min-h-[3.6rem] flex items-center justify-center">
+            <h3 class="text-base font-medium max-sm:text-sm text-gray-800 dark:text-gray-100 line-clamp-3 leading-snug hover:text-[#001A54] dark:hover:text-[#FFC000] transition-colors" title="{{ $cleanName }}">
                 {{ $cleanName }}
             </h3>
         </a>
-        <p class="text-gray-500 dark:text-gray-400 text-xs mb-3 line-clamp-1">
-            شحن سريع - ضمان الجودة العالية
-        </p>
 
+        <!-- Pricing -->
         <div class="flex items-center justify-center gap-2 mb-4" dir="ltr">
             <span class="text-xl md:text-2xl font-bold text-[#001A54] dark:text-[#FFC000]">
                 {{ core()->currency($flashPrice) }}
