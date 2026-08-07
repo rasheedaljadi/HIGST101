@@ -31,6 +31,7 @@ return [
         Webkul\DataTransfer\Providers\ModuleServiceProvider::class,
         Webkul\OfflinePayments\Providers\ModuleServiceProvider::class,
         Webkul\Fulfillment\Providers\ModuleServiceProvider::class,
+        Webkul\FlashDeal\Providers\ModuleServiceProvider::class,
         Webkul\GDPR\Providers\ModuleServiceProvider::class,
         Webkul\Inventory\Providers\ModuleServiceProvider::class,
         Webkul\Marketing\Providers\ModuleServiceProvider::class,

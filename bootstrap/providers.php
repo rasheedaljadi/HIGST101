@@ -70,6 +70,7 @@ return [
     DebugBarServiceProvider::class,
     FPCServiceProvider::class,
     FulfillmentServiceProvider::class,
+    FlashDealServiceProvider::class,
     GDPRServiceProvider::class,
     ImageCacheServiceProvider::class,
     InstallerServiceProvider::class,

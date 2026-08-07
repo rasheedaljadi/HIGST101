@@ -107,7 +107,8 @@
             "Webkul\\Tax\\": "packages/Webkul/Tax/src",
             "Webkul\\Theme\\": "packages/Webkul/Theme/src",
             "Webkul\\User\\": "packages/Webkul/User/src",
-            "Webkul\\Wallet\\": "packages/Webkul/Wallet/src"
+            "Webkul\\Wallet\\": "packages/Webkul/Wallet/src",
+            "Webkul\\FlashDeal\\": "packages/Webkul/FlashDeal/src"
         }
     },
     "autoload-dev": {

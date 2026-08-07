@@ -276,9 +276,12 @@
                                 </div>
                             </div>
 
-                        </div>
-                    </div>
                 </div>
+
+                <!-- Flash Deals Section -->
+                @include('flash_deal::shop.components.flash-deals', [
+                    'deal' => app(\Webkul\FlashDeal\Repositories\FlashDealRepository::class)->getActiveDeals()->first()
+                ])
 
                 @break
             @case ($customization::STATIC_CONTENT)

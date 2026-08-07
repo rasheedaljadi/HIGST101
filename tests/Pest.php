@@ -39,6 +39,7 @@ uses(RazorpayTestCase::class)->in('../packages/Webkul/Razorpay/tests');
 uses(ShopTestCase::class)->in('../packages/Webkul/Shop/tests');
 uses(TestCase::class)->in('../packages/Webkul/Wallet/tests');
 uses(TestCase::class)->in('Feature/Wallet');
+uses(TestCase::class)->in('Feature/FlashDeal');
 
 /*
 |--------------------------------------------------------------------------
