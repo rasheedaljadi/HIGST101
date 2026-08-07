@@ -24,8 +24,8 @@
                     class="w-full h-full flex items-center justify-center overflow-hidden"
                 >
                     <x-shop::media.images.lazy
-                        class="w-full h-full object-contain bg-zinc-100 transition-all duration-300 group-hover:scale-105"
-                        style="aspect-ratio: 9 / 16; object-fit: contain;"
+                        class="w-full h-full object-cover bg-zinc-100 transition-all duration-300 group-hover:scale-105"
+                        style="aspect-ratio: 9 / 16; object-fit: cover;"
                         ::src="product.base_image.medium_image_url"
                         ::srcset="`
                             ${product.base_image.small_image_url} 150w,
@@ -202,8 +202,8 @@
 
                 <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full flex items-center justify-center overflow-hidden">
                     <x-shop::media.images.lazy
-                        class="w-full h-full object-contain bg-zinc-100 transition-all duration-300 group-hover:scale-105"
-                        style="aspect-ratio: 9 / 16; object-fit: contain;"
+                        class="w-full h-full object-cover bg-zinc-100 transition-all duration-300 group-hover:scale-105"
+                        style="aspect-ratio: 9 / 16; object-fit: cover;"
                         ::src="product.base_image.medium_image_url"
                         ::key="product.id"
                         ::index="product.id"
