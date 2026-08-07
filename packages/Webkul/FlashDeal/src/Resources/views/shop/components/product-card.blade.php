@@ -47,7 +47,7 @@
     x-data="{ expired: false }"
     x-show="!expired"
     x-transition:leave="transition ease-in duration-300 transform scale-95 opacity-0"
-    @countdown-expired.window="if ($event.detail.productId == '{{ $productEntity->id }}') expired = true"
+    @countdown-expired.window="$event.detail.productId == '{{ $productEntity->id }}' ? expired = true : null"
     class="w-full flex flex-col justify-between bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative group border border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white overflow-hidden"
 >
     <!-- Dynamic Badge if active -->
