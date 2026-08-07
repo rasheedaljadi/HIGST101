@@ -28,7 +28,15 @@ class FlashDealRepository extends Repository
             ->where('status', 1)
             ->where('starts_at', '<=', $now)
             ->where('ends_at', '>=', $now)
-            ->with(['products.product'])
+            ->with(['products' => function ($query) use ($now) {
+                $query->where(function ($q) use ($now) {
+                    $q->whereNull('offer_end_time')
+                        ->orWhere('offer_end_time', '>', $now);
+                })
+                    ->orderByRaw('COALESCE(offer_end_time, "9999-12-31") ASC')
+                    ->orderBy('sort_order', 'asc')
+                    ->with(['product']);
+            }])
             ->orderBy('starts_at', 'asc')
             ->get();
     }

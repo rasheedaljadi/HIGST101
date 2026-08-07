@@ -12,5 +12,7 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => config('app.admin_ur
         Route::get('edit/{id}', 'edit')->name('admin.marketing.promotions.flash_deals.edit');
         Route::put('edit/{id}', 'update')->name('admin.marketing.promotions.flash_deals.update');
         Route::delete('edit/{id}', 'destroy')->name('admin.marketing.promotions.flash_deals.delete');
+        Route::get('{id}/products', 'getDealProducts')->name('admin.marketing.promotions.flash_deals.get_products');
+        Route::post('{id}/products', 'saveDealProducts')->name('admin.marketing.promotions.flash_deals.save_products');
     });
 });

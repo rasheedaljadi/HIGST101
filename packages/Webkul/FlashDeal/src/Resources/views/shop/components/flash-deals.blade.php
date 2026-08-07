@@ -1,188 +1,120 @@
-@if (! empty($deal) && $deal->products->count() > 0)
-    @php
-        $productImageHelper = app(\Webkul\Product\ProductImage::class);
-        $endsAtIso = $deal->ends_at?->toISOString() ?? now()->addHours(24)->toISOString();
-    @endphp
+@props([
+    'deal' => null,
+])
 
+@php
+    $activeDeal = $deal ?? app(\Webkul\FlashDeal\Repositories\FlashDealRepository::class)->getActiveDeals()->first();
+@endphp
+
+@if ($activeDeal && $activeDeal->products->count() > 0)
     <div 
         x-data="{
-            endsAt: new Date('{{ $endsAtIso }}').getTime(),
-            hours: '00',
-            minutes: '00',
-            seconds: '00',
-            timer: null,
-            init() {
-                this.updateTimer();
-                this.timer = setInterval(() => this.updateTimer(), 1000);
-            },
-            updateTimer() {
-                const now = new Date().getTime();
-                const distance = this.endsAt - now;
-                
-                if (distance < 0) {
-                    this.hours = '00';
-                    this.minutes = '00';
-                    this.seconds = '00';
-                    if (this.timer) clearInterval(this.timer);
-                    return;
+            scrollNext() {
+                const el = this.$refs.carouselTrack;
+                if (el) {
+                    el.scrollBy({ left: -320, behavior: 'smooth' });
                 }
-
-                const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((distance % (1000 * 60)) / 1000);
-
-                this.hours = h < 10 ? '0' + h : '' + h;
-                this.minutes = m < 10 ? '0' + m : '' + m;
-                this.seconds = s < 10 ? '0' + s : '' + s;
+            },
+            scrollPrev() {
+                const el = this.$refs.carouselTrack;
+                if (el) {
+                    el.scrollBy({ left: 320, behavior: 'smooth' });
+                }
             }
         }"
-        x-init="init()"
-        class="py-10 bg-gradient-to-r from-[#001845] via-[#002060] to-[#0B2562] text-white relative overflow-hidden my-8 rounded-3xl shadow-2xl mx-4 md:mx-6"
+        class="w-full my-8 py-8 bg-gradient-to-b from-gray-50/60 via-white to-gray-50/40 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 border-y border-gray-100 dark:border-gray-800 select-none overflow-hidden relative"
     >
-        <!-- Background Decorative Element -->
-        <div class="absolute -top-12 -right-12 w-64 h-64 bg-[#FFC000]/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-12 -left-12 w-64 h-64 bg-[#FFB900]/10 rounded-full blur-3xl pointer-events-none"></div>
+        <!-- Background subtle decorative pattern -->
+        <div class="absolute inset-0 bg-[radial-gradient(#002060_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.03] dark:opacity-[0.07] pointer-events-none"></div>
 
-        <div class="max-w-[1320px] mx-auto px-4 md:px-8 relative z-10">
-            <!-- Section Header: Title & Live Countdown Timer -->
-            <div class="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 border-b border-white/10 pb-6">
+        <div class="max-w-[1440px] mx-auto px-4 md:px-8 relative z-10">
+            
+            <!-- Top Section Row: Promotional Banner (60%) + Offer Information Area (40%) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-stretch">
                 
-                <!-- Right: Section Title & Flash Icon -->
-                <div class="flex items-center gap-3 text-right">
-                    <div class="w-12 h-12 rounded-2xl bg-[#FFC000] text-[#002060] flex items-center justify-center shadow-lg shadow-[#FFC000]/30 animate-pulse">
-                        <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24">
-                            <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="text-2xl md:text-3xl font-black tracking-wide text-white">
-                            {{ $deal->title ?? 'العروض السريعة' }}
-                        </h2>
-                        <p class="text-xs md:text-sm text-gray-300 font-medium mt-0.5">
-                            خصومات استثنائية لفترة محدودة جداً - سارع بالشراء قبل انتهاء الكمية!
-                        </p>
-                    </div>
+                <!-- Promotional Banner (Top Left ~60%) -->
+                <div class="lg:col-span-7 flex">
+                    <x-flash_deal::shop.components.banner 
+                        :title="$activeDeal->title ?? 'عروض خاطفة مميزة'"
+                        :subtitle="$activeDeal->subtitle ?? 'خصومات استثنائية لفترة محدودة جداً'"
+                        :description="$activeDeal->description ?? 'اكتشف أرقى المنتجات بأسعار حصرية وحسومات فائقة قبل نفاد الكمية'"
+                        :banner-image="$activeDeal->banner_image"
+                        :background-image="$activeDeal->background_image"
+                        :accent-color="$activeDeal->accent_color ?? '#FFC000'"
+                        :secondary-color="$activeDeal->secondary_color ?? '#002060'"
+                    />
                 </div>
 
-                <!-- Left: Live Countdown Timer Widget -->
-                <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md px-5 py-2.5 rounded-2xl border border-white/15 shadow-inner">
-                    <span class="text-xs font-extrabold text-[#FFC000] ml-2">ينتهي العرض خلال:</span>
-                    
-                    <!-- Hours -->
-                    <div class="flex flex-col items-center">
-                        <span class="text-xl font-black text-white bg-[#001040] px-2.5 py-1 rounded-lg min-w-[38px] text-center shadow" x-text="hours">00</span>
-                        <span class="text-[10px] text-gray-300 font-bold mt-0.5">ساعة</span>
-                    </div>
-                    <span class="text-xl font-bold text-[#FFC000] mb-3">:</span>
-
-                    <!-- Minutes -->
-                    <div class="flex flex-col items-center">
-                        <span class="text-xl font-black text-white bg-[#001040] px-2.5 py-1 rounded-lg min-w-[38px] text-center shadow" x-text="minutes">00</span>
-                        <span class="text-[10px] text-gray-300 font-bold mt-0.5">دقيقة</span>
-                    </div>
-                    <span class="text-xl font-bold text-[#FFC000] mb-3">:</span>
-
-                    <!-- Seconds -->
-                    <div class="flex flex-col items-center">
-                        <span class="text-xl font-black text-white bg-[#001040] px-2.5 py-1 rounded-lg min-w-[38px] text-center shadow text-[#FFC000]" x-text="seconds">00</span>
-                        <span class="text-[10px] text-gray-300 font-bold mt-0.5">ثانية</span>
-                    </div>
+                <!-- Offer Information Area (Top Right ~40%) -->
+                <div class="lg:col-span-5 flex">
+                    <x-flash_deal::shop.components.info-area 
+                        :section-title="$activeDeal->title ?? 'العروض السريعة'"
+                        :promotional-message="$activeDeal->promotional_message ?? '🔥 وفر حتى 60% على تشكيلة المنتجات الحصرية'"
+                        :offer-description="$activeDeal->offer_description ?? 'سارع بالشراء قبل انتهاء الكمية المخصصة لهذه العروض الحصرية!'"
+                        :view-all-url="$activeDeal->view_all_url ?? route('shop.home.index')"
+                    />
                 </div>
 
             </div>
 
-            <!-- Products Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                @foreach ($deal->products as $dealProduct)
-                    @php
-                        $product = $dealProduct->product;
-                        if (! $product) continue;
+            <!-- Products Slider / Grid Section Header & Navigation Controls -->
+            <div class="relative group/carousel">
+                
+                <!-- Navigation Prev Button (Right side in RTL) -->
+                <button 
+                    type="button"
+                    @click="scrollPrev()"
+                    class="absolute -right-3 md:-right-5 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-2xl border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-[#002060] hover:text-white dark:hover:bg-[#FFC000] dark:hover:text-gray-950 transition-all duration-200 focus:outline-none"
+                    aria-label="Previous Products"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
 
-                        $imageUrl = $productImageHelper->getProductBaseImage($product)['medium_image_url'] ?? bagisto_asset('images/medium-product-placeholder.webp', 'shop');
-                        $productUrl = route('shop.product_or_category.index', $product->url_key);
-                        
-                        $originalPrice = $product->price;
-                        $flashPrice = $dealProduct->flash_price;
+                <!-- Navigation Next Button (Left side in RTL) -->
+                <button 
+                    type="button"
+                    @click="scrollNext()"
+                    class="absolute -left-3 md:-left-5 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-2xl border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-[#002060] hover:text-white dark:hover:bg-[#FFC000] dark:hover:text-gray-950 transition-all duration-200 focus:outline-none"
+                    aria-label="Next Products"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
 
-                        $discountPercent = 0;
-                        if ($originalPrice > $flashPrice && $originalPrice > 0) {
-                            $discountPercent = round((($originalPrice - $flashPrice) / $originalPrice) * 100);
-                        }
+                <!-- Products Carousel Track (Desktop: 5 items visible per row) -->
+                <div 
+                    x-ref="carouselTrack"
+                    class="flex gap-4 overflow-x-auto scroll-smooth py-4 px-1 no-scrollbar"
+                    style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;"
+                >
+                    @foreach ($activeDeal->products as $dealProduct)
+                        @if (! $dealProduct->product) @continue @endif
 
-                        $allocationQty = max(1, (int) $dealProduct->allocation_qty);
-                        $soldQty = (int) $dealProduct->sold_qty;
-                        $soldPercent = min(100, round(($soldQty / $allocationQty) * 100));
-                    @endphp
-
-                    <div class="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between relative group text-gray-900 dark:text-white border border-gray-100 dark:border-gray-800">
-                        
-                        <!-- Discount Badge (Top Right) -->
-                        @if ($discountPercent > 0)
-                            <div class="absolute top-3 right-3 bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-md z-10 flex items-center gap-0.5">
-                                <span>خصم</span>
-                                <span>{{ $discountPercent }}%</span>
-                            </div>
-                        @endif
-
-                        <!-- Product Image Container -->
-                        <a href="{{ $productUrl }}" class="block w-full h-44 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-800 relative mb-3 group-hover:scale-[1.02] transition-transform duration-300">
-                            <img 
-                                src="{{ $imageUrl }}" 
-                                alt="{{ $product->name }}"
-                                class="w-full h-full object-contain p-2"
-                                loading="lazy"
+                        <!-- Product Card Item: Desktop 5 cols (20%), Laptop 4 cols (25%), Tablet 3 cols (33.33%), Mobile 2 cols (50%) -->
+                        <div class="w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.75rem)] lg:w-[calc(25%-0.75rem)] xl:w-[calc(20%-0.8rem)] flex-shrink-0 snap-start flex">
+                            <x-flash_deal::shop.components.product-card 
+                                :deal-product="$dealProduct"
                             />
-                        </a>
-
-                        <!-- Product Name -->
-                        <a href="{{ $productUrl }}" class="block mb-2">
-                            <h3 class="text-sm font-bold text-gray-800 dark:text-gray-100 line-clamp-2 hover:text-[#002060] dark:hover:text-[#FFC000] transition-colors leading-snug">
-                                {{ $product->name }}
-                            </h3>
-                        </a>
-
-                        <!-- Pricing Container -->
-                        <div class="flex items-baseline gap-2 mb-3">
-                            <span class="text-lg font-black text-red-600 dark:text-red-400">
-                                {{ core()->currency($flashPrice) }}
-                            </span>
-
-                            @if ($originalPrice > $flashPrice)
-                                <span class="text-xs text-gray-400 line-through font-semibold">
-                                    {{ core()->currency($originalPrice) }}
-                                </span>
-                            @endif
                         </div>
+                    @endforeach
+                </div>
 
-                        <!-- FOMO Progress Bar -->
-                        <div class="mt-auto">
-                            <div class="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
-                                <span>مباع: {{ $soldQty }} من {{ $allocationQty }}</span>
-                                <span class="text-amber-600 dark:text-amber-400 font-extrabold">{{ $soldPercent }}%</span>
-                            </div>
-
-                            <div class="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden p-0.5 border border-gray-200 dark:border-gray-700">
-                                <div 
-                                    class="h-full bg-gradient-to-r from-[#FFC000] to-amber-500 rounded-full transition-all duration-500"
-                                    style="width: {{ $soldPercent }}%"
-                                ></div>
-                            </div>
-                        </div>
-
-                        <!-- Buy Button -->
-                        <a 
-                            href="{{ $productUrl }}" 
-                            class="mt-4 w-full bg-[#002060] hover:bg-[#001440] text-white font-bold py-2.5 px-4 rounded-xl text-center text-xs transition-colors duration-200 flex items-center justify-center gap-1.5 shadow-md"
-                        >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                            </svg>
-                            <span>اشتري الآن قبل نفاد الكمية</span>
-                        </a>
-
-                    </div>
-                @endforeach
             </div>
+
         </div>
     </div>
+
+    <!-- Custom CSS for Hiding Scrollbars -->
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
 @endif

@@ -18,8 +18,14 @@ class OrderPlacedListener
             $now = Carbon::now();
 
             foreach ($order->items as $item) {
-                // Find matching active flash deal product for this order item
-                $flashDealProduct = FlashDealProduct::where('product_id', $item->product_id)
+                $productIds = [$item->product_id];
+
+                if (! empty($item->product->parent_id)) {
+                    $productIds[] = $item->product->parent_id;
+                }
+
+                // Find matching active flash deal product for this order item or its parent product
+                $flashDealProduct = FlashDealProduct::whereIn('product_id', $productIds)
                     ->whereHas('deal', function ($query) use ($now) {
                         $query->where('status', 1)
                             ->where('starts_at', '<=', $now)
@@ -32,7 +38,7 @@ class OrderPlacedListener
 
                     $flashDealProduct->increment('sold_qty', $qtyOrdered);
 
-                    Log::info("FlashDeal: Incremented sold_qty for product #{$item->product_id} by {$qtyOrdered}");
+                    Log::info("FlashDeal: Incremented sold_qty for deal product #{$flashDealProduct->id} (ordered item #{$item->product_id}) by {$qtyOrdered}");
                 }
             }
         } catch (\Throwable $e) {

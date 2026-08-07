@@ -27,6 +27,15 @@ class FlashDeal extends Model implements FlashDealContract
      */
     protected $fillable = [
         'title',
+        'subtitle',
+        'description',
+        'banner_image',
+        'background_image',
+        'accent_color',
+        'secondary_color',
+        'promotional_message',
+        'offer_description',
+        'view_all_url',
         'status',
         'starts_at',
         'ends_at',

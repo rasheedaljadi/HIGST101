@@ -32,6 +32,9 @@ class FlashDealProduct extends Model implements FlashDealProductContract
         'flash_price',
         'allocation_qty',
         'sold_qty',
+        'offer_end_time',
+        'badge',
+        'sort_order',
     ];
 
     /**
@@ -43,7 +46,16 @@ class FlashDealProduct extends Model implements FlashDealProductContract
         'flash_price' => 'float',
         'allocation_qty' => 'integer',
         'sold_qty' => 'integer',
+        'offer_end_time' => 'datetime',
     ];
+
+    /**
+     * Get effective end time (individual offer_end_time or deal ends_at fallback).
+     */
+    public function getEffectiveEndTimeAttribute()
+    {
+        return $this->offer_end_time ?? $this->deal?->ends_at;
+    }
 
     /**
      * Get the flash deal that owns the product allocation.

@@ -25,6 +25,9 @@ class FlashDealServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
         $this->loadRoutesFrom(__DIR__.'/../Routes/admin-routes.php');
+        if (file_exists(__DIR__.'/../Routes/shop-routes.php')) {
+            $this->loadRoutesFrom(__DIR__.'/../Routes/shop-routes.php');
+        }
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'flash_deal');
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'flashdeal');
     }

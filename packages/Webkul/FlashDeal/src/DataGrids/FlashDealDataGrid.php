@@ -86,8 +86,17 @@ class FlashDealDataGrid extends DataGrid
     {
         if (bouncer()->hasPermission('marketing.promotions.flash_deals')) {
             $this->addAction([
+                'icon' => 'icon-product',
+                'title' => 'إدارة المنتجات',
+                'method' => 'GET',
+                'url' => function ($row) {
+                    return route('admin.marketing.promotions.flash_deals.get_products', $row->id);
+                },
+            ]);
+
+            $this->addAction([
                 'icon' => 'icon-edit',
-                'title' => 'تعديل',
+                'title' => 'تعديل العرض',
                 'method' => 'GET',
                 'url' => function ($row) {
                     return route('admin.marketing.promotions.flash_deals.edit', $row->id);
@@ -96,7 +105,7 @@ class FlashDealDataGrid extends DataGrid
 
             $this->addAction([
                 'icon' => 'icon-delete',
-                'title' => 'حذف',
+                'title' => 'حذف العرض',
                 'method' => 'DELETE',
                 'url' => function ($row) {
                     return route('admin.marketing.promotions.flash_deals.delete', $row->id);
