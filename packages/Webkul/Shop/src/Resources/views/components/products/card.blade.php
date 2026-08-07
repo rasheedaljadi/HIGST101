@@ -14,18 +14,18 @@
             class="1180:transtion-all group w-full rounded-md 1180:relative 1180:grid 1180:content-start 1180:overflow-hidden 1180:duration-300 1180:hover:shadow-[0_5px_10px_rgba(0,0,0,0.1)]"
             v-if="mode != 'list'"
         >
-            <div class="relative w-full aspect-[4/6] overflow-hidden rounded-lg bg-zinc-100 flex items-center justify-center" style="aspect-ratio: 4 / 6;">
+            <div class="relative w-full aspect-square overflow-hidden rounded-lg bg-white flex items-center justify-center p-2" style="aspect-ratio: 1 / 1;">
                 {!! view_render_event('bagisto.shop.components.products.card.image.before') !!}
 
                 <!-- Product Image -->
                 <a
                     :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)"
                     :aria-label="product.name + ' '"
-                    class="w-full h-full flex items-center justify-center overflow-hidden"
+                    class="w-full h-full flex items-center justify-center overflow-hidden bg-white"
                 >
                     <x-shop::media.images.lazy
-                        class="w-full h-full object-cover bg-zinc-100 transition-all duration-300 group-hover:scale-105"
-                        style="aspect-ratio: 4 / 6; object-fit: cover;"
+                        class="w-full h-full object-contain object-center bg-white transition-all duration-300 group-hover:scale-105"
+                        style="aspect-ratio: 1 / 1; object-fit: contain;"
                         ::src="product.base_image.medium_image_url"
                         ::srcset="`
                             ${product.base_image.small_image_url} 150w,
@@ -35,7 +35,7 @@
                         ::key="product.id"
                         ::index="product.id"
                         width="291"
-                        height="436"
+                        height="291"
                         ::alt="product.name"
                     />
                 </a>
