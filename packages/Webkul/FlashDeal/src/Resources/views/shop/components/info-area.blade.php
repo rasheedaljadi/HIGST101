@@ -1,9 +1,6 @@
 @props([
     'sectionTitle' => 'تنتهي العروض خلال',
     'endsAt' => null,
-    'promotionalMessage' => null,
-    'offerDescription' => null,
-    'viewAllUrl' => route('shop.home.index'),
 ])
 
 @php
@@ -47,47 +44,57 @@
         }
     }"
     x-init="initTimer()"
-    class="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.2rem] p-6 shadow-xl flex flex-col justify-between min-h-[170px] relative overflow-hidden"
+    class="w-full flex flex-col items-center pl-0 lg:pl-6"
 >
-    <!-- Header Title with Lightning Bolts -->
-    <div class="flex items-center justify-center gap-2 text-base md:text-lg font-black text-[#002060] dark:text-white mb-3">
-        <span class="text-[#FFC000] text-xl animate-pulse">⚡</span>
+    <!-- Title -->
+    <h2 class="text-2xl font-bold text-[#1e3a8a] dark:text-white mb-6 flex items-center gap-2">
+        <span class="text-[#fbbf24]">⚡</span>
         <span>{{ $sectionTitle }}</span>
-        <span class="text-[#FFC000] text-xl animate-pulse">⚡</span>
+        <span class="text-[#fbbf24]">⚡</span>
+    </h2>
+
+    <!-- 4 Timer Boxes (LTR structure for numbers: Days, Hours, Minutes, Seconds) -->
+    <div class="flex gap-3 md:gap-4 mb-6 text-center" dir="ltr">
+        <!-- Days -->
+        <div class="flex flex-col items-center">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#1e3a8a] dark:text-[#fbbf24] border border-gray-100 dark:border-gray-700 font-mono" x-text="days">
+                02
+            </div>
+            <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">يوم</span>
+        </div>
+
+        <!-- Hours -->
+        <div class="flex flex-col items-center">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#1e3a8a] dark:text-[#fbbf24] border border-gray-100 dark:border-gray-700 font-mono" x-text="hours">
+                14
+            </div>
+            <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">ساعة</span>
+        </div>
+
+        <!-- Minutes -->
+        <div class="flex flex-col items-center">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#1e3a8a] dark:text-[#fbbf24] border border-gray-100 dark:border-gray-700 font-mono" x-text="minutes">
+                36
+            </div>
+            <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">دقيقة</span>
+        </div>
+
+        <!-- Seconds -->
+        <div class="flex flex-col items-center">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#1e3a8a] dark:text-[#fbbf24] border border-gray-100 dark:border-gray-700 font-mono" x-text="seconds">
+                58
+            </div>
+            <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">ثانية</span>
+        </div>
     </div>
 
-    <!-- 4 Countdown Box Widgets (Days, Hours, Minutes, Seconds) -->
-    <div class="grid grid-cols-4 gap-2.5 md:gap-3 text-center my-auto">
-        <!-- Seconds (ثانية) -->
-        <div class="bg-gray-50/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/80 rounded-2xl p-2.5 md:p-3 shadow-sm transition-transform hover:scale-105">
-            <span class="text-2xl md:text-3xl font-black text-[#002060] dark:text-[#FFC000] block leading-none font-mono" x-text="seconds">00</span>
-            <span class="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block mt-1.5">ثانية</span>
-        </div>
-
-        <!-- Minutes (دقيقة) -->
-        <div class="bg-gray-50/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/80 rounded-2xl p-2.5 md:p-3 shadow-sm transition-transform hover:scale-105">
-            <span class="text-2xl md:text-3xl font-black text-[#002060] dark:text-[#FFC000] block leading-none font-mono" x-text="minutes">00</span>
-            <span class="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block mt-1.5">دقيقة</span>
-        </div>
-
-        <!-- Hours (ساعة) -->
-        <div class="bg-gray-50/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/80 rounded-2xl p-2.5 md:p-3 shadow-sm transition-transform hover:scale-105">
-            <span class="text-2xl md:text-3xl font-black text-[#002060] dark:text-[#FFC000] block leading-none font-mono" x-text="hours">00</span>
-            <span class="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block mt-1.5">ساعة</span>
-        </div>
-
-        <!-- Days (يوم) -->
-        <div class="bg-gray-50/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/80 rounded-2xl p-2.5 md:p-3 shadow-sm transition-transform hover:scale-105">
-            <span class="text-2xl md:text-3xl font-black text-[#002060] dark:text-[#FFC000] block leading-none font-mono" x-text="days">00</span>
-            <span class="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block mt-1.5">يوم</span>
-        </div>
-    </div>
-
-    <!-- Bottom Decorative Yellow Progress Line with Flash Handle -->
-    <div class="relative w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-visible flex items-center mt-3">
-        <div class="h-full bg-[#FFC000] rounded-full w-5/6"></div>
-        <div class="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#FFC000] border-2 border-white dark:border-gray-900 shadow-md flex items-center justify-center text-gray-950 text-[10px] font-black">
-            ⚡
+    <!-- Progress Track with Flash Indicator -->
+    <div class="w-full flex items-center gap-4 relative mt-2 max-w-xs md:max-w-sm">
+        <div class="relative w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-visible">
+            <div class="h-full bg-[#fbbf24] rounded-full w-4/5"></div>
+            <div class="absolute left-0 top-1/2 -translate-y-1/2 -ml-2 w-8 h-8 bg-[#fbbf24] rounded-full shadow-md flex items-center justify-center text-white text-sm font-bold">
+                ⚡
+            </div>
         </div>
     </div>
 </div>

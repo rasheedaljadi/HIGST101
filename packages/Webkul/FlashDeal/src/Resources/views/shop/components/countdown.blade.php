@@ -13,7 +13,6 @@
         hours: '00',
         minutes: '00',
         seconds: '00',
-        expired: false,
         timer: null,
         initTimer() {
             this.calculate();
@@ -27,7 +26,6 @@
                 this.hours = '00';
                 this.minutes = '00';
                 this.seconds = '00';
-                this.expired = true;
                 if (this.timer) clearInterval(this.timer);
                 $dispatch('countdown-expired', { productId: '{{ $productId }}' });
                 return;
@@ -43,8 +41,8 @@
         }
     }"
     x-init="initTimer()"
-    class="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-gray-200/80 dark:border-gray-700 font-mono shadow-inner"
+    class="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm font-medium"
 >
-    <span class="text-amber-500 animate-pulse text-[11px]">🕒</span>
-    <span x-text="hours + ':' + minutes + ':' + seconds">00:00:00</span>
+    <span dir="ltr" class="font-mono" x-text="hours + ':' + minutes + ':' + seconds">14:36:58</span>
+    <span>🕒</span>
 </div>

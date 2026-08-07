@@ -1,6 +1,7 @@
 @props([
     'product' => null,
     'dealProduct' => null,
+    'index' => 0,
 ])
 
 @php
@@ -37,9 +38,8 @@
         $discountPercent = (int) round((($originalPrice - $flashPrice) / $originalPrice) * 100);
     }
 
-    $stock = max(1, $dealProduct?->allocation_qty ?? 10);
-    $soldCount = max(0, $dealProduct?->sold_qty ?? 0);
-    $badgeText = $dealProduct?->badge ?? ($discountPercent >= 35 ? '🔥 الأكثر مبيعاً' : null);
+    $isBestSeller = ($index === 2) || ($discountPercent >= 35) || ($dealProduct?->badge === '🔥 الأكثر مبيعاً');
+    $badgeText = $dealProduct?->badge ?? ($isBestSeller ? 'الأكثر مبيعاً' : null);
     $endTime = $dealProduct?->offer_end_time ?? $dealProduct?->deal?->ends_at;
 @endphp
 
@@ -48,74 +48,66 @@
     x-show="!expired"
     x-transition:leave="transition ease-in duration-300 transform scale-95 opacity-0"
     @countdown-expired.window="$event.detail.productId == '{{ $productEntity->id }}' ? expired = true : null"
-    class="w-full flex flex-col justify-between bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative group border border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white overflow-hidden"
+    class="w-full bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-md hover:shadow-xl transition-all relative border {{ $isBestSeller ? 'border-2 border-[#fbbf24] transform lg:-translate-y-2 shadow-yellow-100 dark:shadow-none' : 'border-transparent' }} flex flex-col justify-between"
 >
-    <!-- Dynamic Badge if active -->
-    @if ($badgeText)
-        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#002060] text-[#FFC000] text-[10px] font-black px-3 py-0.5 rounded-full border border-[#FFC000]/40 shadow-md z-20 flex items-center gap-1 whitespace-nowrap">
-            <span>{{ $badgeText }}</span>
+    <!-- Featured "Best Seller" Badge -->
+    @if ($badgeText || $isBestSeller)
+        <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#1e3a8a] text-[#fbbf24] font-bold px-4 py-1 rounded-full text-xs flex items-center gap-1.5 whitespace-nowrap shadow-md z-20">
+            <span>{{ $badgeText ?? 'الأكثر مبيعاً' }}</span>
+            <span>🔥</span>
         </div>
     @endif
 
-    <!-- Top Row: Discount Pill & Live Countdown Timer -->
-    <div class="flex items-center justify-between w-full mb-3 pt-1 z-10">
-        <!-- Discount Badge -->
+    <!-- Top Card Bar: Discount & Countdown -->
+    <div class="flex justify-between items-center mb-4 {{ ($badgeText || $isBestSeller) ? 'mt-2' : '' }}">
         @if ($discountPercent > 0)
-            <div class="bg-[#FFC000] text-gray-950 text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-sm">
-                -{{ $discountPercent }}%
-            </div>
+            <span class="bg-[#fbbf24] text-[#1e3a8a] font-bold px-3 py-1 rounded-full text-sm shadow-sm">-{{ $discountPercent }}%</span>
         @else
             <div></div>
         @endif
 
-        <!-- Countdown Timer -->
         @include('flash_deal::shop.components.countdown', [
             'endTime' => $endTime,
             'productId' => $productEntity->id,
         ])
     </div>
 
-    <!-- Product Image Container -->
-    <a href="{{ $productUrl }}" class="block w-full h-36 md:h-40 rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800 relative mb-3 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center p-2">
+    <!-- Product Image -->
+    <a href="{{ $productUrl }}" class="h-48 mb-4 flex items-center justify-center p-2 group">
         <img 
             src="{{ $imageUrl }}" 
             alt="{{ $cleanName }}"
-            class="w-full h-full object-contain"
+            class="max-h-full max-w-full object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
         />
     </a>
 
-    <!-- Product Title -->
-    <a href="{{ $productUrl }}" class="block mb-1 text-right">
-        <h3 class="text-xs md:text-sm font-bold text-gray-900 dark:text-gray-100 line-clamp-1 hover:text-[#002060] dark:hover:text-[#FFC000] transition-colors leading-snug" title="{{ $cleanName }}">
-            {{ $cleanName }}
-        </h3>
-    </a>
+    <!-- Product Content & Pricing -->
+    <div class="text-center">
+        <a href="{{ $productUrl }}" class="block mb-1">
+            <h3 class="font-bold text-lg text-gray-800 dark:text-gray-100 mb-1 line-clamp-1 hover:text-[#1e3a8a] dark:hover:text-[#fbbf24] transition-colors" title="{{ $cleanName }}">
+                {{ $cleanName }}
+            </h3>
+        </a>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-1">
+            شحن سريع - ضمان الجودة العالية
+        </p>
 
-    <!-- Prices Row -->
-    <div class="flex items-baseline justify-start gap-2 mb-2">
-        <span class="text-base md:text-lg font-black text-[#002060] dark:text-[#FFC000]">
-            {{ core()->currency($flashPrice) }}
-        </span>
-
-        @if ($originalPrice > $flashPrice)
-            <span class="text-xs text-gray-400 line-through font-semibold">
-                {{ core()->currency($originalPrice) }}
+        <div class="flex items-center justify-center gap-2 mb-4" dir="ltr">
+            <span class="text-2xl font-bold text-[#1e3a8a] dark:text-[#fbbf24]">
+                {{ core()->currency($flashPrice) }}
             </span>
-        @endif
-    </div>
+            @if ($originalPrice > $flashPrice)
+                <span class="text-gray-400 line-through text-sm">
+                    {{ core()->currency($originalPrice) }}
+                </span>
+            @endif
+        </div>
 
-    <!-- Sales Progress Bar Component -->
-    @include('flash_deal::shop.components.progress-bar', [
-        'soldCount' => $soldCount,
-        'stock' => $stock,
-    ])
-
-    <!-- Add to Cart Button -->
-    <div class="mt-2 pt-1">
+        <!-- Add to Cart Button -->
         <a 
-            href="{{ $productUrl }}"
-            class="w-full bg-[#002060] hover:bg-[#001240] text-white font-extrabold py-2.5 px-4 rounded-2xl text-center text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+            href="{{ $productUrl }}" 
+            class="w-full {{ $isBestSeller ? 'bg-[#fbbf24] hover:bg-yellow-500 text-[#1e3a8a] shadow-lg shadow-yellow-200' : 'bg-[#1e3a8a] hover:bg-blue-800 text-white' }} font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow text-sm"
         >
             <span>أضف للسلة</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
