@@ -87,7 +87,9 @@ class FlashDealController extends Controller
     public function edit(int $id): View
     {
         $deal = $this->flashDealRepository->with(['products.product'])->findOrFail($id);
-        $products = $this->getAvailableProducts();
+        
+        $existingProductIds = $deal->products->pluck('product_id')->toArray();
+        $products = $this->getAvailableProducts($existingProductIds);
 
         return view('flash_deal::admin.edit', compact('deal', 'products'));
     }
@@ -136,6 +138,47 @@ class FlashDealController extends Controller
     }
 
     /**
+     * Search products for flash deal form autocomplete.
+     */
+    public function searchProducts(Request $request): JsonResponse
+    {
+        $term = trim($request->get('query', ''));
+
+        try {
+            $locale = core()->getRequestedLocaleCode();
+        } catch (\Throwable $e) {
+            $locale = app()->getLocale();
+        }
+
+        $products = DB::table('products')
+            ->leftJoin('product_flat', function ($join) use ($locale) {
+                $join->on('products.id', '=', 'product_flat.product_id')
+                    ->where('product_flat.locale', '=', $locale);
+            })
+            ->when($term, function ($query, $term) {
+                $query->where(function ($q) use ($term) {
+                    $q->where('products.id', 'like', "%{$term}%")
+                      ->orWhere('products.sku', 'like', "%{$term}%")
+                      ->orWhere('product_flat.name', 'like', "%{$term}%");
+                });
+            })
+            ->select('products.id', 'products.sku', 'product_flat.name', 'product_flat.price')
+            ->distinct()
+            ->limit(50)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id'    => $product->id,
+                    'sku'   => $product->sku,
+                    'name'  => ! empty($product->name) ? $product->name : $product->sku,
+                    'price' => (float) ($product->price ?? 0),
+                ];
+            });
+
+        return response()->json($products);
+    }
+
+    /**
      * Remove the specified flash deal from storage.
      */
     public function destroy(int $id): JsonResponse
@@ -150,9 +193,9 @@ class FlashDealController extends Controller
     }
 
     /**
-     * Helper to retrieve available products safely with locale names & prices.
+     * Helper to retrieve initial products safely with locale names & prices.
      */
-    protected function getAvailableProducts()
+    protected function getAvailableProducts(array $includeIds = [])
     {
         try {
             $locale = core()->getRequestedLocaleCode();
@@ -160,14 +203,21 @@ class FlashDealController extends Controller
             $locale = app()->getLocale();
         }
 
-        return DB::table('products')
+        $query = DB::table('products')
             ->leftJoin('product_flat', function ($join) use ($locale) {
                 $join->on('products.id', '=', 'product_flat.product_id')
                     ->where('product_flat.locale', '=', $locale);
             })
             ->select('products.id', 'products.sku', 'product_flat.name', 'product_flat.price')
-            ->distinct()
-            ->get()
+            ->distinct();
+
+        if (! empty($includeIds)) {
+            $query->whereIn('products.id', $includeIds);
+        } else {
+            $query->limit(50);
+        }
+
+        return $query->get()
             ->map(function ($product) {
                 return [
                     'id'    => $product->id,

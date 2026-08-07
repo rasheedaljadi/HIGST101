@@ -159,14 +159,14 @@
                             <span>المنتجات المشمولة في العرض السريع</span>
                         </h2>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            حدد المنتجات وسعر الخصم والكمية المتاحة للعرض (FOMO Allocation)
+                            ابحث عن المنتجات بالاسم أو الـ SKU، ثم حدد سعر الخصم والكمية المتاحة للعرض
                         </p>
                     </div>
 
                     <button 
                         type="button" 
                         @click="addItem"
-                        class="inline-flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-extrabold text-xs py-2 px-4 rounded-xl transition-all border border-amber-500/30 cursor-pointer"
+                        class="inline-flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-extrabold text-xs py-2.5 px-4 rounded-xl transition-all border border-amber-500/30 cursor-pointer shadow-sm"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
@@ -180,26 +180,69 @@
                     <div 
                         v-for="(item, index) in items" 
                         :key="index"
-                        class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 relative hover:border-amber-500/50 transition-colors"
+                        class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 relative hover:border-amber-500/40 transition-all"
                     >
                         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                             
-                            <!-- Product Select (5 cols) -->
-                            <div class="md:col-span-5">
+                            <!-- Product Search Combobox (6 cols) -->
+                            <div class="md:col-span-6 relative">
                                 <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
                                     اختيار المنتج <span class="text-red-500">*</span>
                                 </label>
-                                <select 
-                                    :name="'products[' + index + '][product_id]'" 
-                                    v-model="item.product_id" 
-                                    required
-                                    class="w-full text-xs font-semibold border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 shadow-sm"
-                                >
-                                    <option value="">-- اختر منتجاً من القائمة --</option>
-                                    <option v-for="p in productsList" :key="p.id" :value="p.id">
-                                        #@{{ p.id }} - @{{ p.name }} (@{{ p.sku }})
-                                    </option>
-                                </select>
+
+                                <!-- Hidden Input for Form Submission -->
+                                <input type="hidden" :name="'products[' + index + '][product_id]'" :value="item.product_id" required />
+
+                                <!-- Selected State View -->
+                                <div v-if="item.product_id && getProduct(item.product_id)" class="flex items-center justify-between bg-white dark:bg-gray-900 border border-amber-500/40 rounded-xl p-2.5 text-xs font-semibold shadow-sm">
+                                    <div class="truncate pr-2">
+                                        <span class="text-amber-600 dark:text-amber-400 font-bold">#@{{ getProduct(item.product_id).id }}</span>
+                                        <span class="text-gray-800 dark:text-gray-200 mx-1.5 font-bold">@{{ getProduct(item.product_id).name }}</span>
+                                        <span class="text-gray-400 text-[11px]">(SKU: @{{ getProduct(item.product_id).sku }})</span>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        @click="clearProductSelection(index)"
+                                        class="text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 font-bold underline shrink-0 px-2 cursor-pointer"
+                                    >
+                                        تغيير
+                                    </button>
+                                </div>
+
+                                <!-- Search Input Dropdown State -->
+                                <div v-else class="relative">
+                                    <div class="relative">
+                                        <input 
+                                            type="text" 
+                                            v-model="searchQueries[index]" 
+                                            @input="onSearchInput(index)"
+                                            @focus="openDropdown(index)"
+                                            placeholder="🔍 ابحث باسم المنتج، رقم الـ SKU أو ID..." 
+                                            class="w-full text-xs font-semibold border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 shadow-sm"
+                                        >
+                                        <span v-if="isSearching[index]" class="absolute left-3 top-3 text-xs text-amber-500 animate-spin">⌛</span>
+                                    </div>
+
+                                    <!-- Fast Compact Dropdown List -->
+                                    <div 
+                                        v-if="activeDropdown === index && getDropdownProducts(index).length > 0"
+                                        class="absolute z-50 w-full mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl p-1 divide-y divide-gray-100 dark:divide-gray-800"
+                                    >
+                                        <div 
+                                            v-for="p in getDropdownProducts(index)" 
+                                            :key="p.id"
+                                            @click="selectProduct(index, p)"
+                                            class="p-2.5 hover:bg-amber-500/10 dark:hover:bg-amber-500/20 rounded-lg cursor-pointer transition-colors flex items-center justify-between text-xs"
+                                        >
+                                            <div class="truncate">
+                                                <span class="font-bold text-amber-600 dark:text-amber-400">#@{{ p.id }}</span>
+                                                <span class="font-semibold text-gray-800 dark:text-gray-200 mx-1.5">@{{ p.name }}</span>
+                                                <span class="text-gray-400 text-[10px]">(@{{ p.sku }})</span>
+                                            </div>
+                                            <span class="text-emerald-600 dark:text-emerald-400 font-extrabold text-[11px] shrink-0 ml-2">$@{{ p.price }}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Flash Price Input (3 cols) -->
@@ -210,7 +253,7 @@
                                     </label>
                                     <span 
                                         v-if="item.product_id && getOriginalPrice(item.product_id)"
-                                        class="text-[10px] text-gray-400 line-through"
+                                        class="text-[10px] text-gray-400 line-through font-bold"
                                     >
                                         الأصلي: $@{{ getOriginalPrice(item.product_id) }}
                                     </span>
@@ -229,10 +272,10 @@
                                 </div>
                             </div>
 
-                            <!-- Allocation Quota Input (3 cols) -->
-                            <div class="md:col-span-3">
+                            <!-- Allocation Quota Input (2 cols) -->
+                            <div class="md:col-span-2">
                                 <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
-                                    الكمية المخصصة (Quota) <span class="text-red-500">*</span>
+                                    الكمية المخصصة <span class="text-red-500">*</span>
                                 </label>
                                 <input 
                                     type="number" 
@@ -307,10 +350,21 @@
                 },
 
                 data() {
+                    const initialMap = new Map();
+                    if (this.productsList) {
+                        this.productsList.forEach(p => initialMap.set(p.id, p));
+                    }
+
                     return {
+                        allProductsMap: initialMap,
                         items: this.initialItems && this.initialItems.length ? JSON.parse(JSON.stringify(this.initialItems)) : [
                             { product_id: '', flash_price: '', allocation_qty: 50, sold_qty: 0 }
-                        ]
+                        ],
+                        searchQueries: {},
+                        searchResults: {},
+                        activeDropdown: null,
+                        isSearching: {},
+                        debounceTimers: {}
                     };
                 },
 
@@ -326,7 +380,8 @@
                     },
 
                     getProduct(id) {
-                        return this.productsList.find(p => p.id == id);
+                        if (!id) return null;
+                        return this.allProductsMap.get(parseInt(id)) || this.productsList.find(p => p.id == id);
                     },
 
                     getOriginalPrice(id) {
@@ -340,6 +395,61 @@
                             return Math.round(((orig - flashPrice) / orig) * 100);
                         }
                         return 0;
+                    },
+
+                    openDropdown(index) {
+                        this.activeDropdown = index;
+                        if (!this.searchResults[index]) {
+                            this.searchResults[index] = this.productsList.slice(0, 30);
+                        }
+                    },
+
+                    getDropdownProducts(index) {
+                        if (this.searchResults[index] && this.searchResults[index].length > 0) {
+                            return this.searchResults[index];
+                        }
+                        return this.productsList.slice(0, 30);
+                    },
+
+                    selectProduct(index, product) {
+                        this.items[index].product_id = product.id;
+                        this.allProductsMap.set(product.id, product);
+                        this.activeDropdown = null;
+                        this.searchQueries[index] = '';
+                    },
+
+                    clearProductSelection(index) {
+                        this.items[index].product_id = '';
+                        this.searchQueries[index] = '';
+                        this.openDropdown(index);
+                    },
+
+                    onSearchInput(index) {
+                        const query = (this.searchQueries[index] || '').trim();
+                        this.activeDropdown = index;
+
+                        if (this.debounceTimers[index]) {
+                            clearTimeout(this.debounceTimers[index]);
+                        }
+
+                        if (!query) {
+                            this.searchResults[index] = this.productsList.slice(0, 30);
+                            return;
+                        }
+
+                        this.isSearching[index] = true;
+                        this.debounceTimers[index] = setTimeout(() => {
+                            fetch(`{{ route('admin.marketing.promotions.flash_deals.search_products') }}?query=${encodeURIComponent(query)}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    this.searchResults[index] = data;
+                                    data.forEach(p => this.allProductsMap.set(p.id, p));
+                                    this.isSearching[index] = false;
+                                })
+                                .catch(() => {
+                                    this.isSearching[index] = false;
+                                });
+                        }, 250);
                     }
                 }
             });
