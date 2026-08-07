@@ -72,12 +72,16 @@
         ])
     </div>
 
-    <!-- Product Image -->
-    <a href="{{ $productUrl }}" class="h-44 mb-3 flex items-center justify-center p-2 group">
+    <!-- Product Image (Fixed 16:9 Aspect Ratio Container, Containing Entire Image) -->
+    <a 
+        href="{{ $productUrl }}" 
+        class="w-full mb-3 flex items-center justify-center p-2 group bg-gray-50/80 dark:bg-gray-800/40 rounded-xl overflow-hidden"
+        style="aspect-ratio: 16 / 9; width: 100%;"
+    >
         <img 
             src="{{ $imageUrl }}" 
             alt="{{ $cleanName }}"
-            class="max-h-full max-w-full object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300"
+            class="w-full h-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
         />
     </a>
