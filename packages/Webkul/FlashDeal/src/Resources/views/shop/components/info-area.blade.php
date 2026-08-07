@@ -1,63 +1,93 @@
 @props([
-    'sectionTitle' => 'عروض سريعة',
-    'promotionalMessage' => '🔥 وفر حتى 60% على أحدث التشكيلات الحصرية!',
-    'offerDescription' => 'عروض فائقة السرعة لفترة محدودة، اغتنم الفرصة الآن قبل نفاذ الكميات المتاحة!',
+    'sectionTitle' => 'تنتهي العروض خلال',
+    'endsAt' => null,
+    'promotionalMessage' => null,
+    'offerDescription' => null,
     'viewAllUrl' => route('shop.home.index'),
 ])
 
-<div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 md:p-8 shadow-lg flex flex-col justify-between h-full relative overflow-hidden">
-    <!-- Subtle top right glow line -->
-    <div class="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-[#002060] via-[#FFC000] to-[#002060]"></div>
+@php
+    $isoEndsAt = $endsAt ? \Illuminate\Support\Carbon::parse($endsAt)->toISOString() : now()->addHours(24)->toISOString();
+@endphp
 
-    <!-- Section Header Row -->
-    <div class="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
-        <!-- Title & Icon -->
-        <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-full bg-[#FFC000]/20 text-[#002060] dark:text-[#FFC000] flex items-center justify-center font-bold text-sm shrink-0">
-                ⚡
-            </div>
-            <h3 class="text-xl md:text-2xl font-black text-[#002060] dark:text-white tracking-wide">
-                {{ $sectionTitle }}
-            </h3>
-        </div>
+<div 
+    x-data="{
+        endsAtMs: new Date('{{ $isoEndsAt }}').getTime(),
+        days: '00',
+        hours: '00',
+        minutes: '00',
+        seconds: '00',
+        timer: null,
+        initTimer() {
+            this.update();
+            this.timer = setInterval(() => this.update(), 1000);
+        },
+        update() {
+            const now = new Date().getTime();
+            const distance = this.endsAtMs - now;
 
-        <!-- "View All Offers" Button -->
-        <a 
-            href="{{ $viewAllUrl }}" 
-            class="inline-flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-[#002060] hover:text-white text-[#002060] dark:text-[#FFC000] dark:hover:bg-[#FFC000] dark:hover:text-gray-950 font-extrabold text-xs md:text-sm px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 transition-all duration-200 shadow-sm"
-        >
-            <span>عرض جميع العروض</span>
-            <span class="text-sm font-bold">←</span>
-        </a>
+            if (distance <= 0) {
+                this.days = '00';
+                this.hours = '00';
+                this.minutes = '00';
+                this.seconds = '00';
+                if (this.timer) clearInterval(this.timer);
+                return;
+            }
+
+            const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+            this.days = String(d).padStart(2, '0');
+            this.hours = String(h).padStart(2, '0');
+            this.minutes = String(m).padStart(2, '0');
+            this.seconds = String(s).padStart(2, '0');
+        }
+    }"
+    x-init="initTimer()"
+    class="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.2rem] p-6 shadow-xl flex flex-col justify-between min-h-[170px] relative overflow-hidden"
+>
+    <!-- Header Title with Lightning Bolts -->
+    <div class="flex items-center justify-center gap-2 text-base md:text-lg font-black text-[#002060] dark:text-white mb-3">
+        <span class="text-[#FFC000] text-xl animate-pulse">⚡</span>
+        <span>{{ $sectionTitle }}</span>
+        <span class="text-[#FFC000] text-xl animate-pulse">⚡</span>
     </div>
 
-    <!-- Offer Info Body (Promotional Message & Offer Description) -->
-    <div class="space-y-3 my-auto py-2">
-        @if ($promotionalMessage)
-            <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/50 rounded-2xl p-3.5 flex items-start gap-3">
-                <span class="text-xl shrink-0">🏷️</span>
-                <p class="text-xs md:text-sm font-extrabold text-amber-950 dark:text-amber-200 leading-snug">
-                    {{ $promotionalMessage }}
-                </p>
-            </div>
-        @endif
+    <!-- 4 Countdown Box Widgets (Days, Hours, Minutes, Seconds) -->
+    <div class="grid grid-cols-4 gap-2.5 md:gap-3 text-center my-auto">
+        <!-- Seconds (ثانية) -->
+        <div class="bg-gray-50/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/80 rounded-2xl p-2.5 md:p-3 shadow-sm transition-transform hover:scale-105">
+            <span class="text-2xl md:text-3xl font-black text-[#002060] dark:text-[#FFC000] block leading-none font-mono" x-text="seconds">00</span>
+            <span class="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block mt-1.5">ثانية</span>
+        </div>
 
-        @if ($offerDescription)
-            <p class="text-xs md:text-sm text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
-                {{ $offerDescription }}
-            </p>
-        @endif
+        <!-- Minutes (دقيقة) -->
+        <div class="bg-gray-50/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/80 rounded-2xl p-2.5 md:p-3 shadow-sm transition-transform hover:scale-105">
+            <span class="text-2xl md:text-3xl font-black text-[#002060] dark:text-[#FFC000] block leading-none font-mono" x-text="minutes">00</span>
+            <span class="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block mt-1.5">دقيقة</span>
+        </div>
+
+        <!-- Hours (ساعة) -->
+        <div class="bg-gray-50/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/80 rounded-2xl p-2.5 md:p-3 shadow-sm transition-transform hover:scale-105">
+            <span class="text-2xl md:text-3xl font-black text-[#002060] dark:text-[#FFC000] block leading-none font-mono" x-text="hours">00</span>
+            <span class="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block mt-1.5">ساعة</span>
+        </div>
+
+        <!-- Days (يوم) -->
+        <div class="bg-gray-50/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/80 rounded-2xl p-2.5 md:p-3 shadow-sm transition-transform hover:scale-105">
+            <span class="text-2xl md:text-3xl font-black text-[#002060] dark:text-[#FFC000] block leading-none font-mono" x-text="days">00</span>
+            <span class="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block mt-1.5">يوم</span>
+        </div>
     </div>
 
-    <!-- Bottom Feature Badges -->
-    <div class="grid grid-cols-2 gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-        <div class="flex items-center gap-2 text-[11px] font-bold text-gray-700 dark:text-gray-300">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>توصيل سريع ومباشر</span>
-        </div>
-        <div class="flex items-center gap-2 text-[11px] font-bold text-gray-700 dark:text-gray-300">
-            <span class="w-2 h-2 rounded-full bg-[#FFC000]"></span>
-            <span>منتجات أصلية 100%</span>
+    <!-- Bottom Decorative Yellow Progress Line with Flash Handle -->
+    <div class="relative w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-visible flex items-center mt-3">
+        <div class="h-full bg-[#FFC000] rounded-full w-5/6"></div>
+        <div class="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#FFC000] border-2 border-white dark:border-gray-900 shadow-md flex items-center justify-center text-gray-950 text-[10px] font-black">
+            ⚡
         </div>
     </div>
 </div>

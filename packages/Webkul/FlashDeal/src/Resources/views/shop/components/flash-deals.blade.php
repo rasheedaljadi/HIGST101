@@ -35,22 +35,21 @@
                 <!-- Promotional Banner (Top Left ~60%) -->
                 <div class="lg:col-span-7 flex">
                     @include('flash_deal::shop.components.banner', [
-                        'title' => $activeDeal->title ?? 'عروض خاطفة مميزة',
-                        'subtitle' => $activeDeal->subtitle ?? 'خصومات استثنائية لفترة محدودة جداً',
-                        'description' => $activeDeal->description ?? 'اكتشف أرقى المنتجات بأسعار حصرية وحسومات فائقة قبل نفاد الكمية',
+                        'title' => $activeDeal->title ?? 'العروض السريعة',
+                        'subtitle' => $activeDeal->subtitle ?? 'عروض محدودة لفترة قصيرة .. اغتنم الفرصة قبل انتهاء الوقت!',
+                        'description' => $activeDeal->description,
                         'bannerImage' => $activeDeal->banner_image,
                         'backgroundImage' => $activeDeal->background_image,
                         'accentColor' => $activeDeal->accent_color ?? '#FFC000',
-                        'secondaryColor' => $activeDeal->secondary_color ?? '#002060',
+                        'secondaryColor' => $activeDeal->secondary_color ?? '#001D56',
                     ])
                 </div>
 
                 <!-- Offer Information Area (Top Right ~40%) -->
                 <div class="lg:col-span-5 flex">
                     @include('flash_deal::shop.components.info-area', [
-                        'sectionTitle' => $activeDeal->title ?? 'العروض السريعة',
-                        'promotionalMessage' => $activeDeal->promotional_message ?? '🔥 وفر حتى 60% على تشكيلة المنتجات الحصرية',
-                        'offerDescription' => $activeDeal->offer_description ?? 'سارع بالشراء قبل انتهاء الكمية المخصصة لهذه العروض الحصرية!',
+                        'sectionTitle' => 'تنتهي العروض خلال',
+                        'endsAt' => $activeDeal->ends_at,
                         'viewAllUrl' => $activeDeal->view_all_url ?? route('shop.home.index'),
                     ])
                 </div>
