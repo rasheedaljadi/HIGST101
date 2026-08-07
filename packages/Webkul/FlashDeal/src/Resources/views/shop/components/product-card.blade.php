@@ -69,10 +69,10 @@
         @endif
 
         <!-- Countdown Timer -->
-        <x-flash_deal::shop.components.countdown 
-            :end-time="$endTime"
-            :product-id="$productEntity->id"
-        />
+        @include('flash_deal::shop.components.countdown', [
+            'endTime' => $endTime,
+            'productId' => $productEntity->id,
+        ])
     </div>
 
     <!-- Product Image Container -->
@@ -106,10 +106,10 @@
     </div>
 
     <!-- Sales Progress Bar Component -->
-    <x-flash_deal::shop.components.progress-bar 
-        :sold-count="$soldCount"
-        :stock="$stock"
-    />
+    @include('flash_deal::shop.components.progress-bar', [
+        'soldCount' => $soldCount,
+        'stock' => $stock,
+    ])
 
     <!-- Add to Cart Button -->
     <div class="mt-2 pt-1">

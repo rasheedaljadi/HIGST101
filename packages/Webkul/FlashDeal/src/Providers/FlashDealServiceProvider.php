@@ -30,5 +30,9 @@ class FlashDealServiceProvider extends ServiceProvider
         }
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'flash_deal');
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'flashdeal');
+        
+        if (class_exists(\Illuminate\Support\Facades\Blade::class)) {
+            \Illuminate\Support\Facades\Blade::anonymousComponentPath(__DIR__.'/../Resources/views/shop/components', 'flash_deal');
+        }
     }
 }

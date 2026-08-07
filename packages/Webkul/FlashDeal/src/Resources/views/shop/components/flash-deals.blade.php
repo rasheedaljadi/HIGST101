@@ -34,25 +34,25 @@
                 
                 <!-- Promotional Banner (Top Left ~60%) -->
                 <div class="lg:col-span-7 flex">
-                    <x-flash_deal::shop.components.banner 
-                        :title="$activeDeal->title ?? 'عروض خاطفة مميزة'"
-                        :subtitle="$activeDeal->subtitle ?? 'خصومات استثنائية لفترة محدودة جداً'"
-                        :description="$activeDeal->description ?? 'اكتشف أرقى المنتجات بأسعار حصرية وحسومات فائقة قبل نفاد الكمية'"
-                        :banner-image="$activeDeal->banner_image"
-                        :background-image="$activeDeal->background_image"
-                        :accent-color="$activeDeal->accent_color ?? '#FFC000'"
-                        :secondary-color="$activeDeal->secondary_color ?? '#002060'"
-                    />
+                    @include('flash_deal::shop.components.banner', [
+                        'title' => $activeDeal->title ?? 'عروض خاطفة مميزة',
+                        'subtitle' => $activeDeal->subtitle ?? 'خصومات استثنائية لفترة محدودة جداً',
+                        'description' => $activeDeal->description ?? 'اكتشف أرقى المنتجات بأسعار حصرية وحسومات فائقة قبل نفاد الكمية',
+                        'bannerImage' => $activeDeal->banner_image,
+                        'backgroundImage' => $activeDeal->background_image,
+                        'accentColor' => $activeDeal->accent_color ?? '#FFC000',
+                        'secondaryColor' => $activeDeal->secondary_color ?? '#002060',
+                    ])
                 </div>
 
                 <!-- Offer Information Area (Top Right ~40%) -->
                 <div class="lg:col-span-5 flex">
-                    <x-flash_deal::shop.components.info-area 
-                        :section-title="$activeDeal->title ?? 'العروض السريعة'"
-                        :promotional-message="$activeDeal->promotional_message ?? '🔥 وفر حتى 60% على تشكيلة المنتجات الحصرية'"
-                        :offer-description="$activeDeal->offer_description ?? 'سارع بالشراء قبل انتهاء الكمية المخصصة لهذه العروض الحصرية!'"
-                        :view-all-url="$activeDeal->view_all_url ?? route('shop.home.index')"
-                    />
+                    @include('flash_deal::shop.components.info-area', [
+                        'sectionTitle' => $activeDeal->title ?? 'العروض السريعة',
+                        'promotionalMessage' => $activeDeal->promotional_message ?? '🔥 وفر حتى 60% على تشكيلة المنتجات الحصرية',
+                        'offerDescription' => $activeDeal->offer_description ?? 'سارع بالشراء قبل انتهاء الكمية المخصصة لهذه العروض الحصرية!',
+                        'viewAllUrl' => $activeDeal->view_all_url ?? route('shop.home.index'),
+                    ])
                 </div>
 
             </div>
@@ -95,9 +95,9 @@
 
                         <!-- Product Card Item: Desktop 5 cols (20%), Laptop 4 cols (25%), Tablet 3 cols (33.33%), Mobile 2 cols (50%) -->
                         <div class="w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.75rem)] lg:w-[calc(25%-0.75rem)] xl:w-[calc(20%-0.8rem)] flex-shrink-0 snap-start flex">
-                            <x-flash_deal::shop.components.product-card 
-                                :deal-product="$dealProduct"
-                            />
+                            @include('flash_deal::shop.components.product-card', [
+                                'dealProduct' => $dealProduct,
+                            ])
                         </div>
                     @endforeach
                 </div>
