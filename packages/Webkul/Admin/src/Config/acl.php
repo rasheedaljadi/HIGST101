@@ -476,6 +476,11 @@ return [
         'route' => 'admin.marketing.promotions.catalog_rules.delete',
         'sort' => 3,
     ], [
+        'key' => 'marketing.promotions.flash_deals',
+        'name' => 'العروض السريعة',
+        'route' => 'admin.marketing.promotions.flash_deals.index',
+        'sort' => 3,
+    ], [
         'key' => 'marketing.communications',
         'name' => 'admin::app.acl.communications',
         'route' => 'admin.marketing.communications.email_templates.index',

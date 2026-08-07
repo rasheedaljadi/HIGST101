@@ -246,6 +246,12 @@ return [
         'sort' => 2,
         'icon' => '',
     ], [
+        'key' => 'marketing.promotions.flash_deals',
+        'name' => 'العروض السريعة',
+        'route' => 'admin.marketing.promotions.flash_deals.index',
+        'sort' => 3,
+        'icon' => '',
+    ], [
         'key' => 'marketing.communications',
         'name' => 'admin::app.components.layouts.sidebar.communications',
         'route' => 'admin.marketing.communications.email_templates.index',
