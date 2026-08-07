@@ -132,12 +132,65 @@ class ProductImage
         }
 
         return [
-            'small_image_url' => url('cache/small/'.$path),
-            'medium_image_url' => url('cache/medium/'.$path),
-            'large_image_url' => url('cache/large/'.$path),
-            'original_image_url' => url('cache/original/'.$path),
+            'small_image_url' => $this->getOrGenerateCachedUrl('small', $path),
+            'medium_image_url' => $this->getOrGenerateCachedUrl('medium', $path),
+            'large_image_url' => $this->getOrGenerateCachedUrl('large', $path),
+            'original_image_url' => $this->getOrGenerateCachedUrl('original', $path),
             'fallback_url' => Storage::url($path),
         ];
+    }
+
+    /**
+     * Get cached image URL, generating the cached file if missing or falling back to storage URL.
+     */
+    private function getOrGenerateCachedUrl(string $template, string $path): string
+    {
+        $cachedPath = public_path('cache/'.$template.'/'.$path);
+
+        if (file_exists($cachedPath)) {
+            return url('cache/'.$template.'/'.$path);
+        }
+
+        $originalPath = storage_path('app/public/'.$path);
+
+        if (file_exists($originalPath)) {
+            try {
+                $targetDir = dirname($cachedPath);
+
+                if (! file_exists($targetDir)) {
+                    @mkdir($targetDir, 0777, true);
+                }
+
+                if ($template === 'original') {
+                    @copy($originalPath, $cachedPath);
+                } else {
+                    $templates = config('imagecache.templates', []);
+                    $templateClass = $templates[$template] ?? null;
+
+                    if ($templateClass && class_exists($templateClass)) {
+                        $filter = new $templateClass;
+
+                        if (method_exists($filter, 'applyFilter')) {
+                            $image = image_manager()->read($originalPath);
+                            $image = $filter->applyFilter($image);
+                            @file_put_contents($cachedPath, (string) $image->encodeByMediaType());
+                        } else {
+                            @copy($originalPath, $cachedPath);
+                        }
+                    } else {
+                        @copy($originalPath, $cachedPath);
+                    }
+                }
+
+                if (file_exists($cachedPath)) {
+                    return url('cache/'.$template.'/'.$path);
+                }
+            } catch (\Throwable) {
+                // Ignore generation failure and fall through to Storage::url
+            }
+        }
+
+        return Storage::url($path);
     }
 
     /**
