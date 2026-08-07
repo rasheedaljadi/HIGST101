@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Webkul\FlashDeal\DataGrids\FlashDealDataGrid;
 use Webkul\FlashDeal\Repositories\FlashDealProductRepository;
@@ -37,17 +38,7 @@ class FlashDealController extends Controller
      */
     public function create(): View
     {
-        $products = $this->productRepository->getModel()
-            ->where('status', 1)
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id'    => $product->id,
-                    'sku'   => $product->sku,
-                    'name'  => $product->name ?? $product->sku,
-                    'price' => (float) $product->price,
-                ];
-            });
+        $products = $this->getAvailableProducts();
 
         return view('flash_deal::admin.create', compact('products'));
     }
@@ -96,18 +87,7 @@ class FlashDealController extends Controller
     public function edit(int $id): View
     {
         $deal = $this->flashDealRepository->with(['products.product'])->findOrFail($id);
-
-        $products = $this->productRepository->getModel()
-            ->where('status', 1)
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id'    => $product->id,
-                    'sku'   => $product->sku,
-                    'name'  => $product->name ?? $product->sku,
-                    'price' => (float) $product->price,
-                ];
-            });
+        $products = $this->getAvailableProducts();
 
         return view('flash_deal::admin.edit', compact('deal', 'products'));
     }
@@ -167,5 +147,34 @@ class FlashDealController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => 'تعذر حذف العرض السريع.'], 500);
         }
+    }
+
+    /**
+     * Helper to retrieve available products safely with locale names & prices.
+     */
+    protected function getAvailableProducts()
+    {
+        try {
+            $locale = core()->getRequestedLocaleCode();
+        } catch (\Throwable $e) {
+            $locale = app()->getLocale();
+        }
+
+        return DB::table('products')
+            ->leftJoin('product_flat', function ($join) use ($locale) {
+                $join->on('products.id', '=', 'product_flat.product_id')
+                    ->where('product_flat.locale', '=', $locale);
+            })
+            ->select('products.id', 'products.sku', 'product_flat.name', 'product_flat.price')
+            ->distinct()
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id'    => $product->id,
+                    'sku'   => $product->sku,
+                    'name'  => ! empty($product->name) ? $product->name : $product->sku,
+                    'price' => (float) ($product->price ?? 0),
+                ];
+            });
     }
 }
