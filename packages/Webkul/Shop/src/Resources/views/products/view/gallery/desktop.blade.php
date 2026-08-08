@@ -1,7 +1,7 @@
 <!-- For large screens greater than 1180px. -->
 <div class="sticky top-20 flex h-max gap-8 max-1180:hidden">
     <!-- Product Image and Videos Slider -->
-    <div class="flex-24 h-[630px] flex min-w-[100px] max-w-[100px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
+    <div class="flex-24 h-[700px] flex min-w-[100px] max-w-[100px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
         <!-- Arrow Up -->
         <span
             class="icon-arrow-up cursor-pointer text-2xl"
@@ -16,7 +16,7 @@
         <!-- Swiper Container -->
         <div
             ref="swiperContainer"
-            class="flex flex-col max-h-[630px] gap-2.5 [&>*]:flex-[0] overflow-auto scroll-smooth scrollbar-hide"
+            class="flex flex-col max-h-[700px] gap-2.5 [&>*]:flex-[0] overflow-auto scroll-smooth scrollbar-hide"
         >
             <template v-for="(media, index) in [...media.images, ...media.videos]">
                 <video
@@ -62,23 +62,23 @@
 
     <!-- Product Base Image and Video with Shimmer-->
     <div
-        class="aspect-[4/5] max-h-[630px] max-w-[504px]"
+        class="aspect-[4/5] max-h-[700px] max-w-[560px]"
         v-show="isMediaLoading"
     >
-        <div class="shimmer aspect-[4/5] min-h-[630px] min-w-[504px] rounded-xl bg-zinc-200"></div>
+        <div class="shimmer aspect-[4/5] min-h-[700px] min-w-[560px] rounded-xl bg-zinc-200"></div>
     </div>
 
     <div
-        class="relative aspect-[4/5] max-h-[630px] max-w-[504px] overflow-hidden rounded-xl bg-zinc-100"
+        class="relative aspect-[4/5] max-h-[700px] max-w-[560px] overflow-hidden rounded-xl bg-zinc-100"
         v-show="! isMediaLoading"
     >
         <img
-            class="h-full w-full object-cover min-w-[380px] cursor-pointer rounded-xl"
+            class="h-full w-full object-cover min-w-[450px] cursor-pointer rounded-xl"
             :src="baseFile.path"
             v-if="baseFile.type == 'image'"
             alt="{{ $product->name }}"
-            width="504"
-            height="630"
+            width="800"
+            height="1000"
             loading="eager"
             fetchpriority="high"
             decoding="sync"
