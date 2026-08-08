@@ -14,33 +14,6 @@
     >
         <div class="max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 relative z-10">
             
-            <!-- Hero Outer Container Card -->
-            <div class="bg-white dark:bg-gray-900 rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-6 md:mb-12">
-                <section class="flex flex-col-reverse lg:flex-row gap-6 md:gap-8 items-center justify-between">
-                    
-                    <!-- Timer Column -->
-                    <div class="w-full lg:w-2/5">
-                        @include('flash_deal::shop.components.info-area', [
-                            'sectionTitle' => 'تنتهي العروض خلال',
-                            'endsAt' => $activeDeal->ends_at,
-                        ])
-                    </div>
-
-                    <!-- Hero Banner Column -->
-                    <div class="w-full lg:w-3/5">
-                        @include('flash_deal::shop.components.banner', [
-                            'title' => $activeDeal->title ?? 'عرض الصيف',
-                            'subtitle' => $activeDeal->subtitle ?? 'عروض محدودة لفترة قصيرة ..',
-                            'description' => $activeDeal->description ?? 'اغتنم الفرصة قبل انتهاء الوقت!',
-                            'bannerImage' => $activeDeal->banner_image,
-                            'backgroundImage' => $activeDeal->background_image,
-                            'accentColor' => $activeDeal->accent_color ?? '#FFC000',
-                            'secondaryColor' => $activeDeal->secondary_color ?? '#001A54',
-                        ])
-                    </div>
-
-                </section>
-            </div>
 
             <!-- Responsive Horizontal Product Carousel Section -->
             <div 
