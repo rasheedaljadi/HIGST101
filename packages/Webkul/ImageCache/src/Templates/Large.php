@@ -7,26 +7,26 @@ use Intervention\Image\Interfaces\ImageInterface;
 /**
  * Large image template filter.
  *
- * Creates images at 600x600 pixels.
+ * Creates images at 800x1000 pixels (4:5 aspect ratio).
  */
 class Large
 {
     /**
      * The width for large images.
      */
-    protected int $width = 600;
+    protected int $width = 800;
 
     /**
      * The height for large images.
      */
-    protected int $height = 600;
+    protected int $height = 1000;
 
     /**
      * Apply the filter to the image.
      */
     public function applyFilter(ImageInterface $image): ImageInterface
     {
-        return $image->cover($this->width, $this->height);
+        return $image->scale($this->width, $this->height);
     }
 
     /**
