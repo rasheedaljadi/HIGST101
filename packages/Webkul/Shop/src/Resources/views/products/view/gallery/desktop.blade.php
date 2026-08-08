@@ -1,7 +1,7 @@
 <!-- For large screens greater than 1180px. -->
-<div class="sticky top-20 flex h-max gap-6 max-1180:hidden">
+<div class="sticky top-20 flex h-max gap-8 max-1180:hidden">
     <!-- Product Image and Videos Slider -->
-    <div class="flex-24 h-[500px] max-h-[500px] flex min-w-[100px] max-w-[100px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
+    <div class="flex-24 max-h-[630px] flex min-w-[100px] max-w-[100px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
         <!-- Arrow Up -->
         <span
             class="icon-arrow-up cursor-pointer text-2xl"
@@ -16,7 +16,7 @@
         <!-- Swiper Container -->
         <div
             ref="swiperContainer"
-            class="flex flex-col max-h-[440px] gap-2.5 [&>*]:flex-[0] overflow-auto scroll-smooth scrollbar-hide"
+            class="flex flex-col max-h-[550px] gap-2.5 [&>*]:flex-[0] overflow-auto scroll-smooth scrollbar-hide"
         >
             <template v-for="(media, index) in [...media.images, ...media.videos]">
                 <video
@@ -62,24 +62,23 @@
 
     <!-- Product Base Image and Video with Shimmer-->
     <div
-        class="aspect-[4/5] w-[400px] h-[500px] max-h-[500px] max-w-[400px]"
+        class="aspect-[4/5] max-h-[630px] max-w-[504px]"
         v-show="isMediaLoading"
     >
-        <div class="shimmer aspect-[4/5] h-[500px] w-[400px] min-h-[500px] min-w-[400px] rounded-2xl border border-gray-200 bg-zinc-200"></div>
+        <div class="shimmer aspect-[4/5] min-h-[630px] min-w-[504px] rounded-xl bg-zinc-200"></div>
     </div>
 
-    <!-- Defined 4:5 Bounding Frame (400x500px) -->
     <div
-        class="relative aspect-[4/5] w-[400px] h-[500px] max-h-[500px] max-w-[400px] overflow-hidden rounded-2xl border-2 border-gray-200 shadow-sm bg-white p-2 flex items-center justify-center"
+        class="relative aspect-[4/5] max-h-[630px] max-w-[504px] overflow-hidden rounded-xl bg-zinc-100 flex items-center justify-center"
         v-show="! isMediaLoading"
     >
         <img
-            class="max-h-full max-w-full h-auto w-auto object-contain cursor-pointer rounded-xl m-auto"
+            class="h-full w-full object-contain cursor-pointer rounded-xl p-1"
             :src="baseFile.path"
             v-if="baseFile.type == 'image'"
             alt="{{ $product->name }}"
-            width="400"
-            height="500"
+            width="504"
+            height="630"
             loading="eager"
             fetchpriority="high"
             decoding="sync"
@@ -96,7 +95,7 @@
         >
             <video
                 controls
-                width="380"
+                width="475"
                 alt="{{ $product->name }}"
                 @click="isImageZooming = !isImageZooming"
                 @loadeddata="onMediaLoad()"
