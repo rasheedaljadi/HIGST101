@@ -37,7 +37,7 @@ class RegenerateProductDetailSmartThumbnailsCommand extends Command
         if ($productId) {
             $products = $productRepository->where('id', $productId)->get();
         } else {
-            $products = $productRepository->where('status', 1)->limit(100)->get();
+            $products = $productRepository->limit(100)->get();
         }
 
         if ($products->isEmpty()) {
