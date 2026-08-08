@@ -61,8 +61,11 @@
         ])
     </div>
 
-    <!-- Product Image Container: Fixed 286px x 286px (1:1 Aspect Ratio, object-cover) -->
-    <div class="relative w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-gray-50/80 dark:bg-gray-800/40 shrink-0 group mb-2">
+    <!-- Product Image Container: Fixed 336 / 302 Aspect Ratio (~1.113:1), object-cover -->
+    <div 
+        class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-50/80 dark:bg-gray-800/40 shrink-0 group mb-2"
+        style="aspect-ratio: 336 / 302;"
+    >
         @if ($discountPercent > 0)
             <span class="absolute top-2.5 right-2.5 z-10 bg-[#FFC000] text-black font-black px-2 sm:px-2.5 py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-xs shadow-md">
                 -{{ $discountPercent }}%
