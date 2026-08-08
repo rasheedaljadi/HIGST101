@@ -54,37 +54,37 @@
     </h2>
 
     <!-- 4 Countdown Box Widgets (Days, Hours, Minutes, Seconds) -->
-    <div class="flex gap-3 md:gap-4 mb-6 text-center" dir="ltr">
+    <div class="flex gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 text-center justify-center w-full max-w-full" dir="ltr">
         <!-- Days -->
         <div class="flex flex-col items-center">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="days">
+            <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg w-13 h-16 sm:w-16 sm:h-20 md:w-20 md:h-24 flex items-center justify-center text-xl sm:text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="days">
                 02
             </div>
-            <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">يوم</span>
+            <span class="text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 font-medium text-xs sm:text-sm">يوم</span>
         </div>
 
         <!-- Hours -->
         <div class="flex flex-col items-center">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="hours">
+            <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg w-13 h-16 sm:w-16 sm:h-20 md:w-20 md:h-24 flex items-center justify-center text-xl sm:text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="hours">
                 14
             </div>
-            <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">ساعة</span>
+            <span class="text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 font-medium text-xs sm:text-sm">ساعة</span>
         </div>
 
         <!-- Minutes -->
         <div class="flex flex-col items-center">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="minutes">
+            <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg w-13 h-16 sm:w-16 sm:h-20 md:w-20 md:h-24 flex items-center justify-center text-xl sm:text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="minutes">
                 36
             </div>
-            <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">دقيقة</span>
+            <span class="text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 font-medium text-xs sm:text-sm">دقيقة</span>
         </div>
 
         <!-- Seconds -->
         <div class="flex flex-col items-center">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-16 h-20 md:w-20 md:h-24 flex items-center justify-center text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="seconds">
+            <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg w-13 h-16 sm:w-16 sm:h-20 md:w-20 md:h-24 flex items-center justify-center text-xl sm:text-3xl md:text-4xl font-bold text-[#001A54] dark:text-[#FFC000] border border-gray-100 dark:border-gray-700 font-mono" x-text="seconds">
                 58
             </div>
-            <span class="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">ثانية</span>
+            <span class="text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 font-medium text-xs sm:text-sm">ثانية</span>
         </div>
     </div>
 
