@@ -4,6 +4,7 @@ namespace Webkul\FlashDeal\Console\Commands;
 
 use Illuminate\Console\Command;
 use Webkul\FlashDeal\Helpers\SmartThumbnailHelper;
+use Webkul\Product\Models\ProductProxy;
 use Webkul\Product\ProductImage;
 use Webkul\Product\Repositories\ProductRepository;
 
@@ -35,9 +36,9 @@ class RegenerateProductDetailSmartThumbnailsCommand extends Command
         $productId = $this->option('product_id');
 
         if ($productId) {
-            $products = $productRepository->where('id', $productId)->get();
+            $products = ProductProxy::where('id', $productId)->get();
         } else {
-            $products = $productRepository->limit(100)->get();
+            $products = ProductProxy::limit(100)->get();
         }
 
         if ($products->isEmpty()) {
