@@ -6,11 +6,14 @@
 
 @php
     $productImageHelper = app(\Webkul\Product\ProductImage::class);
+    $smartThumbnailHelper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
     
     $productEntity = $product ?? $dealProduct?->product;
     if (! $productEntity) return;
 
-    $imageUrl = $productImageHelper->getProductBaseImage($productEntity)['medium_image_url'] ?? bagisto_asset('images/medium-product-placeholder.webp', 'shop');
+    $fallbackImageUrl = $productImageHelper->getProductBaseImage($productEntity)['medium_image_url'] ?? bagisto_asset('images/medium-product-placeholder.webp', 'shop');
+    $imageUrl = $smartThumbnailHelper->getQuickOfferThumbnailUrl($productEntity, $fallbackImageUrl);
+
     $productUrl = route('shop.product_or_category.index', $productEntity->url_key);
 
     $cleanName = preg_replace('/[^\p{L}\p{N}\s\-\_]/u', '', $productEntity->name ?? '');
@@ -81,6 +84,7 @@
                 alt="{{ $cleanName }}"
                 class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 block"
                 loading="lazy"
+                onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';"
             />
         </a>
     </div>
