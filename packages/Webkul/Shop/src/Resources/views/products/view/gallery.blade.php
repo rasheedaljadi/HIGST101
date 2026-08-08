@@ -38,7 +38,7 @@
                             $images = product_image()->getGalleryImages($product);
                             if (! empty($images) && isset($images[0]['large_image_url'])) {
                                 $helper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
-                                $images[0]['large_image_url'] = $helper->getProductDetailThumbnailUrl($product, $images[0]['large_image_url']);
+                                $images[0]['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailUrl($product, $images[0]['large_image_url']);
                             }
                             return $images;
                         })()),

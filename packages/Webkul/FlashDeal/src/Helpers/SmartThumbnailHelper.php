@@ -127,4 +127,64 @@ class SmartThumbnailHelper
 
         return $fallbackUrl;
     }
+
+    /**
+     * Get Product Detail Smart Thumbnail URL for 5:4 test context (560x448), falling back to original image URL.
+     */
+    public function getProductDetailTest5x4ThumbnailUrl(?Product $product, string $fallbackUrl): string
+    {
+        if (! $product) {
+            return $fallbackUrl;
+        }
+
+        $baseImage = $product->images->first();
+
+        if (! $baseImage || ! $baseImage->path) {
+            return $fallbackUrl;
+        }
+
+        $sourcePath = storage_path('app/public/'.$baseImage->path);
+
+        if (! file_exists($sourcePath)) {
+            return $fallbackUrl;
+        }
+
+        $targetW = 560;
+        $targetH = 448;
+
+        $sourceHash = md5_file($sourcePath) ?: md5($sourcePath);
+        $cacheKey = md5($product->id.'_'.$sourceHash.'_'.$this->version.'_pdp_test_5x4_'.$targetW.'x'.$targetH.'_'.$this->configHash);
+        $subDir = substr($cacheKey, 0, 2);
+
+        $relativePath = 'smart-thumbnails/product_detail/v1_test_5x4/'.$subDir.'/pdp-v1-test5x4-'.$product->id.'-'.substr($cacheKey, 0, 12).'.webp';
+        $fullTargetPath = storage_path('app/public/'.$relativePath);
+
+        // Check if thumbnail exists in public storage
+        if (file_exists($fullTargetPath)) {
+            return Storage::url($relativePath);
+        }
+
+        // Check public/cache folder fallback
+        $publicCachePath = public_path('cache/'.$relativePath);
+        if (file_exists($publicCachePath)) {
+            return url('cache/'.$relativePath);
+        }
+
+        // Dispatch background job to generate missing thumbnail
+        try {
+            GenerateProductDetailSmartThumbnailJob::dispatch(
+                $product->id,
+                $sourcePath,
+                $fullTargetPath,
+                $sourceHash,
+                $targetW,
+                $targetH,
+                false
+            );
+        } catch (\Throwable) {
+            // Queue dispatch fallback to direct URL
+        }
+
+        return $fallbackUrl;
+    }
 }

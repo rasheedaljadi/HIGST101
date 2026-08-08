@@ -62,14 +62,14 @@
 
     <!-- Product Base Image and Video with Shimmer-->
     <div
-        class="aspect-[4/5] max-h-[560px] w-full max-w-[448px]"
+        class="aspect-[5/4] max-h-[448px] w-full max-w-[560px]"
         v-show="isMediaLoading"
     >
         <div class="shimmer h-full w-full rounded-xl bg-zinc-200"></div>
     </div>
 
     <div
-        class="relative aspect-[4/5] max-h-[560px] w-full max-w-[448px] overflow-hidden rounded-xl bg-zinc-100 flex items-center justify-center"
+        class="relative aspect-[5/4] max-h-[448px] w-full max-w-[560px] overflow-hidden rounded-xl bg-zinc-100 flex items-center justify-center"
         v-show="! isMediaLoading"
     >
         <img
@@ -77,8 +77,8 @@
             :src="baseFile.path"
             v-if="baseFile.type == 'image'"
             alt="{{ $product->name }}"
-            width="448"
-            height="560"
+            width="560"
+            height="448"
             loading="eager"
             fetchpriority="high"
             decoding="sync"
