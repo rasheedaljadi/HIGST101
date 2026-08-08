@@ -1,21 +1,21 @@
 <div class="sticky top-8 flex h-max gap-8 max-1180:hidden">
-    <div class="flex max-h-[100px] max-w-[100px] flex-wrap gap-2.5">
-        <div class="flex-24 h-[560px] flex max-w-[100px] flex-wrap place-content-start justify-center gap-2.5">
+    <div class="flex max-h-[100px] max-w-[80px] flex-wrap gap-2.5">
+        <div class="flex-24 h-[560px] flex max-w-[80px] flex-wrap place-content-start justify-center gap-2.5">
             <span class="shimmer h-6 w-6 text-2xl"></span>
-            <div class="shimmer h-[100px] min-h-[100px] w-[100px] min-w-[100px] rounded-2xl"></div>
-            <div class="shimmer h-[100px] min-h-[100px] w-[100px] min-w-[100px] rounded-2xl"></div>
-            <div class="shimmer h-[100px] min-h-[100px] w-[100px] min-w-[100px] rounded-2xl"></div>
-            <div class="shimmer h-[100px] min-h-[100px] w-[100px] min-w-[100px] rounded-2xl"></div>
-            <div class="shimmer h-[100px] min-h-[100px] w-[100px] min-w-[100px] rounded-2xl"></div>
+            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
+            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
+            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
+            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
+            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
             <span class="shimmer h-6 w-6 text-2xl"></span>
         </div>
     </div>
     
-    <div class="max-h-[560px] max-w-[560px] aspect-square w-[560px] h-[560px]">
-        <div class="shimmer h-[560px] w-[560px] rounded-2xl bg-zinc-200"></div>
+    <div class="aspect-[4/5] max-h-[560px] w-full max-w-[448px]">
+        <div class="shimmer aspect-[4/5] h-full w-full rounded-xl bg-zinc-200"></div>
     </div>
 </div>
 
 <div class="overflow-hidden 1180:hidden">
-    <div class="shimmer aspect-square max-h-screen w-screen"></div>
+    <div class="shimmer aspect-[4/5] max-h-screen w-screen bg-zinc-200"></div>
 </div>
