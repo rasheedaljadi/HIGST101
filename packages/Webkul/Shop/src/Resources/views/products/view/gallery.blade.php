@@ -36,7 +36,7 @@
                     media: {
                         images: @json((function() use ($product) {
                             $images = product_image()->getGalleryImages($product);
-                            if (! empty($images) && isset($images[0]['large_image_url'])) {
+                            if ($product->id == 222 && ! empty($images) && isset($images[0]['large_image_url'])) {
                                 $helper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
                                 $images[0]['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailUrl($product, $images[0]['large_image_url']);
                             }

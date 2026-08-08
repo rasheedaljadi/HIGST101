@@ -1,7 +1,7 @@
 <!-- For large screens greater than 1180px. -->
 <div class="sticky top-20 flex h-max gap-8 max-1180:hidden">
     <!-- Product Image and Videos Slider -->
-    <div class="flex-24 h-[560px] flex min-w-[80px] max-w-[80px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
+    <div class="flex-24 {{ $product->id == 222 ? 'h-[448px]' : 'h-[560px]' }} flex min-w-[80px] max-w-[80px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
         <!-- Arrow Up -->
         <span
             class="icon-arrow-up cursor-pointer text-2xl"
@@ -62,23 +62,23 @@
 
     <!-- Product Base Image and Video with Shimmer-->
     <div
-        class="aspect-[5/4] max-h-[448px] w-full max-w-[560px]"
+        class="{{ $product->id == 222 ? 'aspect-[5/4] max-h-[448px] max-w-[560px]' : 'aspect-[4/5] max-h-[560px] max-w-[448px]' }} w-full"
         v-show="isMediaLoading"
     >
         <div class="shimmer h-full w-full rounded-xl bg-zinc-200"></div>
     </div>
 
     <div
-        class="relative aspect-[5/4] max-h-[448px] w-full max-w-[560px] overflow-hidden rounded-xl bg-zinc-100 flex items-center justify-center"
+        class="relative {{ $product->id == 222 ? 'aspect-[5/4] max-h-[448px] max-w-[560px]' : 'aspect-[4/5] max-h-[560px] max-w-[448px]' }} w-full overflow-hidden rounded-xl bg-zinc-100 flex items-center justify-center"
         v-show="! isMediaLoading"
     >
         <img
-            class="h-full w-full object-contain object-center cursor-pointer rounded-xl block"
+            class="h-full w-full {{ $product->id == 222 ? '' : 'object-contain object-center' }} cursor-pointer rounded-xl block"
             :src="baseFile.path"
             v-if="baseFile.type == 'image'"
             alt="{{ $product->name }}"
-            width="560"
-            height="448"
+            width="{{ $product->id == 222 ? '560' : '448' }}"
+            height="{{ $product->id == 222 ? '448' : '560' }}"
             loading="eager"
             fetchpriority="high"
             decoding="sync"
