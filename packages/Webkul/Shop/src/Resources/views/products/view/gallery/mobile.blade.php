@@ -52,7 +52,7 @@
 
                     <template v-else>
                         <img
-                            class="aspect-[4/5] max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out object-contain bg-[#f8f8f8] rounded-[20px]"
+                            class="aspect-square max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out"
                             :src="media.large_image_url"
                             :alt="media.large_image_url"
                             v-on:error="$event.target.src = media.original_image_url || media.fallback_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
