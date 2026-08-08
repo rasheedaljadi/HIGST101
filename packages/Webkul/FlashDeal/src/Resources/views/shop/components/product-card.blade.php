@@ -86,7 +86,7 @@
             <img 
                 src="{{ $imageUrl }}" 
                 alt="{{ $cleanName }}"
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                class="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
             />
         </a>
