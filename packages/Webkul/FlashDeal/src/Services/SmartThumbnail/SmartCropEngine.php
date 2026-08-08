@@ -20,10 +20,14 @@ class SmartCropEngine
     ) {}
 
     /**
-     * Process original image and crop/scale to 336:302 target canvas.
+     * Process original image and crop/scale to target canvas.
      */
-    public function process(ImageInterface $image, string $filePath): ImageInterface
+    public function process(ImageInterface $image, string $filePath, ?int $targetW = null, ?int $targetH = null): ImageInterface
     {
+        $targetW = $targetW ?: $this->targetWidth;
+        $targetH = $targetH ?: $this->targetHeight;
+        $targetRatio = ($targetH > 0) ? ($targetW / $targetH) : $this->targetRatio;
+
         $analysis = $this->analyzer->analyze($image, $filePath);
         $boundingRegion = $this->detector->detectBoundingRegion($image);
 
@@ -36,24 +40,24 @@ class SmartCropEngine
         $xf = $boundingRegion['x_min'] + (0.5 * $boundingRegion['width']);
         $yf = $boundingRegion['y_min'] + (0.4 * $boundingRegion['height']);
 
-        // 2. Candidate Crop Window calculation matching target aspect ratio 336:302
+        // 2. Candidate Crop Window calculation matching target aspect ratio
         $cropW = $origW;
-        $cropH = (int) round($cropW / $this->targetRatio);
+        $cropH = (int) round($cropW / $targetRatio);
 
         if ($cropH > $origH) {
             $cropH = $origH;
-            $cropW = (int) round($cropH * $this->targetRatio);
+            $cropW = (int) round($cropH * $targetRatio);
         }
 
         // Expand/contain to cover subject bounding region safely if needed
         if ($cropW < $boundingRegion['width']) {
             $cropW = min($origW, (int) round($boundingRegion['width'] * 1.15));
-            $cropH = (int) round($cropW / $this->targetRatio);
+            $cropH = (int) round($cropW / $targetRatio);
         }
 
         if ($cropH < $boundingRegion['height']) {
             $cropH = min($origH, (int) round($boundingRegion['height'] * 1.15));
-            $cropW = (int) round($cropH * $this->targetRatio);
+            $cropW = (int) round($cropH * $targetRatio);
         }
 
         // Clamp dimensions to image boundaries
@@ -68,10 +72,10 @@ class SmartCropEngine
         $cropX = max(0, min($origW - $cropW, $cropX));
         $cropY = max(0, min($origH - $cropH, $cropY));
 
-        // 3. Execute Crop & Resize to Target Canvas 336x302 via Intervention Image v3
+        // 3. Execute Crop & Resize to Target Canvas via Intervention Image v3
         $croppedImage = clone $image;
         $croppedImage->crop($cropW, $cropH, $cropX, $cropY);
-        $croppedImage->resize($this->targetWidth, $this->targetHeight);
+        $croppedImage->resize($targetW, $targetH);
 
         return $croppedImage;
     }

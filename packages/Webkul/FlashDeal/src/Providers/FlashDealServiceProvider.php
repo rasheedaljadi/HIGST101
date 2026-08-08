@@ -4,6 +4,7 @@ namespace Webkul\FlashDeal\Providers;
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Webkul\FlashDeal\Console\Commands\RegenerateProductDetailSmartThumbnailsCommand;
 use Webkul\FlashDeal\Console\Commands\RegenerateSmartThumbnailsCommand;
 
 class FlashDealServiceProvider extends ServiceProvider
@@ -40,6 +41,7 @@ class FlashDealServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 RegenerateSmartThumbnailsCommand::class,
+                RegenerateProductDetailSmartThumbnailsCommand::class,
             ]);
         }
     }

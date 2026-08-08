@@ -34,7 +34,14 @@
                     isMediaLoading: true,
 
                     media: {
-                        images: @json(product_image()->getGalleryImages($product)),
+                        images: @json((function() use ($product) {
+                            $images = product_image()->getGalleryImages($product);
+                            if (! empty($images) && isset($images[0]['large_image_url'])) {
+                                $helper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
+                                $images[0]['large_image_url'] = $helper->getProductDetailThumbnailUrl($product, $images[0]['large_image_url']);
+                            }
+                            return $images;
+                        })()),
 
                         videos: @json(product_video()->getVideos($product)),
                     },
