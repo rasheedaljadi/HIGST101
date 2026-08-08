@@ -14,12 +14,12 @@ class Large
     /**
      * The width for large images.
      */
-    protected int $width = 800;
+    protected int $width = 600;
 
     /**
      * The height for large images.
      */
-    protected int $height = 1000;
+    protected int $height = 600;
 
     /**
      * Apply the filter to the image.
