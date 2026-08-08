@@ -60,19 +60,8 @@
         </span>
     </div>
 
-    <!-- Product Base Image and Video with Shimmer-->
-    <div
-        class="aspect-[4/5] w-[400px] h-[500px] max-h-[500px] max-w-[400px]"
-        v-show="isMediaLoading"
-    >
-        <div class="shimmer aspect-[4/5] h-[500px] w-[400px] min-h-[500px] min-w-[400px] rounded-2xl border border-gray-200 bg-zinc-200"></div>
-    </div>
-
     <!-- Defined 4:5 Bounding Frame (400x500px) -->
-    <div
-        class="relative aspect-[4/5] w-[400px] h-[500px] max-h-[500px] max-w-[400px] overflow-hidden rounded-2xl border-2 border-gray-200 shadow-sm bg-white p-2 flex items-center justify-center"
-        v-show="! isMediaLoading"
-    >
+    <div class="relative aspect-[4/5] w-[400px] h-[500px] max-h-[500px] max-w-[400px] overflow-hidden rounded-2xl border-2 border-gray-200 shadow-sm bg-white p-2 flex items-center justify-center">
         <img
             class="max-h-full max-w-full h-auto w-auto object-contain cursor-pointer rounded-xl m-auto"
             :src="baseFile.path"
