@@ -42,17 +42,108 @@
                 </section>
             </div>
 
-            <!-- Responsive Product Grid Section -->
-            <section class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-8 md:mb-12">
-                @foreach ($activeDeal->products->take(5) as $index => $dealProduct)
-                    @if (! $dealProduct->product) @continue @endif
+            <!-- Responsive Horizontal Product Carousel Section -->
+            <div 
+                x-data="{
+                    canScrollPrev: false,
+                    canScrollNext: true,
+                    updateScrollState() {
+                        const el = this.$refs.carouselTrack;
+                        if (!el) return;
+                        const maxScroll = el.scrollWidth - el.clientWidth;
+                        if (maxScroll <= 5) {
+                            this.canScrollPrev = false;
+                            this.canScrollNext = false;
+                            return;
+                        }
+                        const current = Math.abs(el.scrollLeft);
+                        this.canScrollPrev = current > 5;
+                        this.canScrollNext = current < (maxScroll - 5);
+                    },
+                    scrollNext() {
+                        const el = this.$refs.carouselTrack;
+                        if (!el) return;
+                        const isRtl = document.dir === 'rtl' || getComputedStyle(el).direction === 'rtl';
+                        const amount = el.clientWidth;
+                        el.scrollBy({ left: isRtl ? -amount : amount, behavior: 'smooth' });
+                    },
+                    scrollPrev() {
+                        const el = this.$refs.carouselTrack;
+                        if (!el) return;
+                        const isRtl = document.dir === 'rtl' || getComputedStyle(el).direction === 'rtl';
+                        const amount = el.clientWidth;
+                        el.scrollBy({ left: isRtl ? amount : -amount, behavior: 'smooth' });
+                    }
+                }"
+                x-init="
+                    $nextTick(() => updateScrollState());
+                    window.addEventListener('resize', () => updateScrollState());
+                "
+                class="mb-8 md:mb-12 relative w-full overflow-hidden"
+            >
+                <!-- Header Bar with Title & Navigation Controls -->
+                <div class="flex items-center justify-between mb-4 md:mb-6">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl sm:text-2xl">🔥</span>
+                        <h3 class="text-lg sm:text-xl md:text-2xl font-black text-[#001A54] dark:text-white">أحدث العروض</h3>
+                    </div>
 
-                    @include('flash_deal::shop.components.product-card', [
-                        'dealProduct' => $dealProduct,
-                        'index' => $index,
-                    ])
-                @endforeach
-            </section>
+                    <!-- Navigation Control Buttons -->
+                    <div class="flex items-center gap-2" dir="ltr">
+                        <!-- Prev Button -->
+                        <button 
+                            type="button"
+                            @click="scrollPrev()"
+                            :disabled="!canScrollPrev"
+                            :class="canScrollPrev ? 'bg-white dark:bg-gray-800 text-[#001A54] dark:text-white shadow-md hover:bg-[#FFC000] hover:text-black border border-gray-200 dark:border-gray-700 cursor-pointer' : 'bg-gray-100 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 border border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-40'"
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-200 select-none"
+                            aria-label="Previous Products"
+                        >
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 transform rotate-180" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+
+                        <!-- Next Button -->
+                        <button 
+                            type="button"
+                            @click="scrollNext()"
+                            :disabled="!canScrollNext"
+                            :class="canScrollNext ? 'bg-white dark:bg-gray-800 text-[#001A54] dark:text-white shadow-md hover:bg-[#FFC000] hover:text-black border border-gray-200 dark:border-gray-700 cursor-pointer' : 'bg-gray-100 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 border border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-40'"
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-200 select-none"
+                            aria-label="Next Products"
+                        >
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Carousel Viewport & Single Horizontal Track -->
+                <div class="relative w-full overflow-hidden">
+                    <div 
+                        x-ref="carouselTrack"
+                        @scroll.debounce.50ms="updateScrollState()"
+                        class="flex flex-nowrap gap-4 lg:gap-5 overflow-x-auto scroll-smooth py-2 px-0.5 w-full scrollbar-none"
+                        style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;"
+                    >
+                        @foreach ($activeDeal->products as $index => $dealProduct)
+                            @if (! $dealProduct->product) @continue @endif
+
+                            <div 
+                                class="shrink-0 w-full md:w-[calc((100%-2*1rem)/3)] lg:w-[calc((100%-4*1.25rem)/5)]"
+                                style="scroll-snap-align: start;"
+                            >
+                                @include('flash_deal::shop.components.product-card', [
+                                    'dealProduct' => $dealProduct,
+                                    'index' => $index,
+                                ])
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
 
             <!-- Footer Action Button: View All Offers -->
             <div class="flex justify-center">
@@ -69,4 +160,12 @@
 
         </div>
     </div>
+
+    <style>
+        [x-ref="carouselTrack"]::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+    </style>
 @endif
