@@ -132,7 +132,7 @@
                             @if (! $dealProduct->product) @continue @endif
 
                             <div 
-                                class="shrink-0 w-full md:w-[calc((100%-2*1rem)/3)] lg:w-[calc((100%-4*1.25rem)/5)]"
+                                class="shrink-0 w-full md:w-[calc((100%-2*1rem)/3)] lg:w-[calc((100%-4*1.25rem)/5)] xl:w-[310px] h-[505px] max-h-[505px]"
                                 style="scroll-snap-align: start;"
                             >
                                 @include('flash_deal::shop.components.product-card', [
