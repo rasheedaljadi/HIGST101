@@ -67,16 +67,16 @@
         
             mounted() {
                 if (this.media.images.length) {
+
                     this.baseFile.type = 'image';
 
                     this.baseFile.path = this.media.images[0].large_image_url;
                 } else if (this.media.videos.length) {
+
                     this.baseFile.type = 'video';
 
                     this.baseFile.path = this.media.videos[0].video_url;
                 }
-
-                this.isMediaLoading = false;
             },
 
             computed: {
