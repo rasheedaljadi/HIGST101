@@ -29,10 +29,10 @@ class WhitespaceDetector
 
         // Sampling background color from 4 corners
         $corners = [
-            $image->pickColor(0, 0)->toRgb(),
-            $image->pickColor(max(0, $width - 1), 0)->toRgb(),
-            $image->pickColor(0, max(0, $height - 1))->toRgb(),
-            $image->pickColor(max(0, $width - 1), max(0, $height - 1))->toRgb(),
+            $this->extractRgb($image->pickColor(0, 0)),
+            $this->extractRgb($image->pickColor(max(0, $width - 1), 0)),
+            $this->extractRgb($image->pickColor(0, max(0, $height - 1))),
+            $this->extractRgb($image->pickColor(max(0, $width - 1), max(0, $height - 1))),
         ];
 
         $avgBgR = array_sum(array_column($corners, 'red')) / 4;
@@ -50,12 +50,12 @@ class WhitespaceDetector
 
         for ($y = 0; $y < $height; $y += $stepY) {
             for ($x = 0; $x < $width; $x += $stepX) {
-                $rgb = $image->pickColor($x, $y)->toRgb();
+                $rgb = $this->extractRgb($image->pickColor($x, $y));
 
                 $deltaC = sqrt(
-                    pow($rgb->red - $avgBgR, 2) +
-                    pow($rgb->green - $avgBgG, 2) +
-                    pow($rgb->blue - $avgBgB, 2)
+                    pow($rgb['red'] - $avgBgR, 2) +
+                    pow($rgb['green'] - $avgBgG, 2) +
+                    pow($rgb['blue'] - $avgBgB, 2)
                 );
 
                 if ($deltaC > $this->colorThreshold) {
@@ -95,5 +95,37 @@ class WhitespaceDetector
             'width' => $subjWidth,
             'height' => $subjHeight,
         ];
+    }
+
+    /**
+     * Safely extract RGB values from Intervention Image v3 Color object.
+     */
+    protected function extractRgb(mixed $color): array
+    {
+        if (is_object($color)) {
+            if (method_exists($color, 'red') && method_exists($color, 'green') && method_exists($color, 'blue')) {
+                $r = $color->red();
+                $g = $color->green();
+                $b = $color->blue();
+
+                return [
+                    'red' => is_object($r) && method_exists($r, 'getValue') ? $r->getValue() : (int) $r,
+                    'green' => is_object($g) && method_exists($g, 'getValue') ? $g->getValue() : (int) $g,
+                    'blue' => is_object($b) && method_exists($b, 'getValue') ? $b->getValue() : (int) $b,
+                ];
+            }
+
+            if (method_exists($color, 'toRgb')) {
+                $rgb = $color->toRgb();
+
+                return [
+                    'red' => $rgb->red ?? 255,
+                    'green' => $rgb->green ?? 255,
+                    'blue' => $rgb->blue ?? 255,
+                ];
+            }
+        }
+
+        return ['red' => 255, 'green' => 255, 'blue' => 255];
     }
 }
