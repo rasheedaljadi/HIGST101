@@ -104,14 +104,10 @@ class WhitespaceDetector
     {
         if (is_object($color)) {
             if (method_exists($color, 'red') && method_exists($color, 'green') && method_exists($color, 'blue')) {
-                $r = $color->red();
-                $g = $color->green();
-                $b = $color->blue();
-
                 return [
-                    'red' => is_object($r) && method_exists($r, 'getValue') ? $r->getValue() : (int) $r,
-                    'green' => is_object($g) && method_exists($g, 'getValue') ? $g->getValue() : (int) $g,
-                    'blue' => is_object($b) && method_exists($b, 'getValue') ? $b->getValue() : (int) $b,
+                    'red' => (int) (string) $color->red(),
+                    'green' => (int) (string) $color->green(),
+                    'blue' => (int) (string) $color->blue(),
                 ];
             }
 
@@ -119,9 +115,9 @@ class WhitespaceDetector
                 $rgb = $color->toRgb();
 
                 return [
-                    'red' => $rgb->red ?? 255,
-                    'green' => $rgb->green ?? 255,
-                    'blue' => $rgb->blue ?? 255,
+                    'red' => (int) ($rgb->red ?? 255),
+                    'green' => (int) ($rgb->green ?? 255),
+                    'blue' => (int) ($rgb->blue ?? 255),
                 ];
             }
         }
