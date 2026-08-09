@@ -3,8 +3,6 @@
 namespace Webkul\FlashDeal\Helpers;
 
 use Illuminate\Support\Facades\Storage;
-use Webkul\FlashDeal\Jobs\GenerateProductDetailSmartThumbnailJob;
-use Webkul\FlashDeal\Jobs\GenerateQuickOfferSmartThumbnailJob;
 use Webkul\Product\Contracts\Product;
 
 class SmartThumbnailHelper
@@ -90,16 +88,24 @@ class SmartThumbnailHelper
             return url('cache/'.$relativePath);
         }
 
-        // Dispatch background job to generate missing thumbnail
+        // Try inline generation for immediate display if missing
         try {
-            GenerateQuickOfferSmartThumbnailJob::dispatch(
-                $product->id,
-                $sourcePath,
-                $fullTargetPath,
-                $sourceHash
-            );
-        } catch (\Throwable) {
-            // Queue dispatch fallback to direct URL
+            $imageManager = image_manager();
+            $cropEngine = app(SmartCropEngine::class);
+            $encoder = app(WebpEncoder::class);
+
+            $img = $imageManager->read($sourcePath);
+            $processed = $cropEngine->process($img, $sourcePath);
+            $encoder->encodeAndSave($processed, $fullTargetPath);
+
+            if (file_exists($fullTargetPath)) {
+                return Storage::url($relativePath);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Quick Offer Smart Thumbnail inline generation failed: '.$e->getMessage(), [
+                'product_id' => $product->id,
+                'source' => $sourcePath,
+            ]);
         }
 
         return $fallbackUrl;
@@ -148,19 +154,24 @@ class SmartThumbnailHelper
             return url('cache/'.$relativePath);
         }
 
-        // Dispatch background job to generate missing thumbnail
+        // Try inline generation for immediate display if missing
         try {
-            GenerateProductDetailSmartThumbnailJob::dispatch(
-                $product->id,
-                $sourcePath,
-                $fullTargetPath,
-                $sourceHash,
-                $targetW,
-                $targetH,
-                $isRetina
-            );
-        } catch (\Throwable) {
-            // Queue dispatch fallback to direct URL
+            $imageManager = image_manager();
+            $cropEngine = app(SmartCropEngine::class);
+            $encoder = app(WebpEncoder::class);
+
+            $img = $imageManager->read($sourcePath);
+            $processed = $cropEngine->process($img, $sourcePath, $targetW, $targetH);
+            $encoder->encodeAndSave($processed, $fullTargetPath);
+
+            if (file_exists($fullTargetPath)) {
+                return Storage::url($relativePath);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('PDP Smart Thumbnail inline generation failed: '.$e->getMessage(), [
+                'product_id' => $product->id,
+                'source' => $sourcePath,
+            ]);
         }
 
         return $fallbackUrl;
@@ -208,19 +219,24 @@ class SmartThumbnailHelper
             return url('cache/'.$relativePath);
         }
 
-        // Dispatch background job to generate missing thumbnail
+        // Try inline generation for immediate display if missing
         try {
-            GenerateProductDetailSmartThumbnailJob::dispatch(
-                $product->id,
-                $sourcePath,
-                $fullTargetPath,
-                $sourceHash,
-                $targetW,
-                $targetH,
-                false
-            );
-        } catch (\Throwable) {
-            // Queue dispatch fallback to direct URL
+            $imageManager = image_manager();
+            $cropEngine = app(SmartCropEngine::class);
+            $encoder = app(WebpEncoder::class);
+
+            $img = $imageManager->read($sourcePath);
+            $processed = $cropEngine->process($img, $sourcePath, $targetW, $targetH);
+            $encoder->encodeAndSave($processed, $fullTargetPath);
+
+            if (file_exists($fullTargetPath)) {
+                return Storage::url($relativePath);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('PDP Smart Thumbnail inline generation failed: '.$e->getMessage(), [
+                'product_id' => $product->id,
+                'source' => $sourcePath,
+            ]);
         }
 
         return $fallbackUrl;
@@ -263,19 +279,24 @@ class SmartThumbnailHelper
             return url('cache/'.$relativePath);
         }
 
-        // Dispatch background job to generate missing thumbnail
+        // Try inline generation for immediate display if missing
         try {
-            GenerateProductDetailSmartThumbnailJob::dispatch(
-                $product->id,
-                $sourcePath,
-                $fullTargetPath,
-                $sourceHash,
-                $targetW,
-                $targetH,
-                false
-            );
-        } catch (\Throwable) {
-            // Queue dispatch fallback to direct URL
+            $imageManager = image_manager();
+            $cropEngine = app(SmartCropEngine::class);
+            $encoder = app(WebpEncoder::class);
+
+            $img = $imageManager->read($sourcePath);
+            $processed = $cropEngine->process($img, $sourcePath, $targetW, $targetH);
+            $encoder->encodeAndSave($processed, $fullTargetPath);
+
+            if (file_exists($fullTargetPath)) {
+                return Storage::url($relativePath);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('PDP Smart Thumbnail inline generation failed: '.$e->getMessage(), [
+                'product_id' => $product->id,
+                'source' => $sourcePath,
+            ]);
         }
 
         return $fallbackUrl;

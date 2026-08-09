@@ -30,10 +30,17 @@
             if (! empty($galleryImages) && $helper->isProductPageActive()) {
                 $productImageModels = $product->images;
                 foreach ($galleryImages as $index => &$imageItem) {
-                    if (isset($productImageModels[$index]) && isset($imageItem['large_image_url'])) {
-                        $imageItem['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailForImage($product, $productImageModels[$index], $imageItem['large_image_url']);
+                    $imageModel = $productImageModels[$index] ?? null;
+                    if ($imageModel && isset($imageItem['large_image_url'])) {
+                        $smartUrl = $helper->getProductDetailTest5x4ThumbnailForImage($product, $imageModel, $imageItem['large_image_url']);
+                        $imageItem['large_image_url'] = $smartUrl;
+                        $imageItem['medium_image_url'] = $smartUrl;
+                        $imageItem['small_image_url'] = $smartUrl;
                     } elseif ($index === 0 && isset($imageItem['large_image_url'])) {
-                        $imageItem['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailUrl($product, $imageItem['large_image_url']);
+                        $smartUrl = $helper->getProductDetailTest5x4ThumbnailUrl($product, $imageItem['large_image_url']);
+                        $imageItem['large_image_url'] = $smartUrl;
+                        $imageItem['medium_image_url'] = $smartUrl;
+                        $imageItem['small_image_url'] = $smartUrl;
                     }
                 }
             }
