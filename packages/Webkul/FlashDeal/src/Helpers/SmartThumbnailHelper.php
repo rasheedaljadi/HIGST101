@@ -8,9 +8,9 @@ use Webkul\Product\Contracts\Product;
 
 class SmartThumbnailHelper
 {
-    protected string $version = 'v1';
+    protected string $version = 'v2';
 
-    protected string $configHash = 'c82_m15_t28'; // Config parameter signature
+    protected string $configHash = 'v2_3strat_enhance'; // Config parameter signature
 
     /**
      * Check if the Smart Thumbnail Engine is globally enabled.

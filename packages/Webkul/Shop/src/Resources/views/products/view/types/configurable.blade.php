@@ -212,6 +212,33 @@
         <script type="module">
             let galleryImages = @json(product_image()->getGalleryImages($product));
 
+            <?php
+                $__configurableConfig = app('Webkul\Product\Helpers\ConfigurableOption')->getConfigurationConfig($product);
+                $__smartHelper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
+                if ($__smartHelper->isProductPageActive() && ! empty($__configurableConfig['variant_images'])) {
+                    foreach ($__configurableConfig['variant_images'] as $__variantId => &$__variantGallery) {
+                        $__variant = $product->variants->firstWhere('id', $__variantId);
+                        if (! $__variant) {
+                            continue;
+                        }
+                        $__variantImageModels = $__variant->images;
+                        foreach ($__variantGallery as $__idx => &$__imgItem) {
+                            $__imgModel = $__variantImageModels[$__idx] ?? null;
+                            if ($__imgModel && isset($__imgItem['large_image_url'])) {
+                                $__smartUrl = $__smartHelper->getProductDetailTest5x4ThumbnailForImage(
+                                    $__variant, $__imgModel, $__imgItem['large_image_url']
+                                );
+                                $__imgItem['large_image_url'] = $__smartUrl;
+                                $__imgItem['medium_image_url'] = $__smartUrl;
+                                $__imgItem['small_image_url'] = $__smartUrl;
+                            }
+                        }
+                        unset($__imgItem);
+                    }
+                    unset($__variantGallery);
+                }
+            ?>
+
             app.component('v-product-configurable-options', {
                 template: '#v-product-configurable-options-template',
 
@@ -219,7 +246,8 @@
 
                 data() {
                     return {
-                        config: @json(app('Webkul\Product\Helpers\ConfigurableOption')->getConfigurationConfig($product)),
+                        config: @json($__configurableConfig),
+
 
                         childAttributes: [],
 

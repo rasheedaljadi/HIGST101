@@ -76,7 +76,7 @@
     >
         <img
             class="h-full w-full cursor-pointer rounded-xl block"
-            style="width: 100%; height: 100%; object-fit: fill;"
+            style="width: 100%; height: 100%; object-fit: contain; background: #f5f5f5;"
             :src="baseFile.path"
             v-if="baseFile.type == 'image'"
             alt="{{ $product->name }}"
