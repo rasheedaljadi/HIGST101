@@ -2,6 +2,7 @@
 
 namespace Webkul\FlashDeal\Helpers;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Product\Contracts\Product;
 
