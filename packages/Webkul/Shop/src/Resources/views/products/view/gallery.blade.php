@@ -26,8 +26,8 @@
     <script type="module">
         <?php
             $galleryImages = product_image()->getGalleryImages($product);
-            if (! empty($galleryImages)) {
-                $helper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
+            $helper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
+            if (! empty($galleryImages) && $helper->isProductPageActive()) {
                 $productImageModels = $product->images;
                 foreach ($galleryImages as $index => &$imageItem) {
                     if (isset($productImageModels[$index]) && isset($imageItem['large_image_url'])) {

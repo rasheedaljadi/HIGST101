@@ -4464,6 +4464,22 @@ return [
                         'info' => 'Configure product stock options to allow back orders, set minimum and maximum cart quantities, and define out-of-stock thresholds.',
                     ],
                 ],
+
+                'smart-thumbnail' => [
+                    'title' => 'Smart Image Engine',
+                    'info' => 'Configure smart image engine generation and display options across storefront sections.',
+
+                    'settings' => [
+                        'title' => 'Smart Image Engine Settings',
+                        'info' => 'Globally enable or disable the smart thumbnail engine or toggle it per section.',
+                        'active' => 'Enable Smart Image Engine (Global)',
+                        'active-info' => 'When disabled, smart thumbnail generation will be completely turned off across all store sections.',
+                        'quick-offers-active' => 'Enable in Quick Offers Section',
+                        'quick-offers-active-info' => 'Enable or disable smart image generation for product cards in the homepage quick offers section.',
+                        'product-page-active' => 'Enable in Product Details Page',
+                        'product-page-active-info' => 'Enable or disable smart image generation for the main gallery on the product details page.',
+                    ],
+                ],
             ],
 
             'customer' => [

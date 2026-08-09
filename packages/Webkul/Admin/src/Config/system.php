@@ -1215,6 +1215,44 @@ return [
                 'default' => '0',
             ],
         ],
+    ], [
+        'key' => 'catalog.smart_thumbnail',
+        'name' => 'admin::app.configuration.index.catalog.smart-thumbnail.title',
+        'info' => 'admin::app.configuration.index.catalog.smart-thumbnail.info',
+        'icon' => 'settings/product.svg',
+        'sort' => 4,
+    ], [
+        'key' => 'catalog.smart_thumbnail.settings',
+        'name' => 'admin::app.configuration.index.catalog.smart-thumbnail.settings.title',
+        'info' => 'admin::app.configuration.index.catalog.smart-thumbnail.settings.info',
+        'sort' => 1,
+        'fields' => [
+            [
+                'name' => 'active',
+                'title' => 'admin::app.configuration.index.catalog.smart-thumbnail.settings.active',
+                'info' => 'admin::app.configuration.index.catalog.smart-thumbnail.settings.active-info',
+                'type' => 'boolean',
+                'channel_based' => false,
+                'locale_based' => false,
+                'default' => 1,
+            ], [
+                'name' => 'quick_offers_active',
+                'title' => 'admin::app.configuration.index.catalog.smart-thumbnail.settings.quick-offers-active',
+                'info' => 'admin::app.configuration.index.catalog.smart-thumbnail.settings.quick-offers-active-info',
+                'type' => 'boolean',
+                'channel_based' => false,
+                'locale_based' => false,
+                'default' => 1,
+            ], [
+                'name' => 'product_page_active',
+                'title' => 'admin::app.configuration.index.catalog.smart-thumbnail.settings.product-page-active',
+                'info' => 'admin::app.configuration.index.catalog.smart-thumbnail.settings.product-page-active-info',
+                'type' => 'boolean',
+                'channel_based' => false,
+                'locale_based' => false,
+                'default' => 1,
+            ],
+        ],
     ],
 
     /**

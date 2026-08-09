@@ -14,11 +14,49 @@ class SmartThumbnailHelper
     protected string $configHash = 'c82_m15_t28'; // Config parameter signature
 
     /**
+     * Check if the Smart Thumbnail Engine is globally enabled.
+     */
+    public function isEngineActive(): bool
+    {
+        $active = core()->getConfigData('catalog.smart_thumbnail.settings.active');
+
+        return $active === null ? true : (bool) $active;
+    }
+
+    /**
+     * Check if the Quick Offers section smart thumbnails are enabled.
+     */
+    public function isQuickOffersActive(): bool
+    {
+        if (! $this->isEngineActive()) {
+            return false;
+        }
+
+        $active = core()->getConfigData('catalog.smart_thumbnail.settings.quick_offers_active');
+
+        return $active === null ? true : (bool) $active;
+    }
+
+    /**
+     * Check if the Product Page gallery smart thumbnails are enabled.
+     */
+    public function isProductPageActive(): bool
+    {
+        if (! $this->isEngineActive()) {
+            return false;
+        }
+
+        $active = core()->getConfigData('catalog.smart_thumbnail.settings.product_page_active');
+
+        return $active === null ? true : (bool) $active;
+    }
+
+    /**
      * Get Quick Offer Smart Thumbnail URL for product, falling back to original image URL.
      */
     public function getQuickOfferThumbnailUrl(?Product $product, string $fallbackUrl): string
     {
-        if (! $product) {
+        if (! $product || ! $this->isQuickOffersActive()) {
             return $fallbackUrl;
         }
 
