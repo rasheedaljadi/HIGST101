@@ -24,6 +24,21 @@
     </script>
 
     <script type="module">
+        <?php
+            $galleryImages = product_image()->getGalleryImages($product);
+            if (! empty($galleryImages)) {
+                $helper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
+                $productImageModels = $product->images;
+                foreach ($galleryImages as $index => &$imageItem) {
+                    if (isset($productImageModels[$index]) && isset($imageItem['large_image_url'])) {
+                        $imageItem['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailForImage($product, $productImageModels[$index], $imageItem['large_image_url']);
+                    } elseif ($index === 0 && isset($imageItem['large_image_url'])) {
+                        $imageItem['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailUrl($product, $imageItem['large_image_url']);
+                    }
+                }
+            }
+        ?>
+
         app.component('v-product-gallery', {
             template: '#v-product-gallery-template',
 
@@ -34,21 +49,7 @@
                     isMediaLoading: true,
 
                     media: {
-                        images: @json((function() use ($product) {
-                            $images = product_image()->getGalleryImages($product);
-                            if (! empty($images)) {
-                                $helper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
-                                $productImageModels = $product->images;
-                                foreach ($images as $index => &$imageItem) {
-                                    if (isset($productImageModels[$index]) && isset($imageItem['large_image_url'])) {
-                                        $imageItem['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailForImage($product, $productImageModels[$index], $imageItem['large_image_url']);
-                                    } elseif ($index === 0 && isset($imageItem['large_image_url'])) {
-                                        $imageItem['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailUrl($product, $imageItem['large_image_url']);
-                                    }
-                                }
-                            }
-                            return $images;
-                        })()),
+                        images: @json($galleryImages),
 
                         videos: @json(product_video()->getVideos($product)),
                     },
