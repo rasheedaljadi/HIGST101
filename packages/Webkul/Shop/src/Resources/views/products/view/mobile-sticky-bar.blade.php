@@ -13,7 +13,7 @@
     >
         <div
             v-if="isMounted"
-            class="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between gap-3 border-t border-zinc-200 bg-white p-3 shadow-2xl transition-all duration-300 ease-in-out 1180:hidden"
+            class="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between gap-3 border-t border-zinc-200 bg-white p-3 shadow-2xl transition-all duration-300 ease-in-out md:hidden"
             :class="isVisible ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'"
         >
             <!-- Price Display -->

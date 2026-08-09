@@ -1,12 +1,12 @@
 <div
-    class="overflow-hidden 1180:hidden"
+    class="overflow-hidden md:hidden"
     v-if="isMediaLoading"
 >
     <div class="shimmer aspect-[5/4] max-h-screen w-screen bg-zinc-200"></div>
 </div>
 
 <div
-    class="scrollbar-hide flex w-screen gap-8 overflow-auto max-sm:gap-5 1180:hidden"
+    class="scrollbar-hide flex w-screen gap-8 overflow-auto max-sm:gap-5 md:hidden"
     v-else
 >
     <v-product-carousel

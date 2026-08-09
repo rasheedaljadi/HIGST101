@@ -1,5 +1,5 @@
-<!-- For large screens greater than 1180px. -->
-<div class="sticky top-20 flex h-max gap-8 max-1180:hidden">
+<!-- For screens 768px and greater (tablets, laptops, desktop). -->
+<div class="sticky top-20 flex h-max gap-8 max-md:hidden">
     <!-- Product Image and Videos Slider -->
     <div class="flex-24 h-[448px] flex min-w-[80px] max-w-[80px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
         <!-- Arrow Up -->
@@ -70,7 +70,7 @@
     </div>
 
     <div
-        class="relative w-full overflow-hidden rounded-xl bg-zinc-100 flex items-center justify-center"
+        class="relative w-full overflow-hidden rounded-xl bg-white flex items-center justify-center"
         style="aspect-ratio: 5 / 4; max-width: 560px; max-height: 448px; align-self: flex-start;"
         v-show="! isMediaLoading"
     >
