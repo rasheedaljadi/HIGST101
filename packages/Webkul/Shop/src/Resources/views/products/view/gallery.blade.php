@@ -36,9 +36,16 @@
                     media: {
                         images: @json((function() use ($product) {
                             $images = product_image()->getGalleryImages($product);
-                            if ($product->id == 222 && ! empty($images) && isset($images[0]['large_image_url'])) {
+                            if (! empty($images)) {
                                 $helper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
-                                $images[0]['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailUrl($product, $images[0]['large_image_url']);
+                                $productImageModels = $product->images;
+                                foreach ($images as $index => &$imageItem) {
+                                    if (isset($productImageModels[$index]) && isset($imageItem['large_image_url'])) {
+                                        $imageItem['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailForImage($product, $productImageModels[$index], $imageItem['large_image_url']);
+                                    } elseif ($index === 0 && isset($imageItem['large_image_url'])) {
+                                        $imageItem['large_image_url'] = $helper->getProductDetailTest5x4ThumbnailUrl($product, $imageItem['large_image_url']);
+                                    }
+                                }
                             }
                             return $images;
                         })()),
