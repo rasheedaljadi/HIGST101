@@ -20,6 +20,7 @@
     </v-product-carousel>
 </div>
 
+@push('scripts')
     <script
         type="text/x-template"
         id="v-product-carousel-template"
@@ -252,3 +253,4 @@
             },
         });
     </script>
+@endpush
