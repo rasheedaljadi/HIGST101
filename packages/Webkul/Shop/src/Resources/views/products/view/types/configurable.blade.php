@@ -256,10 +256,7 @@
                         this.childAttributes.unshift(attribute);
                     }
 
-                    // Merge all variant images into gallery so all thumbnails remain visible
-                    this.$nextTick(() => {
-                        this.initAllVariantImages();
-                    });
+                    // Keep gallery initial state limited to official base images
                 },
 
                 methods: {
