@@ -4,6 +4,8 @@ namespace Webkul\FlashDeal\Helpers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Webkul\FlashDeal\Services\SmartThumbnail\SmartCropEngine;
+use Webkul\FlashDeal\Services\SmartThumbnail\WebpEncoder;
 use Webkul\Product\Contracts\Product;
 
 class SmartThumbnailHelper
@@ -75,7 +77,7 @@ class SmartThumbnailHelper
         $cacheKey = md5($product->id.'_'.$sourceHash.'_'.$this->version.'_'.$this->configHash);
         $subDir = substr($cacheKey, 0, 2);
 
-        $relativePath = 'smart-thumbnails/quick_offers/v1/'.$subDir.'/quick-offer-v1-'.$product->id.'-'.substr($cacheKey, 0, 12).'.webp';
+        $relativePath = 'smart-thumbnails/quick_offers/'.$this->version.'/'.$subDir.'/quick-offer-'.$this->version.'-'.$product->id.'-'.substr($cacheKey, 0, 12).'.webp';
         $fullTargetPath = storage_path('app/public/'.$relativePath);
 
         // Check if thumbnail exists in public storage
@@ -141,7 +143,7 @@ class SmartThumbnailHelper
         $cacheKey = md5($product->id.'_'.$sourceHash.'_'.$this->version.'_pdp_'.$targetW.'x'.$targetH.'_'.$this->configHash);
         $subDir = substr($cacheKey, 0, 2);
 
-        $relativePath = 'smart-thumbnails/product_detail/v1/'.$subDir.'/pdp-v1-'.$product->id.'-'.substr($cacheKey, 0, 12).$retinaTag.'.webp';
+        $relativePath = 'smart-thumbnails/product_detail/'.$this->version.'/'.$subDir.'/pdp-'.$this->version.'-'.$product->id.'-'.substr($cacheKey, 0, 12).$retinaTag.'.webp';
         $fullTargetPath = storage_path('app/public/'.$relativePath);
 
         // Check if thumbnail exists in public storage
@@ -206,7 +208,7 @@ class SmartThumbnailHelper
         $cacheKey = md5($product->id.'_'.$sourceHash.'_'.$this->version.'_pdp_test_5x4_'.$targetW.'x'.$targetH.'_'.$this->configHash);
         $subDir = substr($cacheKey, 0, 2);
 
-        $relativePath = 'smart-thumbnails/product_detail/v1_test_5x4/'.$subDir.'/pdp-v1-test5x4-'.$product->id.'-'.substr($cacheKey, 0, 12).'.webp';
+        $relativePath = 'smart-thumbnails/product_detail/'.$this->version.'_5x4/'.$subDir.'/pdp-'.$this->version.'-5x4-'.$product->id.'-'.substr($cacheKey, 0, 12).'.webp';
         $fullTargetPath = storage_path('app/public/'.$relativePath);
 
         // Check if thumbnail exists in public storage
@@ -266,7 +268,7 @@ class SmartThumbnailHelper
         $cacheKey = md5($product->id.'_'.$imageId.'_'.$sourceHash.'_'.$this->version.'_pdp_test_5x4_'.$targetW.'x'.$targetH.'_'.$this->configHash);
         $subDir = substr($cacheKey, 0, 2);
 
-        $relativePath = 'smart-thumbnails/product_detail/v1_test_5x4/'.$subDir.'/pdp-v1-test5x4-'.$product->id.'-'.$imageId.'-'.substr($cacheKey, 0, 12).'.webp';
+        $relativePath = 'smart-thumbnails/product_detail/'.$this->version.'_5x4/'.$subDir.'/pdp-'.$this->version.'-5x4-'.$product->id.'-'.$imageId.'-'.substr($cacheKey, 0, 12).'.webp';
         $fullTargetPath = storage_path('app/public/'.$relativePath);
 
         // Check if thumbnail exists in public storage
