@@ -1,7 +1,7 @@
 <!-- For screens 768px and greater (tablets, laptops, desktop). -->
 <div class="sticky top-20 flex h-max gap-8 max-md:hidden">
     <!-- Product Image and Videos Slider -->
-    <div class="flex-24 h-[448px] flex min-w-[48px] max-w-[48px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
+    <div class="flex-24 h-[448px] flex min-w-[52px] max-w-[52px] flex-wrap place-content-start justify-center gap-2.5 overflow-hidden scrollbar-hide">
         <!-- Arrow Up -->
         <span
             class="icon-arrow-up cursor-pointer text-2xl"
@@ -16,7 +16,7 @@
         <!-- Swiper Container -->
         <div
             ref="swiperContainer"
-            class="flex flex-col max-h-[500px] gap-2.5 [&>*]:flex-[0] overflow-auto scroll-smooth scrollbar-hide"
+            class="flex flex-col max-h-[380px] gap-2.5 [&>*]:flex-[0] overflow-y-auto scroll-smooth scrollbar-hide"
         >
             <template v-for="(media, index) in [...media.images, ...media.videos]">
                 <video
