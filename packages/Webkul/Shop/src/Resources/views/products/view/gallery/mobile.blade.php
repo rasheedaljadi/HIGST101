@@ -2,7 +2,7 @@
     class="overflow-hidden 1180:hidden"
     v-if="isMediaLoading"
 >
-    <div class="shimmer aspect-[4/5] max-h-screen w-screen bg-zinc-200"></div>
+    <div class="shimmer aspect-[5/4] max-h-screen w-screen bg-zinc-200"></div>
 </div>
 
 <div
@@ -51,7 +51,7 @@
 
                     <template v-else>
                         <img
-                            class="{{ $product->id == 222 ? 'aspect-[5/4]' : 'aspect-[4/5] object-contain' }} max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out bg-zinc-100 rounded-xl"
+                            class="aspect-[5/4] object-fill max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out bg-zinc-100 rounded-xl"
                             :src="media.large_image_url"
                             :alt="media.large_image_url"
                             v-on:error="$event.target.src = media.original_image_url || media.fallback_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
