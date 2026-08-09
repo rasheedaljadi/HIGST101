@@ -3,7 +3,6 @@
 namespace Webkul\Shop\Tests\Feature;
 
 use Webkul\Product\Models\Product;
-use Webkul\Product\Models\ProductImage as ProductImageModel;
 use Webkul\Product\ProductImage as ProductImageHelper;
 use Webkul\Shop\Tests\ShopTestCase;
 

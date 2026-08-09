@@ -2,6 +2,7 @@
 
 namespace Webkul\Shop\Transformers;
 
+use Illuminate\Support\Str;
 use Webkul\Product\Contracts\Product;
 use Webkul\Product\Helpers\Review as ReviewHelper;
 use Webkul\Product\Helpers\View as ProductViewHelper;
@@ -22,7 +23,6 @@ class ProductPDPTransformer
      * Transform Eloquent product model into a structured PDP ViewModel payload.
      *
      * @param  Product  $product
-     * @return array
      */
     public function transform($product): array
     {
@@ -64,7 +64,7 @@ class ProductPDPTransformer
             'meta_title' => trim((string) $product->meta_title) !== '' ? $product->meta_title : $product->name,
             'meta_description' => trim((string) $product->meta_description) !== ''
                 ? $product->meta_description
-                : \Illuminate\Support\Str::limit(strip_tags((string) $product->description), 120, ''),
+                : Str::limit(strip_tags((string) $product->description), 120, ''),
             'meta_keywords' => $product->meta_keywords,
             'is_saleable' => $isSaleable,
             'total_qty' => $totalQty,

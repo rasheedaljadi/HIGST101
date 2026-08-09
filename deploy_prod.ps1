@@ -13,7 +13,7 @@ git add -f resources/views/aliexpress/import.blade.php 2>$null
 git add -f resources/views/aliexpress/keys.blade.php 2>$null
 git add -f resources/views/aliexpress/sync.blade.php 2>$null
 git add -A
-git commit -m "Update shop copyright text to Hayest, sync fixes, and project views"
+git commit -m "Update flash deals product card: move cart icon circle to left with brand color and price to right"
 git push origin main
 
 if ($LASTEXITCODE -ne 0) {

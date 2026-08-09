@@ -2,6 +2,7 @@
 
 namespace Webkul\Shop\Tests\Feature;
 
+use Webkul\Product\Models\Product;
 use Webkul\Shop\Tests\ShopTestCase;
 use Webkul\Shop\Transformers\ProductPDPTransformer;
 
@@ -20,7 +21,7 @@ class ProductPDPTransformerTest extends ShopTestCase
     public function test_transformer_includes_dropshipping_transparency_contract(): void
     {
         $transformer = app(ProductPDPTransformer::class);
-        $product = \Webkul\Product\Models\Product::factory()->create([
+        $product = Product::factory()->create([
             'type' => 'simple',
         ]);
 

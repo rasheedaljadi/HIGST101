@@ -49,7 +49,7 @@ class ImageCacheController extends Controller
 
         // Fallback Step 1: Check original storage path if cache path is missing
         if (! file_exists($path)) {
-            $originalStoragePath = storage_path('app/public/' . $filename);
+            $originalStoragePath = storage_path('app/public/'.$filename);
             if (file_exists($originalStoragePath)) {
                 $path = $originalStoragePath;
             }
@@ -74,7 +74,7 @@ class ImageCacheController extends Controller
 
                 $content = (string) $image->encodeByMediaType();
 
-                $targetPath = public_path('cache/' . $template . '/' . $filename);
+                $targetPath = public_path('cache/'.$template.'/'.$filename);
                 $targetDir = dirname($targetPath);
                 if (! file_exists($targetDir)) {
                     @mkdir($targetDir, 0777, true);
@@ -86,7 +86,7 @@ class ImageCacheController extends Controller
                 // If filter processing fails, fall through to raw file or placeholder
                 if (file_exists($path)) {
                     $rawContent = file_get_contents($path);
-                    $targetPath = public_path('cache/' . $template . '/' . $filename);
+                    $targetPath = public_path('cache/'.$template.'/'.$filename);
                     $targetDir = dirname($targetPath);
                     if (! file_exists($targetDir)) {
                         @mkdir($targetDir, 0777, true);
@@ -106,6 +106,7 @@ class ImageCacheController extends Controller
 
         // Fallback Step 4: Transparent 1x1 WebP pixel stream (Guarantees zero 404 broken image UI)
         $transparentWebp = base64_decode('UklGRdhAAAAvAAAAAAfQ//73v/+BiOh/AAA=');
+
         return response($transparentWebp, 200, ['Content-Type' => 'image/webp']);
     }
 

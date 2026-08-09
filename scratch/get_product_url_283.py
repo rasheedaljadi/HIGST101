@@ -6,18 +6,28 @@ password = "YoK2PBV1fo82yujX2tDq"
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+print(f"Connecting to {username}@{hostname}...")
 client.connect(hostname, username=username, password=password, timeout=15)
 
 project_dir = "/home/highest-ye/htdocs/highest-ye.store"
-test_cmd = f"cd '{project_dir}' && php artisan tinker --execute=\"\$p = app(\\Webkul\\Wallet\\Payment\\WalletPayment::class); var_dump(\$p->isAvailable()); var_dump(\$p->getConfigData('active')); var_dump(core()->getConfigData('sales.wallet.active'));\""
+script = r"""
+$p = app('Webkul\Product\Repositories\ProductRepository')->find(283);
+if ($p) {
+    echo "ID: " . $p->id . "\n";
+    echo "URL_KEY: " . $p->url_key . "\n";
+}
+"""
 
-stdin, stdout, stderr = client.exec_command(test_cmd)
+cmd = f"cd '{project_dir}' && php artisan tinker --execute=\"{script}\""
+
+stdin, stdout, stderr = client.exec_command(cmd)
 out = stdout.read().decode("utf-8", errors="ignore")
 err = stderr.read().decode("utf-8", errors="ignore")
 
-print("=== STDOUT ===")
+print("=== OUT ===")
 print(out)
-print("=== STDERR ===")
+print("=== ERR ===")
 print(err)
 
 client.close()

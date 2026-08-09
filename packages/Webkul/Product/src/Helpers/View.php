@@ -72,7 +72,6 @@ class View
      * Get dropshipping fulfillment transparency metadata.
      *
      * @param  Product  $product
-     * @return array
      */
     public function getDropshippingMetadata($product): array
     {
