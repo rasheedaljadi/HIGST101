@@ -1,7 +1,7 @@
 <!-- For screens 768px and greater (tablets, laptops, desktop). -->
 <div class="sticky top-20 flex h-max gap-8 max-md:hidden">
     <!-- Product Image and Videos Slider -->
-    <div class="flex-24 h-[448px] flex min-w-[80px] max-w-[80px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
+    <div class="flex-24 h-[448px] flex min-w-[60px] max-w-[60px] flex-wrap place-content-start justify-center gap-2.5 overflow-y-auto overflow-x-hidden">
         <!-- Arrow Up -->
         <span
             class="icon-arrow-up cursor-pointer text-2xl"
@@ -21,7 +21,7 @@
             <template v-for="(media, index) in [...media.images, ...media.videos]">
                 <video
                     v-if="media.type == 'videos'"
-                    :class="`transparent aspect-[4/5] max-h-[100px] min-w-[80px] w-[80px] cursor-pointer rounded-xl object-contain border bg-zinc-50 ${isActiveMedia(index) ? 'pointer-events-none border border-navyBlue' : 'border-white'}`"
+                    :class="`transparent aspect-square h-[60px] max-h-[60px] min-w-[60px] w-[60px] cursor-pointer rounded-md object-cover border bg-zinc-50 ${isActiveMedia(index) ? 'pointer-events-none border-2 border-navyBlue' : 'border-gray-200'}`"
                     @click="change(media, index)"
                     alt="{{ $product->name }}"
                     tabindex="0"
@@ -34,11 +34,11 @@
 
                 <img
                     v-else
-                    :class="`transparent aspect-[4/5] max-h-[100px] min-w-[80px] w-[80px] cursor-pointer rounded-xl object-contain border bg-zinc-50 ${isActiveMedia(index) ? 'pointer-events-none border border-navyBlue' : 'border-white'}`"
+                    :class="`transparent aspect-square h-[60px] max-h-[60px] min-w-[60px] w-[60px] cursor-pointer rounded-md object-cover border bg-zinc-50 ${isActiveMedia(index) ? 'pointer-events-none border-2 border-navyBlue' : 'border-gray-200'}`"
                     :src="media.small_image_url"
                     alt="{{ $product->name }}"
-                    width="80"
-                    height="100"
+                    width="60"
+                    height="60"
                     loading="lazy"
                     decoding="async"
                     tabindex="0"

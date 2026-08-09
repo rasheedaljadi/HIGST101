@@ -1,12 +1,12 @@
 <div class="sticky top-8 flex h-max gap-8 max-md:hidden">
-    <div class="flex max-h-[100px] max-w-[80px] flex-wrap gap-2.5">
-        <div class="flex-24 h-[560px] flex max-w-[80px] flex-wrap place-content-start justify-center gap-2.5">
+    <div class="flex max-h-[60px] max-w-[60px] flex-wrap gap-2.5">
+        <div class="flex-24 h-[560px] flex max-w-[60px] flex-wrap place-content-start justify-center gap-2.5">
             <span class="shimmer h-6 w-6 text-2xl"></span>
-            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
-            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
-            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
-            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
-            <div class="shimmer aspect-[4/5] h-[100px] min-h-[100px] w-[80px] min-w-[80px] rounded-xl"></div>
+            <div class="shimmer aspect-square h-[60px] min-h-[60px] w-[60px] min-w-[60px] rounded-md"></div>
+            <div class="shimmer aspect-square h-[60px] min-h-[60px] w-[60px] min-w-[60px] rounded-md"></div>
+            <div class="shimmer aspect-square h-[60px] min-h-[60px] w-[60px] min-w-[60px] rounded-md"></div>
+            <div class="shimmer aspect-square h-[60px] min-h-[60px] w-[60px] min-w-[60px] rounded-md"></div>
+            <div class="shimmer aspect-square h-[60px] min-h-[60px] w-[60px] min-w-[60px] rounded-md"></div>
             <span class="shimmer h-6 w-6 text-2xl"></span>
         </div>
     </div>
