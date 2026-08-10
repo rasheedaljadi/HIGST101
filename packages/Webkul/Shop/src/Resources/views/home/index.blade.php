@@ -183,16 +183,19 @@
     @endforeach
 
     @pushonce('scripts')
+        <x-shop::products.card class="hidden" />
+
         <script type="text/x-template" id="v-products-grid-template">
             <div v-if="isLoading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
                 <div v-for="n in 8" :key="n" class="h-[380px] bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse"></div>
             </div>
             <div v-else-if="products.length" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
-                <x-shop::products.card
-                    ::mode="'grid'"
+                <v-product-card
+                    :mode="'grid'"
                     v-for="product in products"
                     :key="product.id"
-                />
+                    :product="product"
+                ></v-product-card>
             </div>
             <div v-else class="text-center py-8 text-gray-500">
                 لا توجد منتجات متاحة حالياً
