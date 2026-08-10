@@ -65,7 +65,7 @@
                 <x-shop::products.card
                     class="min-w-[291px] max-md:h-fit max-md:min-w-56 max-sm:min-w-[192px]"
                     v-for="product in products"
-                    :card-style="cardStyle"
+                    ::card-style="cardStyle"
                 />
             </div>
 
