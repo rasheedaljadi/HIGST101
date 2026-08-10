@@ -14,11 +14,11 @@
         type="text/x-template"
         id="v-product-card-template"
     >
-        <div v-if="product" class="w-full">
+        <div v-if="product" class="w-full h-full">
             <!-- Modern Flash Deal Style Product Card (Default Grid & Carousel View) -->
             <div
                 v-if="mode != 'list'"
-                class="w-full h-[465px] max-h-[465px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border select-none"
+                class="w-full h-full min-h-[400px] max-h-[420px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border select-none"
             >
                 <!-- Product Image Container -->
                 <div 
@@ -85,29 +85,29 @@
                 <!-- Product Title Area -->
                 <a 
                     :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" 
-                    class="block h-[56px] flex items-center mb-2 px-0.5 shrink-0 overflow-hidden"
+                    class="block flex items-center my-1 px-0.5 shrink-0 overflow-hidden"
                 >
                     <h3 
-                        class="text-xs sm:text-sm font-bold text-[#001A54] dark:text-gray-100 hover:text-[#FFC000] transition-colors text-center w-full leading-tight sm:leading-snug" 
+                        class="text-xs sm:text-sm font-bold text-[#001A54] dark:text-gray-100 hover:text-[#FFC000] transition-colors text-right rtl:text-right ltr:text-left w-full leading-tight sm:leading-snug" 
                         :title="product.name"
-                        style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-height: 2.8rem;"
+                        style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-height: 2.6rem;"
                     >
                         @{{ product.name }}
                     </h3>
                 </a>
 
                 <!-- Bottom Footer Area: Price & Cart Button -->
-                <div class="border-t border-gray-100 dark:border-gray-800 pt-2.5 mt-auto h-[64px] flex items-center justify-between gap-2 shrink-0">
+                <div class="border-t border-gray-100 dark:border-gray-800 pt-2 mt-auto flex items-center justify-between gap-2 shrink-0">
                     <!-- Price Section -->
                     <div 
-                        class="flex flex-col items-start justify-center overflow-hidden text-sm sm:text-base font-bold text-[#001A54] dark:text-white"
+                        class="flex flex-col items-start justify-center overflow-hidden text-xs sm:text-sm md:text-base font-bold text-[#001A54] dark:text-white"
                         v-html="product.price_html"
                     >
                     </div>
 
                     <!-- Cart Button -->
                     <button
-                        class="bg-[#060C3B] hover:opacity-90 text-white font-bold p-2 sm:p-2.5 rounded-full flex items-center justify-center shadow-md shrink-0 w-9 h-9 sm:w-11 sm:h-11 transition-transform active:scale-95"
+                        class="bg-[#060C3B] hover:opacity-90 text-white font-bold p-2 sm:p-2.5 rounded-full flex items-center justify-center shadow-md shrink-0 w-9 h-9 sm:w-10 sm:h-10 transition-transform active:scale-95"
                         style="background-color: #060C3B !important; color: #ffffff !important;"
                         :disabled="! product.is_saleable || isAddingToCart"
                         @click="addToCart()"
