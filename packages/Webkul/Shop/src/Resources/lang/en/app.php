@@ -1193,6 +1193,7 @@ return [
             'product-carousel' => 'Product Carousel',
             'resend-verify-email' => 'Resend Verification Email',
             'verify-email' => 'Verify your email account',
+            'view-all' => 'View All',
         ],
 
         'coming-soon' => [

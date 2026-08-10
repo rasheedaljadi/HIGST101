@@ -1195,6 +1195,7 @@ return [
             'product-carousel' => 'سلاسل المنتجات',
             'resend-verify-email' => 'إعادة إرسال بريد التحقق',
             'verify-email' => 'تحقق من حساب بريدك الإلكتروني',
+            'view-all' => 'عرض الكل',
         ],
 
         'coming-soon' => [
