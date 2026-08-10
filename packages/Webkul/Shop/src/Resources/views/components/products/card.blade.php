@@ -13,7 +13,7 @@
         type="text/x-template"
         id="v-product-card-template"
     >
-        <div v-bind="$attrs" class="w-full">
+        <div class="w-full">
             <!-- Modern Flash Deal Style Product Card (Default Grid & Carousel View) -->
             <div
                 v-if="mode != 'list'"
@@ -72,7 +72,7 @@
                         class="w-full h-full block overflow-hidden"
                     >
                         <img 
-                            :src="product.base_image.medium_image_url || product.base_image.small_image_url" 
+                            :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 block bg-gray-100 dark:bg-gray-800"
                             loading="lazy"
@@ -128,7 +128,7 @@
                 <div class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-800 shrink-0">
                     <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full block">
                         <img 
-                            :src="product.base_image.medium_image_url || product.base_image.small_image_url" 
+                            :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 block"
                             loading="lazy"
@@ -187,8 +187,6 @@
     <script type="module">
         app.component('v-product-card', {
             template: '#v-product-card-template',
-
-            inheritAttrs: false,
 
             props: ['mode', 'product', 'cardStyle'],
 
