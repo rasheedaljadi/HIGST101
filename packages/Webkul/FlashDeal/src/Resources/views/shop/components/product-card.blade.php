@@ -70,7 +70,10 @@
         style="aspect-ratio: 336 / 302;"
     >
         @if ($discountPercent > 0)
-            <span class="absolute top-2.5 right-2.5 z-10 bg-[#FFC000] text-black font-black px-2 sm:px-2.5 py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-xs shadow-md">
+            <span 
+                class="absolute top-2.5 right-2.5 z-10 bg-white text-[#001A54] font-black rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[11px] sm:text-xs shadow-md border border-gray-100"
+                style="background-color: #ffffff !important; color: #001A54 !important;"
+            >
                 -{{ $discountPercent }}%
             </span>
         @endif
