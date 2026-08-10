@@ -1,7 +1,11 @@
+@props([
+    'cardStyle' => 'standard',
+])
+
 <v-product-card
     {{ $attributes }}
     ::product="product"
-    ::card-style="{{ json_encode($cardStyle ?? 'standard') }}"
+    :card-style="{{ json_encode($cardStyle) }}"
 >
 </v-product-card>
 
@@ -87,7 +91,7 @@
         <!-- Standard Grid Card (Design 2: Standard Store Style) -->
         <div
             class="1180:transtion-all group w-full rounded-md 1180:relative 1180:grid 1180:content-start 1180:overflow-hidden 1180:duration-300 1180:hover:shadow-[0_5px_10px_rgba(0,0,0,0.1)]"
-            v-else-if="mode != 'list'"
+            v-if="cardStyle !== 'compact_deal' && mode != 'list'"
         >
             <div class="relative w-full aspect-[4/6] overflow-hidden rounded-lg bg-zinc-100 flex items-center justify-center" style="aspect-ratio: 4 / 6;">
                 {!! view_render_event('bagisto.shop.components.products.card.image.before') !!}
