@@ -513,7 +513,10 @@
 
                                 {!! view_render_event('bagisto.shop.products.view.additional_actions.before', ['product' => $product]) !!}
 
-                                {!! view_render_event('bagisto.shop.products.view.additional_actions.after', ['product' => $product]) !!}
+                                <!-- Share Buttons Container at Bottom -->
+                                <div class="mt-8 flex items-center gap-4 max-sm:mt-4 max-sm:justify-center">
+                                    {!! view_render_event('bagisto.shop.products.view.additional_actions.after', ['product' => $product]) !!}
+                                </div>
 
                                 <!-- Dropshipping Fulfillment & Dispatch Transparency Card -->
                                 <x-shop::products.dropshipping-transparency

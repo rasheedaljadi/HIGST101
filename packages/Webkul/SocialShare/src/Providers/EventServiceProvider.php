@@ -14,7 +14,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Event::listen('bagisto.shop.products.view.compare.after', function ($viewRenderEventManager) {
+        Event::listen('bagisto.shop.products.view.additional_actions.after', function ($viewRenderEventManager) {
             $viewRenderEventManager->addTemplate('social_share::share');
         });
     }
