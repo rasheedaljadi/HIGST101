@@ -183,8 +183,6 @@
     @endforeach
 
     @pushonce('scripts')
-        <x-shop::products.card class="hidden" />
-
         <script type="text/x-template" id="v-products-grid-template">
             <div v-if="isLoading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
                 <div v-for="n in 8" :key="n" class="h-[380px] bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse"></div>

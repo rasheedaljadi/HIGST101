@@ -68,14 +68,19 @@
                         if (entry.isIntersecting) {
                             let lazyImage = document.getElementById('image-' + self.$.uid);
 
-                            lazyImage.src = lazyImage.dataset.src;
-
-                            lazyImageObserver.unobserve(lazyImage);
+                            if (lazyImage) {
+                                lazyImage.src = lazyImage.dataset.src;
+                                lazyImageObserver.unobserve(lazyImage);
+                            }
                         }
                     });
                 });
 
-                lazyImageObserver.observe(document.getElementById('image-shimmer-' + this.$.uid));
+                let shimmer = document.getElementById('image-shimmer-' + this.$.uid);
+
+                if (shimmer) {
+                    lazyImageObserver.observe(shimmer);
+                }
             },
 
             methods: {
