@@ -25,31 +25,34 @@
                     class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-50/80 dark:bg-gray-800/40 shrink-0 group mb-2"
                     style="aspect-ratio: 336 / 302;"
                 >
-                    <!-- Featured Badge -->
-                    <span 
-                        v-if="product.is_featured"
-                        class="absolute top-2.5 right-2.5 z-10 bg-[#060C3B] text-white font-bold px-2 sm:px-2.5 py-1 text-xs sm:text-sm shadow-sm flex items-center justify-center rounded-none"
-                        style="background-color: #060C3B !important; color: #ffffff !important;"
-                    >
-                        @lang('shop::app.components.products.card.featured')
-                    </span>
+                    <!-- Badges Overlay (Supports Multiple Badges: Featured, Sale, New) -->
+                    <div class="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1 items-end pointer-events-none">
+                        <!-- Featured Badge -->
+                        <span 
+                            v-if="product.is_featured"
+                            class="bg-[#060C3B] text-white font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs shadow-sm flex items-center justify-center rounded-md"
+                            style="background-color: #060C3B !important; color: #ffffff !important;"
+                        >
+                            @lang('shop::app.components.products.card.featured')
+                        </span>
 
-                    <!-- Sale Badge -->
-                    <span 
-                        v-else-if="product.on_sale"
-                        class="absolute top-2.5 right-2.5 z-10 bg-[#e60023] text-white font-bold px-2 sm:px-2.5 py-1 text-xs sm:text-sm shadow-sm flex items-center justify-center rounded-none"
-                        style="background-color: #e60023 !important; color: #ffffff !important;"
-                    >
-                        @lang('shop::app.components.products.card.sale')
-                    </span>
+                        <!-- Sale Badge -->
+                        <span 
+                            v-if="product.on_sale"
+                            class="bg-[#e60023] text-white font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs shadow-sm flex items-center justify-center rounded-md"
+                            style="background-color: #e60023 !important; color: #ffffff !important;"
+                        >
+                            @lang('shop::app.components.products.card.sale')
+                        </span>
 
-                    <!-- New Badge -->
-                    <span 
-                        v-else-if="product.is_new"
-                        class="absolute top-2.5 right-2.5 z-10 bg-[#060C3B] text-white font-bold px-2 sm:px-2.5 py-1 text-xs sm:text-sm shadow-sm flex items-center justify-center rounded-none"
-                    >
-                        @lang('shop::app.components.products.card.new')
-                    </span>
+                        <!-- New Badge -->
+                        <span 
+                            v-if="product.is_new && !product.is_featured && !product.on_sale"
+                            class="bg-[#060C3B] text-white font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs shadow-sm flex items-center justify-center rounded-md"
+                        >
+                            @lang('shop::app.components.products.card.new')
+                        </span>
+                    </div>
 
                     <!-- Wishlist & Compare Buttons Overlay -->
                     <div class="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1.5 opacity-90 transition-opacity group-hover:opacity-100">
