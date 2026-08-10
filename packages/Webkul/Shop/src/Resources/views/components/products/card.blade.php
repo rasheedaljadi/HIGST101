@@ -95,7 +95,7 @@
 
         <!-- Standard Grid Card (Design 2: Standard Store Style) -->
         <div
-            class="group w-full rounded-md relative grid content-start overflow-hidden transition-all duration-300 hover:shadow-[0_5px_10px_rgba(0,0,0,0.1)]"
+            class="1180:transtion-all group w-full rounded-md 1180:relative 1180:grid 1180:content-start 1180:overflow-hidden 1180:duration-300 1180:hover:shadow-[0_5px_10px_rgba(0,0,0,0.1)]"
             v-else-if="cardStyle !== 'compact_deal' && mode != 'list'"
         >
             <div class="relative w-full aspect-[4/6] overflow-hidden rounded-lg bg-zinc-100 flex items-center justify-center" style="aspect-ratio: 4 / 6;">
@@ -204,7 +204,7 @@
             </div>
 
             <!-- Product Information Section -->
-            <div class="-mt-9 grid w-full translate-y-9 content-start gap-2.5 bg-white p-2.5 transition-transform duration-300 ease-out group-hover:-translate-y-0 group-hover:rounded-t-lg max-[1180px]:relative max-[1180px]:mt-0 max-[1180px]:translate-y-0 max-[1180px]:gap-0 max-[1180px]:px-0 max-[1180px]:py-1.5">
+            <div class="-mt-9 grid max-w-[291px] translate-y-9 content-start gap-2.5 bg-white p-2.5 transition-transform duration-300 ease-out group-hover:-translate-y-0 group-hover:rounded-t-lg max-md:relative max-md:mt-0 max-md:translate-y-0 max-md:gap-0 max-md:px-0 max-md:py-1.5 max-sm:min-w-[170px] max-sm:max-w-[192px]">
 
                 {!! view_render_event('bagisto.shop.components.products.card.name.before') !!}
 
