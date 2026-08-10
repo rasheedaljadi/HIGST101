@@ -12,7 +12,7 @@ class SmartThumbnailHelper
 {
     protected string $version = 'v2';
 
-    protected string $configHash = 'v2_3strat_enhance'; // Config parameter signature
+    protected string $configHash = 'v3_aspect_safe'; // Config parameter signature
 
     /**
      * Check if the Smart Thumbnail Engine is globally enabled.

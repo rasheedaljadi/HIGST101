@@ -77,6 +77,13 @@ class SmartCropEngine
      */
     protected function chooseStrategy(float $ratioDiff, float $subjectFillPct, float $origRatio, float $targetRatio): string
     {
+        // If image aspect ratio orientation differs from target (e.g., Portrait < 0.95 vs Landscape > 1.05),
+        // cropping across orientations WILL slice off top/bottom or sides of the product.
+        // Always use Contain + Pad (Strategy B) to preserve 100% of the original product image.
+        if (($origRatio < 0.95 && $targetRatio > 1.05) || ($origRatio > 1.05 && $targetRatio < 0.95)) {
+            return 'B';
+        }
+
         // Strategy A: Original ratio is close to target — simple smart crop works well
         if ($ratioDiff <= $this->ratioTolerance) {
             return 'A';
@@ -249,6 +256,12 @@ class SmartCropEngine
 
         $subjectW = max(10, $subjectW);
         $subjectH = max(10, $subjectH);
+
+        // Safety check: If focused crop height or width is smaller than 95% of detected subject bounding box,
+        // cropping would cut off part of the product. Fall back to Contain+Pad (Strategy B).
+        if ($subjectH < ($boundingRegion['height'] * 0.95) || $subjectW < ($boundingRegion['width'] * 0.95)) {
+            return $this->strategyContainPad($image, $origW, $origH, $targetW, $targetH, $targetRatio);
+        }
 
         // If the focused crop is still very close to the full image,
         // fall back to Contain+Pad to avoid pointless near-full crop
