@@ -429,15 +429,14 @@
 
                                 <!-- Product Actions and Quantity Box (IntersectionObserver Sentinel) -->
                                 <div id="primary-pdp-cta-container">
-                                    <div class="mt-8 flex max-w-[470px] gap-4 max-sm:mt-4">
-
+                                    <div class="mt-6 flex items-center gap-2.5 sm:gap-3 w-full max-w-[590px] max-sm:mt-4">
                                         {!! view_render_event('bagisto.shop.products.view.quantity.before', ['product' => $product]) !!}
 
                                         @if ($product->getTypeInstance()->showQuantityBox())
                                             <x-shop::quantity-changer
                                                 name="quantity"
                                                 value="1"
-                                                class="gap-x-4 rounded-xl px-7 py-4 max-md:py-3 max-sm:gap-x-5 max-sm:rounded-lg max-sm:px-4 max-sm:py-1.5"
+                                                class="gap-x-2.5 sm:gap-x-3 rounded-xl px-3 py-2.5 max-sm:px-2.5 max-sm:py-2 text-sm shrink-0 border border-gray-300 dark:border-gray-700"
                                             />
                                         @endif
 
@@ -449,7 +448,7 @@
 
                                             <x-shop::button
                                                 type="submit"
-                                                class="secondary-button w-full max-w-full max-md:py-3 max-sm:rounded-lg max-sm:py-1.5"
+                                                class="secondary-button flex-1 py-2.5 max-sm:py-2 text-xs sm:text-sm font-bold rounded-xl whitespace-nowrap min-w-0"
                                                 button-type="secondary-button"
                                                 :loading="false"
                                                 :title="trans('shop::app.products.view.add-to-cart')"
@@ -460,36 +459,34 @@
                                             />
 
                                             {!! view_render_event('bagisto.shop.products.view.add_to_cart.after', ['product' => $product]) !!}
+
+                                            <!-- Buy Now Button -->
+                                            @if (core()->getConfigData('catalog.products.storefront.buy_now_button_display'))
+                                                {!! view_render_event('bagisto.shop.products.view.buy_now.before', ['product' => $product]) !!}
+
+                                                <x-shop::button
+                                                    type="submit"
+                                                    class="primary-button flex-1 py-2.5 max-sm:py-2 text-xs sm:text-sm font-bold rounded-xl whitespace-nowrap min-w-0"
+                                                    button-type="primary-button"
+                                                    :title="trans('shop::app.products.view.buy-now')"
+                                                    :disabled="! $product->isSaleable(1)"
+                                                    ::loading="isStoring.buyNow"
+                                                    ::disabled="isStoring.buyNow"
+                                                    @click="is_buy_now=1;"
+                                                />
+
+                                                {!! view_render_event('bagisto.shop.products.view.buy_now.after', ['product' => $product]) !!}
+                                            @endif
                                         @else
                                             <button
                                                 type="button"
-                                                class="secondary-button w-full max-w-full max-md:py-3 max-sm:rounded-lg max-sm:py-1.5"
+                                                class="secondary-button flex-1 py-2.5 max-sm:py-2 text-xs sm:text-sm font-bold rounded-xl"
                                                 @click="$refs.contactUsModal.open()"
                                             >
                                                 @lang('shop::app.components.layouts.footer.contact-us')
                                             </button>
                                         @endif
                                     </div>
-
-                                    <!-- Buy Now Button -->
-                                    @if (core()->getConfigData('sales.checkout.shopping_cart.cart_page'))
-                                        {!! view_render_event('bagisto.shop.products.view.buy_now.before', ['product' => $product]) !!}
-
-                                        @if (core()->getConfigData('catalog.products.storefront.buy_now_button_display'))
-                                            <x-shop::button
-                                                type="submit"
-                                                class="primary-button mt-5 w-full max-w-[470px] max-md:py-3 max-sm:mt-3 max-sm:rounded-lg max-sm:py-1.5"
-                                                button-type="primary-button"
-                                                :title="trans('shop::app.products.view.buy-now')"
-                                                :disabled="! $product->isSaleable(1)"
-                                                ::loading="isStoring.buyNow"
-                                                @click="is_buy_now=1;"
-                                                ::disabled="isStoring.buyNow"
-                                            />
-                                        @endif
-
-                                        {!! view_render_event('bagisto.shop.products.view.buy_now.after', ['product' => $product]) !!}
-                                    @endif
                                 </div>
 
                                 {!! view_render_event('bagisto.shop.products.view.additional_actions.before', ['product' => $product]) !!}
