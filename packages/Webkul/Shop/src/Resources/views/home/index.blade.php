@@ -146,16 +146,90 @@
 
                 @break
             @case ($customization::PRODUCT_CAROUSEL)
-                <!-- Product Carousel -->
-                <x-shop::products.carousel
-                    :title="$data['title'] ?? ''"
-                    :src="route('shop.api.products.index', $data['filters'] ?? [])"
-                    :navigation-link="route('shop.search.index', $data['filters'] ?? [])"
-                    card-style="{{ $data['card_style'] ?? 'standard' }}"
-                    aria-label="{{ trans('shop::app.home.index.product-carousel') }}"
-                />
+                @if (($data['display_mode'] ?? '') === 'grid' || ($data['mode'] ?? '') === 'grid' || ($data['card_style'] ?? '') === 'grid')
+                    <!-- Products Grid Section (قسم المنتجات بتنسيق شبكي رسمياً من السمات) -->
+                    <div class="container px-4 py-8 mx-auto max-w-[1440px]">
+                        <div class="flex items-center justify-between mb-6 pb-2 border-b border-gray-100 dark:border-gray-800">
+                            <h2 class="text-xl sm:text-2xl font-bold text-[#001A54] dark:text-white">
+                                {{ $customization->name ?? ($data['title'] ?? 'المنتجات') }}
+                            </h2>
+                            <a 
+                                href="{{ route('shop.search.index', $data['filters'] ?? []) }}"
+                                class="text-xs sm:text-sm font-bold text-[#001A54] hover:text-[#FFC000] border border-gray-200 dark:border-gray-700 px-4 py-1.5 rounded-full transition-colors flex items-center gap-1"
+                            >
+                                @lang('shop::app.home.index.view-all')
+                                <span class="icon-arrow-right rtl:rotate-180 text-xs"></span>
+                            </a>
+                        </div>
+
+                        <!-- Vue Products Grid Component -->
+                        <v-products-grid
+                            src="{{ route('shop.api.products.index', array_merge(['limit' => 12], $data['filters'] ?? [])) }}"
+                        ></v-products-grid>
+                    </div>
+                @else
+                    <!-- Product Carousel -->
+                    <x-shop::products.carousel
+                        :title="$data['title'] ?? ''"
+                        :src="route('shop.api.products.index', $data['filters'] ?? [])"
+                        :navigation-link="route('shop.search.index', $data['filters'] ?? [])"
+                        card-style="{{ $data['card_style'] ?? 'standard' }}"
+                        aria-label="{{ trans('shop::app.home.index.product-carousel') }}"
+                    />
+                @endif
 
                 @break
         @endswitch
     @endforeach
+
+    @pushonce('scripts')
+        <script type="text/x-template" id="v-products-grid-template">
+            <div v-if="isLoading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+                <div v-for="n in 8" :key="n" class="h-[380px] bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse"></div>
+            </div>
+            <div v-else-if="products.length" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+                <x-shop::products.card
+                    ::mode="'grid'"
+                    v-for="product in products"
+                    :key="product.id"
+                />
+            </div>
+            <div v-else class="text-center py-8 text-gray-500">
+                لا توجد منتجات متاحة حالياً
+            </div>
+        </script>
+
+        <script type="module">
+            app.component('v-products-grid', {
+                template: '#v-products-grid-template',
+
+                props: ['src'],
+
+                data() {
+                    return {
+                        isLoading: true,
+                        products: [],
+                    };
+                },
+
+                mounted() {
+                    this.getProducts();
+                },
+
+                methods: {
+                    getProducts() {
+                        this.$axios.get(this.src)
+                            .then(response => {
+                                this.isLoading = false;
+                                this.products = response.data.data;
+                            })
+                            .catch(error => {
+                                this.isLoading = false;
+                                console.error(error);
+                            });
+                    },
+                },
+            });
+        </script>
+    @endpushonce
 </x-shop::layouts>
