@@ -25,29 +25,35 @@
 
         {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.category.before') !!}
 
-        <!-- Header Navigation Links: الرئيسية, المنتجات, العروض -->
-        <nav class="flex items-center gap-5 max-[1180px]:gap-3 text-base font-bold text-[#001A54] dark:text-gray-100">
-            <a 
-                href="{{ route('shop.home.index') }}" 
-                class="hover:text-[#FFC000] transition-colors py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-                الرئيسية
-            </a>
+        <!-- Header Left Navigation: "الكل" Categories Drawer + الرئيسية, المنتجات, العروض -->
+        <div class="flex items-center gap-x-2 sm:gap-x-4">
+            <!-- "الكل" Categories Toggler -->
+            <v-desktop-category></v-desktop-category>
 
-            <a 
-                href="{{ route('shop.search.index') }}" 
-                class="hover:text-[#FFC000] transition-colors py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-                المنتجات
-            </a>
+            <!-- 3 Main Navigation Links -->
+            <nav class="flex items-center gap-3 sm:gap-5 text-base font-bold text-[#001A54] dark:text-gray-100 border-s border-gray-200 dark:border-gray-700 ps-3 sm:ps-4">
+                <a 
+                    href="{{ route('shop.home.index') }}" 
+                    class="hover:text-[#FFC000] transition-colors py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                    الرئيسية
+                </a>
 
-            <a 
-                href="{{ route('shop.home.index') }}#flash-deals" 
-                class="hover:text-[#FFC000] transition-colors py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-                العروض
-            </a>
-        </nav>
+                <a 
+                    href="{{ route('shop.search.index') }}" 
+                    class="hover:text-[#FFC000] transition-colors py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                    المنتجات
+                </a>
+
+                <a 
+                    href="{{ route('shop.home.index') }}#flash-deals" 
+                    class="hover:text-[#FFC000] transition-colors py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                    العروض
+                </a>
+            </nav>
+        </div>
 
         {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.category.after') !!}
     </div>
@@ -281,153 +287,26 @@
             ></span>
         </div>
 
-        <!-- Default category layout -->
-        <div
-            class="flex items-center"
-            v-else-if="'{{ core()->getConfigData('general.design.categories.category_view') }}' !== 'sidebar'"
-        >
+        <!-- "الكل" Category Drawer Layout -->
+        <div class="flex items-center" v-else>
+            <!-- "All" button for opening the category drawer -->
             <div
-                class="group relative flex h-[77px] items-center border-b-4 border-transparent hover:border-b-4 hover:border-navyBlue"
-                v-for="category in categories"
+                class="flex h-[77px] cursor-pointer items-center border-b-4 border-transparent hover:border-b-4 hover:border-[#001A54] transition-colors"
+                @click="toggleCategoryDrawer"
             >
-                <span>
-                    <a
-                        :href="category.url"
-                        class="inline-block px-5 uppercase"
-                    >
-                        @{{ category.name }}
-                    </a>
+                <span class="flex items-center gap-1.5 px-2.5 sm:px-3 text-base font-bold text-[#001A54] dark:text-gray-100 hover:text-[#FFC000]">
+                    <span class="text-xl icon-hamburger"></span>
+
+                    @lang('shop::app.components.layouts.header.desktop.bottom.all')
                 </span>
-
-                <div
-                    class="pointer-events-none absolute top-[78px] z-[1] max-h-[580px] w-max max-w-[1260px] translate-y-1 overflow-auto overflow-x-auto border border-b-0 border-l-0 border-r-0 border-t border-[#F3F3F3] bg-white p-9 opacity-0 shadow-[0_6px_6px_1px_rgba(0,0,0,.3)] transition duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-hover:duration-200 group-hover:ease-in ltr:-left-9 rtl:-right-9"
-                    v-if="category.children && category.children.length"
-                >
-                    <div class="flex justify-between gap-x-[70px]">
-                        <div
-                            class="grid w-full min-w-max max-w-[150px] flex-auto grid-cols-[1fr] content-start gap-5"
-                            v-for="pairCategoryChildren in pairCategoryChildren(category)"
-                        >
-                            <template v-for="secondLevelCategory in pairCategoryChildren">
-                                <p class="font-medium text-navyBlue">
-                                    <a :href="secondLevelCategory.url">
-                                        @{{ secondLevelCategory.name }}
-                                    </a>
-                                </p>
-
-                                <ul
-                                    class="grid grid-cols-[1fr] gap-3"
-                                    v-if="secondLevelCategory.children && secondLevelCategory.children.length"
-                                >
-                                    <li
-                                        class="text-sm font-medium text-zinc-500"
-                                        v-for="thirdLevelCategory in secondLevelCategory.children"
-                                    >
-                                        <a :href="thirdLevelCategory.url">
-                                            @{{ thirdLevelCategory.name }}
-                                        </a>
-                                    </li>
-                                </ul>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar category layout -->
-        <div v-else>
-            <!-- Categories Navigation -->
-            <div class="flex items-center">
-                <!-- "All" button for opening the category drawer -->
-                <div
-                    class="flex h-[77px] cursor-pointer items-center border-b-4 border-transparent hover:border-b-4 hover:border-navyBlue"
-                    @click="toggleCategoryDrawer"
-                >
-                    <span class="flex items-center gap-1 px-5 uppercase">
-                        <span class="text-xl icon-hamburger"></span>
-
-                        @lang('shop::app.components.layouts.header.desktop.bottom.all')
-                    </span>
-                </div>
-
-                <!-- Show only first 4 categories in main navigation -->
-                <div
-                    class="group relative flex h-[77px] items-center border-b-4 border-transparent hover:border-b-4 hover:border-navyBlue"
-                    v-for="category in categories.slice(0, 4)"
-                >
-                    <span>
-                        <a
-                            :href="category.url"
-                            class="inline-block px-5 uppercase"
-                        >
-                            @{{ category.name }}
-                        </a>
-                    </span>
-
-                    <!-- Dropdown for each category -->
-                    <div
-                        class="pointer-events-none absolute top-[78px] z-[1] max-h-[580px] w-max max-w-[1260px] translate-y-1 overflow-auto overflow-x-auto border border-b-0 border-l-0 border-r-0 border-t border-[#F3F3F3] bg-white p-9 opacity-0 shadow-[0_6px_6px_1px_rgba(0,0,0,.3)] transition duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-hover:duration-200 group-hover:ease-in ltr:-left-9 rtl:-right-9"
-                        v-if="category.children && category.children.length"
-                    >
-                        <div class="flex justify-between gap-x-[70px]">
-                            <div
-                                class="grid w-full min-w-max max-w-[150px] flex-auto grid-cols-[1fr] content-start gap-5"
-                                v-for="pairCategoryChildren in pairCategoryChildren(category)"
-                            >
-                                <template v-for="secondLevelCategory in pairCategoryChildren">
-                                    <p class="font-medium text-navyBlue">
-                                        <a :href="secondLevelCategory.url">
-                                            @{{ secondLevelCategory.name }}
-                                        </a>
-                                    </p>
-
-                                    <ul
-                                        class="grid grid-cols-[1fr] gap-3"
-                                        v-if="secondLevelCategory.children && secondLevelCategory.children.length"
-                                    >
-                                        <li
-                                            class="text-sm font-medium text-zinc-500"
-                                            v-for="thirdLevelCategory in secondLevelCategory.children"
-                                        >
-                                            <a :href="thirdLevelCategory.url">
-                                                @{{ thirdLevelCategory.name }}
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <!-- Bagisto Drawer Integration -->
+            <!-- Category Drawer Integration -->
             <x-shop::drawer
                 position="left"
                 width="400px"
                 ::is-active="isDrawerActive"
                 @toggle="onDrawerToggle"
-                @close="onDrawerClose"
-            >
-                <x-slot:toggle></x-slot>
-
-                <x-slot:header class="border-b border-gray-200">
-                    <div class="flex items-center justify-between w-full">
-                        <p class="text-xl font-medium">
-                            @lang('shop::app.components.layouts.header.desktop.bottom.categories')
-                        </p>
-                    </div>
-                </x-slot>
-
-                <x-slot:content class="!px-0">
-                    <!-- Wrapper with transition effects -->
-                    <div class="relative h-full overflow-hidden">
-                        <!-- Sliding container -->
-                        <div
-                            class="flex h-full transition-transform duration-300"
-                            :class="{
-                                'ltr:translate-x-0 rtl:translate-x-0': currentViewLevel !== 'third',
                                 'ltr:-translate-x-full rtl:translate-x-full': currentViewLevel === 'third'
                             }"
                         >
