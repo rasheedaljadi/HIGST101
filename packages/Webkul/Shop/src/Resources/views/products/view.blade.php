@@ -331,22 +331,44 @@
                             <div class="relative max-w-[590px] max-md:w-full max-md:max-w-full max-md:px-5 max-sm:px-4">
                                 {!! view_render_event('bagisto.shop.products.name.before', ['product' => $product]) !!}
 
-                                <div class="flex justify-between gap-4">
-                                    <h1 class="break-words text-3xl font-medium max-sm:text-xl" v-pre>
+                                <div class="flex justify-between gap-4 items-start">
+                                    <h1 class="break-words text-3xl font-medium max-sm:text-xl flex-1" v-pre>
                                         {{ $product->name }}
                                     </h1>
 
-                                    @if (core()->getConfigData('customer.settings.wishlist.wishlist_option'))
-                                        <div
-                                            class="max-sm:min-h-7 max-sm:min-w-7 flex max-h-[46px] min-h-[46px] min-w-[46px] cursor-pointer items-center justify-center rounded-full border bg-white text-2xl transition-all hover:opacity-[0.8] max-sm:max-h-7 max-sm:text-base"
-                                            role="button"
-                                            aria-label="@lang('shop::app.products.view.add-to-wishlist')"
-                                            tabindex="0"
-                                            :class="isWishlist ? 'icon-heart-fill text-red-600' : 'icon-heart'"
-                                            @click="addToWishlist"
-                                        >
-                                        </div>
-                                    @endif
+                                    <div class="flex flex-col items-center gap-2.5 shrink-0">
+                                        <!-- Wishlist Icon -->
+                                        @if (core()->getConfigData('customer.settings.wishlist.wishlist_option'))
+                                            <div
+                                                class="max-sm:min-h-7 max-sm:min-w-7 flex max-h-[46px] min-h-[46px] min-w-[46px] cursor-pointer items-center justify-center rounded-full border bg-white text-2xl transition-all hover:opacity-[0.8] max-sm:max-h-7 max-sm:text-base shadow-sm"
+                                                role="button"
+                                                aria-label="@lang('shop::app.products.view.add-to-wishlist')"
+                                                title="@lang('shop::app.products.view.add-to-wishlist')"
+                                                tabindex="0"
+                                                :class="isWishlist ? 'icon-heart-fill text-red-600' : 'icon-heart'"
+                                                @click="addToWishlist"
+                                            >
+                                            </div>
+                                        @endif
+
+                                        <!-- Compare Icon (directly below Wishlist icon) -->
+                                        @if (core()->getConfigData('catalog.products.settings.compare_option'))
+                                            {!! view_render_event('bagisto.shop.products.view.compare.before', ['product' => $product]) !!}
+
+                                            <div
+                                                class="max-sm:min-h-7 max-sm:min-w-7 flex max-h-[46px] min-h-[46px] min-w-[46px] cursor-pointer items-center justify-center rounded-full border bg-white text-xl transition-all hover:opacity-[0.8] max-sm:max-h-7 max-sm:text-base shadow-sm"
+                                                role="button"
+                                                aria-label="@lang('shop::app.products.view.compare')"
+                                                title="@lang('shop::app.products.view.compare')"
+                                                tabindex="0"
+                                                @click="is_buy_now=0; addToCompare({{ $product->id }})"
+                                            >
+                                                <span class="icon-compare text-xl"></span>
+                                            </div>
+
+                                            {!! view_render_event('bagisto.shop.products.view.compare.after', ['product' => $product]) !!}
+                                        @endif
+                                    </div>
                                 </div>
 
                                 {!! view_render_event('bagisto.shop.products.name.after', ['product' => $product]) !!}
@@ -490,29 +512,6 @@
                                 </div>
 
                                 {!! view_render_event('bagisto.shop.products.view.additional_actions.before', ['product' => $product]) !!}
-
-                                <!-- Share Buttons -->
-                                <div class="mt-10 flex gap-9 max-md:mt-4 max-md:flex-wrap max-sm:justify-center max-sm:gap-3">
-                                    {!! view_render_event('bagisto.shop.products.view.compare.before', ['product' => $product]) !!}
-
-                                    <div
-                                        class="flex cursor-pointer items-center justify-center gap-2.5 max-sm:gap-1.5 max-sm:text-base"
-                                        role="button"
-                                        tabindex="0"
-                                        @click="is_buy_now=0; addToCompare({{ $product->id }})"
-                                    >
-                                        @if (core()->getConfigData('catalog.products.settings.compare_option'))
-                                            <span
-                                                class="icon-compare text-2xl"
-                                                role="presentation"
-                                            ></span>
-
-                                            @lang('shop::app.products.view.compare')
-                                        @endif
-                                    </div>
-
-                                    {!! view_render_event('bagisto.shop.products.view.compare.after', ['product' => $product]) !!}
-                                </div>
 
                                 {!! view_render_event('bagisto.shop.products.view.additional_actions.after', ['product' => $product]) !!}
 
