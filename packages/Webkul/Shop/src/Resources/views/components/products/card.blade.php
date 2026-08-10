@@ -4,6 +4,7 @@
 
 <v-product-card
     {{ $attributes }}
+    :product="product"
     :card-style="{{ json_encode($cardStyle) }}"
 >
 </v-product-card>
@@ -13,7 +14,7 @@
         type="text/x-template"
         id="v-product-card-template"
     >
-        <div class="w-full">
+        <div v-if="product" class="w-full">
             <!-- Modern Flash Deal Style Product Card (Default Grid & Carousel View) -->
             <div
                 v-if="mode != 'list'"
