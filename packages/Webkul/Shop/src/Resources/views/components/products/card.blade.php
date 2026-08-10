@@ -4,8 +4,8 @@
 
 <v-product-card
     {{ $attributes }}
-    ::product="product"
-    :card-style="{{ json_encode($cardStyle) }}"
+    v-bind:product="product"
+    v-bind:card-style="cardStyle"
 >
 </v-product-card>
 
