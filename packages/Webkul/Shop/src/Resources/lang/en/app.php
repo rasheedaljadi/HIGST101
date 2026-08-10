@@ -705,6 +705,7 @@ return [
                 'add-to-compare-success' => 'Item added successfully to compare list.',
                 'add-to-wishlist' => 'Add To Wishlist',
                 'already-in-compare' => 'Item is already added to compare list.',
+                'featured' => 'Featured',
                 'new' => 'New',
                 'review-description' => 'Be the first to review this product',
                 'sale' => 'Sale',

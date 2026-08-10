@@ -25,9 +25,18 @@
                     class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-50/80 dark:bg-gray-800/40 shrink-0 group mb-2"
                     style="aspect-ratio: 336 / 302;"
                 >
+                    <!-- Featured Badge -->
+                    <span 
+                        v-if="product.is_featured"
+                        class="absolute top-2.5 right-2.5 z-10 bg-[#060C3B] text-white font-bold px-2 sm:px-2.5 py-1 text-xs sm:text-sm shadow-sm flex items-center justify-center rounded-none"
+                        style="background-color: #060C3B !important; color: #ffffff !important;"
+                    >
+                        @lang('shop::app.components.products.card.featured')
+                    </span>
+
                     <!-- Sale Badge -->
                     <span 
-                        v-if="product.on_sale"
+                        v-else-if="product.on_sale"
                         class="absolute top-2.5 right-2.5 z-10 bg-[#e60023] text-white font-bold px-2 sm:px-2.5 py-1 text-xs sm:text-sm shadow-sm flex items-center justify-center rounded-none"
                         style="background-color: #e60023 !important; color: #ffffff !important;"
                     >

@@ -705,6 +705,7 @@ return [
                 'add-to-compare-success' => 'تمت إضافة العنصر بنجاح إلى قائمة المقارنة.',
                 'add-to-wishlist' => 'أضف إلى قائمة الرغبات',
                 'already-in-compare' => 'العنصر مضاف بالفعل إلى قائمة المقارنة.',
+                'featured' => 'مميز',
                 'new' => 'جديد',
                 'review-description' => 'كن أول من يقيم هذا المنتج',
                 'sale' => 'تخفيض',
