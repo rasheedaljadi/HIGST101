@@ -1,7 +1,7 @@
 <!-- For screens 768px and greater (tablets, laptops, desktop). -->
-<div class="sticky top-20 flex h-max gap-8 max-md:hidden">
+<div class="sticky top-20 flex h-max gap-8 max-md:hidden min-w-[400px] w-full max-w-[620px] shrink-0">
     <!-- Product Image and Videos Slider -->
-    <div class="flex-24 h-[448px] flex min-w-[52px] max-w-[52px] flex-wrap place-content-start justify-center gap-2.5 overflow-hidden scrollbar-hide">
+    <div class="flex-24 h-[448px] flex min-w-[52px] max-w-[52px] flex-wrap place-content-start justify-center gap-2.5 overflow-hidden scrollbar-hide shrink-0">
         <!-- Arrow Up -->
         <span
             class="icon-arrow-up cursor-pointer text-2xl"
@@ -62,23 +62,23 @@
 
     <!-- Product Base Image and Video with Shimmer-->
     <div
-        class="w-full"
-        style="aspect-ratio: 5 / 4; max-width: 560px; max-height: 448px; align-self: flex-start;"
+        class="w-full min-w-[320px] max-w-[560px] h-[448px] min-h-[380px] rounded-xl overflow-hidden bg-zinc-100 shrink-0"
+        style="aspect-ratio: 5 / 4; width: 100%; max-width: 560px; height: 448px; min-height: 380px; align-self: flex-start;"
         v-show="isMediaLoading"
     >
         <div class="shimmer h-full w-full rounded-xl bg-zinc-200"></div>
     </div>
 
     <div
-        class="relative w-full overflow-hidden rounded-xl bg-white flex items-center justify-center"
-        style="aspect-ratio: 5 / 4; max-width: 560px; max-height: 448px; align-self: flex-start;"
+        class="relative w-full min-w-[320px] max-w-[560px] h-[448px] min-h-[380px] overflow-hidden rounded-xl bg-zinc-50 flex items-center justify-center border border-gray-100 shrink-0"
+        style="aspect-ratio: 5 / 4; width: 100%; max-width: 560px; height: 448px; min-height: 380px; align-self: flex-start;"
         v-show="! isMediaLoading"
     >
         <img
             class="h-full w-full cursor-pointer rounded-xl block"
-            style="width: 100%; height: 100%; object-fit: contain; background: #f5f5f5;"
-            :src="baseFile.path"
-            v-if="baseFile.type == 'image'"
+            style="width: 100%; height: 100%; object-fit: contain; background: #f8fafc;"
+            :src="baseFile.path || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
+            v-if="baseFile.type == 'image' || !baseFile.type"
             alt="{{ $product->name }}"
             width="560"
             height="448"
@@ -94,7 +94,7 @@
         <div
             class="w-full h-full cursor-pointer rounded-xl flex items-center justify-center"
             tabindex="0"
-            v-if="baseFile.type == 'video'"
+            v-else-if="baseFile.type == 'video'"
         >
             <video
                 controls
