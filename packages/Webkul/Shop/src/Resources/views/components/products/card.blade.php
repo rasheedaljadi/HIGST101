@@ -25,7 +25,7 @@
                     class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-50/80 dark:bg-gray-800/40 shrink-0 group mb-2"
                     style="aspect-ratio: 336 / 302;"
                 >
-                    <!-- Badges Overlay (Supports Multiple Badges: Featured, Sale, New) -->
+                    <!-- Badges Overlay (Supports Multiple Badges: Featured, Discount %, New) -->
                     <div class="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1 items-end pointer-events-none">
                         <!-- Featured Badge -->
                         <span 
@@ -36,13 +36,18 @@
                             @lang('shop::app.components.products.card.featured')
                         </span>
 
-                        <!-- Sale Badge -->
+                        <!-- Sale / Discount Percentage Badge -->
                         <span 
                             v-if="product.on_sale"
                             class="bg-[#e60023] text-white font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs shadow-sm flex items-center justify-center rounded-md"
                             style="background-color: #e60023 !important; color: #ffffff !important;"
                         >
-                            @lang('shop::app.components.products.card.sale')
+                            <template v-if="product.discount_percent && product.discount_percent > 0">
+                                -@{{ product.discount_percent }}%
+                            </template>
+                            <template v-else>
+                                @lang('shop::app.components.products.card.sale')
+                            </template>
                         </span>
 
                         <!-- New Badge -->

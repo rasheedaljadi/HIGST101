@@ -30,6 +30,12 @@ class ProductResource extends JsonResource
     public function toArray($request)
     {
         $productTypeInstance = $this->getTypeInstance();
+        $regularPrice = (float) $this->price;
+        $finalPrice = (float) $productTypeInstance->getMinimalPrice();
+        $discountPercent = 0;
+        if ($regularPrice > $finalPrice && $regularPrice > 0) {
+            $discountPercent = (int) round((($regularPrice - $finalPrice) / $regularPrice) * 100);
+        }
 
         return [
             'id' => $this->id,
@@ -42,6 +48,7 @@ class ProductResource extends JsonResource
             'is_new' => (bool) $this->new,
             'is_featured' => (bool) $this->featured,
             'on_sale' => (bool) $productTypeInstance->haveDiscount(),
+            'discount_percent' => $discountPercent,
             'is_saleable' => (bool) $productTypeInstance->isSaleable(),
             'is_wishlist' => (bool) auth()->guard()->user()?->wishlist_items
                 ->where('channel_id', core()->getCurrentChannel()->id)
