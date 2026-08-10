@@ -76,7 +76,7 @@
                             :alt="product.name"
                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 block bg-gray-100 dark:bg-gray-800"
                             loading="lazy"
-                            @error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
+                            v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
                     </a>
                 </div>
@@ -132,7 +132,7 @@
                             :alt="product.name"
                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 block"
                             loading="lazy"
-                            @error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
+                            v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
                     </a>
                 </div>
