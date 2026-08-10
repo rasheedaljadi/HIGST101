@@ -26,7 +26,7 @@ class Medium
      */
     public function applyFilter(ImageInterface $image): ImageInterface
     {
-        return $image->cover($this->width, $this->height);
+        return $image->pad($this->width, $this->height, 'ffffff');
     }
 
     /**
