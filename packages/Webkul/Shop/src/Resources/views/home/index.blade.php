@@ -118,6 +118,9 @@
                     'deal' => app(\Webkul\FlashDeal\Repositories\FlashDealRepository::class)->getActiveDeals()->first()
                 ])
 
+                <!-- Big Discounts Section -->
+                @include('shop::components.products.big-discounts')
+
                 @break
             @case ($customization::STATIC_CONTENT)
                 <!-- push style -->
