@@ -63,7 +63,7 @@
                 class="flex gap-8 pb-2.5 [&>*]:flex-[0] mt-10 overflow-auto scroll-smooth scrollbar-hide max-md:gap-7 max-md:mt-5 max-sm:gap-4 max-md:pb-0 max-md:whitespace-nowrap"
             >
                 <x-shop::products.card
-                    class="min-w-[291px] max-md:h-fit max-md:min-w-56 max-sm:min-w-[192px]"
+                    class="w-[291px] min-w-[291px] max-w-[291px] shrink-0 max-md:h-fit max-md:w-56 max-md:min-w-56 max-sm:w-[192px] max-sm:min-w-[192px]"
                     v-for="product in products"
                     :card-style="$cardStyle ?? 'standard'"
                 />
