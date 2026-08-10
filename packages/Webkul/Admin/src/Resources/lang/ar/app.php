@@ -1126,7 +1126,7 @@ return [
                 'title' => 'تعديل المنتج',
 
                 'channels' => [
-                    'title' => 'قنوات البيع',
+                    'title' => 'قنوات المتجر',
                 ],
 
                 'price' => [
@@ -3068,7 +3068,7 @@ return [
         ],
 
         'create' => [
-            'channels' => 'قنوات البيع',
+            'channels' => 'قنوات المتجر',
             'content' => 'محتوى الصفحة',
             'description' => 'الوصف',
             'general' => 'معلومات عامة',
@@ -3084,7 +3084,7 @@ return [
 
         'edit' => [
             'back-btn' => 'رجوع',
-            'channels' => 'قنوات البيع',
+            'channels' => 'قنوات المتجر',
             'content' => 'محتوى الصفحة',
             'description' => 'الوصف',
             'general' => 'معلومات عامة',
@@ -5162,7 +5162,7 @@ return [
                 'campaigns' => 'الحملات التسويقية',
                 'catalog' => 'إدارة المنتجــات',
                 'categories' => 'التصنيفات',
-                'channels' => 'قنوات البيع',
+                'channels' => 'قنوات المتجر',
                 'cms' => 'إدارة المحتوى',
                 'collapse' => 'طي',
                 'communications' => 'التواصل والإشعارات',
