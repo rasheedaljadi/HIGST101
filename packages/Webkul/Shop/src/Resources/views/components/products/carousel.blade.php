@@ -165,4 +165,6 @@
             },
         });
     </script>
+
+    <x-shop::products.card class="hidden" />
 @endpushonce
