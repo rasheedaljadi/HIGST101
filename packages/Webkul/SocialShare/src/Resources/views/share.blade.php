@@ -17,35 +17,14 @@
 
     {!! view_render_event('bagisto.shop.products.view.share.before', ['product' => $product]) !!}
 
-    {{-- Single Share Button --}}
-    <div class="higst-share-wrapper">
-        <button
-            id="higst-share-btn"
-            class="higst-share-trigger"
-            onclick="higstToggleShareModal(event)"
-            aria-label="@lang('admin::app.configuration.index.catalog.products.social-share.share')"
-            aria-haspopup="true"
-            aria-expanded="false"
-            type="button"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="18" cy="5" r="3"></circle>
-                <circle cx="6" cy="12" r="3"></circle>
-                <circle cx="18" cy="19" r="3"></circle>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-            </svg>
-            <span class="higst-share-label">@lang('admin::app.configuration.index.catalog.products.social-share.share')</span>
-        </button>
-
-        {{-- Share Modal Popup --}}
-        <div
-            id="higst-share-modal"
-            class="higst-share-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Share this product"
-        >
+    {{-- Share Modal Popup (trigger button moved to view.blade.php inline with wishlist/compare) --}}
+    <div
+        id="higst-share-modal"
+        class="higst-share-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Share this product"
+    >
             {{-- Backdrop --}}
             <div class="higst-share-backdrop" onclick="higstCloseShareModal()"></div>
 
@@ -234,58 +213,6 @@
 
     @push('styles')
         <style>
-            /* ===== Share Wrapper ===== */
-            .higst-share-wrapper {
-                position: relative;
-                display: inline-flex;
-                align-items: center;
-            }
-
-            /* ===== Trigger Button ===== */
-            .higst-share-trigger {
-                display: inline-flex;
-                align-items: center;
-                gap: 7px;
-                padding: 9px 18px 9px 14px;
-                background: #ffffff;
-                border: 1.5px solid #e5e7eb;
-                border-radius: 50px;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 500;
-                color: #374151;
-                transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-                box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-                white-space: nowrap;
-                font-family: inherit;
-            }
-
-            .higst-share-trigger:hover {
-                background: #f9fafb;
-                border-color: #9ca3af;
-                box-shadow: 0 4px 14px rgba(0,0,0,0.10);
-                transform: translateY(-1px);
-                color: #111827;
-            }
-
-            .higst-share-trigger:active {
-                transform: translateY(0);
-                box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            }
-
-            .higst-share-trigger svg {
-                flex-shrink: 0;
-                transition: transform 0.22s ease;
-            }
-
-            .higst-share-trigger:hover svg {
-                transform: rotate(15deg);
-            }
-
-            .higst-share-label {
-                font-size: 13.5px;
-            }
-
             /* ===== Modal Overlay ===== */
             .higst-share-modal {
                 display: none;
@@ -616,9 +543,8 @@
     @push('scripts')
         <script>
             function higstToggleShareModal(event) {
-                event.stopPropagation();
+                if (event) event.stopPropagation();
                 const modal = document.getElementById('higst-share-modal');
-                const btn   = document.getElementById('higst-share-btn');
                 const isOpen = modal.classList.contains('is-open');
                 if (isOpen) {
                     higstCloseShareModal();
@@ -629,13 +555,11 @@
 
             function higstOpenShareModal() {
                 const modal = document.getElementById('higst-share-modal');
-                const btn   = document.getElementById('higst-share-btn');
                 modal.classList.add('is-open');
-                btn.setAttribute('aria-expanded', 'true');
                 document.body.style.overflow = 'hidden';
 
                 // Re-trigger stagger animations on each open
-                document.querySelectorAll('.higst-social-item').forEach(function(el, i) {
+                document.querySelectorAll('.higst-social-item').forEach(function(el) {
                     el.style.animation = 'none';
                     el.offsetHeight; // reflow
                     el.style.animation = '';
@@ -644,9 +568,7 @@
 
             function higstCloseShareModal() {
                 const modal = document.getElementById('higst-share-modal');
-                const btn   = document.getElementById('higst-share-btn');
                 modal.classList.remove('is-open');
-                btn.setAttribute('aria-expanded', 'false');
                 document.body.style.overflow = '';
             }
 

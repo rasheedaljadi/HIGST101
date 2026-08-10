@@ -368,6 +368,27 @@
 
                                             {!! view_render_event('bagisto.shop.products.view.compare.after', ['product' => $product]) !!}
                                         @endif
+
+                                        <!-- Share Icon (inline with wishlist & compare) -->
+                                        @if (core()->getConfigData('catalog.products.social_share.enabled'))
+                                            <div
+                                                id="higst-share-btn-inline"
+                                                class="max-sm:min-h-7 max-sm:min-w-7 flex max-h-[46px] min-h-[46px] min-w-[46px] cursor-pointer items-center justify-center rounded-full border bg-white text-xl transition-all hover:opacity-[0.8] max-sm:max-h-7 max-sm:text-base shadow-sm"
+                                                role="button"
+                                                aria-label="@lang('admin::app.configuration.index.catalog.products.social-share.share')"
+                                                title="@lang('admin::app.configuration.index.catalog.products.social-share.share')"
+                                                tabindex="0"
+                                                onclick="higstOpenShareModal()"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="18" cy="5" r="3"></circle>
+                                                    <circle cx="6" cy="12" r="3"></circle>
+                                                    <circle cx="18" cy="19" r="3"></circle>
+                                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                                </svg>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
 
