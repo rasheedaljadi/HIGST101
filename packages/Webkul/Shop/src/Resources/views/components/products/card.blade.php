@@ -13,10 +13,11 @@
         type="text/x-template"
         id="v-product-card-template"
     >
+        <div v-bind="$attrs">
         <!-- Compact Deal Card (Design 1: Flash Deal Style) -->
         <div
             v-if="cardStyle === 'compact_deal' && mode != 'list'"
-            class="w-full h-[465px] max-h-[465px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border shrink-0 select-none"
+            class="w-full h-[465px] max-h-[465px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border select-none"
         >
             <!-- Product Image Container -->
             <div 
@@ -94,7 +95,7 @@
 
         <!-- Standard Grid Card (Design 2: Standard Store Style) -->
         <div
-            class="1180:transtion-all group w-full rounded-md 1180:relative 1180:grid 1180:content-start 1180:overflow-hidden 1180:duration-300 1180:hover:shadow-[0_5px_10px_rgba(0,0,0,0.1)]"
+            class="group w-full rounded-md relative grid content-start overflow-hidden transition-all duration-300 hover:shadow-[0_5px_10px_rgba(0,0,0,0.1)]"
             v-else-if="cardStyle !== 'compact_deal' && mode != 'list'"
         >
             <div class="relative w-full aspect-[4/6] overflow-hidden rounded-lg bg-zinc-100 flex items-center justify-center" style="aspect-ratio: 4 / 6;">
@@ -203,7 +204,7 @@
             </div>
 
             <!-- Product Information Section -->
-            <div class="-mt-9 grid max-w-[291px] translate-y-9 content-start gap-2.5 bg-white p-2.5 transition-transform duration-300 ease-out group-hover:-translate-y-0 group-hover:rounded-t-lg max-md:relative max-md:mt-0 max-md:translate-y-0 max-md:gap-0 max-md:px-0 max-md:py-1.5 max-sm:min-w-[170px] max-sm:max-w-[192px]">
+            <div class="-mt-9 grid w-full translate-y-9 content-start gap-2.5 bg-white p-2.5 transition-transform duration-300 ease-out group-hover:-translate-y-0 group-hover:rounded-t-lg max-[1180px]:relative max-[1180px]:mt-0 max-[1180px]:translate-y-0 max-[1180px]:gap-0 max-[1180px]:px-0 max-[1180px]:py-1.5">
 
                 {!! view_render_event('bagisto.shop.components.products.card.name.before') !!}
 
@@ -275,8 +276,9 @@
         </div>
 
         <!-- List Card -->
+
         <div
-            class="relative flex max-w-max grid-cols-2 gap-4 overflow-hidden rounded max-sm:flex-wrap"
+            class="relative flex w-full grid-cols-2 gap-4 overflow-hidden rounded max-sm:flex-wrap"
             v-else
         >
             <div class="group relative w-[250px] aspect-[9/16] overflow-hidden rounded-lg bg-zinc-100 flex items-center justify-center" style="aspect-ratio: 9 / 16;">
@@ -423,11 +425,14 @@
                 @endif
             </div>
         </div>
+        </div>
     </script>
 
     <script type="module">
         app.component('v-product-card', {
             template: '#v-product-card-template',
+
+            inheritAttrs: false,
 
             props: ['mode', 'product', 'cardStyle'],
 
