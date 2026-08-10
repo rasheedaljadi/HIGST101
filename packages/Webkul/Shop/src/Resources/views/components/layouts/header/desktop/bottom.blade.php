@@ -297,7 +297,7 @@
                 <span class="flex items-center gap-1.5 px-2.5 sm:px-3 text-base font-bold text-[#001A54] dark:text-gray-100 hover:text-[#FFC000]">
                     <span class="text-xl icon-hamburger"></span>
 
-                    @lang('shop::app.components.layouts.header.desktop.bottom.all')
+                    @lang('shop::app.components.layouts.header.desktop.bottom.categories')
                 </span>
             </div>
 
