@@ -71,7 +71,7 @@
     >
         @if ($discountPercent > 0)
             <span 
-                class="absolute top-2.5 right-2.5 z-10 bg-white text-[#001A54] font-black rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[11px] sm:text-xs shadow-md border border-gray-100"
+                class="absolute top-2.5 right-2.5 z-10 bg-white text-[#001A54] font-black rounded-full w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-[10px] sm:text-[11px] leading-none tracking-tighter shadow-md border border-gray-100/80 shrink-0"
                 style="background-color: #ffffff !important; color: #001A54 !important;"
             >
                 -{{ $discountPercent }}%
