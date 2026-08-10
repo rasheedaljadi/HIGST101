@@ -95,7 +95,7 @@
     <!-- Product Title Area: Fixed Height (~56px), Clamped to 2 Lines Max -->
     <a href="{{ $productUrl }}" class="block h-[56px] flex items-center mb-2 px-0.5 shrink-0 overflow-hidden">
         <h3 
-            class="text-xs sm:text-sm font-bold text-[#001A54] dark:text-gray-100 hover:text-[#FFC000] transition-colors text-center w-full leading-tight sm:leading-snug" 
+            class="text-xs sm:text-sm font-bold text-[#001A54] dark:text-gray-100 hover:opacity-80 transition-opacity text-center w-full leading-tight sm:leading-snug" 
             title="{{ $cleanName }}"
             style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-height: 2.8rem;"
         >

@@ -105,7 +105,7 @@
                     class="block flex items-center my-1 px-0.5 shrink-0 overflow-hidden"
                 >
                     <h3 
-                        class="text-xs sm:text-sm font-bold text-[#001A54] dark:text-gray-100 hover:text-[#FFC000] transition-colors text-right rtl:text-right ltr:text-left w-full leading-tight sm:leading-snug" 
+                        class="text-xs sm:text-sm font-bold text-[#001A54] dark:text-gray-100 hover:opacity-80 transition-opacity text-right rtl:text-right ltr:text-left w-full leading-tight sm:leading-snug" 
                         :title="product.name"
                         style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-height: 2.6rem;"
                     >
@@ -158,7 +158,7 @@
                 <div class="flex flex-col justify-between flex-1 py-1 min-w-0">
                     <div>
                         <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)">
-                            <h3 class="text-base sm:text-lg font-bold text-[#001A54] dark:text-gray-100 hover:text-[#FFC000] transition-colors mb-2">
+                            <h3 class="text-base sm:text-lg font-bold text-[#001A54] dark:text-gray-100 hover:opacity-80 transition-opacity mb-2">
                                 @{{ product.name }}
                             </h3>
                         </a>

@@ -34,21 +34,21 @@
             <nav class="flex items-center gap-3 sm:gap-5 text-base font-bold text-[#001A54] dark:text-gray-100 border-s border-gray-200 dark:border-gray-700 ps-3 sm:ps-4">
                 <a 
                     href="{{ route('shop.home.index') }}" 
-                    class="hover:text-[#FFC000] transition-colors py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                    class="hover:opacity-80 transition-opacity py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                     الرئيسية
                 </a>
 
                 <a 
                     href="{{ route('shop.search.index') }}" 
-                    class="hover:text-[#FFC000] transition-colors py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                    class="hover:opacity-80 transition-opacity py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                     المنتجات
                 </a>
 
                 <a 
                     href="{{ route('shop.home.index') }}#flash-deals" 
-                    class="hover:text-[#FFC000] transition-colors py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                    class="hover:opacity-80 transition-opacity py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                     العروض
                 </a>
@@ -294,7 +294,7 @@
                 class="flex h-[77px] cursor-pointer items-center border-b-4 border-transparent hover:border-b-4 hover:border-[#001A54] transition-colors"
                 @click="toggleCategoryDrawer"
             >
-                <span class="flex items-center gap-1.5 px-2.5 sm:px-3 text-base font-bold text-[#001A54] dark:text-gray-100 hover:text-[#FFC000]">
+                <span class="flex items-center gap-1.5 px-2.5 sm:px-3 text-base font-bold text-[#001A54] dark:text-gray-100 hover:opacity-80 transition-opacity">
                     <span class="text-xl icon-hamburger"></span>
 
                     @lang('shop::app.components.layouts.header.desktop.bottom.categories')

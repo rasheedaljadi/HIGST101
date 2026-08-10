@@ -155,7 +155,7 @@
                             </h2>
                             <a 
                                 href="{{ route('shop.search.index', $data['filters'] ?? []) }}"
-                                class="text-xs sm:text-sm font-bold text-[#001A54] hover:text-[#FFC000] border border-gray-200 dark:border-gray-700 px-4 py-1.5 rounded-full transition-colors flex items-center gap-1"
+                                class="text-xs sm:text-sm font-bold text-[#001A54] hover:opacity-80 border border-gray-200 dark:border-gray-700 px-4 py-1.5 rounded-full transition-opacity flex items-center gap-1"
                             >
                                 @lang('shop::app.home.index.view-all')
                                 <span class="icon-arrow-right rtl:rotate-180 text-xs"></span>
