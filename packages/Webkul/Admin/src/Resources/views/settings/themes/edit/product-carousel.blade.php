@@ -56,6 +56,31 @@
                     <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[options][title]" />
                 </x-admin::form.control-group>
 
+                <!-- Card Style Selection -->
+                <x-admin::form.control-group class="mb-2.5">
+                    <x-admin::form.control-group.label>
+                        قالب بطاقة المنتج (Product Card Style)
+                    </x-admin::form.control-group.label>
+
+                    <v-field
+                        name="{{ $currentLocale->code }}[options][card_style]"
+                        v-slot="{ field }"
+                        value="{{ $theme->translate($currentLocale->code)->options['card_style'] ?? 'standard' }}"
+                        label="قالب بطاقة المنتج"
+                    >
+                        <select
+                            name="{{ $currentLocale->code }}[options][card_style]"
+                            v-bind="field"
+                            class="custom-select flex min-h-[39px] w-full rounded-md border bg-white px-3 py-1.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
+                        >
+                            <option value="standard">التصميم القياسي للمتجر (Standard Card)</option>
+                            <option value="compact_deal">تصميم العروض السريعة (Compact Deal Card)</option>
+                        </select>
+                    </v-field>
+
+                    <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[options][card_style]" />
+                </x-admin::form.control-group>
+
                 <!-- Sort -->
                 <x-admin::form.control-group>
                     <x-admin::form.control-group.label class="required">
