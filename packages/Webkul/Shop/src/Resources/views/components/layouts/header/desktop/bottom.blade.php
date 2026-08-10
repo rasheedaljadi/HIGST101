@@ -307,6 +307,26 @@
                 width="400px"
                 ::is-active="isDrawerActive"
                 @toggle="onDrawerToggle"
+                @close="onDrawerClose"
+            >
+                <x-slot:toggle></x-slot>
+
+                <x-slot:header class="border-b border-gray-200">
+                    <div class="flex items-center justify-between w-full">
+                        <p class="text-xl font-medium">
+                            @lang('shop::app.components.layouts.header.desktop.bottom.categories')
+                        </p>
+                    </div>
+                </x-slot>
+
+                <x-slot:content class="!px-0">
+                    <!-- Wrapper with transition effects -->
+                    <div class="relative h-full overflow-hidden">
+                        <!-- Sliding container -->
+                        <div
+                            class="flex h-full transition-transform duration-300"
+                            :class="{
+                                'ltr:translate-x-0 rtl:translate-x-0': currentViewLevel !== 'third',
                                 'ltr:-translate-x-full rtl:translate-x-full': currentViewLevel === 'third'
                             }"
                         >
