@@ -132,3 +132,31 @@ if (! function_exists('array_permutation')) {
         return $results;
     }
 }
+
+if (! function_exists('clean_product_description')) {
+    /**
+     * Clean product description from imported metadata noise like modname=..., cols=..., colspace=...
+     */
+    function clean_product_description(?string $content): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        $patterns = [
+            '/modname\s*=\s*.*?(?=<|\n|\r|$)/iu',
+            '/cols\s*=\s*\d+.*?(?=<|\n|\r|$)/iu',
+            '/colspace\s*=\s*\d+.*?(?=<|\n|\r|$)/iu',
+            '/rowspace\s*=\s*\d+.*?(?=<|\n|\r|$)/iu',
+            '/align\s*=\s*(center|centre|مركز)(?=<|\n|\r|$)/iu',
+        ];
+
+        foreach ($patterns as $pattern) {
+            $content = preg_replace($pattern, '', $content);
+        }
+
+        $content = preg_replace('/<(div|p|span)[^>]*>\s*<\/\1>/iu', '', $content);
+
+        return trim($content);
+    }
+}
