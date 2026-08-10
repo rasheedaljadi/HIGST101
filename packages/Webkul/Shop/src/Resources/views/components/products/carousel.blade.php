@@ -1,8 +1,15 @@
+@props([
+    'src',
+    'title',
+    'navigationLink' => null,
+    'cardStyle' => 'standard',
+])
+
 <v-products-carousel
     src="{{ $src }}"
     title="{{ $title }}"
     navigation-link="{{ $navigationLink ?? '' }}"
-    card-style="{{ $cardStyle ?? 'standard' }}"
+    card-style="{{ $cardStyle }}"
 >
     <x-shop::shimmer.products.carousel :navigation-link="$navigationLink ?? false" />
 </v-products-carousel>
@@ -62,12 +69,12 @@
                 ref="swiperContainer"
                 class="flex gap-8 pb-2.5 mt-10 overflow-auto scroll-smooth scrollbar-hide max-md:gap-7 max-md:mt-5 max-sm:gap-4 max-md:pb-0 max-md:whitespace-nowrap"
             >
-                <x-shop::products.card
+                <v-product-card
                     class="min-w-[291px] max-w-[291px] shrink-0 max-md:h-fit max-md:min-w-56 max-sm:min-w-[192px]"
                     v-for="product in products"
-                    ::product="product"
-                    :card-style="$cardStyle ?? 'standard'"
-                />
+                    :product="product"
+                    :card-style="cardStyle"
+                ></v-product-card>
             </div>
 
             <a
