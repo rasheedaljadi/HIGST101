@@ -41,7 +41,7 @@
         $discountPercent = (int) round((($originalPrice - $flashPrice) / $originalPrice) * 100);
     }
 
-    $endTime = $dealProduct?->offer_end_time ?? $dealProduct?->deal?->ends_at;
+    $endTime = $dealProduct?->effective_end_time ?? $dealProduct?->offer_end_time ?? $dealProduct?->deal?->ends_at;
 @endphp
 
 <!-- Product Card: Fixed 310px x 505px Desktop Reference Dimensions -->
