@@ -119,11 +119,12 @@
         <!-- Cart Icon Button -->
         <a 
             href="{{ $productUrl }}" 
-            class="bg-[#001A54] hover:bg-[#072870] text-white font-bold p-2 sm:p-2.5 rounded-full flex items-center justify-center shadow-sm shrink-0 w-9 h-9 sm:w-11 sm:h-11 transition-transform active:scale-95"
+            class="bg-navyBlue hover:opacity-90 text-white font-bold p-2 sm:p-2.5 rounded-full flex items-center justify-center shadow-md shrink-0 w-9 h-9 sm:w-11 sm:h-11 transition-transform active:scale-95"
+            style="background-color: #060C3B !important; color: #ffffff !important;"
             title="أضف للسلة"
             aria-label="أضف للسلة"
         >
-            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" style="color: #ffffff !important;">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
         </a>
