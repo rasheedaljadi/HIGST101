@@ -2,10 +2,14 @@
     $productImageHelper = app(\Webkul\Product\ProductImage::class);
     $smartThumbnailHelper = app(\Webkul\FlashDeal\Helpers\SmartThumbnailHelper::class);
 
+    $currentChannel = core()->getCurrentChannel()->code ?? 'default';
+    $currentLocale = core()->getCurrentLocale()->code ?? 'ar';
     $now = \Illuminate\Support\Carbon::now();
 
-    // Query active products with valid special price ordered by highest discount percentage
-    $discountedProducts = \Webkul\Product\Models\Product::where('status', 1)
+    // Query product_flat table for active items in current channel and locale with special_price
+    $flatRecords = \Webkul\Product\Models\ProductFlat::where('status', 1)
+        ->where('channel', $currentChannel)
+        ->where('locale', $currentLocale)
         ->whereNotNull('special_price')
         ->where('special_price', '>', 0)
         ->whereColumn('special_price', '<', 'price')
@@ -20,10 +24,24 @@
         ->limit(15)
         ->get();
 
-    // Fallback: If less than 4 products matched direct special_price column, evaluate active products and calculate discount
+    $discountedProducts = collect();
+
+    foreach ($flatRecords as $flat) {
+        if ($flat->product) {
+            $productEntity = $flat->product;
+            $productEntity->computed_discount = (int) $flat->computed_discount;
+            $productEntity->computed_original_price = (float) $flat->price;
+            $productEntity->computed_final_price = (float) $flat->special_price;
+            $discountedProducts->push($productEntity);
+        }
+    }
+
+    // Fallback: If less than 4 flat records match direct special_price column, fetch active products and compute
     if ($discountedProducts->count() < 4) {
-        $allActive = \Webkul\Product\Models\Product::where('status', 1)->limit(50)->get();
-        $sorted = $allActive->map(function ($p) {
+        $allProducts = \Webkul\Product\Models\Product::where('status', 1)->limit(50)->get();
+        $fallbackItems = collect();
+
+        foreach ($allProducts as $p) {
             $orig = $p->type === 'configurable' ? $p->getTypeInstance()->getMinimalPrice() : $p->price;
             if (! $orig || $orig <= 0) {
                 $orig = $p->price;
@@ -33,17 +51,16 @@
             if ($orig > 0 && $orig > $special) {
                 $disc = (int) round((($orig - $special) / $orig) * 100);
             }
-            $p->computed_discount = $disc;
-            $p->computed_original_price = $orig;
-            $p->computed_final_price = $special;
+            if ($disc > 0) {
+                $p->computed_discount = $disc;
+                $p->computed_original_price = $orig;
+                $p->computed_final_price = $special;
+                $fallbackItems->push($p);
+            }
+        }
 
-            return $p;
-        })->filter(function ($p) {
-            return $p->computed_discount > 0;
-        })->sortByDesc('computed_discount')->take(15);
-
-        if ($sorted->count() > 0) {
-            $discountedProducts = $sorted->values();
+        if ($fallbackItems->count() > 0) {
+            $discountedProducts = $fallbackItems->sortByDesc('computed_discount')->take(15)->values();
         }
     }
 @endphp
