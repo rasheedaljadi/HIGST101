@@ -25,24 +25,29 @@
 
         {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.category.before') !!}
 
-        <v-desktop-category>
-            <div class="flex items-center gap-5">
-                <span
-                    class="w-20 h-6 rounded shimmer"
-                    role="presentation"
-                ></span>
+        <!-- Header Navigation Links: الرئيسية, المنتجات, العروض -->
+        <nav class="flex items-center gap-5 max-[1180px]:gap-3 text-base font-bold text-[#001A54] dark:text-gray-100">
+            <a 
+                href="{{ route('shop.home.index') }}" 
+                class="hover:text-[#FFC000] transition-colors py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+                الرئيسية
+            </a>
 
-                <span
-                    class="w-20 h-6 rounded shimmer"
-                    role="presentation"
-                ></span>
+            <a 
+                href="{{ route('shop.search.index') }}" 
+                class="hover:text-[#FFC000] transition-colors py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+                المنتجات
+            </a>
 
-                <span
-                    class="w-20 h-6 rounded shimmer"
-                    role="presentation"
-                ></span>
-            </div>
-        </v-desktop-category>
+            <a 
+                href="{{ route('shop.home.index') }}#flash-deals" 
+                class="hover:text-[#FFC000] transition-colors py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+                العروض
+            </a>
+        </nav>
 
         {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.category.after') !!}
     </div>

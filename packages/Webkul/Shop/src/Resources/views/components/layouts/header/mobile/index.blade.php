@@ -293,6 +293,28 @@
 
                     {!! view_render_event('bagisto.shop.components.layouts.header.mobile.drawer.categories.before') !!}
 
+                    <!-- Main Navigation Links: الرئيسية, المنتجات, العروض -->
+                    <div class="flex flex-col border-b border-zinc-200 py-2 bg-gray-50/50">
+                        <a 
+                            href="{{ route('shop.home.index') }}"
+                            class="flex items-center gap-3 px-5 py-3 text-base font-bold text-[#001A54] hover:bg-gray-100"
+                        >
+                            الرئيسية
+                        </a>
+                        <a 
+                            href="{{ route('shop.search.index') }}"
+                            class="flex items-center gap-3 px-5 py-3 text-base font-bold text-[#001A54] hover:bg-gray-100"
+                        >
+                            المنتجات
+                        </a>
+                        <a 
+                            href="{{ route('shop.home.index') }}#flash-deals"
+                            class="flex items-center gap-3 px-5 py-3 text-base font-bold text-[#001A54] hover:bg-gray-100"
+                        >
+                            العروض
+                        </a>
+                    </div>
+
                     <!-- Mobile category view -->
                     <v-mobile-category ref="mobileCategory"></v-mobile-category>
 
