@@ -34,7 +34,7 @@
 
                 <img
                     v-else
-                    :class="`transparent aspect-square h-[48px] max-h-[48px] min-w-[48px] w-[48px] cursor-pointer rounded-md object-cover border bg-zinc-50 ${isActiveMedia(index) ? 'pointer-events-none border-2 border-navyBlue' : 'border-gray-200'}`"
+                    :class="`transparent aspect-square h-[48px] max-h-[48px] min-w-[48px] w-[48px] cursor-pointer rounded-md object-contain border bg-zinc-50 ${isActiveMedia(index) ? 'pointer-events-none border-2 border-navyBlue' : 'border-gray-200'}`"
                     :src="media.small_image_url"
                     alt="{{ $product->name }}"
                     width="48"

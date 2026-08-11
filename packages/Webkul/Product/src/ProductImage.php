@@ -121,22 +121,14 @@ class ProductImage
      */
     private function getCachedImageUrls($path): array
     {
-        if (! $this->isDriverLocal()) {
-            return [
-                'small_image_url' => Storage::url($path),
-                'medium_image_url' => Storage::url($path),
-                'large_image_url' => Storage::url($path),
-                'original_image_url' => Storage::url($path),
-                'fallback_url' => Storage::url($path),
-            ];
-        }
+        $url = Storage::url($path);
 
         return [
-            'small_image_url' => $this->getOrGenerateCachedUrl('small', $path),
-            'medium_image_url' => $this->getOrGenerateCachedUrl('medium', $path),
-            'large_image_url' => $this->getOrGenerateCachedUrl('large', $path),
-            'original_image_url' => $this->getOrGenerateCachedUrl('original', $path),
-            'fallback_url' => Storage::url($path),
+            'small_image_url'    => $url,
+            'medium_image_url'   => $url,
+            'large_image_url'    => $url,
+            'original_image_url' => $url,
+            'fallback_url'       => $url,
         ];
     }
 
