@@ -180,6 +180,11 @@ class FlashDealController extends Controller
             }
         }
 
+        try {
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+        } catch (\Throwable $e) {}
+
         return response()->json(['message' => 'تم حفظ منتجات العرض السريع بنجاح.']);
     }
 
