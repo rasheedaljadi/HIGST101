@@ -76,7 +76,7 @@
     >
         <img
             class="h-full w-full cursor-pointer rounded-xl block"
-            style="width: 100%; height: 100%; object-fit: cover; background: #f8fafc; transform: scale(2); transform-origin: center;"
+            style="width: 100%; height: 100%; object-fit: cover; background: #f8fafc; transform: scaleX(2); transform-origin: center;"
             :src="baseFile.path || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
             v-if="baseFile.type == 'image' || !baseFile.type"
             alt="{{ $product->name }}"
