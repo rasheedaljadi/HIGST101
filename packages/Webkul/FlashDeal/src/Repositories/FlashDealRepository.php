@@ -30,7 +30,9 @@ class FlashDealRepository extends Repository
             ->where('ends_at', '>=', $now)
             ->with(['products' => function ($query) use ($now) {
                 $query->whereHas('product', function ($pQuery) {
-                    $pQuery->where('status', 1);
+                    $pQuery->whereHas('product_flats', function ($pfQuery) {
+                        $pfQuery->where('status', 1);
+                    });
                 })
                 ->where(function ($q) use ($now) {
                     $q->whereNull('offer_end_time')
