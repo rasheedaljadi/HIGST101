@@ -31,6 +31,35 @@ class NotificationController extends Controller
         $params = request()->except('page');
 
         $results = $this->notificationRepository->getForCustomer($customerId, $params);
+
+        $results->getCollection()->transform(function ($notification) {
+            if (! empty($notification->title) && str_starts_with($notification->title, 'shop::app.')) {
+                $translated = trans($notification->title);
+                $notification->title = ($translated !== $notification->title) ? $translated : match ($notification->title) {
+                    'shop::app.notifications.order_created_title' => 'تم إنشاء طلبك بنجاح',
+                    'shop::app.notifications.order_status_title' => 'تحديث على حالة الطلب',
+                    'shop::app.notifications.invoice_created_title' => 'تم إصدار فاتورة لطلبك',
+                    'shop::app.notifications.shipment_created_title' => 'تم شحن طلبك',
+                    'shop::app.notifications.refund_created_title' => 'تم استرداد مبلغ من طلبك',
+                    default => 'إشعار جديد',
+                };
+            }
+
+            if (! empty($notification->message) && str_starts_with($notification->message, 'shop::app.')) {
+                $orderId = $notification->order_id ?? '';
+                $translated = trans($notification->message, ['order_id' => $orderId]);
+                $notification->message = ($translated !== $notification->message) ? $translated : match ($notification->message) {
+                    'shop::app.notifications.order_created_message' => "تم استلام طلبك رقم #{$orderId} بنجاح وهو قيد المراجعة.",
+                    'shop::app.notifications.invoice_created_message' => "تم إصدار فاتورة الشراء لطلبك رقم #{$orderId}.",
+                    'shop::app.notifications.shipment_created_message' => "تم شحن طلبك رقم #{$orderId} وهو في طريقه إليك.",
+                    'shop::app.notifications.refund_created_message' => "تم إصدار مرتجع مالي لطلبك رقم #{$orderId}.",
+                    default => "تم تحديث حالة طلبك رقم #{$orderId}.",
+                };
+            }
+
+            return $notification;
+        });
+
         $totalUnread = $this->notificationRepository->getUnreadCountForCustomer($customerId);
 
         return response()->json([
