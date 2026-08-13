@@ -521,7 +521,7 @@
                 <x-shop::dropdown position="bottom-{{ core()->getCurrentLocale()->direction === 'ltr' ? 'right' : 'left' }}">
                     <x-slot:toggle>
                         <div class="relative cursor-pointer flex items-center">
-                            <span class="inline-block text-2xl cursor-pointer icon-notification" role="button" aria-label="الإشعارات" tabindex="0"></span>
+                            <span class="inline-block text-2xl cursor-pointer icon-notification text-navyBlue dark:text-white" role="button" aria-label="الإشعارات" tabindex="0"></span>
                             <span v-if="totalUnread > 0" class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
                                 @{{ totalUnread > 9 ? '9+' : totalUnread }}
                             </span>

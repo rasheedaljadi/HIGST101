@@ -235,6 +235,10 @@ img.lazy {
         content: "\e92b";
     }
 
+    .icon-notification:before {
+        content: "\e928";
+    }
+
     .icon-orders:before {
         content: "\e92c";
     }
