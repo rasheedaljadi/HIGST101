@@ -15,3 +15,12 @@ Schedule::command('wallet:verify-ledger --notify')
     ->dailyAt('02:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+/**
+ * HIGEST Wallet Promotions Outbox Worker (Every Minute)
+ */
+Schedule::command('wallet:promotions:process-outbox --batch=50 --lease=60')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground();
+

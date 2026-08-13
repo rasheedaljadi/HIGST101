@@ -121,4 +121,60 @@ return [
             ],
         ],
     ],
+    [
+        'key' => 'sales.wallet_promotions',
+        'name' => 'إعدادات العروض الترويجية للمحفظة (Wallet Promotions)',
+        'info' => 'التحكم في أوضاع التشغيل، صندوق المعالجة الذري، ومطابقة الأرصدة',
+        'icon' => 'settings/promotions.svg',
+        'sort' => 12,
+    ],
+    [
+        'key' => 'sales.wallet_promotions.settings',
+        'name' => 'إعدادات التشغيل والـ Outbox',
+        'info' => 'تحديد وضع التشغيل ومهلات المعالجة',
+        'icon' => 'settings/promotions.svg',
+        'sort' => 1,
+        'fields' => [
+            [
+                'name' => 'mode',
+                'title' => 'وضع التشغيل (Promotion Operating Mode)',
+                'type' => 'select',
+                'options' => [
+                    [
+                        'title' => 'الوضع القديم فقط (Legacy Only - Promotions Inactive)',
+                        'value' => 'legacy_only',
+                    ],
+                    [
+                        'title' => 'تفعيل العروض الترويجية (Promotions Active)',
+                        'value' => 'promotions_active',
+                    ],
+                    [
+                        'title' => 'الكتابة المزدوجة (Dual Write Mode)',
+                        'value' => 'dual_write',
+                    ],
+                ],
+                'default' => 'promotions_active',
+                'channel_based' => false,
+                'locale_based' => false,
+            ],
+            [
+                'name' => 'outbox_batch_size',
+                'title' => 'حجم الدفعة المعالجة (Outbox Batch Size)',
+                'type' => 'number',
+                'default' => 50,
+                'validation' => 'required|integer|min:1|max:500',
+                'channel_based' => false,
+                'locale_based' => false,
+            ],
+            [
+                'name' => 'outbox_lease_seconds',
+                'title' => 'مهلة القفل بالثواني (Outbox Lease Timeout Seconds)',
+                'type' => 'number',
+                'default' => 60,
+                'validation' => 'required|integer|min:10|max:600',
+                'channel_based' => false,
+                'locale_based' => false,
+            ],
+        ],
+    ],
 ];

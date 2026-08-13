@@ -8,6 +8,10 @@ use Webkul\Wallet\Listeners\CreateWalletOnCustomerRegistered;
 use Webkul\Wallet\Listeners\CreditWalletOnOrderCanceled;
 use Webkul\Wallet\Listeners\CreditWalletOnRefundCreated;
 use Webkul\Wallet\Listeners\DebitWalletOnOrderCreated;
+use Webkul\Wallet\Listeners\PromotionCustomerRegistrationListener;
+use Webkul\Wallet\Listeners\PromotionInvoicePaidListener;
+use Webkul\Wallet\Listeners\PromotionRefundListener;
+use Webkul\Wallet\Listeners\PromotionTopUpApprovedListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -50,10 +54,33 @@ class EventServiceProvider extends ServiceProvider
         ],
 
         /**
-         * Invoice saved — apply promotional cashback for wallet purchases.
+         * Invoice saved — apply legacy cashback for wallet purchases.
          */
         'sales.invoice.save.after' => [
             [ApplyWalletCashbackListener::class, 'handle'],
+            [PromotionInvoicePaidListener::class, 'handle'],
+        ],
+
+        /**
+         * Promotional event bindings
+         */
+        'customer.registration.after' => [
+            [CreateWalletOnCustomerRegistered::class, 'handle'],
+            [PromotionCustomerRegistrationListener::class, 'handle'],
+        ],
+
+        'customer.create.after' => [
+            [CreateWalletOnCustomerRegistered::class, 'handle'],
+            [PromotionCustomerRegistrationListener::class, 'handle'],
+        ],
+
+        'wallet.topup.after' => [
+            [PromotionTopUpApprovedListener::class, 'handle'],
+        ],
+
+        'sales.refund.save.after' => [
+            [CreditWalletOnRefundCreated::class, 'handle'],
+            [PromotionRefundListener::class, 'handle'],
         ],
     ];
 }
