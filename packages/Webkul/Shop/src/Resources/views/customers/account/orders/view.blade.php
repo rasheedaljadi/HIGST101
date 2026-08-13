@@ -104,7 +104,7 @@
 
                         <!-- Order Details -->
                         <div class="relative mt-8 overflow-x-auto rounded-xl border">
-                            <table class="w-full text-left">
+                            <table class="w-full ltr:text-left rtl:text-right">
                                 <thead class="border-b border-zinc-200 bg-zinc-100 text-sm text-black">
                                     <tr class="[&>*]:font-medium [&>*]:px-6 [&>*]:py-4">
                                         <th scope="col">
@@ -1199,7 +1199,7 @@
                                     </div>
 
                                     <div class="relative mt-8 overflow-x-auto rounded-xl border">
-                                        <table class="w-full text-left">
+                                        <table class="w-full ltr:text-left rtl:text-right">
                                             <thead class="border-b border-zinc-200 bg-zinc-100 text-sm text-black">
                                                 <tr class="[&>*]:font-medium [&>*]:px-6 [&>*]:py-4">
                                                     <th scope="col">
@@ -1458,7 +1458,7 @@
 
                                     <!-- Table of Contents -->
                                     <div class="relative mt-5 overflow-x-auto rounded-xl border max-md:hidden">
-                                        <table class="w-full text-left text-sm">
+                                        <table class="w-full ltr:text-left rtl:text-right text-sm">
                                             <thead class="border-b border-zinc-200 bg-zinc-100 text-sm text-black">
                                                 <tr class="[&>*]:font-medium [&>*]:px-6 [&>*]:py-4">
                                                     <th scope="col">
@@ -1588,7 +1588,7 @@
                                 </div>
 
                                 <div class="relative mt-8 overflow-x-auto rounded-xl border">
-                                    <table class="w-full text-left text-sm">
+                                    <table class="w-full ltr:text-left rtl:text-right text-sm">
                                         <thead class="border-b border-zinc-200 bg-zinc-100 text-sm text-black">
                                             <tr class="[&>*]:font-medium [&>*]:px-6 [&>*]:py-4">
                                                 <th scope="col">
