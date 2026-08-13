@@ -7,7 +7,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Webkul\FlashDeal\Repositories\FlashDealRepository;
-use Webkul\Product\Helpers\ProductImage;
+use Webkul\Product\ProductImage;
 
 class FlashDealController extends Controller
 {
