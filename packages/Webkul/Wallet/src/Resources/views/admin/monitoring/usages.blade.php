@@ -1,6 +1,6 @@
 <x-admin::layouts>
     <x-slot:title>
-        سجل استخدامات العروض (Usages)
+        سجل استخدامات العروض الترويجية
     </x-slot:title>
 
     <div class="flex flex-col gap-4 p-6">

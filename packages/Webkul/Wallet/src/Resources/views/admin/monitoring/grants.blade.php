@@ -1,6 +1,6 @@
 <x-admin::layouts>
     <x-slot:title>
-        حصص المنح النشطة (Grant Lots)
+        حصص المنح الترويجية النشطة
     </x-slot:title>
 
     <div class="flex flex-col gap-4 p-6">

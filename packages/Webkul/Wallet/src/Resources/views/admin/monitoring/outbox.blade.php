@@ -1,6 +1,6 @@
 <x-admin::layouts>
     <x-slot:title>
-        صندوق الأحداث المالية (Outbox Queue)
+        صندوق الأحداث المالية للعروض
     </x-slot:title>
 
     <div class="flex flex-col gap-4 p-6">

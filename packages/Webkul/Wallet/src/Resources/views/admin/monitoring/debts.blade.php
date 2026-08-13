@@ -1,6 +1,6 @@
 <x-admin::layouts>
     <x-slot:title>
-        ديون العروض الترويجية (Promo Debts)
+        ديون العروض الترويجية المسجلة
     </x-slot:title>
 
     <div class="flex flex-col gap-4 p-6">

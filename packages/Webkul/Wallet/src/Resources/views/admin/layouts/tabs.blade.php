@@ -45,7 +45,7 @@
         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition {{ str_contains($currentRoute, 'admin.wallet.promotions.index') || str_contains($currentRoute, 'admin.wallet.promotions.create') || str_contains($currentRoute, 'admin.wallet.promotions.edit') ? 'bg-blue-900 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' }}"
     >
         <span class="icon-cart text-lg"></span>
-        <span>العروض والمكافآت (Promotions)</span>
+        <span>العروض والمكافآت</span>
     </a>
 
     {{-- 6. Monitoring & Governance --}}
