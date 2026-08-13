@@ -36,4 +36,18 @@ return [
         'sort' => 4,
         'icon' => '',
     ],
+    [
+        'key' => 'wallet.promotions',
+        'name' => 'العروض والمكافآت',
+        'route' => 'admin.wallet.promotions.index',
+        'sort' => 5,
+        'icon' => '',
+    ],
+    [
+        'key' => 'wallet.monitoring',
+        'name' => 'الرقابة والتدقيق الداخلي',
+        'route' => 'admin.wallet.promotions.monitoring.index',
+        'sort' => 6,
+        'icon' => '',
+    ],
 ];

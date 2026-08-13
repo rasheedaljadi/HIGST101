@@ -30,9 +30,13 @@ class WalletController extends Controller
 
             $balances = [
                 'total' => core()->formatBasePrice($wallet->total_balance),
+                'cash' => core()->formatBasePrice($wallet->cash_balance),
+                'promotional' => core()->formatBasePrice($wallet->promo_balance),
                 'available' => core()->formatBasePrice($wallet->available_balance),
-                'promotional' => core()->formatBasePrice(0),
+                'withdrawable' => core()->formatBasePrice(max(0, (float) $wallet->cash_balance - (float) $wallet->held_balance)),
                 'held' => core()->formatBasePrice($wallet->held_balance),
+                'raw_cash' => (float) $wallet->cash_balance,
+                'raw_promo' => (float) $wallet->promo_balance,
             ];
 
             $transactions = $wallet->transactions()->latest()->take(10)->get();
@@ -47,9 +51,13 @@ class WalletController extends Controller
         } else {
             $balances = [
                 'total' => core()->formatBasePrice(0),
-                'available' => core()->formatBasePrice(0),
+                'cash' => core()->formatBasePrice(0),
                 'promotional' => core()->formatBasePrice(0),
+                'available' => core()->formatBasePrice(0),
+                'withdrawable' => core()->formatBasePrice(0),
                 'held' => core()->formatBasePrice(0),
+                'raw_cash' => 0.0,
+                'raw_promo' => 0.0,
             ];
 
             $transactions = collect();

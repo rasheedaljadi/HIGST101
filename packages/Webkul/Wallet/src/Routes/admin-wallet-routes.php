@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Webkul\Wallet\Http\Controllers\Admin\WalletAccountController;
 use Webkul\Wallet\Http\Controllers\Admin\WalletAdjustmentController;
 use Webkul\Wallet\Http\Controllers\Admin\WalletDashboardController;
+use Webkul\Wallet\Http\Controllers\Admin\WalletPromotionController;
+use Webkul\Wallet\Http\Controllers\Admin\WalletPromotionMonitoringController;
 use Webkul\Wallet\Http\Controllers\Admin\WalletReportController;
 use Webkul\Wallet\Http\Controllers\Admin\WalletTopUpController;
 use Webkul\Wallet\Http\Controllers\Admin\WalletWithdrawalController;
@@ -95,4 +97,43 @@ Route::group(['prefix' => 'wallet'], function () {
     Route::get('settings', function () {
         return redirect()->route('admin.configuration.index', ['slug' => 'sales', 'slug2' => 'wallet']);
     })->name('admin.wallet.settings.index');
+
+    /**
+     * Wallet Promotions Management.
+     */
+    Route::get('promotions', [WalletPromotionController::class, 'index'])
+        ->name('admin.wallet.promotions.index');
+
+    Route::get('promotions/create', [WalletPromotionController::class, 'create'])
+        ->name('admin.wallet.promotions.create');
+
+    Route::post('promotions', [WalletPromotionController::class, 'store'])
+        ->name('admin.wallet.promotions.store');
+
+    Route::get('promotions/{id}/edit', [WalletPromotionController::class, 'edit'])
+        ->name('admin.wallet.promotions.edit');
+
+    Route::put('promotions/{id}', [WalletPromotionController::class, 'update'])
+        ->name('admin.wallet.promotions.update');
+
+    Route::post('promotions/{id}/destroy', [WalletPromotionController::class, 'destroy'])
+        ->name('admin.wallet.promotions.destroy');
+
+    /**
+     * Internal Monitoring & Governance.
+     */
+    Route::get('monitoring', [WalletPromotionMonitoringController::class, 'index'])
+        ->name('admin.wallet.promotions.monitoring.index');
+
+    Route::get('monitoring/usages', [WalletPromotionMonitoringController::class, 'usages'])
+        ->name('admin.wallet.promotions.monitoring.usages');
+
+    Route::get('monitoring/grants', [WalletPromotionMonitoringController::class, 'grants'])
+        ->name('admin.wallet.promotions.monitoring.grants');
+
+    Route::get('monitoring/debts', [WalletPromotionMonitoringController::class, 'debts'])
+        ->name('admin.wallet.promotions.monitoring.debts');
+
+    Route::get('monitoring/outbox', [WalletPromotionMonitoringController::class, 'outbox'])
+        ->name('admin.wallet.promotions.monitoring.outbox');
 });

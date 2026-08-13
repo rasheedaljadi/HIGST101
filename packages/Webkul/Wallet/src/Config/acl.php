@@ -79,4 +79,40 @@ return [
         'route' => 'admin.wallet.reports.index',
         'sort' => 5,
     ],
+    [
+        'key' => 'wallet.promotions',
+        'name' => 'العروض الترويجية والمكافآت',
+        'route' => 'admin.wallet.promotions.index',
+        'sort' => 6,
+    ],
+    [
+        'key' => 'wallet.promotions.view',
+        'name' => 'عرض العروض والمكافآت',
+        'route' => 'admin.wallet.promotions.index',
+        'sort' => 1,
+    ],
+    [
+        'key' => 'wallet.promotions.create',
+        'name' => 'إنشاء عرض جديد',
+        'route' => 'admin.wallet.promotions.create',
+        'sort' => 2,
+    ],
+    [
+        'key' => 'wallet.promotions.edit',
+        'name' => 'تعديل العروض',
+        'route' => 'admin.wallet.promotions.edit',
+        'sort' => 3,
+    ],
+    [
+        'key' => 'wallet.promotions.delete',
+        'name' => 'أرشفة/حذف العروض',
+        'route' => 'admin.wallet.promotions.destroy',
+        'sort' => 4,
+    ],
+    [
+        'key' => 'wallet.promotions.monitoring',
+        'name' => 'شاشات الرقابة والتدقيق (الحصص، الاستخدامات، الديون، الصندوق)',
+        'route' => 'admin.wallet.promotions.monitoring.index',
+        'sort' => 5,
+    ],
 ];

@@ -62,17 +62,41 @@
             </div>
 
             <!-- Sub-balances Grid -->
-            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <!-- Available Balance -->
+            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <!-- Cash Balance -->
                 <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-emerald-900 dark:text-emerald-200">السيولة المتاحة (قابل للسحب)</span>
-                        <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">جاهز للاستخدام</span>
+                        <span class="text-sm font-medium text-emerald-900 dark:text-emerald-200">الرصيد النقدي (Cash)</span>
+                        <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">نقدي فعلي</span>
                     </div>
                     <p class="mt-2 text-2xl font-bold text-emerald-700 dark:text-emerald-300">
-                        {{ $balances['available'] }}
+                        {{ $balances['cash'] }}
                     </p>
-                    <p class="mt-1 text-xs text-emerald-600/80 dark:text-emerald-400/80">متاح للمشتريات أو طلبات السحب البنكي</p>
+                    <p class="mt-1 text-xs text-emerald-600/80 dark:text-emerald-400/80">متاح للمشتريات أو السحب البنكي</p>
+                </div>
+
+                <!-- Promotional Balance (Non-withdrawable) -->
+                <div class="rounded-xl border border-purple-100 bg-purple-50/50 p-4 dark:border-purple-900/40 dark:bg-purple-950/30">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-purple-900 dark:text-purple-200">رصيد المكافآت (Promo)</span>
+                        <span class="text-xs font-bold text-purple-600 dark:text-purple-400">غير قابل للسحب</span>
+                    </div>
+                    <p class="mt-2 text-2xl font-bold text-purple-700 dark:text-purple-300">
+                        {{ $balances['promotional'] }}
+                    </p>
+                    <p class="mt-1 text-xs text-purple-600/80 dark:text-purple-400/80">مخصص للمشتريات فقط ولا يسحب كاش</p>
+                </div>
+
+                <!-- Withdrawable Balance -->
+                <div class="rounded-xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900/40 dark:bg-blue-950/30">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-blue-900 dark:text-blue-200">السيولة القابلة للسحب</span>
+                        <span class="text-xs font-bold text-blue-600 dark:text-blue-400">سحب بنكي</span>
+                    </div>
+                    <p class="mt-2 text-2xl font-bold text-blue-700 dark:text-blue-300">
+                        {{ $balances['withdrawable'] }}
+                    </p>
+                    <p class="mt-1 text-xs text-blue-600/80 dark:text-blue-400/80">الحد الأقصى لطلب السحب الفعلي</p>
                 </div>
 
                 <!-- Held Balance -->
