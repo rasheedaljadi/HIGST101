@@ -36,6 +36,11 @@ class WalletAccount extends Model implements WalletAccountContract
         'total_balance',
         'available_balance',
         'held_balance',
+        'promo_balance',
+        'cash_balance',
+        'unclassified_balance',
+        'promo_debt',
+        'backfill_status',
         'currency_code',
         'status',
     ];
@@ -46,9 +51,13 @@ class WalletAccount extends Model implements WalletAccountContract
      * @var array<string, string>
      */
     protected $casts = [
-        'total_balance' => 'float',
-        'available_balance' => 'float',
-        'held_balance' => 'float',
+        'total_balance' => 'string',
+        'available_balance' => 'string',
+        'held_balance' => 'string',
+        'promo_balance' => 'string',
+        'cash_balance' => 'string',
+        'unclassified_balance' => 'string',
+        'promo_debt' => 'string',
     ];
 
     /**
@@ -57,6 +66,12 @@ class WalletAccount extends Model implements WalletAccountContract
     const STATUS_ACTIVE = 'active';
 
     const STATUS_SUSPENDED = 'suspended';
+
+    const BACKFILL_STATUS_VERIFIED = 'verified';
+
+    const BACKFILL_STATUS_PENDING_REVIEW = 'pending_review';
+
+    const BACKFILL_STATUS_RESOLVED = 'resolved';
 
     /**
      * Get the customer that owns the wallet.
@@ -102,6 +117,22 @@ class WalletAccount extends Model implements WalletAccountContract
     }
 
     /**
+     * Get all promotion grants for this wallet.
+     */
+    public function promotionGrants(): HasMany
+    {
+        return $this->hasMany(WalletPromotionGrantProxy::modelClass(), 'wallet_id');
+    }
+
+    /**
+     * Get all promo debts for this wallet.
+     */
+    public function promoDebts(): HasMany
+    {
+        return $this->hasMany(WalletPromoDebtProxy::modelClass(), 'wallet_id');
+    }
+
+    /**
      * Scope: active wallets only.
      */
     public function scopeActive($query)
@@ -126,10 +157,18 @@ class WalletAccount extends Model implements WalletAccountContract
     }
 
     /**
+     * Check if wallet is under audit review.
+     */
+    public function isUnderAudit(): bool
+    {
+        return $this->backfill_status === self::BACKFILL_STATUS_PENDING_REVIEW;
+    }
+
+    /**
      * Check if wallet can cover an amount.
      */
-    public function canCover(float $amount): bool
+    public function canCover(float|string $amount): bool
     {
-        return $this->available_balance >= $amount;
+        return bccomp((string) $this->available_balance, (string) $amount, 4) >= 0;
     }
 }

@@ -1,13 +1,74 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Schema;
 use Webkul\Wallet\Exceptions\InsufficientWalletBalanceException;
 use Webkul\Wallet\Exceptions\WalletSuspendedException;
 use Webkul\Wallet\Models\WalletAccount;
 use Webkul\Wallet\Models\WalletTransaction;
 use Webkul\Wallet\Services\WalletService;
 
-uses(RefreshDatabase::class);
+uses(DatabaseTransactions::class);
+
+beforeEach(function () {
+    if (! Schema::hasTable('customers')) {
+        Schema::create('customers', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
+            $table->string('email')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    if (! Schema::hasTable('wallet_accounts')) {
+        Schema::create('wallet_accounts', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('customer_id');
+            $table->decimal('total_balance', 12, 4)->default(0.0000);
+            $table->decimal('available_balance', 12, 4)->default(0.0000);
+            $table->decimal('held_balance', 12, 4)->default(0.0000);
+            $table->decimal('promo_balance', 12, 4)->default(0.0000);
+            $table->decimal('cash_balance', 12, 4)->default(0.0000);
+            $table->decimal('unclassified_balance', 12, 4)->default(0.0000);
+            $table->decimal('promo_debt', 12, 4)->default(0.0000);
+            $table->string('backfill_status', 30)->default('verified');
+            $table->string('currency_code', 3)->default('SAR');
+            $table->string('status', 30)->default('active');
+            $table->timestamps();
+        });
+    } else {
+        if (! Schema::hasColumn('wallet_accounts', 'promo_balance')) {
+            Schema::table('wallet_accounts', function (Blueprint $table) {
+                $table->decimal('promo_balance', 12, 4)->unsigned()->default(0.0000)->after('available_balance');
+                $table->decimal('cash_balance', 12, 4)->unsigned()->default(0.0000)->after('promo_balance');
+                $table->decimal('unclassified_balance', 12, 4)->unsigned()->default(0.0000)->after('cash_balance');
+                $table->decimal('promo_debt', 12, 4)->unsigned()->default(0.0000)->after('unclassified_balance');
+                $table->string('backfill_status', 30)->default('verified')->after('promo_debt');
+            });
+        }
+    }
+
+    if (! Schema::hasTable('wallet_transactions')) {
+        Schema::create('wallet_transactions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('wallet_id');
+            $table->string('type', 50);
+            $table->string('direction', 20);
+            $table->decimal('amount', 12, 4);
+            $table->decimal('running_balance', 12, 4);
+            $table->string('description', 500)->nullable();
+            $table->string('reference_type', 100)->nullable();
+            $table->unsignedBigInteger('reference_id')->nullable();
+            $table->unsignedBigInteger('reference_transaction_id')->nullable();
+            $table->string('created_by_type', 100)->nullable();
+            $table->unsignedBigInteger('created_by_id')->nullable();
+            $table->json('meta')->nullable();
+            $table->timestamps();
+        });
+    }
+});
 
 // Scenario 1: Credit increases available balance
 test('credit increases available balance and creates transaction', function () {
@@ -33,6 +94,7 @@ test('debit decreases available balance and creates transaction', function () {
     $wallet = WalletAccount::factory()->create([
         'available_balance' => 200.00,
         'total_balance' => 200.00,
+        'cash_balance' => 200.00,
         'status' => 'active',
     ]);
 
@@ -49,6 +111,8 @@ test('debit decreases available balance and creates transaction', function () {
 test('debit throws InsufficientWalletBalanceException when balance is insufficient', function () {
     $wallet = WalletAccount::factory()->create([
         'available_balance' => 10.00,
+        'total_balance' => 10.00,
+        'cash_balance' => 10.00,
         'status' => 'active',
     ]);
 
@@ -63,6 +127,7 @@ test('hold moves balance from available to held', function () {
     $wallet = WalletAccount::factory()->create([
         'available_balance' => 500.00,
         'held_balance' => 0,
+        'cash_balance' => 500.00,
         'total_balance' => 500.00,
         'status' => 'active',
     ]);
@@ -80,6 +145,7 @@ test('release moves held balance back to available', function () {
     $wallet = WalletAccount::factory()->create([
         'available_balance' => 300.00,
         'held_balance' => 200.00,
+        'cash_balance' => 500.00,
         'total_balance' => 500.00,
         'status' => 'active',
     ]);
@@ -96,6 +162,8 @@ test('release moves held balance back to available', function () {
 test('suspended wallet throws WalletSuspendedException', function () {
     $wallet = WalletAccount::factory()->create([
         'available_balance' => 500.00,
+        'total_balance' => 500.00,
+        'cash_balance' => 500.00,
         'status' => 'suspended',
     ]);
 
@@ -110,7 +178,7 @@ test('suspended wallet throws WalletSuspendedException', function () {
 
 // Scenario 7: WalletTransaction is immutable — cannot be updated
 test('WalletTransaction is immutable after creation', function () {
-    $wallet = WalletAccount::factory()->create(['available_balance' => 100, 'status' => 'active']);
+    $wallet = WalletAccount::factory()->create(['available_balance' => 100, 'total_balance' => 100, 'cash_balance' => 100, 'status' => 'active']);
     $service = app(WalletService::class);
     $txn = $service->credit($wallet, 100, WalletTransaction::TYPE_CREDIT_TOPUP, 'test');
 
@@ -120,7 +188,7 @@ test('WalletTransaction is immutable after creation', function () {
 
 // Scenario 8: Adjust creates ADJUSTMENT transaction with reference
 test('adjust creates ADJUSTMENT transaction with reference_transaction_id', function () {
-    $wallet = WalletAccount::factory()->create(['available_balance' => 100, 'total_balance' => 100, 'status' => 'active']);
+    $wallet = WalletAccount::factory()->create(['available_balance' => 100, 'total_balance' => 100, 'cash_balance' => 100, 'status' => 'active']);
     $service = app(WalletService::class);
 
     $originalTxn = $service->credit($wallet, 100, WalletTransaction::TYPE_CREDIT_TOPUP, 'original');

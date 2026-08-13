@@ -42,8 +42,8 @@ class WalletTransaction extends Model implements WalletTransactionContract
      * @var array<string, string>
      */
     protected $casts = [
-        'amount' => 'float',
-        'running_balance' => 'float',
+        'amount' => 'decimal:4',
+        'running_balance' => 'decimal:4',
         'meta' => 'array',
     ];
 

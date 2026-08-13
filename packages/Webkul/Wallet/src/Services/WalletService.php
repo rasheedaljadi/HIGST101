@@ -3,6 +3,7 @@
 namespace Webkul\Wallet\Services;
 
 use Illuminate\Support\Facades\DB;
+use Webkul\Wallet\Exceptions\AccountUnderAuditException;
 use Webkul\Wallet\Exceptions\InsufficientWalletBalanceException;
 use Webkul\Wallet\Exceptions\WalletSuspendedException;
 use Webkul\Wallet\Models\WalletAccount;
@@ -62,6 +63,75 @@ class WalletService
 
             $wallet->increment('available_balance', $amount);
             $wallet->increment('total_balance', $amount);
+            $wallet->increment('cash_balance', $amount);
+
+            $this->assertWalletInvariant($wallet);
+
+            return $transaction;
+        });
+    }
+
+    /**
+     * Credit promotional balance to wallet.
+     *
+     * Sole authorized mutation point for promotional credit transactions.
+     * Strictly uses BCMath decimal arithmetic without floating point.
+     */
+    public function creditPromotion(
+        WalletAccount $wallet,
+        string $amountStr,
+        string $description = '',
+        array $meta = [],
+        ?string $referenceType = null,
+        ?int $referenceId = null,
+        ?string $createdByType = 'system',
+        ?int $createdById = null
+    ): WalletTransaction {
+        $this->guardActive($wallet);
+
+        return DB::transaction(function () use (
+            $wallet, $amountStr, $description, $meta,
+            $referenceType, $referenceId, $createdByType, $createdById
+        ) {
+            $wallet = WalletAccount::lockForUpdate()->findOrFail($wallet->id);
+
+            $this->guardActive($wallet);
+
+            if ($wallet->isUnderAudit()) {
+                throw new AccountUnderAuditException(
+                    "Wallet Account #{$wallet->id} is under audit review and cannot receive promotional credits."
+                );
+            }
+
+            if (empty(trim($description))) {
+                throw new \InvalidArgumentException('A valid non-empty description or reason is required for audit trail.');
+            }
+
+            if (bccomp($amountStr, '0.0000', 4) <= 0) {
+                throw new \InvalidArgumentException('Promotional credit amount must be strictly positive.');
+            }
+
+            $newRunningBalance = bcadd((string) $wallet->available_balance, $amountStr, 4);
+
+            $transaction = WalletTransaction::create([
+                'wallet_id' => $wallet->id,
+                'type' => WalletTransaction::TYPE_CREDIT_PROMOTION,
+                'direction' => 'credit',
+                'amount' => $amountStr,
+                'running_balance' => $newRunningBalance,
+                'description' => $description,
+                'reference_type' => $referenceType,
+                'reference_id' => $referenceId,
+                'created_by_type' => $createdByType,
+                'created_by_id' => $createdById,
+                'meta' => $meta ?: null,
+            ]);
+
+            // Update promo_balance, available_balance, and total_balance using BCMath
+            $wallet->promo_balance = bcadd((string) $wallet->promo_balance, $amountStr, 4);
+            $wallet->available_balance = bcadd((string) $wallet->available_balance, $amountStr, 4);
+            $wallet->total_balance = bcadd((string) $wallet->total_balance, $amountStr, 4);
+            $wallet->save();
 
             $this->assertWalletInvariant($wallet);
 
@@ -82,6 +152,7 @@ class WalletService
         array $meta = [],
         ?string $referenceType = null,
         ?int $referenceId = null,
+        ?int $referenceTransactionId = null,
         ?string $createdByType = null,
         ?int $createdById = null
     ): WalletTransaction {
@@ -89,7 +160,7 @@ class WalletService
 
         return DB::transaction(function () use (
             $wallet, $amount, $type, $description, $meta,
-            $referenceType, $referenceId, $createdByType, $createdById
+            $referenceType, $referenceId, $referenceTransactionId, $createdByType, $createdById
         ) {
             $wallet = WalletAccount::lockForUpdate()->findOrFail($wallet->id);
 
@@ -114,6 +185,7 @@ class WalletService
                 'description' => $description,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
+                'reference_transaction_id' => $referenceTransactionId,
                 'created_by_type' => $createdByType,
                 'created_by_id' => $createdById,
                 'meta' => $meta ?: null,
@@ -121,6 +193,7 @@ class WalletService
 
             $wallet->decrement('available_balance', $amount);
             $wallet->decrement('total_balance', $amount);
+            $wallet->decrement('cash_balance', $amount);
 
             $this->assertWalletInvariant($wallet);
 
@@ -282,19 +355,39 @@ class WalletService
     }
 
     /**
-     * Assert financial balance invariant: total_balance == available_balance + held_balance
-     *
-     * C-01 Fix: Ensures balance consistency after every transaction.
+     * Assert financial balance invariant:
+     * 1. total_balance == cash_balance + promo_balance + unclassified_balance
+     * 2. available_balance == (cash_balance - held_balance) + promo_balance
      */
     public function assertWalletInvariant(WalletAccount $wallet): void
     {
         $fresh = $wallet->fresh();
 
-        $expectedTotal = (float) $fresh->available_balance + (float) $fresh->held_balance;
+        $expectedTotal = bcadd(
+            bcadd((string) ($fresh->cash_balance ?? '0.0000'), (string) ($fresh->promo_balance ?? '0.0000'), 4),
+            (string) ($fresh->unclassified_balance ?? '0.0000'),
+            4
+        );
 
-        if (abs((float) $fresh->total_balance - $expectedTotal) > 0.0001) {
+        $actualTotal = (string) $fresh->total_balance;
+
+        if (bccomp($actualTotal, $expectedTotal, 4) !== 0) {
             throw new \RuntimeException(
-                "Wallet financial invariant violation on Wallet #{$wallet->id}: total_balance ({$fresh->total_balance}) does not equal available ({$fresh->available_balance}) + held ({$fresh->held_balance})."
+                "Wallet financial invariant violation on Wallet #{$wallet->id}: total_balance ({$actualTotal}) does not match cash ({$fresh->cash_balance}) + promo ({$fresh->promo_balance}) + unclassified ({$fresh->unclassified_balance}) = {$expectedTotal}."
+            );
+        }
+
+        $expectedAvailable = bcadd(
+            bcsub((string) ($fresh->cash_balance ?? '0.0000'), (string) ($fresh->held_balance ?? '0.0000'), 4),
+            (string) ($fresh->promo_balance ?? '0.0000'),
+            4
+        );
+
+        $actualAvailable = (string) $fresh->available_balance;
+
+        if (bccomp($actualAvailable, $expectedAvailable, 4) !== 0) {
+            throw new \RuntimeException(
+                "Wallet financial invariant violation on Wallet #{$wallet->id}: available_balance ({$actualAvailable}) does not match (cash ({$fresh->cash_balance}) - held ({$fresh->held_balance})) + promo ({$fresh->promo_balance}) = {$expectedAvailable}."
             );
         }
     }
@@ -334,6 +427,7 @@ class WalletService
             WalletTransaction::TYPE_ADJUSTMENT,
             $reason, [],
             null, null,
+            $referenceTransactionId,
             'admin', $adminUserId
         );
     }

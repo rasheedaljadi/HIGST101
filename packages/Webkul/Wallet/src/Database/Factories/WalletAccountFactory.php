@@ -3,7 +3,7 @@
 namespace Webkul\Wallet\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Webkul\Customer\Models\Customer;
+use Illuminate\Support\Facades\DB;
 use Webkul\Wallet\Models\WalletAccount;
 
 class WalletAccountFactory extends Factory
@@ -21,11 +21,22 @@ class WalletAccountFactory extends Factory
     public function definition(): array
     {
         return [
-            'customer_id' => Customer::factory(),
+            'customer_id' => function () {
+                return DB::table('customers')->insertGetId([
+                    'first_name' => 'User',
+                    'last_name' => 'Test',
+                    'email' => 'user_'.uniqid().'@example.com',
+                ]);
+            },
             'total_balance' => 0,
             'available_balance' => 0,
             'held_balance' => 0,
-            'currency_code' => 'USD',
+            'cash_balance' => 0,
+            'promo_balance' => 0,
+            'unclassified_balance' => 0,
+            'promo_debt' => 0,
+            'backfill_status' => 'verified',
+            'currency_code' => 'SAR',
             'status' => 'active',
         ];
     }
