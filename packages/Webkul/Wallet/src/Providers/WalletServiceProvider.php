@@ -5,6 +5,7 @@ namespace Webkul\Wallet\Providers;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Webkul\Wallet\Console\Commands\ProcessPromotionOutboxCommand;
+use Webkul\Wallet\Console\Commands\SimulateWalletPromotionsCommand;
 use Webkul\Wallet\Console\Commands\VerifyWalletLedgerCommand;
 use Webkul\Wallet\Repositories\WalletAccountRepository;
 use Webkul\Wallet\Repositories\WalletPromoDebtRepository;
@@ -48,6 +49,7 @@ class WalletServiceProvider extends ServiceProvider
             $this->commands([
                 VerifyWalletLedgerCommand::class,
                 ProcessPromotionOutboxCommand::class,
+                SimulateWalletPromotionsCommand::class,
             ]);
         }
     }

@@ -171,4 +171,16 @@ class WalletAccount extends Model implements WalletAccountContract
     {
         return bccomp((string) $this->available_balance, (string) $amount, 4) >= 0;
     }
+
+    /**
+     * Get withdrawable balance strictly derived from cash balance minus held balance.
+     * Promotional balance is non-withdrawable.
+     */
+    public function getWithdrawableBalanceAttribute(): float
+    {
+        $cash = (float) $this->cash_balance;
+        $held = (float) $this->held_balance;
+
+        return max(0.0, $cash - $held);
+    }
 }
