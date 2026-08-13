@@ -3,6 +3,10 @@
         {{ __('wallet::app.admin.wallet.withdrawals.title') ?? 'Wallet Withdrawals' }}
     </x-slot:title>
 
+    <div class="p-6 pb-0">
+        @include('wallet::admin.layouts.tabs')
+    </div>
+
     <v-wallet-withdrawals></v-wallet-withdrawals>
 
     @pushOnce('scripts')

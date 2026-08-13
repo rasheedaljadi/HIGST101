@@ -4,6 +4,8 @@
     </x-slot:title>
 
     <div class="flex flex-col gap-6 p-6">
+        @include('wallet::admin.layouts.tabs')
+
         <div>
             <p class="text-xl font-bold text-gray-800 dark:text-white">
                 الرقابة والتدقيق المالي للعروض والمكافآت

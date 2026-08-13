@@ -110,6 +110,12 @@ return [
         'sort' => 4,
     ],
     [
+        'key' => 'wallet.monitoring',
+        'name' => 'الرقابة والتدقيق الداخلي',
+        'route' => 'admin.wallet.promotions.monitoring.index',
+        'sort' => 7,
+    ],
+    [
         'key' => 'wallet.promotions.monitoring',
         'name' => 'شاشات الرقابة والتدقيق (الحصص، الاستخدامات، الديون، الصندوق)',
         'route' => 'admin.wallet.promotions.monitoring.index',

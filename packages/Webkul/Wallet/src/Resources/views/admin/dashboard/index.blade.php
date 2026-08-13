@@ -4,6 +4,8 @@
     </x-slot:title>
 
     <div class="flex flex-col gap-6 p-6 bg-gray-50/50 dark:bg-gray-950 min-h-screen">
+        @include('wallet::admin.layouts.tabs')
+
         {{-- 1. Header & Toolbar --}}
         <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-6 shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-gray-900">
             <div>

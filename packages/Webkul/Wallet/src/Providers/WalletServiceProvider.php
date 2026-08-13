@@ -40,16 +40,6 @@ class WalletServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'wallet');
 
-        $this->mergeConfigFrom(__DIR__.'/../Config/menu.php', 'menu.admin');
-
-        $this->mergeConfigFrom(__DIR__.'/../Config/shop-menu.php', 'menu.customer');
-
-        $this->mergeConfigFrom(__DIR__.'/../Config/acl.php', 'acl');
-
-        $this->mergeConfigFrom(__DIR__.'/../Config/payment-methods.php', 'payment_methods');
-
-        $this->mergeConfigFrom(__DIR__.'/../Config/system.php', 'core');
-
         $this->loadRoutes();
 
         $this->app->register(EventServiceProvider::class);
@@ -67,6 +57,12 @@ class WalletServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->mergeConfigFrom(__DIR__.'/../Config/admin-menu.php', 'menu.admin');
+        $this->mergeConfigFrom(__DIR__.'/../Config/shop-menu.php', 'menu.customer');
+        $this->mergeConfigFrom(__DIR__.'/../Config/acl.php', 'acl');
+        $this->mergeConfigFrom(__DIR__.'/../Config/payment-methods.php', 'payment_methods');
+        $this->mergeConfigFrom(__DIR__.'/../Config/system.php', 'core');
+
         $this->app->singleton(WalletService::class);
         $this->app->singleton(PromotionGrantService::class);
         $this->app->singleton(WalletDebtService::class);

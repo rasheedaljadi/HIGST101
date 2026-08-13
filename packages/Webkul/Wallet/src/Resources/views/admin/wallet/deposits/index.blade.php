@@ -3,6 +3,10 @@
         {{ __('wallet::app.admin.wallet.deposits.title') ?? 'Wallet Top-Ups / Deposits' }}
     </x-slot:title>
 
+    <div class="p-6 pb-0">
+        @include('wallet::admin.layouts.tabs')
+    </div>
+
     <v-wallet-deposits></v-wallet-deposits>
 
     @pushOnce('scripts')
