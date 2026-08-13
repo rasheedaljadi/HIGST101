@@ -107,7 +107,7 @@ class Cart extends Model implements CartContract
      */
     public function selected_shipping_rate()
     {
-        return $this->shipping_rates
+        return $this->shipping_rates()
             ->where('method', $this->shipping_method);
     }
 

@@ -63,6 +63,8 @@ class Shipping
 
         $cart->shipping_rates()->delete();
 
+        $cart->unsetRelation('shipping_rates');
+
         $this->rates = [];
     }
 
@@ -91,6 +93,8 @@ class Shipping
 
             $rate->save();
         }
+
+        $cart->unsetRelation('shipping_rates');
     }
 
     /**

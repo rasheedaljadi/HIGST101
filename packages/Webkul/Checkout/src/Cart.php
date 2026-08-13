@@ -569,6 +569,8 @@ class Cart
         $this->cart->shipping_method = $shippingMethodCode;
         $this->cart->save();
 
+        $this->cart->unsetRelation('shipping_rates');
+
         return true;
     }
 
