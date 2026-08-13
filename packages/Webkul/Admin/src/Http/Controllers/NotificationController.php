@@ -86,7 +86,7 @@ class NotificationController extends Controller
         return [
             'search_results' => $results,
             'status_count' => $statusCount,
-            'total_unread' => $this->notificationRepository->where('read', 0)->count(),
+            'total_unread' => $this->notificationRepository->whereNull('customer_id')->where('read', 0)->count(),
         ];
     }
 
@@ -98,8 +98,8 @@ class NotificationController extends Controller
      */
     public function viewedNotifications($id)
     {
-        $notification = $this->notificationRepository->find($id)
-            ?? $this->notificationRepository->where('order_id', $id)->first();
+        $notification = $this->notificationRepository->whereNull('customer_id')->where('id', $id)->first()
+            ?? $this->notificationRepository->whereNull('customer_id')->where('order_id', $id)->first();
 
         if ($notification) {
             $notification->read = 1;
@@ -130,7 +130,7 @@ class NotificationController extends Controller
      */
     public function readAllNotifications()
     {
-        $this->notificationRepository->where('read', 0)->update(['read' => 1]);
+        $this->notificationRepository->whereNull('customer_id')->where('read', 0)->update(['read' => 1]);
 
         $searchResults = $this->notificationRepository->getParamsData([
             'limit' => 5,
@@ -139,7 +139,7 @@ class NotificationController extends Controller
 
         return [
             'search_results' => $searchResults,
-            'total_unread' => $this->notificationRepository->where('read', 0)->count(),
+            'total_unread' => $this->notificationRepository->whereNull('customer_id')->where('read', 0)->count(),
             'success_message' => trans('admin::app.notifications.marked-success'),
         ];
     }

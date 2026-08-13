@@ -61,6 +61,10 @@
 
                 {!! view_render_event('bagisto.shop.components.layouts.header.mobile.mini_cart.after') !!}
 
+                @auth('customer')
+                    <v-customer-notifications></v-customer-notifications>
+                @endauth
+
                 <!-- For Large screens -->
                 <div class="max-md:hidden">
                     <x-shop::dropdown position="bottom-{{ core()->getCurrentLocale()->direction === 'ltr' ? 'right' : 'left' }}">

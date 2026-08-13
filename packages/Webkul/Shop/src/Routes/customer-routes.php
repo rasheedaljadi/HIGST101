@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Webkul\Core\Http\Middleware\NoCacheMiddleware;
 use Webkul\Shop\Http\Controllers\Customer\Account\AddressController;
 use Webkul\Shop\Http\Controllers\Customer\Account\DownloadableProductController;
+use Webkul\Shop\Http\Controllers\Customer\Account\NotificationController;
 use Webkul\Shop\Http\Controllers\Customer\Account\OrderController;
 use Webkul\Shop\Http\Controllers\Customer\Account\RMAController;
 use Webkul\Shop\Http\Controllers\Customer\Account\WishlistController;
@@ -82,6 +83,17 @@ Route::prefix('customer')->group(function () {
          */
         Route::prefix('account')->group(function () {
             Route::get('', [CustomerController::class, 'account'])->name('shop.customers.account.index');
+
+            /**
+             * Notifications.
+             */
+            Route::controller(NotificationController::class)->prefix('notifications')->group(function () {
+                Route::get('', 'index')->name('shop.customers.account.notifications.index');
+                Route::get('get', 'getNotifications')->name('shop.customers.account.notifications.get');
+                Route::get('unread-count', 'unreadCount')->name('shop.customers.account.notifications.unread_count');
+                Route::post('mark-as-read/{id}', 'markAsRead')->name('shop.customers.account.notifications.mark_as_read');
+                Route::post('mark-all-as-read', 'markAllAsRead')->name('shop.customers.account.notifications.mark_all_as_read');
+            });
 
             /**
              * Wishlist.

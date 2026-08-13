@@ -5,6 +5,7 @@ namespace Webkul\Wallet\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
+use Webkul\Notification\Services\CustomerNotificationService;
 use Webkul\Wallet\DataGrids\WalletTopUpsDataGrid;
 use Webkul\Wallet\Exceptions\InvalidWalletTransitionException;
 use Webkul\Wallet\Models\WalletTopUp;
@@ -87,6 +88,19 @@ class WalletTopUpController extends Controller
             } catch (\Throwable $e) {
                 Log::error('Mail send error on topup approval: '.$e->getMessage());
             }
+
+            try {
+                app(CustomerNotificationService::class)->createCustomerNotification(
+                    customerId: $wallet->customer->id,
+                    type: 'wallet_topup',
+                    title: 'تمت الموافقة على إيداع الرصيد',
+                    message: "تم اعتماد طلب إيداع الرصيد رقم #{$topup->id} وإضافته لمحفظتك بنجاح.",
+                    actionUrl: '/customer/account/wallet',
+                    eventKey: "wallet_topup:{$topup->id}:completed"
+                );
+            } catch (\Throwable $e) {
+                Log::error('In-app notification error on topup approval: '.$e->getMessage());
+            }
         }
 
         $message = trans('wallet::app.admin.wallet.deposits.approved') ?? 'تم الموافقة على طلب الإيداع وإضافة الرصيد بنجاح.';
@@ -137,6 +151,19 @@ class WalletTopUpController extends Controller
                 $wallet->customer->notify(new WalletTopUpRejectedNotification($topup));
             } catch (\Throwable $e) {
                 Log::error('Mail send error on topup rejection: '.$e->getMessage());
+            }
+
+            try {
+                app(CustomerNotificationService::class)->createCustomerNotification(
+                    customerId: $wallet->customer->id,
+                    type: 'wallet_topup',
+                    title: 'تم رفض طلب إيداع الرصيد',
+                    message: "تم رفض طلب إيداع الرصيد رقم #{$topup->id}.",
+                    actionUrl: '/customer/account/wallet',
+                    eventKey: "wallet_topup:{$topup->id}:failed"
+                );
+            } catch (\Throwable $e) {
+                Log::error('In-app notification error on topup rejection: '.$e->getMessage());
             }
         }
 

@@ -16,11 +16,11 @@ class NotificationRepository extends Repository
     }
 
     /**
-     * Return Filtered Notification resources.
+     * Return Filtered Notification resources for Admin.
      */
     public function getParamsData(array $params): array
     {
-        $query = $this->model->with('order');
+        $query = $this->model->whereNull('customer_id')->with('order');
 
         if (isset($params['status']) && $params['status'] != 'All') {
             $query->whereHas('order', function ($q) use ($params) {
@@ -36,7 +36,8 @@ class NotificationRepository extends Repository
 
         $notifications = $query->latest()->paginate($params['limit'] ?? 10);
 
-        $statusCounts = $this->model->join('orders', 'notifications.order_id', '=', 'orders.id')
+        $statusCounts = $this->model->whereNull('notifications.customer_id')
+            ->join('orders', 'notifications.order_id', '=', 'orders.id')
             ->select('orders.status', DB::raw('COUNT(*) as status_count'))
             ->groupBy('orders.status')
             ->get();
@@ -45,21 +46,46 @@ class NotificationRepository extends Repository
     }
 
     /**
-     * Return Notification resources.
+     * Return Notification resources for Admin.
      *
      * @return array
      */
     public function getAll(array $params = [])
     {
-        $query = $this->model->with('order');
+        $query = $this->model->whereNull('customer_id')->with('order');
 
         $notifications = $query->latest()->paginate($params['limit'] ?? 10);
 
-        $statusCounts = $this->model->join('orders', 'notifications.order_id', '=', 'orders.id')
+        $statusCounts = $this->model->whereNull('notifications.customer_id')
+            ->join('orders', 'notifications.order_id', '=', 'orders.id')
             ->select('orders.status', DB::raw('COUNT(*) as status_count'))
             ->groupBy('orders.status')
             ->get();
 
         return ['notifications' => $notifications, 'status_counts' => $statusCounts];
+    }
+
+    /**
+     * Get paginated notifications for a specific customer.
+     */
+    public function getForCustomer(int $customerId, array $params = [])
+    {
+        $query = $this->model->where('customer_id', $customerId);
+
+        if (isset($params['read'])) {
+            $query->where('read', (int) $params['read']);
+        }
+
+        return $query->latest()->paginate($params['limit'] ?? 10);
+    }
+
+    /**
+     * Get unread notification count for a specific customer.
+     */
+    public function getUnreadCountForCustomer(int $customerId): int
+    {
+        return $this->model->where('customer_id', $customerId)
+            ->where('read', 0)
+            ->count();
     }
 }

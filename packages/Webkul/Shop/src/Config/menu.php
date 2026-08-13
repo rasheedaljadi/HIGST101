@@ -14,6 +14,12 @@ return [
         'icon' => 'icon-users',
         'sort' => 1,
     ], [
+        'key' => 'account.notifications',
+        'name' => 'الإشعارات',
+        'route' => 'shop.customers.account.notifications.index',
+        'icon' => 'icon-notification',
+        'sort' => 2,
+    ], [
         'key' => 'account.address',
         'name' => 'shop::app.layouts.address',
         'route' => 'shop.customers.account.addresses.index',

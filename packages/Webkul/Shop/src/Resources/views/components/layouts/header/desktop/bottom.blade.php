@@ -137,6 +137,10 @@
 
             {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.mini_cart.after') !!}
 
+            @auth('customer')
+                <v-customer-notifications></v-customer-notifications>
+            @endauth
+
             {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.profile.before') !!}
 
             <!-- user profile -->
@@ -510,5 +514,91 @@
             },
         });
     </script>
+
+    @auth('customer')
+        <script type="text/x-template" id="v-customer-notifications-template">
+            <div class="relative">
+                <x-shop::dropdown position="bottom-{{ core()->getCurrentLocale()->direction === 'ltr' ? 'right' : 'left' }}">
+                    <x-slot:toggle>
+                        <div class="relative cursor-pointer flex items-center">
+                            <span class="inline-block text-2xl cursor-pointer icon-notification" role="button" aria-label="الإشعارات" tabindex="0"></span>
+                            <span v-if="totalUnread > 0" class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                                @{{ totalUnread > 9 ? '9+' : totalUnread }}
+                            </span>
+                        </div>
+                    </x-slot>
+
+                    <x-slot:content class="!p-0 w-[360px]">
+                        <div class="flex items-center justify-between border-b border-zinc-200 p-4">
+                            <h4 class="text-base font-semibold text-zinc-900">الإشعارات</h4>
+                            <button v-if="notifications.length && totalUnread > 0" @click="markAllAsRead" class="text-xs text-navyBlue hover:underline cursor-pointer">تعليم الكل كمقروء</button>
+                        </div>
+
+                        <div v-if="isLoading" class="p-4 text-center">
+                            <span class="shimmer block h-12 rounded"></span>
+                        </div>
+
+                        <div v-else-if="!notifications.length" class="p-6 text-center text-sm text-zinc-500">
+                            لا توجد إشعارات حالياً
+                        </div>
+
+                        <div v-else class="max-h-[320px] overflow-y-auto divide-y divide-zinc-100">
+                            <div v-for="item in notifications" :key="item.id" @click="handleItemClick(item)" class="p-3 transition-colors cursor-pointer hover:bg-zinc-50" :class="{'bg-blue-50/40': !item.read}">
+                                <p class="text-xs font-semibold text-zinc-900">@{{ item.title || 'إشعار' }}</p>
+                                <p class="text-xs text-zinc-600 line-clamp-2 mt-0.5">@{{ item.message }}</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-zinc-200 p-3 text-center">
+                            <a href="{{ route('shop.customers.account.notifications.index') }}" class="text-xs font-medium text-navyBlue hover:underline">عرض جميع الإشعارات</a>
+                        </div>
+                    </x-slot:content>
+                </x-shop::dropdown>
+            </div>
+        </script>
+
+        <script type="module">
+            app.component('v-customer-notifications', {
+                template: '#v-customer-notifications-template',
+                data() {
+                    return {
+                        isLoading: true,
+                        notifications: [],
+                        totalUnread: 0,
+                    }
+                },
+                mounted() {
+                    this.getNotifications();
+                },
+                methods: {
+                    getNotifications() {
+                        this.$axios.get("{{ route('shop.customers.account.notifications.get', ['limit' => 5]) }}")
+                            .then(response => {
+                                this.isLoading = false;
+                                this.notifications = response.data.notifications.data || [];
+                                this.totalUnread = response.data.total_unread || 0;
+                            })
+                            .catch(() => { this.isLoading = false; });
+                    },
+                    handleItemClick(item) {
+                        if (!item.read) {
+                            this.$axios.post(`{{ url('customer/account/notifications/mark-as-read') }}/${item.id}`)
+                                .then(res => { window.location.href = res.data.redirect_url; })
+                                .catch(() => { window.location.href = item.action_url || "{{ route('shop.customers.account.notifications.index') }}"; });
+                        } else {
+                            window.location.href = item.action_url || "{{ route('shop.customers.account.notifications.index') }}";
+                        }
+                    },
+                    markAllAsRead() {
+                        this.$axios.post("{{ route('shop.customers.account.notifications.mark_all_as_read') }}")
+                            .then(() => {
+                                this.totalUnread = 0;
+                                this.notifications.forEach(n => n.read = 1);
+                            });
+                    }
+                }
+            });
+        </script>
+    @endauth
 @endpushonce
 {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.after') !!}

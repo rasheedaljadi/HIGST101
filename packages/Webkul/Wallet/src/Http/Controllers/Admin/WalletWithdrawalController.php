@@ -6,6 +6,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Webkul\Notification\Services\CustomerNotificationService;
 use Webkul\Wallet\DataGrids\WalletWithdrawalsDataGrid;
 use Webkul\Wallet\Http\Requests\Admin\ApproveWithdrawalRequest;
 use Webkul\Wallet\Http\Requests\Admin\RejectWithdrawalRequest;
@@ -176,6 +177,19 @@ class WalletWithdrawalController extends Controller
                 } catch (\Throwable $e) {
                     // Prevent notification email issues from failing DB transaction
                 }
+
+                try {
+                    app(CustomerNotificationService::class)->createCustomerNotification(
+                        customerId: $wallet->customer->id,
+                        type: 'wallet_withdrawal',
+                        title: 'تم تحويل مبلغ السحب',
+                        message: "تم معالجة وتحويل مبلغ طلب السحب رقم #{$withdrawal->id} لحسابك البنكي بنجاح.",
+                        actionUrl: '/customer/account/wallet',
+                        eventKey: "wallet_withdrawal:{$withdrawal->id}:completed"
+                    );
+                } catch (\Throwable $e) {
+                    // Prevent notification creation error from breaking transaction
+                }
             }
         });
 
@@ -245,6 +259,19 @@ class WalletWithdrawalController extends Controller
                     $wallet->customer->notify(new WalletWithdrawalRejectedNotification($withdrawal));
                 } catch (\Throwable $e) {
                     // Prevent notification email issues from failing DB transaction
+                }
+
+                try {
+                    app(CustomerNotificationService::class)->createCustomerNotification(
+                        customerId: $wallet->customer->id,
+                        type: 'wallet_withdrawal',
+                        title: 'تم رفض طلب السحب',
+                        message: "تم رفض طلب السحب رقم #{$withdrawal->id} وإعادة المبلغ لحساب محفظتك.",
+                        actionUrl: '/customer/account/wallet',
+                        eventKey: "wallet_withdrawal:{$withdrawal->id}:rejected"
+                    );
+                } catch (\Throwable $e) {
+                    // Prevent notification creation error from breaking transaction
                 }
             }
         });
