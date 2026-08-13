@@ -82,4 +82,15 @@ class WalletPromotion extends Model implements WalletPromotionContract
     {
         return $this->belongsTo(AdminProxy::modelClass(), 'created_by_admin_id');
     }
+
+    /**
+     * The "booted" method of the model.
+     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (self $model) {
+            throw new \LogicException('Physical deletion of WalletPromotion records is strictly forbidden to preserve financial and audit history. Use status archiving ($promotion->status = "archived") instead.');
+        });
+    }
 }

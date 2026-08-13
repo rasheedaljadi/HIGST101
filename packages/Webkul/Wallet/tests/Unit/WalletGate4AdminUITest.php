@@ -329,3 +329,27 @@ test('Scenario 5: Internal monitoring queries for Usages, Grants, Debts, and Out
     expect(WalletPromoDebt::where('customer_id', $customerId)->count())->toBe(1);
     expect(WalletPromotionOutbox::where('event_key', $outboxEventKey)->count())->toBe(1);
 });
+
+test('Scenario 6: Enforces Archive-only policy and strictly prohibits physical deletion of promotion records', function () {
+    $promo = WalletPromotion::create([
+        'name' => 'Anti-Delete Campaign',
+        'type' => WalletPromotion::TYPE_WELCOME_BONUS,
+        'status' => WalletPromotion::STATUS_ACTIVE,
+        'action_type' => WalletPromotion::ACTION_FIXED,
+        'reward_value' => '10.0000',
+    ]);
+
+    // 1. Direct physical delete MUST throw LogicException
+    expect(fn () => $promo->delete())->toThrow(LogicException::class);
+
+    // 2. Promotion record remains intact in database
+    expect(WalletPromotion::find($promo->id))->not->toBeNull();
+
+    // 3. Official Admin Destruction Route executes status archiving, preserving accounting history
+    $promo->status = WalletPromotion::STATUS_ARCHIVED;
+    $promo->save();
+
+    $freshPromo = WalletPromotion::find($promo->id);
+    expect($freshPromo)->not->toBeNull();
+    expect($freshPromo->status)->toBe(WalletPromotion::STATUS_ARCHIVED);
+});
