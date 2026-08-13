@@ -8,9 +8,12 @@ use Webkul\Sales\Models\InvoiceProxy;
 use Webkul\Sales\Models\OrderItemProxy;
 use Webkul\Sales\Models\OrderProxy;
 use Webkul\Wallet\Contracts\WalletPromotionOrderItemAllocation as WalletPromotionOrderItemAllocationContract;
+use Webkul\Wallet\Models\Traits\ProhibitsPhysicalDeletion;
 
 class WalletPromotionOrderItemAllocation extends Model implements WalletPromotionOrderItemAllocationContract
 {
+    use ProhibitsPhysicalDeletion;
+
     protected $table = 'wallet_promotion_order_item_allocations';
 
     protected $fillable = [
@@ -63,16 +66,5 @@ class WalletPromotionOrderItemAllocation extends Model implements WalletPromotio
     public function orderItem(): BelongsTo
     {
         return $this->belongsTo(OrderItemProxy::modelClass(), 'order_item_id');
-    }
-
-    /**
-     * The "booted" method of the model.
-     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
-     */
-    protected static function booted(): void
-    {
-        static::deleting(function (self $model) {
-            throw new \LogicException('Physical deletion of WalletPromotionOrderItemAllocation records is strictly forbidden to preserve accounting history.');
-        });
     }
 }

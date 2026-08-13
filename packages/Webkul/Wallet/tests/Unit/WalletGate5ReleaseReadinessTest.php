@@ -13,7 +13,6 @@ use Webkul\Wallet\Models\WalletPromotionGrant;
 use Webkul\Wallet\Models\WalletPromotionOutbox;
 use Webkul\Wallet\Models\WalletPromotionUsage;
 use Webkul\Wallet\Services\PaymentVerificationService;
-use Webkul\Wallet\Services\PromotionGrantService;
 use Webkul\Wallet\Services\WalletDebtService;
 use Webkul\Wallet\Services\WalletPromotionOrchestrator;
 use Webkul\Wallet\Services\WalletPromotionOutboxWorker;
@@ -67,42 +66,42 @@ beforeEach(function () {
 test('Smoke Test 1: Welcome Bonus end-to-end controlled flow with manual runOnce worker', function () {
     $customerId = DB::table('customers')->insertGetId([
         'first_name' => 'Smoke',
-        'last_name'  => 'Welcome',
-        'email'      => 'smoke_welcome_' . uniqid() . '@example.com',
+        'last_name' => 'Welcome',
+        'email' => 'smoke_welcome_'.uniqid().'@example.com',
     ]);
 
     $wallet = WalletAccount::create([
-        'customer_id'          => $customerId,
-        'cash_balance'         => '0.0000',
-        'promo_balance'        => '0.0000',
-        'held_balance'         => '0.0000',
+        'customer_id' => $customerId,
+        'cash_balance' => '0.0000',
+        'promo_balance' => '0.0000',
+        'held_balance' => '0.0000',
         'unclassified_balance' => '0.0000',
-        'promo_debt'           => '0.0000',
-        'available_balance'    => '0.0000',
-        'total_balance'        => '0.0000',
-        'status'               => 'active',
-        'backfill_status'      => 'verified',
+        'promo_debt' => '0.0000',
+        'available_balance' => '0.0000',
+        'total_balance' => '0.0000',
+        'status' => 'active',
+        'backfill_status' => 'verified',
     ]);
 
     $promo = WalletPromotion::create([
-        'name'         => 'Smoke Welcome Campaign',
-        'type'         => WalletPromotion::TYPE_WELCOME_BONUS,
-        'status'       => WalletPromotion::STATUS_ACTIVE,
-        'action_type'  => WalletPromotion::ACTION_FIXED,
+        'name' => 'Smoke Welcome Campaign',
+        'type' => WalletPromotion::TYPE_WELCOME_BONUS,
+        'status' => WalletPromotion::STATUS_ACTIVE,
+        'action_type' => WalletPromotion::ACTION_FIXED,
         'reward_value' => '25.0000',
     ]);
 
-    $eventKey = 'smoke:welcome:' . uniqid();
+    $eventKey = 'smoke:welcome:'.uniqid();
     $outbox = WalletPromotionOutbox::create([
         'event_type' => 'welcome_bonus',
-        'event_key'  => $eventKey,
-        'payload'    => [
+        'event_key' => $eventKey,
+        'payload' => [
             'promotion_id' => $promo->id,
-            'wallet_id'    => $wallet->id,
-            'customer_id'  => $customerId,
-            'amount'       => '0.0000',
+            'wallet_id' => $wallet->id,
+            'customer_id' => $customerId,
+            'amount' => '0.0000',
         ],
-        'status'   => WalletPromotionOutbox::STATUS_PENDING,
+        'status' => WalletPromotionOutbox::STATUS_PENDING,
         'attempts' => 0,
     ]);
 
@@ -133,42 +132,42 @@ test('Smoke Test 1: Welcome Bonus end-to-end controlled flow with manual runOnce
 test('Smoke Test 2: Top-up Bonus end-to-end controlled flow with manual runOnce worker', function () {
     $customerId = DB::table('customers')->insertGetId([
         'first_name' => 'Smoke',
-        'last_name'  => 'Topup',
-        'email'      => 'smoke_topup_' . uniqid() . '@example.com',
+        'last_name' => 'Topup',
+        'email' => 'smoke_topup_'.uniqid().'@example.com',
     ]);
 
     $wallet = WalletAccount::create([
-        'customer_id'          => $customerId,
-        'cash_balance'         => '100.0000', // Real deposited funds
-        'promo_balance'        => '0.0000',
-        'held_balance'         => '0.0000',
+        'customer_id' => $customerId,
+        'cash_balance' => '100.0000', // Real deposited funds
+        'promo_balance' => '0.0000',
+        'held_balance' => '0.0000',
         'unclassified_balance' => '0.0000',
-        'promo_debt'           => '0.0000',
-        'available_balance'    => '100.0000',
-        'total_balance'        => '100.0000',
-        'status'               => 'active',
-        'backfill_status'      => 'verified',
+        'promo_debt' => '0.0000',
+        'available_balance' => '100.0000',
+        'total_balance' => '100.0000',
+        'status' => 'active',
+        'backfill_status' => 'verified',
     ]);
 
     $promo = WalletPromotion::create([
-        'name'         => 'Smoke 10% Top-up Bonus',
-        'type'         => WalletPromotion::TYPE_TOPUP_BONUS,
-        'status'       => WalletPromotion::STATUS_ACTIVE,
-        'action_type'  => WalletPromotion::ACTION_PERCENTAGE,
+        'name' => 'Smoke 10% Top-up Bonus',
+        'type' => WalletPromotion::TYPE_TOPUP_BONUS,
+        'status' => WalletPromotion::STATUS_ACTIVE,
+        'action_type' => WalletPromotion::ACTION_PERCENTAGE,
         'reward_value' => '10.0000', // 10%
     ]);
 
-    $eventKey = 'smoke:topup:' . uniqid();
+    $eventKey = 'smoke:topup:'.uniqid();
     $outbox = WalletPromotionOutbox::create([
         'event_type' => 'topup_bonus',
-        'event_key'  => $eventKey,
-        'payload'    => [
+        'event_key' => $eventKey,
+        'payload' => [
             'promotion_id' => $promo->id,
-            'wallet_id'    => $wallet->id,
-            'customer_id'  => $customerId,
-            'amount'       => '100.0000',
+            'wallet_id' => $wallet->id,
+            'customer_id' => $customerId,
+            'amount' => '100.0000',
         ],
-        'status'   => WalletPromotionOutbox::STATUS_PENDING,
+        'status' => WalletPromotionOutbox::STATUS_PENDING,
         'attempts' => 0,
     ]);
 
@@ -188,38 +187,38 @@ test('Smoke Test 2: Top-up Bonus end-to-end controlled flow with manual runOnce 
 test('Smoke Test 3: Order Cashback verified strictly via invoices.state and processed safely', function () {
     $customerId = DB::table('customers')->insertGetId([
         'first_name' => 'Smoke',
-        'last_name'  => 'Order',
-        'email'      => 'smoke_order_' . uniqid() . '@example.com',
+        'last_name' => 'Order',
+        'email' => 'smoke_order_'.uniqid().'@example.com',
     ]);
 
     $wallet = WalletAccount::create([
-        'customer_id'          => $customerId,
-        'cash_balance'         => '50.0000',
-        'promo_balance'        => '0.0000',
-        'held_balance'         => '0.0000',
+        'customer_id' => $customerId,
+        'cash_balance' => '50.0000',
+        'promo_balance' => '0.0000',
+        'held_balance' => '0.0000',
         'unclassified_balance' => '0.0000',
-        'promo_debt'           => '0.0000',
-        'available_balance'    => '50.0000',
-        'total_balance'        => '50.0000',
-        'status'               => 'active',
-        'backfill_status'      => 'verified',
+        'promo_debt' => '0.0000',
+        'available_balance' => '50.0000',
+        'total_balance' => '50.0000',
+        'status' => 'active',
+        'backfill_status' => 'verified',
     ]);
 
     $orderId = DB::table('orders')->insertGetId([
-        'status'           => 'processing',
-        'grand_total'      => '200.0000',
+        'status' => 'processing',
+        'grand_total' => '200.0000',
         'base_grand_total' => '200.0000',
     ]);
 
     $invoiceId = DB::table('invoices')->insertGetId([
-        'order_id'         => $orderId,
-        'state'            => 'paid',
-        'grand_total'      => '200.0000',
+        'order_id' => $orderId,
+        'state' => 'paid',
+        'grand_total' => '200.0000',
         'base_grand_total' => '200.0000',
     ]);
 
     $invoiceObj = (object) [
-        'id'    => $invoiceId,
+        'id' => $invoiceId,
         'state' => 'paid',
     ];
 
@@ -228,24 +227,24 @@ test('Smoke Test 3: Order Cashback verified strictly via invoices.state and proc
     expect($paymentVerifier->isInvoiceEligibleForPromotion($invoiceObj))->toBeTrue();
 
     $promo = WalletPromotion::create([
-        'name'         => 'Smoke Order Cashback',
-        'type'         => WalletPromotion::TYPE_ORDER_SUBTOTAL_CASHBACK,
-        'status'       => WalletPromotion::STATUS_ACTIVE,
-        'action_type'  => WalletPromotion::ACTION_PERCENTAGE,
+        'name' => 'Smoke Order Cashback',
+        'type' => WalletPromotion::TYPE_ORDER_SUBTOTAL_CASHBACK,
+        'status' => WalletPromotion::STATUS_ACTIVE,
+        'action_type' => WalletPromotion::ACTION_PERCENTAGE,
         'reward_value' => '5.0000', // 5% of 200 = 10
     ]);
 
-    $eventKey = 'smoke:order:' . uniqid();
+    $eventKey = 'smoke:order:'.uniqid();
     $outbox = WalletPromotionOutbox::create([
         'event_type' => 'order_cashback',
-        'event_key'  => $eventKey,
-        'payload'    => [
+        'event_key' => $eventKey,
+        'payload' => [
             'promotion_id' => $promo->id,
-            'wallet_id'    => $wallet->id,
-            'customer_id'  => $customerId,
-            'amount'       => '200.0000',
+            'wallet_id' => $wallet->id,
+            'customer_id' => $customerId,
+            'amount' => '200.0000',
         ],
-        'status'   => WalletPromotionOutbox::STATUS_PENDING,
+        'status' => WalletPromotionOutbox::STATUS_PENDING,
         'attempts' => 0,
     ]);
 
@@ -261,34 +260,34 @@ test('Smoke Test 3: Order Cashback verified strictly via invoices.state and proc
 test('Smoke Test 4: Refund reversal, Promo Debt, and Net settlement reconciliation', function () {
     $customerId = DB::table('customers')->insertGetId([
         'first_name' => 'Smoke',
-        'last_name'  => 'Refund',
-        'email'      => 'smoke_refund_' . uniqid() . '@example.com',
+        'last_name' => 'Refund',
+        'email' => 'smoke_refund_'.uniqid().'@example.com',
     ]);
 
     $wallet = WalletAccount::create([
-        'customer_id'          => $customerId,
-        'cash_balance'         => '50.0000',
-        'promo_balance'        => '0.0000',
-        'held_balance'         => '0.0000',
+        'customer_id' => $customerId,
+        'cash_balance' => '50.0000',
+        'promo_balance' => '0.0000',
+        'held_balance' => '0.0000',
         'unclassified_balance' => '0.0000',
-        'promo_debt'           => '0.0000',
-        'available_balance'    => '50.0000',
-        'total_balance'        => '50.0000',
-        'status'               => 'active',
-        'backfill_status'      => 'verified',
+        'promo_debt' => '0.0000',
+        'available_balance' => '50.0000',
+        'total_balance' => '50.0000',
+        'status' => 'active',
+        'backfill_status' => 'verified',
     ]);
 
     $promo = WalletPromotion::create([
-        'name'         => 'Smoke Debt Promo',
-        'type'         => WalletPromotion::TYPE_WELCOME_BONUS,
-        'status'       => WalletPromotion::STATUS_ACTIVE,
-        'action_type'  => WalletPromotion::ACTION_FIXED,
+        'name' => 'Smoke Debt Promo',
+        'type' => WalletPromotion::TYPE_WELCOME_BONUS,
+        'status' => WalletPromotion::STATUS_ACTIVE,
+        'action_type' => WalletPromotion::ACTION_FIXED,
         'reward_value' => '30.0000',
     ]);
 
     $orderId = DB::table('orders')->insertGetId([
-        'status'           => 'completed',
-        'grand_total'      => '100.0000',
+        'status' => 'completed',
+        'grand_total' => '100.0000',
         'base_grand_total' => '100.0000',
     ]);
 
@@ -297,7 +296,7 @@ test('Smoke Test 4: Refund reversal, Promo Debt, and Net settlement reconciliati
     $debt = $debtService->createDebt(
         wallet: $wallet,
         orderId: $orderId,
-        eventKey: 'smoke:debt:init:' . uniqid(),
+        eventKey: 'smoke:debt:init:'.uniqid(),
         deficitAmountStr: '20.0000',
         reason: 'Refund promo deficit'
     );
@@ -309,7 +308,7 @@ test('Smoke Test 4: Refund reversal, Promo Debt, and Net settlement reconciliati
     $result = $orchestrator->applyPromotionGrant(
         promotion: $promo,
         walletId: $wallet->id,
-        eventKey: 'smoke:debt:settle:' . uniqid(),
+        eventKey: 'smoke:debt:settle:'.uniqid(),
         eligibleAmountStr: '30.0000',
         referenceType: WalletPromotion::class,
         referenceId: $promo->id
@@ -327,27 +326,27 @@ test('Smoke Test 4: Refund reversal, Promo Debt, and Net settlement reconciliati
 
 test('Smoke Test 5: Admin Promotion CRUD, Status Archiving, and Customer Balances Segregation', function () {
     $adminId = DB::table('admins')->insertGetId([
-        'name'  => 'Smoke Admin',
-        'email' => 'smoke_admin_' . uniqid() . '@example.com',
+        'name' => 'Smoke Admin',
+        'email' => 'smoke_admin_'.uniqid().'@example.com',
     ]);
 
     // 1. Admin creates promotion
     $promo = WalletPromotion::create([
-        'name'         => 'Smoke Full Admin Promo',
-        'type'         => WalletPromotion::TYPE_WELCOME_BONUS,
-        'status'       => WalletPromotion::STATUS_DRAFT,
-        'action_type'  => WalletPromotion::ACTION_FIXED,
+        'name' => 'Smoke Full Admin Promo',
+        'type' => WalletPromotion::TYPE_WELCOME_BONUS,
+        'status' => WalletPromotion::STATUS_DRAFT,
+        'action_type' => WalletPromotion::ACTION_FIXED,
         'reward_value' => '15.0000',
     ]);
 
     WalletPromotionAudit::create([
-        'promotion_id'  => $promo->id,
+        'promotion_id' => $promo->id,
         'admin_user_id' => $adminId,
-        'action'        => WalletPromotionAudit::ACTION_CREATED,
-        'old_values'    => null,
-        'new_values'    => $promo->toArray(),
-        'ip_address'    => '127.0.0.1',
-        'created_at'    => now(),
+        'action' => WalletPromotionAudit::ACTION_CREATED,
+        'old_values' => null,
+        'new_values' => $promo->toArray(),
+        'ip_address' => '127.0.0.1',
+        'created_at' => now(),
     ]);
 
     // 2. Admin activates promotion
@@ -355,13 +354,13 @@ test('Smoke Test 5: Admin Promotion CRUD, Status Archiving, and Customer Balance
     $promo->update(['status' => WalletPromotion::STATUS_ACTIVE]);
 
     WalletPromotionAudit::create([
-        'promotion_id'  => $promo->id,
+        'promotion_id' => $promo->id,
         'admin_user_id' => $adminId,
-        'action'        => WalletPromotionAudit::ACTION_UPDATED,
-        'old_values'    => $oldValues,
-        'new_values'    => $promo->fresh()->toArray(),
-        'ip_address'    => '127.0.0.1',
-        'created_at'    => now(),
+        'action' => WalletPromotionAudit::ACTION_UPDATED,
+        'old_values' => $oldValues,
+        'new_values' => $promo->fresh()->toArray(),
+        'ip_address' => '127.0.0.1',
+        'created_at' => now(),
     ]);
 
     // 3. Admin archives promotion (Non-destructive Delete)
@@ -369,13 +368,13 @@ test('Smoke Test 5: Admin Promotion CRUD, Status Archiving, and Customer Balance
     $promo->update(['status' => WalletPromotion::STATUS_ARCHIVED]);
 
     WalletPromotionAudit::create([
-        'promotion_id'  => $promo->id,
+        'promotion_id' => $promo->id,
         'admin_user_id' => $adminId,
-        'action'        => WalletPromotionAudit::ACTION_ARCHIVED,
-        'old_values'    => $oldValues,
-        'new_values'    => $promo->fresh()->toArray(),
-        'ip_address'    => '127.0.0.1',
-        'created_at'    => now(),
+        'action' => WalletPromotionAudit::ACTION_ARCHIVED,
+        'old_values' => $oldValues,
+        'new_values' => $promo->fresh()->toArray(),
+        'ip_address' => '127.0.0.1',
+        'created_at' => now(),
     ]);
 
     expect($promo->fresh()->status)->toBe(WalletPromotion::STATUS_ARCHIVED);
@@ -384,21 +383,21 @@ test('Smoke Test 5: Admin Promotion CRUD, Status Archiving, and Customer Balance
     // 4. Customer balance segregation check
     $customerId = DB::table('customers')->insertGetId([
         'first_name' => 'Smoke',
-        'last_name'  => 'Segregation',
-        'email'      => 'smoke_seg_' . uniqid() . '@example.com',
+        'last_name' => 'Segregation',
+        'email' => 'smoke_seg_'.uniqid().'@example.com',
     ]);
 
     $wallet = WalletAccount::create([
-        'customer_id'          => $customerId,
-        'cash_balance'         => '100.0000',
-        'promo_balance'        => '50.0000',
-        'held_balance'         => '20.0000',
+        'customer_id' => $customerId,
+        'cash_balance' => '100.0000',
+        'promo_balance' => '50.0000',
+        'held_balance' => '20.0000',
         'unclassified_balance' => '0.0000',
-        'promo_debt'           => '0.0000',
-        'available_balance'    => '150.0000',
-        'total_balance'        => '150.0000',
-        'status'               => 'active',
-        'backfill_status'      => 'verified',
+        'promo_debt' => '0.0000',
+        'available_balance' => '150.0000',
+        'total_balance' => '150.0000',
+        'status' => 'active',
+        'backfill_status' => 'verified',
     ]);
 
     $rawCash = (float) $wallet->cash_balance;
@@ -414,14 +413,32 @@ test('Smoke Test 5: Admin Promotion CRUD, Status Archiving, and Customer Balance
 
 test('Smoke Test 6: Strict physical deletion prohibition across ORM and Query Builder checks', function () {
     $promo = WalletPromotion::create([
-        'name'         => 'Anti Delete Smoke',
-        'type'         => WalletPromotion::TYPE_WELCOME_BONUS,
-        'status'       => WalletPromotion::STATUS_ACTIVE,
-        'action_type'  => WalletPromotion::ACTION_FIXED,
+        'name' => 'Anti Delete Smoke',
+        'type' => WalletPromotion::TYPE_WELCOME_BONUS,
+        'status' => WalletPromotion::STATUS_ACTIVE,
+        'action_type' => WalletPromotion::ACTION_FIXED,
         'reward_value' => '10.0000',
     ]);
 
-    // Direct model delete must be blocked by booted deleting guard
-    expect(fn () => $promo->delete())->toThrow(\LogicException::class);
+    // 1. Direct model instance delete must throw LogicException
+    expect(fn () => $promo->delete())->toThrow(LogicException::class);
     expect(WalletPromotion::find($promo->id))->not->toBeNull();
+
+    // 2. Direct Eloquent Query Builder delete: query()->delete()
+    expect(fn () => WalletPromotion::query()->where('id', $promo->id)->delete())
+        ->toThrow(LogicException::class);
+
+    // 3. Direct Model static where()->delete()
+    expect(fn () => WalletPromotion::where('id', $promo->id)->delete())
+        ->toThrow(LogicException::class);
+
+    // 4. Verify record still exists in DB
+    expect(WalletPromotion::find($promo->id))->not->toBeNull();
+
+    // 5. Direct Query Builder delete on other promotional and audit models
+    expect(fn () => WalletPromotionUsage::query()->delete())->toThrow(LogicException::class);
+    expect(fn () => WalletPromotionGrant::query()->delete())->toThrow(LogicException::class);
+    expect(fn () => WalletPromoDebt::query()->delete())->toThrow(LogicException::class);
+    expect(fn () => WalletPromotionOutbox::query()->delete())->toThrow(LogicException::class);
+    expect(fn () => WalletPromotionAudit::query()->delete())->toThrow(LogicException::class);
 });

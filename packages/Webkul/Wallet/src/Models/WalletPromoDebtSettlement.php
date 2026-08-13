@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Webkul\Customer\Models\CustomerProxy;
 use Webkul\Wallet\Contracts\WalletPromoDebtSettlement as WalletPromoDebtSettlementContract;
+use Webkul\Wallet\Models\Traits\ProhibitsPhysicalDeletion;
 
 class WalletPromoDebtSettlement extends Model implements WalletPromoDebtSettlementContract
 {
+    use ProhibitsPhysicalDeletion;
+
     public $timestamps = false;
 
     protected $table = 'wallet_promo_debt_settlements';
@@ -55,16 +58,5 @@ class WalletPromoDebtSettlement extends Model implements WalletPromoDebtSettleme
     public function walletTransaction(): BelongsTo
     {
         return $this->belongsTo(WalletTransactionProxy::modelClass(), 'wallet_transaction_id');
-    }
-
-    /**
-     * The "booted" method of the model.
-     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
-     */
-    protected static function booted(): void
-    {
-        static::deleting(function (self $model) {
-            throw new \LogicException('Physical deletion of WalletPromoDebtSettlement records is strictly forbidden to preserve accounting history.');
-        });
     }
 }

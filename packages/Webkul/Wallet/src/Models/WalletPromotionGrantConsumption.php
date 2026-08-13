@@ -8,9 +8,12 @@ use Webkul\Customer\Models\CustomerProxy;
 use Webkul\Sales\Models\OrderItemProxy;
 use Webkul\Sales\Models\OrderProxy;
 use Webkul\Wallet\Contracts\WalletPromotionGrantConsumption as WalletPromotionGrantConsumptionContract;
+use Webkul\Wallet\Models\Traits\ProhibitsPhysicalDeletion;
 
 class WalletPromotionGrantConsumption extends Model implements WalletPromotionGrantConsumptionContract
 {
+    use ProhibitsPhysicalDeletion;
+
     public $timestamps = false;
 
     protected $table = 'wallet_promotion_grant_consumptions';
@@ -81,16 +84,5 @@ class WalletPromotionGrantConsumption extends Model implements WalletPromotionGr
     public function reversalTransaction(): BelongsTo
     {
         return $this->belongsTo(WalletTransactionProxy::modelClass(), 'reversal_transaction_id');
-    }
-
-    /**
-     * The "booted" method of the model.
-     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
-     */
-    protected static function booted(): void
-    {
-        static::deleting(function (self $model) {
-            throw new \LogicException('Physical deletion of WalletPromotionGrantConsumption records is strictly forbidden to preserve accounting history.');
-        });
     }
 }

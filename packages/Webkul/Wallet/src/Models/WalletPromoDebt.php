@@ -9,9 +9,12 @@ use Webkul\Customer\Models\CustomerProxy;
 use Webkul\Sales\Models\OrderProxy;
 use Webkul\Sales\Models\RefundProxy;
 use Webkul\Wallet\Contracts\WalletPromoDebt as WalletPromoDebtContract;
+use Webkul\Wallet\Models\Traits\ProhibitsPhysicalDeletion;
 
 class WalletPromoDebt extends Model implements WalletPromoDebtContract
 {
+    use ProhibitsPhysicalDeletion;
+
     protected $table = 'wallet_promo_debts';
 
     protected $fillable = [
@@ -65,16 +68,5 @@ class WalletPromoDebt extends Model implements WalletPromoDebtContract
     public function settlements(): HasMany
     {
         return $this->hasMany(WalletPromoDebtSettlementProxy::modelClass(), 'debt_id');
-    }
-
-    /**
-     * The "booted" method of the model.
-     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
-     */
-    protected static function booted(): void
-    {
-        static::deleting(function (self $model) {
-            throw new \LogicException('Physical deletion of WalletPromoDebt records is strictly forbidden to preserve accounting history.');
-        });
     }
 }

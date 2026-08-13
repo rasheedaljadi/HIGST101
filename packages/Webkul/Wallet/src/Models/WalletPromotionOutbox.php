@@ -4,9 +4,12 @@ namespace Webkul\Wallet\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Webkul\Wallet\Contracts\WalletPromotionOutbox as WalletPromotionOutboxContract;
+use Webkul\Wallet\Models\Traits\ProhibitsPhysicalDeletion;
 
 class WalletPromotionOutbox extends Model implements WalletPromotionOutboxContract
 {
+    use ProhibitsPhysicalDeletion;
+
     public $timestamps = false;
 
     protected $table = 'wallet_promotion_outbox';
@@ -41,15 +44,4 @@ class WalletPromotionOutbox extends Model implements WalletPromotionOutboxContra
     public const STATUS_COMPLETED = 'completed';
 
     public const STATUS_FAILED = 'failed';
-
-    /**
-     * The "booted" method of the model.
-     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
-     */
-    protected static function booted(): void
-    {
-        static::deleting(function (self $model) {
-            throw new \LogicException('Physical deletion of WalletPromotionOutbox records is strictly forbidden to preserve event audit history.');
-        });
-    }
 }

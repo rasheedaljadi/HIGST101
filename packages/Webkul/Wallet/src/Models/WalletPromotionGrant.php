@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Webkul\Customer\Models\CustomerProxy;
 use Webkul\Wallet\Contracts\WalletPromotionGrant as WalletPromotionGrantContract;
+use Webkul\Wallet\Models\Traits\ProhibitsPhysicalDeletion;
 
 class WalletPromotionGrant extends Model implements WalletPromotionGrantContract
 {
+    use ProhibitsPhysicalDeletion;
+
     protected $table = 'wallet_promotion_grants';
 
     protected $fillable = [
@@ -74,16 +77,5 @@ class WalletPromotionGrant extends Model implements WalletPromotionGrantContract
     public function consumptions(): HasMany
     {
         return $this->hasMany(WalletPromotionGrantConsumptionProxy::modelClass(), 'grant_id');
-    }
-
-    /**
-     * The "booted" method of the model.
-     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
-     */
-    protected static function booted(): void
-    {
-        static::deleting(function (self $model) {
-            throw new \LogicException('Physical deletion of WalletPromotionGrant records is strictly forbidden to preserve accounting history.');
-        });
     }
 }

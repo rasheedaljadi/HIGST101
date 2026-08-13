@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Webkul\User\Models\AdminProxy;
 use Webkul\Wallet\Contracts\WalletPromotion as WalletPromotionContract;
+use Webkul\Wallet\Models\Traits\ProhibitsPhysicalDeletion;
 
 class WalletPromotion extends Model implements WalletPromotionContract
 {
+    use ProhibitsPhysicalDeletion;
+
     protected $table = 'wallet_promotions';
 
     protected $fillable = [
@@ -81,16 +84,5 @@ class WalletPromotion extends Model implements WalletPromotionContract
     public function createdByAdmin(): BelongsTo
     {
         return $this->belongsTo(AdminProxy::modelClass(), 'created_by_admin_id');
-    }
-
-    /**
-     * The "booted" method of the model.
-     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
-     */
-    protected static function booted(): void
-    {
-        static::deleting(function (self $model) {
-            throw new \LogicException('Physical deletion of WalletPromotion records is strictly forbidden to preserve financial and audit history. Use status archiving ($promotion->status = "archived") instead.');
-        });
     }
 }

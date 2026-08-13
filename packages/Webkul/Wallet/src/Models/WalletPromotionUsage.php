@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Webkul\Customer\Models\CustomerProxy;
 use Webkul\Wallet\Contracts\WalletPromotionUsage as WalletPromotionUsageContract;
+use Webkul\Wallet\Models\Traits\ProhibitsPhysicalDeletion;
 
 class WalletPromotionUsage extends Model implements WalletPromotionUsageContract
 {
+    use ProhibitsPhysicalDeletion;
+
     protected $table = 'wallet_promotion_usages';
 
     protected $fillable = [
@@ -56,16 +59,5 @@ class WalletPromotionUsage extends Model implements WalletPromotionUsageContract
     public function grant(): HasOne
     {
         return $this->hasOne(WalletPromotionGrantProxy::modelClass(), 'usage_id');
-    }
-
-    /**
-     * The "booted" method of the model.
-     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
-     */
-    protected static function booted(): void
-    {
-        static::deleting(function (self $model) {
-            throw new \LogicException('Physical deletion of WalletPromotionUsage records is strictly forbidden to preserve accounting history.');
-        });
     }
 }

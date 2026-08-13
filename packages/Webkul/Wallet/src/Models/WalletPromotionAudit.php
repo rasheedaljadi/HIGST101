@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Webkul\User\Models\AdminProxy;
 use Webkul\Wallet\Contracts\WalletPromotionAudit as WalletPromotionAuditContract;
+use Webkul\Wallet\Models\Traits\ProhibitsPhysicalDeletion;
 
 class WalletPromotionAudit extends Model implements WalletPromotionAuditContract
 {
+    use ProhibitsPhysicalDeletion;
+
     public $timestamps = false;
 
     protected $table = 'wallet_promotion_audits';
@@ -49,16 +52,5 @@ class WalletPromotionAudit extends Model implements WalletPromotionAuditContract
     public function adminUser(): BelongsTo
     {
         return $this->belongsTo(AdminProxy::modelClass(), 'admin_user_id');
-    }
-
-    /**
-     * The "booted" method of the model.
-     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
-     */
-    protected static function booted(): void
-    {
-        static::deleting(function (self $model) {
-            throw new \LogicException('Physical deletion of WalletPromotionAudit records is strictly forbidden to preserve immutable audit trail.');
-        });
     }
 }
