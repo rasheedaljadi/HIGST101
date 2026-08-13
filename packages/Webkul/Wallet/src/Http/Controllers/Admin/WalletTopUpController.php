@@ -4,6 +4,7 @@ namespace Webkul\Wallet\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Log;
 use Webkul\Notification\Services\CustomerNotificationService;
 use Webkul\Wallet\DataGrids\WalletTopUpsDataGrid;
@@ -103,7 +104,8 @@ class WalletTopUpController extends Controller
             }
         }
 
-        $message = trans('wallet::app.admin.wallet.deposits.approved') ?? 'تم الموافقة على طلب الإيداع وإضافة الرصيد بنجاح.';
+        $approvedKey = 'wallet::app.admin.wallet.deposits.approved';
+        $message = Lang::has($approvedKey) ? trans($approvedKey) : 'تم الموافقة على طلب الإيداع وإضافة الرصيد بنجاح.';
 
         if (request()->ajax()) {
             return response()->json([
@@ -167,7 +169,8 @@ class WalletTopUpController extends Controller
             }
         }
 
-        $message = trans('wallet::app.admin.wallet.deposits.rejected') ?? 'تم رفض طلب الإيداع بنجاح.';
+        $rejectedKey = 'wallet::app.admin.wallet.deposits.rejected';
+        $message = Lang::has($rejectedKey) ? trans($rejectedKey) : 'تم رفض طلب الإيداع بنجاح.';
 
         if (request()->ajax()) {
             return response()->json([

@@ -1,6 +1,32 @@
 <?php
 
 return [
+    'notifications' => [
+        'title' => 'Notifications',
+        'unread' => 'Unread',
+        'mark_all_as_read' => 'Mark All as Read',
+        'marked_all_as_read_success' => 'All notifications marked as read successfully.',
+        'empty' => 'No notifications currently',
+        'empty_description' => 'All updates regarding your orders and wallet will appear here.',
+        'view_all' => 'View All Notifications',
+        'new' => 'New',
+        'order_created_title' => 'Order Created Successfully',
+        'order_created_message' => 'Your order #:order_id has been received successfully and is under review.',
+        'order_status_title' => 'Order Status Update',
+        'order_status_message' => 'Your order #:order_id status has been updated to :status.',
+        'invoice_created_title' => 'Invoice Generated for Your Order',
+        'invoice_created_message' => 'A purchase invoice has been issued for your order #:order_id.',
+        'shipment_created_title' => 'Your Order Has Been Shipped',
+        'shipment_created_message' => 'Your order #:order_id has been shipped and is on its way.',
+        'refund_created_title' => 'Refund Issued for Your Order',
+        'refund_created_message' => 'A financial refund has been issued for your order #:order_id.',
+        'order_status_pending' => 'Pending',
+        'order_status_processing' => 'Processing',
+        'order_status_completed' => 'Completed',
+        'order_status_canceled' => 'Canceled',
+        'order_status_closed' => 'Closed',
+    ],
+
     'customers' => [
         'forgot-password' => [
             'already-sent' => 'Already Password Reset Mail Sent.',

@@ -1,6 +1,32 @@
 <?php
 
 return [
+    'notifications' => [
+        'title' => 'الإشعارات',
+        'unread' => 'غير مقروء',
+        'mark_all_as_read' => 'تعليم الكل كمقروء',
+        'marked_all_as_read_success' => 'تم تعليم جميع الإشعارات كمقروءة بنجاح.',
+        'empty' => 'لا توجد إشعارات حالياً',
+        'empty_description' => 'ستظهر جميع التحديثات المتعلقة بطلباتك ومحفظتك هنا.',
+        'view_all' => 'عرض جميع الإشعارات',
+        'new' => 'جديد',
+        'order_created_title' => 'تم إنشاء طلبك بنجاح',
+        'order_created_message' => 'تم استلام طلبك رقم #:order_id بنجاح وهو قيد المراجعة.',
+        'order_status_title' => 'تحديث على حالة الطلب',
+        'order_status_message' => 'تم تغيير حالة طلبك رقم #:order_id إلى :status.',
+        'invoice_created_title' => 'تم إصدار فاتورة لطلبك',
+        'invoice_created_message' => 'تم إصدار فاتورة الشراء لطلبك رقم #:order_id.',
+        'shipment_created_title' => 'تم شحن طلبك',
+        'shipment_created_message' => 'تم شحن طلبك رقم #:order_id وهو في طريقه إليك.',
+        'refund_created_title' => 'تم استرداد مبلغ من طلبك',
+        'refund_created_message' => 'تم إصدار مرتجع مالي لطلبك رقم #:order_id.',
+        'order_status_pending' => 'قيد الانتظار',
+        'order_status_processing' => 'قيد التجهيز',
+        'order_status_completed' => 'مكتمل',
+        'order_status_canceled' => 'ملغي',
+        'order_status_closed' => 'مغلق',
+    ],
+
     'customers' => [
         'forgot-password' => [
             'already-sent' => 'تم بالفعل إعادة تعيين كلمة المرور للبريد المرسل.',
