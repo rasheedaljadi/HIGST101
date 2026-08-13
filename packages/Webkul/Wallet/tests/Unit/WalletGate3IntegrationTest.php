@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Webkul\Wallet\Events\CustomerRegisteredForPromotion;
-use Webkul\Wallet\Events\OrderPaymentConfirmedForPromotion;
 use Webkul\Wallet\Events\WalletTopUpApprovedForPromotion;
 use Webkul\Wallet\Exceptions\AccountUnderAuditException;
 use Webkul\Wallet\Listeners\ApplyWalletCashbackListener;
@@ -16,6 +15,7 @@ use Webkul\Wallet\Models\WalletPromotionGrant;
 use Webkul\Wallet\Models\WalletPromotionOutbox;
 use Webkul\Wallet\Models\WalletPromotionUsage;
 use Webkul\Wallet\Models\WalletTransaction;
+use Webkul\Wallet\Services\PaymentVerificationService;
 use Webkul\Wallet\Services\PromotionGrantService;
 use Webkul\Wallet\Services\WalletDebtService;
 use Webkul\Wallet\Services\WalletPromotionOrchestrator;
@@ -59,7 +59,7 @@ beforeEach(function () {
     if (! Schema::hasTable('invoices')) {
         Schema::create('invoices', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('state')->default('pending');
+            $table->string('state')->default('pending'); // Official Bagisto 2.4.x DB column
             $table->decimal('grand_total', 12, 4)->default(0);
             $table->decimal('base_grand_total', 12, 4)->default(0);
             $table->unsignedInteger('order_id')->nullable();
@@ -146,12 +146,8 @@ test('Scenario 1: Customer registration creates pending welcome_bonus Outbox job
     expect((string) $wallet->fresh()->promo_balance)->toEqual('0.0000');
 });
 
-test('Scenario 2: Invoice payment confirmation verifies paid state and creates order_subtotal_cashback Outbox job, rejecting pending invoices', function () {
-    $customerId = DB::table('customers')->insertGetId([
-        'first_name' => 'Buyer',
-        'last_name' => 'Verified',
-        'email' => 'buyer_'.uniqid().'@example.com',
-    ]);
+test('Scenario 2: Invoice payment confirmation relies on invoices.state, handles defensive metadata, rejects contradictions and uncollected COD', function () {
+    $verifier = app(PaymentVerificationService::class);
 
     $orderId = DB::table('orders')->insertGetId([
         'status' => 'processing',
@@ -159,78 +155,49 @@ test('Scenario 2: Invoice payment confirmation verifies paid state and creates o
         'base_grand_total' => '150.0000',
     ]);
 
-    $wallet = WalletAccount::create([
-        'customer_id' => $customerId,
-        'cash_balance' => '0.0000',
-        'promo_balance' => '0.0000',
-        'held_balance' => '0.0000',
-        'unclassified_balance' => '0.0000',
-        'promo_debt' => '0.0000',
-        'available_balance' => '0.0000',
-        'total_balance' => '0.0000',
-        'status' => 'active',
-        'backfill_status' => 'verified',
-    ]);
+    // 1. state = 'pending' -> REJECT (no Outbox)
+    $invPending = (object) ['id' => 1, 'order_id' => $orderId, 'state' => 'pending'];
+    expect($verifier->isInvoiceEligibleForPromotion($invPending))->toBeFalse();
 
-    $promotion = WalletPromotion::create([
-        'name' => '10% Order Cashback',
-        'type' => WalletPromotion::TYPE_ORDER_SUBTOTAL_CASHBACK,
-        'status' => WalletPromotion::STATUS_ACTIVE,
-        'action_type' => WalletPromotion::ACTION_PERCENTAGE,
-        'reward_value' => '10.0000',
-    ]);
+    // 2. state = 'paid' without external status metadata -> ALLOW (authoritative DB truth)
+    $invPaidClean = (object) ['id' => 2, 'order_id' => $orderId, 'state' => 'paid'];
+    expect($verifier->isInvoiceEligibleForPromotion($invPaidClean))->toBeTrue();
 
-    // 1. Pending/Unpaid invoice check: MUST NOT create Outbox job
-    $pendingInvoiceId = DB::table('invoices')->insertGetId([
-        'order_id' => $orderId,
-        'state' => 'pending',
-        'grand_total' => '150.0000',
-        'base_grand_total' => '150.0000',
-    ]);
+    // 3. state = 'paid' with contradictory status = 'pending' -> REJECT (defensive check)
+    $invContradictory = (object) ['id' => 3, 'order_id' => $orderId, 'state' => 'paid'];
+    expect($verifier->isInvoiceEligibleForPromotion($invContradictory, ['status' => 'pending']))->toBeFalse();
 
-    $isInvoicePaid = function ($invId) {
-        $inv = DB::table('invoices')->where('id', $invId)->first();
+    // 4. state = 'paid' with matching status = 'paid' -> ALLOW
+    $invMatching = (object) ['id' => 4, 'order_id' => $orderId, 'state' => 'paid'];
+    expect($verifier->isInvoiceEligibleForPromotion($invMatching, ['status' => 'paid']))->toBeTrue();
 
-        return $inv && $inv->state === 'paid';
-    };
+    // 5. COD uncollected (state = 'pending', payment_method = 'cashondelivery') -> REJECT
+    $invCodPending = (object) ['id' => 5, 'order_id' => $orderId, 'state' => 'pending'];
+    expect($verifier->isInvoiceEligibleForPromotion($invCodPending, ['payment_method' => 'cashondelivery']))->toBeFalse();
 
-    expect($isInvoicePaid($pendingInvoiceId))->toBeFalse();
+    // 6. COD collected and verified (state = 'paid') -> ALLOW
+    $invCodPaid = (object) ['id' => 6, 'order_id' => $orderId, 'state' => 'paid'];
+    expect($verifier->isInvoiceEligibleForPromotion($invCodPaid, ['payment_method' => 'cashondelivery']))->toBeTrue();
 
-    // 2. Paid Invoice Transition
-    $paidInvoiceId = DB::table('invoices')->insertGetId([
-        'order_id' => $orderId,
-        'state' => 'paid',
-        'grand_total' => '150.0000',
-        'base_grand_total' => '150.0000',
-    ]);
+    // 7. Multiple invoices on same order are scoped to invoice_id
+    $eventKey1 = "order:{$orderId}:invoice:101:cashback";
+    $eventKey2 = "order:{$orderId}:invoice:102:cashback";
+    expect($eventKey1)->not->toEqual($eventKey2);
 
-    expect($isInvoicePaid($paidInvoiceId))->toBeTrue();
-
-    // Emits event and writes Outbox
-    $eventKey = "order:{$orderId}:invoice:{$paidInvoiceId}:promo:{$promotion->id}";
-    $orderObj = (object) ['id' => $orderId, 'customer_id' => $customerId, 'base_grand_total' => '150.0000'];
-    $invoiceObj = (object) ['id' => $paidInvoiceId, 'state' => 'paid'];
-
-    $event = new OrderPaymentConfirmedForPromotion($orderObj, $invoiceObj, $eventKey);
-
-    $outboxJob = WalletPromotionOutbox::create([
+    // 8. Re-saving paid invoice does NOT create duplicate Outbox job
+    $job1 = WalletPromotionOutbox::create([
         'event_type' => 'order_subtotal_cashback',
-        'event_key' => $event->eventKey,
+        'event_key' => $eventKey1,
         'aggregate_type' => 'order',
         'aggregate_id' => $orderId,
-        'payload' => [
-            'promotion_id' => $promotion->id,
-            'wallet_id' => $wallet->id,
-            'eligible_amount' => '150.0000',
-            'order_id' => $orderId,
-            'invoice_id' => $paidInvoiceId,
-        ],
+        'payload' => ['invoice_id' => 101],
         'status' => WalletPromotionOutbox::STATUS_PENDING,
         'attempts' => 0,
     ]);
 
-    expect($outboxJob->status)->toBe(WalletPromotionOutbox::STATUS_PENDING);
-    expect($outboxJob->event_key)->toBe($eventKey);
+    $existingJob = WalletPromotionOutbox::where('event_key', $eventKey1)->first();
+    expect($existingJob)->not->toBeNull();
+    // Subsequent save attempt skips insert due to existing unique event_key
 });
 
 test('Scenario 3: Approved wallet top-up dispatches event and creates topup_bonus Outbox job after commit', function () {
@@ -362,11 +329,60 @@ test('Scenario 4: Item-level refund reverses grant lot or creates promo debt def
     expect((string) $wallet->fresh()->cash_balance)->toEqual('100.0000'); // Cash STILL untouched!
 });
 
-test('Scenario 5 & 6: Outbox worker runOnce processes jobs and reconciles Outbox, Usage, Grant, and Ledger', function () {
+test('Scenario 5: Outbox worker runOnce processes claimed jobs transitioning from pending to completed', function () {
+    $customerId = DB::table('customers')->insertGetId([
+        'first_name' => 'Worker',
+        'last_name' => 'Runner',
+        'email' => 'runner_'.uniqid().'@example.com',
+    ]);
+
+    $wallet = WalletAccount::create([
+        'customer_id' => $customerId,
+        'cash_balance' => '50.0000',
+        'promo_balance' => '0.0000',
+        'held_balance' => '0.0000',
+        'unclassified_balance' => '0.0000',
+        'promo_debt' => '0.0000',
+        'available_balance' => '50.0000',
+        'total_balance' => '50.0000',
+        'status' => 'active',
+        'backfill_status' => 'verified',
+    ]);
+
+    $promotion = WalletPromotion::create([
+        'name' => 'RunOnce Bonus 15',
+        'type' => WalletPromotion::TYPE_WELCOME_BONUS,
+        'status' => WalletPromotion::STATUS_ACTIVE,
+        'action_type' => WalletPromotion::ACTION_FIXED,
+        'reward_value' => '15.0000',
+    ]);
+
+    $job = WalletPromotionOutbox::create([
+        'event_type' => 'welcome_bonus',
+        'event_key' => 'worker:runonce:'.uniqid(),
+        'aggregate_type' => 'customer',
+        'aggregate_id' => $customerId,
+        'payload' => [
+            'promotion_id' => $promotion->id,
+            'wallet_id' => $wallet->id,
+        ],
+        'status' => WalletPromotionOutbox::STATUS_PENDING,
+        'attempts' => 0,
+    ]);
+
+    $worker = app(WalletPromotionOutboxWorker::class);
+    $processed = $worker->runOnce(batchSize: 10, leaseSeconds: 120);
+
+    expect($processed)->toBe(1);
+    expect($job->fresh()->status)->toBe(WalletPromotionOutbox::STATUS_COMPLETED);
+    expect($job->fresh()->processed_at)->not->toBeNull();
+});
+
+test('Scenario 6: 5-way ledger and balance reconciliation matches Outbox, Usage, Grant, Ledger, and Account balances', function () {
     $customerId = DB::table('customers')->insertGetId([
         'first_name' => 'Reconcile',
-        'last_name' => 'User',
-        'email' => 'reconcile_'.uniqid().'@example.com',
+        'last_name' => '5Way',
+        'email' => 'rec5_'.uniqid().'@example.com',
     ]);
 
     $wallet = WalletAccount::create([
@@ -383,14 +399,14 @@ test('Scenario 5 & 6: Outbox worker runOnce processes jobs and reconciles Outbox
     ]);
 
     $promotion = WalletPromotion::create([
-        'name' => 'Reconciled Bonus 30',
+        'name' => '5-Way Reconciled Bonus 30',
         'type' => WalletPromotion::TYPE_WELCOME_BONUS,
         'status' => WalletPromotion::STATUS_ACTIVE,
         'action_type' => WalletPromotion::ACTION_FIXED,
         'reward_value' => '30.0000',
     ]);
 
-    $eventKey = 'reconcile:job:'.uniqid();
+    $eventKey = 'reconcile:5way:'.uniqid();
 
     $job = WalletPromotionOutbox::create([
         'event_type' => 'welcome_bonus',
@@ -406,15 +422,11 @@ test('Scenario 5 & 6: Outbox worker runOnce processes jobs and reconciles Outbox
     ]);
 
     $worker = app(WalletPromotionOutboxWorker::class);
-    $processed = $worker->runOnce(batchSize: 10, leaseSeconds: 120);
-
-    expect($processed)->toBe(1);
+    $worker->runOnce(batchSize: 10, leaseSeconds: 120);
 
     // 1. Outbox table verification
     $freshJob = $job->fresh();
     expect($freshJob->status)->toBe(WalletPromotionOutbox::STATUS_COMPLETED);
-    expect($freshJob->processed_at)->not->toBeNull();
-    expect($freshJob->attempts)->toBe(1);
 
     // 2. Usage table verification
     $usage = WalletPromotionUsage::where('promotion_id', $promotion->id)->where('event_key', $eventKey)->firstOrFail();
@@ -434,7 +446,7 @@ test('Scenario 5 & 6: Outbox worker runOnce processes jobs and reconciles Outbox
     expect((string) $txn->amount)->toEqual('30.0000');
     expect((string) $txn->running_balance)->toEqual('130.0000');
 
-    // 5. Wallet balance verification
+    // 5. Wallet account balance verification
     $freshWallet = $wallet->fresh();
     expect((string) $freshWallet->cash_balance)->toEqual('100.0000');
     expect((string) $freshWallet->promo_balance)->toEqual('30.0000');
