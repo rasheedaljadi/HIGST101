@@ -445,25 +445,25 @@ test('Scenario 7: Prohibits individual and bulk physical deletion across all pro
 
     $outbox = WalletPromotionOutbox::create([
         'event_type' => 'welcome_bonus',
-        'event_key'  => 'guard:outbox:' . uniqid(),
-        'payload'    => ['guard' => true],
-        'status'     => 'pending',
-        'attempts'   => 0,
+        'event_key' => 'guard:outbox:'.uniqid(),
+        'payload' => ['guard' => true],
+        'status' => 'pending',
+        'attempts' => 0,
     ]);
 
     $adminId = DB::table('admins')->insertGetId([
-        'name'  => 'Guard Admin',
-        'email' => 'admin_' . uniqid() . '@example.com',
+        'name' => 'Guard Admin',
+        'email' => 'admin_'.uniqid().'@example.com',
     ]);
 
     $audit = WalletPromotionAudit::create([
-        'promotion_id'  => $promo->id,
+        'promotion_id' => $promo->id,
         'admin_user_id' => $adminId,
-        'action'        => 'created',
-        'old_values'    => null,
-        'new_values'    => ['name' => 'Guard Promo'],
-        'ip_address'    => '127.0.0.1',
-        'created_at'    => now(),
+        'action' => 'created',
+        'old_values' => null,
+        'new_values' => ['name' => 'Guard Promo'],
+        'ip_address' => '127.0.0.1',
+        'created_at' => now(),
     ]);
 
     // 1. Verify physical deletion is strictly rejected on every individual model
