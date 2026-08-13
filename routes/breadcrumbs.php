@@ -73,6 +73,12 @@ Breadcrumbs::for('wishlist', function (BreadcrumbTrail $trail) {
     $trail->push(trans('shop::app.layouts.wishlist'), route('shop.customers.account.wishlist.index'));
 });
 
+// Home > My Account > Notifications
+Breadcrumbs::for('notifications', function (BreadcrumbTrail $trail) {
+    $trail->parent('account');
+    $trail->push('الإشعارات', route('shop.customers.account.notifications.index'));
+});
+
 // Home > Cart
 Breadcrumbs::for('cart', function (BreadcrumbTrail $trail) {
     $trail->parent('home');
