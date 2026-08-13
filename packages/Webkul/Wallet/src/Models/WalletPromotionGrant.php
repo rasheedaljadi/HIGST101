@@ -75,4 +75,15 @@ class WalletPromotionGrant extends Model implements WalletPromotionGrantContract
     {
         return $this->hasMany(WalletPromotionGrantConsumptionProxy::modelClass(), 'grant_id');
     }
+
+    /**
+     * The "booted" method of the model.
+     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (self $model) {
+            throw new \LogicException('Physical deletion of WalletPromotionGrant records is strictly forbidden to preserve accounting history.');
+        });
+    }
 }

@@ -56,4 +56,15 @@ class WalletPromoDebtSettlement extends Model implements WalletPromoDebtSettleme
     {
         return $this->belongsTo(WalletTransactionProxy::modelClass(), 'wallet_transaction_id');
     }
+
+    /**
+     * The "booted" method of the model.
+     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (self $model) {
+            throw new \LogicException('Physical deletion of WalletPromoDebtSettlement records is strictly forbidden to preserve accounting history.');
+        });
+    }
 }

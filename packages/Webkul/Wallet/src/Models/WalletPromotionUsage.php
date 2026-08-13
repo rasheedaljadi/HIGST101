@@ -57,4 +57,15 @@ class WalletPromotionUsage extends Model implements WalletPromotionUsageContract
     {
         return $this->hasOne(WalletPromotionGrantProxy::modelClass(), 'usage_id');
     }
+
+    /**
+     * The "booted" method of the model.
+     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (self $model) {
+            throw new \LogicException('Physical deletion of WalletPromotionUsage records is strictly forbidden to preserve accounting history.');
+        });
+    }
 }

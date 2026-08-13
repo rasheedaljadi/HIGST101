@@ -64,4 +64,15 @@ class WalletPromotionOrderItemAllocation extends Model implements WalletPromotio
     {
         return $this->belongsTo(OrderItemProxy::modelClass(), 'order_item_id');
     }
+
+    /**
+     * The "booted" method of the model.
+     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (self $model) {
+            throw new \LogicException('Physical deletion of WalletPromotionOrderItemAllocation records is strictly forbidden to preserve accounting history.');
+        });
+    }
 }

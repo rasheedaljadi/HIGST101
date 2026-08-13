@@ -105,7 +105,7 @@ return [
     ],
     [
         'key' => 'wallet.promotions.delete',
-        'name' => 'أرشفة/حذف العروض',
+        'name' => 'أرشفة وتعطيل العروض الترويجية (Archive Only)',
         'route' => 'admin.wallet.promotions.destroy',
         'sort' => 4,
     ],

@@ -66,4 +66,15 @@ class WalletPromoDebt extends Model implements WalletPromoDebtContract
     {
         return $this->hasMany(WalletPromoDebtSettlementProxy::modelClass(), 'debt_id');
     }
+
+    /**
+     * The "booted" method of the model.
+     * Enforces strict accounting preservation: physical deletion is strictly forbidden.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (self $model) {
+            throw new \LogicException('Physical deletion of WalletPromoDebt records is strictly forbidden to preserve accounting history.');
+        });
+    }
 }

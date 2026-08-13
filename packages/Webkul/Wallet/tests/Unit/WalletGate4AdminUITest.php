@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Webkul\Wallet\Http\Requests\Admin\StoreWalletPromotionRequest;
 use Webkul\Wallet\Models\WalletAccount;
 use Webkul\Wallet\Models\WalletPromoDebt;
+use Webkul\Wallet\Models\WalletPromoDebtSettlement;
 use Webkul\Wallet\Models\WalletPromotion;
 use Webkul\Wallet\Models\WalletPromotionAudit;
 use Webkul\Wallet\Models\WalletPromotionGrant;
@@ -352,4 +353,155 @@ test('Scenario 6: Enforces Archive-only policy and strictly prohibits physical d
     $freshPromo = WalletPromotion::find($promo->id);
     expect($freshPromo)->not->toBeNull();
     expect($freshPromo->status)->toBe(WalletPromotion::STATUS_ARCHIVED);
+});
+
+test('Scenario 7: Prohibits individual and bulk physical deletion across all promotional and audit models', function () {
+    $customerId = DB::table('customers')->insertGetId([
+        'first_name' => 'Archive',
+        'last_name' => 'Guard',
+        'email' => 'archive_guard_'.uniqid().'@example.com',
+    ]);
+
+    $wallet = WalletAccount::create([
+        'customer_id' => $customerId,
+        'cash_balance' => '0.0000',
+        'promo_balance' => '0.0000',
+        'held_balance' => '0.0000',
+        'unclassified_balance' => '0.0000',
+        'promo_debt' => '0.0000',
+        'available_balance' => '0.0000',
+        'total_balance' => '0.0000',
+        'status' => 'active',
+        'backfill_status' => 'verified',
+    ]);
+
+    $promo = WalletPromotion::create([
+        'name' => 'Guard Promo',
+        'type' => WalletPromotion::TYPE_WELCOME_BONUS,
+        'status' => WalletPromotion::STATUS_ACTIVE,
+        'action_type' => WalletPromotion::ACTION_FIXED,
+        'reward_value' => '10.0000',
+    ]);
+
+    $usage = WalletPromotionUsage::create([
+        'promotion_id' => $promo->id,
+        'customer_id' => $customerId,
+        'event_key' => 'guard:use:'.uniqid(),
+        'reward_amount' => '10.0000',
+        'base_reward_amount' => '10.0000',
+        'net_credited_amount' => '10.0000',
+        'currency_code' => 'SAR',
+        'exchange_rate' => '1.0000',
+        'status' => 'approved',
+        'promotion_snapshot' => $promo->toArray(),
+    ]);
+
+    $grant = WalletPromotionGrant::create([
+        'promotion_id' => $promo->id,
+        'customer_id' => $customerId,
+        'wallet_id' => $wallet->id,
+        'usage_id' => $usage->id,
+        'original_amount' => '10.0000',
+        'remaining_amount' => '10.0000',
+        'consumed_amount' => '0.0000',
+        'currency_code' => 'SAR',
+        'base_amount' => '10.0000',
+        'status' => 'active',
+        'reference_type' => WalletPromotion::class,
+        'reference_id' => $promo->id,
+        'granted_at' => now(),
+    ]);
+
+    $orderId = DB::table('orders')->insertGetId([
+        'status' => 'completed',
+        'grand_total' => '100.0000',
+        'base_grand_total' => '100.0000',
+    ]);
+
+    $debt = WalletPromoDebt::create([
+        'wallet_id' => $wallet->id,
+        'customer_id' => $customerId,
+        'order_id' => $orderId,
+        'event_key' => 'guard:debt:'.uniqid(),
+        'currency_code' => 'SAR',
+        'original_debt_amount' => '5.0000',
+        'remaining_debt_amount' => '5.0000',
+        'settled_amount' => '0.0000',
+        'status' => 'active',
+        'reason' => 'Debt guard test',
+    ]);
+
+    $settlement = WalletPromoDebtSettlement::create([
+        'debt_id' => $debt->id,
+        'wallet_id' => $wallet->id,
+        'customer_id' => $customerId,
+        'grant_id' => $grant->id,
+        'settlement_amount' => '5.0000',
+        'base_settlement_amount' => '5.0000',
+        'currency_code' => 'SAR',
+        'event_key' => 'guard:settle:'.uniqid(),
+        'created_at' => now(),
+    ]);
+
+    $outbox = WalletPromotionOutbox::create([
+        'event_type' => 'welcome_bonus',
+        'event_key'  => 'guard:outbox:' . uniqid(),
+        'payload'    => ['guard' => true],
+        'status'     => 'pending',
+        'attempts'   => 0,
+    ]);
+
+    $adminId = DB::table('admins')->insertGetId([
+        'name'  => 'Guard Admin',
+        'email' => 'admin_' . uniqid() . '@example.com',
+    ]);
+
+    $audit = WalletPromotionAudit::create([
+        'promotion_id'  => $promo->id,
+        'admin_user_id' => $adminId,
+        'action'        => 'created',
+        'old_values'    => null,
+        'new_values'    => ['name' => 'Guard Promo'],
+        'ip_address'    => '127.0.0.1',
+        'created_at'    => now(),
+    ]);
+
+    // 1. Verify physical deletion is strictly rejected on every individual model
+    expect(fn () => $promo->delete())->toThrow(LogicException::class);
+    expect(fn () => $usage->delete())->toThrow(LogicException::class);
+    expect(fn () => $grant->delete())->toThrow(LogicException::class);
+    expect(fn () => $debt->delete())->toThrow(LogicException::class);
+    expect(fn () => $settlement->delete())->toThrow(LogicException::class);
+    expect(fn () => $outbox->delete())->toThrow(LogicException::class);
+    expect(fn () => $audit->delete())->toThrow(LogicException::class);
+
+    // 2. Verify bulk/collection deletion iteration is also rejected
+    $grantsCollection = WalletPromotionGrant::where('id', $grant->id)->get();
+    expect(fn () => $grantsCollection->each->delete())->toThrow(LogicException::class);
+
+    // 3. Verify all records remain intact in database
+    expect(WalletPromotion::find($promo->id))->not->toBeNull();
+    expect(WalletPromotionUsage::find($usage->id))->not->toBeNull();
+    expect(WalletPromotionGrant::find($grant->id))->not->toBeNull();
+    expect(WalletPromoDebt::find($debt->id))->not->toBeNull();
+    expect(WalletPromoDebtSettlement::find($settlement->id))->not->toBeNull();
+    expect(WalletPromotionOutbox::find($outbox->id))->not->toBeNull();
+    expect(WalletPromotionAudit::find($audit->id))->not->toBeNull();
+
+    // 4. Verify valid status lifecycle transitions work without deletion
+    $grant->status = WalletPromotionGrant::STATUS_EXPIRED;
+    $grant->save();
+    expect($grant->fresh()->status)->toBe(WalletPromotionGrant::STATUS_EXPIRED);
+
+    $usage->status = WalletPromotionUsage::STATUS_REVERSED;
+    $usage->save();
+    expect($usage->fresh()->status)->toBe(WalletPromotionUsage::STATUS_REVERSED);
+
+    $debt->status = WalletPromoDebt::STATUS_SETTLED;
+    $debt->save();
+    expect($debt->fresh()->status)->toBe(WalletPromoDebt::STATUS_SETTLED);
+
+    $outbox->status = WalletPromotionOutbox::STATUS_COMPLETED;
+    $outbox->save();
+    expect($outbox->fresh()->status)->toBe(WalletPromotionOutbox::STATUS_COMPLETED);
 });
