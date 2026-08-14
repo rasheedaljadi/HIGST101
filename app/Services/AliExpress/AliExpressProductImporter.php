@@ -828,22 +828,28 @@ class AliExpressProductImporter
             ->first();
 
         if ($existing !== null) {
-            Log::channel('aliexpress')->info('AliExpress product already imported', [
-                'aliexpress_product_id' => $id,
-                'product_id' => $existing->product_id,
-            ]);
+            $stillExistsInCatalog = $existing->product_id !== null
+                && DB::table('products')->where('id', $existing->product_id)->exists();
 
-            $reference = $existing->product_id !== null
-                ? " as product #{$existing->product_id}"
-                : '';
-
-            throw new AliExpressImportException(
-                "This AliExpress product has already been imported{$reference}.",
-                [
+            if ($stillExistsInCatalog) {
+                Log::channel('aliexpress')->info('AliExpress product already imported', [
                     'aliexpress_product_id' => $id,
                     'product_id' => $existing->product_id,
-                ]
-            );
+                ]);
+
+                throw new AliExpressImportException(
+                    "This AliExpress product has already been imported as product #{$existing->product_id}.",
+                    [
+                        'aliexpress_product_id' => $id,
+                        'product_id' => $existing->product_id,
+                    ]
+                );
+            }
+
+            Log::channel('aliexpress')->info('AliExpress product previously imported but deleted from catalog; allowing re-import', [
+                'aliexpress_product_id' => $id,
+                'previous_product_id' => $existing->product_id,
+            ]);
         }
     }
 
