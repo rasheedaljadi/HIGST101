@@ -266,25 +266,7 @@
                 <div class="p-6 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900 flex flex-col gap-6">
                     <h2 class="text-base font-bold text-gray-800 dark:text-white">خيارات الشحن</h2>
 
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        <div class="flex flex-col gap-1">
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                هامش الشحن (مبلغ ثابت بالدولار)
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                name="shipping_margin"
-                                value="{{ old('shipping_margin', $settings->shipping_margin) }}"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                                placeholder="0.00"
-                            />
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                يُضاف مرة واحدة على كل طلب فوق تكلفة شحن AliExpress، ويغطّي النقل الداخلي (السعودية → اليمن) وربح المتجر.
-                            </p>
-                        </div>
-
+                    <div class="grid grid-cols-1 gap-6">
                         <div class="flex flex-col gap-1">
                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                 أيام التوصيل الإضافية
