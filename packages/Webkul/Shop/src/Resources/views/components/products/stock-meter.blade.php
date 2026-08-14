@@ -37,8 +37,8 @@
     @endif
 
     @if ($isChoice)
-        <span class="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-300 shadow-xs">
-            <span class="rounded bg-amber-500 text-white px-1.5 py-0.5 text-[9px] font-black leading-none">Choice</span>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 dark:bg-amber-950/40 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-300 shadow-xs">
+            <span class="h-2 w-2 rounded-full bg-amber-500"></span>
             <span>فريد</span>
         </span>
     @endif
