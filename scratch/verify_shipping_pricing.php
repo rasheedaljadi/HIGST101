@@ -5,26 +5,32 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-$setting = \App\Models\AliExpressSetting::current();
-echo "===========================================\n";
-echo "AliExpress Setting include_shipping_in_price: " . ($setting->include_shipping_in_price ? 'ENABLED (true)' : 'DISABLED (false)') . "\n";
-echo "===========================================\n\n";
+$resolver = app(\App\Services\Pricing\PricingRuleResolver::class);
+$engine = app(\App\Services\Pricing\PricingEngine::class);
 
-$productIds = [1, 44, 114, 185, 222, 329, 650, 657, 658];
+foreach ([1, 44, 657, 658] as $pid) {
+    $offer = \App\Models\HigestSourceOffer::where('product_id', $pid)->first();
+    $ae = \App\Models\AliExpressProductImport::where('product_id', $pid)->first();
+    $catId = $resolver->resolveCategoryId($pid);
+    $rule = $resolver->resolve($pid, $catId);
 
-foreach ($productIds as $pid) {
-    $bagistoProduct = \Webkul\Product\Models\Product::find($pid);
-    $aeImport = \App\Models\AliExpressProductImport::where('product_id', $pid)->first();
-    $sourceOffer = \App\Models\HigestSourceOffer::where('product_id', $pid)->first();
-    $history = \App\Models\HigestCalculatedPriceHistory::where('product_id', $pid)->latest()->first();
+    $context = new \App\Services\Pricing\DTO\PricingContext(
+        sourceProvider: 'aliexpress',
+        currency: 'USD',
+        acquisitionOriginalCost: $offer?->acquisition_original_cost !== null ? (float) $offer->acquisition_original_cost : null,
+        shippingCost: (float) ($ae?->base_shipping_cost ?? 0.0),
+    );
+
+    $result = $rule ? $engine->calculate((float) $offer->acquisition_cost, $rule, $context) : null;
 
     echo "Product ID: {$pid}\n";
-    echo "  - AliExpress Stored Shipping Cost: " . ($aeImport ? $aeImport->base_shipping_cost . ' ' . $aeImport->shipping_currency : 'N/A') . "\n";
-    echo "  - Supplier Item Cost: " . ($sourceOffer ? $sourceOffer->acquisition_cost : 'N/A') . "\n";
-    echo "  - Current Selling Price in Catalog: " . ($bagistoProduct ? $bagistoProduct->price : 'N/A') . "\n";
-    if ($history) {
-        echo "  - History Selling Price: {$history->selling_price}\n";
-        echo "  - Calculation Breakdown: " . json_encode($history->breakdown_json, JSON_UNESCAPED_UNICODE) . "\n";
+    echo "  - Acquisition Cost: " . ($offer?->acquisition_cost ?? 'N/A') . "\n";
+    echo "  - Shipping Cost: " . ($ae?->base_shipping_cost ?? 'N/A') . "\n";
+    echo "  - Rule: " . ($rule ? "ID: {$rule->id}, Name: {$rule->name}, Margin: {$rule->margin_value} ({$rule->margin_type})" : 'NO RULE MATCHED') . "\n";
+    if ($result) {
+        echo "  - Result Selling Price: {$result->sellingPrice}\n";
+        echo "  - Result Special Price: {$result->specialPrice}\n";
+        echo "  - Breakdown: " . json_encode($result->breakdown, JSON_UNESCAPED_UNICODE) . "\n";
     }
     echo "-------------------------------------------\n";
 }
