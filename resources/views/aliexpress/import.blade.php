@@ -163,6 +163,14 @@
                     source.addEventListener('done', function (e) {
                         const data = JSON.parse(e.data);
                         setProgress(100, 'اكتمل الاستيراد');
+
+                        // Clear the input field and reset focus so the user can easily paste a new URL/ID
+                        const input = $('ae-identifier');
+                        if (input) {
+                            input.value = '';
+                            input.focus();
+                        }
+
                         const successBox = $('ae-success');
                         if (successBox) {
                             let html = 'تم الاستيراد بنجاح.';
