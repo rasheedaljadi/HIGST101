@@ -498,10 +498,47 @@
                 }
             };
 
+            window.notifyUser = function(type, message) {
+                if (window.emitter) {
+                    window.emitter.emit('add-flash', { type: type, message: message });
+                    return;
+                }
+                
+                let container = document.getElementById('custom-toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'custom-toast-container';
+                    container.className = 'fixed top-5 left-5 z-50 flex flex-col gap-2 max-w-md';
+                    document.body.appendChild(container);
+                }
+
+                const toast = document.createElement('div');
+                const isError = type === 'error' || type === 'warning';
+                toast.className = `flex items-center gap-3 p-4 rounded-xl shadow-lg border text-sm font-sans transition-all duration-300 transform translate-y-0 ${
+                    isError 
+                        ? 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-gray-800 dark:border-amber-700 dark:text-amber-300' 
+                        : 'bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-gray-800 dark:border-emerald-700 dark:text-emerald-300'
+                }`;
+
+                toast.innerHTML = `
+                    <span class="${isError ? 'icon-warning' : 'icon-done'} text-xl flex-shrink-0"></span>
+                    <div class="flex-1 font-medium">${message}</div>
+                    <button type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" onclick="this.parentElement.remove()">
+                        <span class="icon-cancel text-sm"></span>
+                    </button>
+                `;
+
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', '-translate-y-2');
+                    setTimeout(() => toast.remove(), 300);
+                }, 4500);
+            };
+
             window.copyModalJson = function() {
                 if (!window.currentModalJsonString) return;
                 navigator.clipboard.writeText(window.currentModalJsonString).then(() => {
-                    alert('تم نسخ كود الـ JSON بنجاح.');
+                    notifyUser('success', 'تم نسخ كود الـ JSON بنجاح.');
                 });
             };
 
@@ -527,16 +564,17 @@
                 .then(res => res.json().then(data => ({ status: res.status, body: data })))
                 .then(res => {
                     if (res.status === 200 && res.body.success) {
-                        window.location.reload();
+                        notifyUser('success', res.body.message || 'تمت مزامنة بيانات الشحن بنجاح.');
+                        setTimeout(() => window.location.reload(), 1000);
                     } else {
-                        alert(res.body.message || 'تعذر مزامنة بيانات الشحن لهذا المنتج.');
+                        notifyUser('warning', res.body.message || 'تعذر العثور على خيارات شحن متاحة لهذا المنتج حالياً من AliExpress.');
                         btnEl.disabled = false;
                         icon.className = origClass;
                     }
                 })
                 .catch(err => {
                     console.error('Shipping sync error:', err);
-                    alert('حدث خطأ في الاتصال أثناء مزامنة الشحن.');
+                    notifyUser('error', 'حدث خطأ في الاتصال أثناء مزامنة الشحن.');
                     btnEl.disabled = false;
                     icon.className = origClass;
                 });
