@@ -338,6 +338,14 @@
 
                         <!-- Categories View Blade File -->
                         @include('admin::catalog.products.edit.categories')
+
+                        @php
+                            $aeImport = \App\Models\AliExpressProductImport::where('product_id', $product->id)->first();
+                        @endphp
+
+                        @if ($aeImport)
+                            @include('admin::catalog.products.edit.dropshipping-shipping', ['import' => $aeImport, 'product' => $product])
+                        @endif
                     @endif
                 </div>
 
@@ -367,6 +375,14 @@
 
                         <!-- Categories View Blade File -->
                         @include('admin::catalog.products.edit.categories')
+
+                        @php
+                            $aeImport = $aeImport ?? \App\Models\AliExpressProductImport::where('product_id', $product->id)->first();
+                        @endphp
+
+                        @if ($aeImport)
+                            @include('admin::catalog.products.edit.dropshipping-shipping', ['import' => $aeImport, 'product' => $product])
+                        @endif
                     </div>
                 @endif
 
