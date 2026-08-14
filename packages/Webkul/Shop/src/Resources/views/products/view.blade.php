@@ -410,10 +410,11 @@
 
                                 {!! view_render_event('bagisto.shop.products.rating.after', ['product' => $product]) !!}
 
-                                <!-- Stock Meter Indicator -->
+                                <!-- Stock Meter Indicator & Choice Badge -->
                                 <x-shop::products.stock-meter
                                     :total-qty="$pdpViewData['total_qty'] ?? 0"
                                     :in-stock="$pdpViewData['in_stock'] ?? true"
+                                    :product="$product"
                                 />
 
                                 <!-- Pricing -->
