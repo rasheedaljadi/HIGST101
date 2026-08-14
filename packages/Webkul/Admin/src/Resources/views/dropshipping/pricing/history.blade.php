@@ -3,11 +3,14 @@
         سجل عمليات التسعير — HIGEST Pricing Engine
     </x-slot:title>
 
-    <div class="flex gap-4 justify-between items-center max-sm:flex-col mb-6">
-        <div class="flex flex-col gap-2">
-            <h1 class="text-2xl font-bold dark:text-white">
-                سجل أسعار البيع والتكلفة (Calculated Price History)
-            </h1>
+    <div class="flex flex-col gap-6 p-6">
+        @include('admin::dropshipping.audit-logs.tabs')
+
+        <div class="flex gap-4 justify-between items-center max-sm:flex-col mb-2">
+            <div class="flex flex-col gap-2">
+                <h1 class="text-2xl font-bold dark:text-white">
+                    سجل أسعار البيع والتكلفة (Calculated Price History)
+                </h1>
             <p class="text-gray-600 dark:text-gray-300">
                 تدقيق تفصيلي لجميع عمليات إعادة حساب الأسعار، مصادر التكلفة، وقواعد الهامش المطبقة.
             </p>
@@ -85,5 +88,6 @@
         <div class="p-4 border-t border-gray-200 dark:border-gray-800">
             {{ $histories->links() }}
         </div>
+    </div>
     </div>
 </x-admin::layouts>

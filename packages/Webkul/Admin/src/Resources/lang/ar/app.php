@@ -5158,6 +5158,7 @@ return [
                 'attributes' => 'الخصائص',
                 'audit-logs' => 'سجلات التدقيق',
                 'price-audit-log' => 'سجل تدقيق الأسعار',
+                'products-import-audit-log' => 'سجل تدقيق استيراد المنتجات',
                 'booking-product' => 'حجوزات المنتجات',
                 'campaigns' => 'الحملات التسويقية',
                 'catalog' => 'إدارة المنتجــات',

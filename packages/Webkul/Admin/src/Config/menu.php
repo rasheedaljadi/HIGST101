@@ -459,5 +459,11 @@ return [
         'route' => 'admin.audit-logs.pricing.index',
         'sort' => 1,
         'icon' => '',
+    ], [
+        'key' => 'audit_logs.products_import',
+        'name' => 'admin::app.components.layouts.sidebar.products-import-audit-log',
+        'route' => 'admin.audit-logs.products-import.index',
+        'sort' => 2,
+        'icon' => '',
     ],
 ];

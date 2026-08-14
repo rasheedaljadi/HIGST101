@@ -4,6 +4,7 @@ namespace Webkul\Admin\Http\Controllers\Dropshipping;
 
 use App\Enums\PricingTrigger;
 use App\Enums\SourceDiscountPolicy;
+use App\Models\AliExpressProductImport;
 use App\Models\HigestCalculatedPriceHistory;
 use App\Models\HigestPricingRule;
 use App\Models\HigestProductPriceOverride;
@@ -193,5 +194,53 @@ class PricingController extends Controller
         session()->flash('success', "تم تحديث وضع التسعير للمنتج إلى {$modeLabel} بنجاح.");
 
         return redirect()->back();
+    }
+
+    /**
+     * Display product imports audit log.
+     */
+    public function productImportHistory(Request $request)
+    {
+        $query = AliExpressProductImport::with(['product'])
+            ->leftJoin('products as p', 'aliexpress_product_imports.product_id', '=', 'p.id')
+            ->leftJoin('product_flat as pf', function ($join) {
+                $join->on('aliexpress_product_imports.product_id', '=', 'pf.product_id')
+                    ->where('pf.locale', '=', 'ar');
+            })
+            ->select(
+                'aliexpress_product_imports.*',
+                'p.sku as catalog_sku',
+                'p.type as catalog_type',
+                'pf.name as product_name',
+                'pf.url_key',
+                'pf.meta_title',
+                'pf.meta_keywords',
+                'pf.meta_description'
+            );
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('aliexpress_product_imports.aliexpress_product_id', 'like', "%{$search}%")
+                    ->orWhere('aliexpress_product_imports.sku', 'like', "%{$search}%")
+                    ->orWhere('p.sku', 'like', "%{$search}%")
+                    ->orWhere('pf.name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status = $request->input('status')) {
+            $query->where('aliexpress_product_imports.status', $status);
+        }
+
+        $imports = $query->orderByDesc('aliexpress_product_imports.id')->paginate(25)->withQueryString();
+
+        // High-level statistics
+        $stats = [
+            'total_imports' => AliExpressProductImport::count(),
+            'successful_imports' => AliExpressProductImport::where('status', 'success')->count(),
+            'failed_imports' => AliExpressProductImport::where('status', 'failed')->count(),
+            'with_shipping' => AliExpressProductImport::whereNotNull('base_shipping_cost')->count(),
+        ];
+
+        return view('admin::dropshipping.audit-logs.products-import', compact('imports', 'stats'));
     }
 }

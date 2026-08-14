@@ -5159,6 +5159,7 @@ return [
                 'attributes' => 'Attributes',
                 'audit-logs' => 'Audit Logs',
                 'price-audit-log' => 'Price Audit Log',
+                'products-import-audit-log' => 'Products Import Audit Log',
                 'booking-product' => 'Bookings',
                 'campaigns' => 'Campaigns',
                 'catalog' => 'Catalog',
