@@ -12,10 +12,10 @@ Route::get('configuration/search', [ConfigurationController::class, 'search'])->
 Route::post('configuration/cache-management/execute', [CacheManagementController::class, 'execute'])
     ->name('admin.configuration.cache-management.execute');
 
-Route::controller(ConfigurationController::class)->prefix('configuration/{slug?}/{slug2?}')->group(function () {
-    Route::get('', 'index')->name('admin.configuration.index');
+Route::controller(ConfigurationController::class)->group(function () {
+    Route::get('configuration/{slug?}/{slug2?}', 'index')->name('admin.configuration.index');
 
-    Route::post('', 'store')->name('admin.configuration.store');
+    Route::post('configuration/{slug?}/{slug2?}', 'store')->name('admin.configuration.store');
 
-    Route::get('{path}', 'download')->name('admin.configuration.download');
+    Route::get('configuration/{slug}/{slug2}/{path}', 'download')->name('admin.configuration.download');
 });
