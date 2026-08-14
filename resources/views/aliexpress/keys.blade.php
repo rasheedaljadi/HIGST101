@@ -352,24 +352,11 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-3 py-1">
-                        <input
-                            type="hidden"
-                            name="shipping_enabled"
-                            value="0"
-                        />
-                        <input
-                            type="checkbox"
-                            id="shipping_enabled"
-                            name="shipping_enabled"
-                            value="1"
-                            {{ old('shipping_enabled', $settings->shipping_enabled) ? 'checked' : '' }}
-                            class="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-800"
-                        />
-                        <label for="shipping_enabled" class="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
-                            تفعيل خيار شحن AliExpress في صفحة الدفع
-                        </label>
-                    </div>
+                    <input
+                        type="hidden"
+                        name="shipping_enabled"
+                        value="{{ old('shipping_enabled', $settings->shipping_enabled ? '1' : '0') }}"
+                    />
 
                     <div class="flex items-center pt-2">
                         <button
