@@ -9,6 +9,7 @@ use App\Models\HigestCalculatedPriceHistory;
 use App\Models\HigestPricingRule;
 use App\Models\HigestProductPriceOverride;
 use App\Models\HigestSourceOffer;
+use App\Services\AliExpress\AliExpressFreightService;
 use App\Services\Pricing\PriceRecalculationService;
 use Illuminate\Http\Request;
 use Webkul\Admin\Http\Controllers\Controller;
@@ -257,5 +258,70 @@ class PricingController extends Controller
         ];
 
         return view('admin::dropshipping.audit-logs.products-import', compact('imports', 'stats'));
+    }
+
+    /**
+     * Synchronize and fetch shipping information for a specific imported product.
+     */
+    public function syncProductShipping(int $id, AliExpressFreightService $freightService)
+    {
+        $import = AliExpressProductImport::find($id);
+
+        if (! $import) {
+            return response()->json([
+                'success' => false,
+                'message' => 'سجل الاستيراد غير موجود.',
+            ], 404);
+        }
+
+        if (str_starts_with((string) $import->aliexpress_product_id, 'CSV-')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'هذا المنتج تم استيراده عبر ملف CSV ولا يتبع لمنتجات علي إكسبرس.',
+            ], 422);
+        }
+
+        $snapshot = is_array($import->payload_snapshot)
+            ? $import->payload_snapshot
+            : (json_decode((string) $import->payload_snapshot, true) ?? []);
+
+        $skuId = data_get($snapshot, 'variants.0.sku_id');
+        $shipping = $freightService->quote($import->aliexpress_product_id, $skuId ? (string) $skuId : null);
+
+        if ($shipping === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'تعذر العثور على خيارات شحن متاحة لهذا المنتج حالياً من AliExpress إلى وجهة الشحن المحددة.',
+            ], 422);
+        }
+
+        $snapshot['shipping'] = $shipping;
+        $snapshot['is_choice'] = (bool) ($shipping['is_choice'] ?? false);
+
+        $import->forceFill([
+            'base_shipping_cost' => $shipping['cost'],
+            'shipping_currency' => $shipping['currency'],
+            'shipping_min_days' => $shipping['min_days'],
+            'shipping_max_days' => $shipping['max_days'],
+            'shipping_company' => $shipping['company'],
+            'shipping_tracking' => $shipping['tracking'],
+            'shipping_synced_at' => now(),
+            'payload_snapshot' => $snapshot,
+            'updated_at' => now(),
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تمت مزامنة وجلب بيانات الشحن بنجاح.',
+            'shipping' => [
+                'cost' => $shipping['cost'],
+                'currency' => $shipping['currency'],
+                'min_days' => $shipping['min_days'],
+                'max_days' => $shipping['max_days'],
+                'company' => $shipping['company'],
+                'tracking' => $shipping['tracking'],
+                'is_choice' => $shipping['is_choice'] ?? false,
+            ],
+        ]);
     }
 }

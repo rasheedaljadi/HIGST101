@@ -73,9 +73,22 @@ class AliExpressFreightService
             return null;
         }
 
-        $body = $result['body']['aliexpress_ds_freight_query_response'] ?? $result['body'];
+        $body = $result['body']['aliexpress_ds_freight_query_response'] ?? $result['body'] ?? [];
 
         $options = data_get($body, 'result.delivery_options.delivery_option_d_t_o', []);
+
+        // Smart fallback: if variant-specific query yielded no options, retry at base product level
+        if ((! is_array($options) || $options === []) && isset($req['selectedSkuId'])) {
+            unset($req['selectedSkuId']);
+            $fallbackResult = $this->apiClient->call('aliexpress.ds.freight.query', $token->access_token, [
+                'queryDeliveryReq' => $req,
+            ]);
+
+            if ($fallbackResult['ok'] !== false) {
+                $fallbackBody = $fallbackResult['body']['aliexpress_ds_freight_query_response'] ?? $fallbackResult['body'] ?? [];
+                $options = data_get($fallbackBody, 'result.delivery_options.delivery_option_d_t_o', []);
+            }
+        }
 
         if (! is_array($options) || $options === []) {
             return null;

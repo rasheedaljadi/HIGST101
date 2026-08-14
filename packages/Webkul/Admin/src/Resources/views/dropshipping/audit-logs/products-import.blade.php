@@ -302,7 +302,19 @@
                                             @endif
                                         </div>
                                     @else
-                                        <span class="text-gray-400 text-xs">غير متزامن</span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-gray-400 text-xs">غير متزامن</span>
+                                            @if(!str_starts_with((string)$log->aliexpress_product_id, 'CSV-'))
+                                                <button 
+                                                    type="button" 
+                                                    onclick="syncShippingData({{ $log->id }}, this)" 
+                                                    class="inline-flex items-center justify-center h-6 w-6 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-all border border-blue-200 dark:border-blue-800 shadow-xs group"
+                                                    title="مزامنة وجلب بيانات الشحن من علي إكسبرس الآن"
+                                                >
+                                                    <span class="icon-refresh text-xs transition-transform group-hover:rotate-180 duration-300"></span>
+                                                </button>
+                                            @endif
+                                        </div>
                                     @endif
                                 </td>
 
@@ -490,6 +502,43 @@
                 if (!window.currentModalJsonString) return;
                 navigator.clipboard.writeText(window.currentModalJsonString).then(() => {
                     alert('تم نسخ كود الـ JSON بنجاح.');
+                });
+            };
+
+            window.syncShippingData = function(importId, btnEl) {
+                if (!importId || !btnEl) return;
+                
+                const icon = btnEl.querySelector('.icon-refresh') || btnEl;
+                const origClass = icon.className;
+                
+                btnEl.disabled = true;
+                icon.className = 'icon-refresh text-xs animate-spin inline-block text-blue-600';
+                
+                const syncUrl = "{{ route('admin.audit-logs.products-import.sync-shipping', ['id' => ':id']) }}".replace(':id', importId);
+
+                fetch(syncUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                .then(res => {
+                    if (res.status === 200 && res.body.success) {
+                        window.location.reload();
+                    } else {
+                        alert(res.body.message || 'تعذر مزامنة بيانات الشحن لهذا المنتج.');
+                        btnEl.disabled = false;
+                        icon.className = origClass;
+                    }
+                })
+                .catch(err => {
+                    console.error('Shipping sync error:', err);
+                    alert('حدث خطأ في الاتصال أثناء مزامنة الشحن.');
+                    btnEl.disabled = false;
+                    icon.className = origClass;
                 });
             };
         </script>
