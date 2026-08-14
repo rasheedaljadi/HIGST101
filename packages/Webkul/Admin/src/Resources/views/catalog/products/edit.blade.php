@@ -142,6 +142,20 @@
         <!-- body content -->
         {!! view_render_event('bagisto.admin.catalog.product.edit.form.before', ['product' => $product]) !!}
 
+        @php
+            $aeImport = \App\Models\AliExpressProductImport::where('product_id', $product->id)
+                ->orWhere('sku', $product->sku)
+                ->orWhere('aliexpress_product_id', $product->sku)
+                ->orWhere('aliexpress_product_id', str_replace(['ae-', 'ae_', 'CSV-'], '', (string)$product->sku))
+                ->orWhere(function ($q) use ($product) {
+                    if (!empty($product->parent_id)) {
+                        $q->where('product_id', $product->parent_id);
+                    }
+                })
+                ->latest('id')
+                ->first();
+        @endphp
+
         <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
             @php
                 $groupedColumns = $product->attribute_family->attribute_groups->groupBy('column');
@@ -332,20 +346,17 @@
                         @foreach ($product->getTypeInstance()->getAdditionalViews() as $view)
                             @includeIf($view)
                         @endforeach
+
+                        <!-- Dropshipping Supplier Shipping & Cost Card -->
+                        @if ($aeImport)
+                            @include('admin::catalog.products.edit.dropshipping-shipping', ['import' => $aeImport, 'product' => $product])
+                        @endif
                     @elseif (! $isSingleColumn)
                         <!-- Channels View Blade File -->
                         @include('admin::catalog.products.edit.channels')
 
                         <!-- Categories View Blade File -->
                         @include('admin::catalog.products.edit.categories')
-
-                        @php
-                            $aeImport = \App\Models\AliExpressProductImport::where('product_id', $product->id)->first();
-                        @endphp
-
-                        @if ($aeImport)
-                            @include('admin::catalog.products.edit.dropshipping-shipping', ['import' => $aeImport, 'product' => $product])
-                        @endif
                     @endif
                 </div>
 
@@ -375,14 +386,6 @@
 
                         <!-- Categories View Blade File -->
                         @include('admin::catalog.products.edit.categories')
-
-                        @php
-                            $aeImport = $aeImport ?? \App\Models\AliExpressProductImport::where('product_id', $product->id)->first();
-                        @endphp
-
-                        @if ($aeImport)
-                            @include('admin::catalog.products.edit.dropshipping-shipping', ['import' => $aeImport, 'product' => $product])
-                        @endif
                     </div>
                 @endif
 
