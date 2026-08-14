@@ -236,8 +236,12 @@ class PricingController extends Controller
         // High-level statistics
         $stats = [
             'total_imports' => AliExpressProductImport::count(),
-            'successful_imports' => AliExpressProductImport::where('status', 'success')->count(),
-            'failed_imports' => AliExpressProductImport::where('status', 'failed')->count(),
+            'active_imports' => AliExpressProductImport::whereNotNull('product_id')->whereHas('product')->count(),
+            'deleted_imports' => AliExpressProductImport::where(function ($q) {
+                $q->whereNull('product_id')
+                    ->orWhereDoesntHave('product')
+                    ->orWhere('error', 'like', '%no longer exists%');
+            })->count(),
             'with_shipping' => AliExpressProductImport::whereNotNull('base_shipping_cost')->count(),
         ];
 

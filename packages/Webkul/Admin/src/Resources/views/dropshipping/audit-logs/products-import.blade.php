@@ -38,22 +38,22 @@
 
             <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
                 <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">الاستيراد الناجح</span>
+                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">المنتجات النشطة بالمتجر</span>
                     <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
                         <span class="icon-done text-xl"></span>
                     </span>
                 </div>
-                <p class="mt-3 text-2xl font-bold text-green-600">{{ number_format($stats['successful_imports']) }}</p>
+                <p class="mt-3 text-2xl font-bold text-green-600">{{ number_format($stats['active_imports']) }}</p>
             </div>
 
             <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
                 <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">الاستيراد المتعثر / الفاشل</span>
-                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                        <span class="icon-cancel text-xl"></span>
+                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">المنتجات المحذوفة (أرشيف)</span>
+                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                        <span class="icon-delete text-xl"></span>
                     </span>
                 </div>
-                <p class="mt-3 text-2xl font-bold text-red-600">{{ number_format($stats['failed_imports']) }}</p>
+                <p class="mt-3 text-2xl font-bold text-amber-600">{{ number_format($stats['deleted_imports']) }}</p>
             </div>
 
             <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
@@ -188,16 +188,32 @@
 
                                 {{-- 4. Status --}}
                                 <td class="py-3 px-4">
-                                    @if($log->status === 'success')
+                                    @php
+                                        $isDeletedFromCatalog = str_contains(strtolower($log->error ?? ''), 'no longer exists') 
+                                            || str_contains(strtolower($log->error ?? ''), 'deleted')
+                                            || ($log->product_id && empty($log->catalog_sku));
+                                    @endphp
+
+                                    @if($isDeletedFromCatalog)
+                                        <div class="flex flex-col gap-0.5">
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" title="تم حذف هذا المنتج من المتجر سابقاً بعد استيراده">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                                تم حذف المنتج من المتجر
+                                            </span>
+                                            <span class="text-[11px] text-gray-500 dark:text-gray-400">
+                                                (سجل أرشفة تاريخي)
+                                            </span>
+                                        </div>
+                                    @elseif($log->status === 'success')
                                         <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/30 dark:text-green-300">
                                             <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
-                                            ناجح
+                                            نشط بالمتجر
                                         </span>
                                     @elseif($log->status === 'failed')
                                         <div class="flex flex-col">
                                             <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800 dark:bg-red-900/30 dark:text-red-300">
                                                 <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
-                                                تعثر
+                                                فشل الاستيراد
                                             </span>
                                             @if($log->error)
                                                 <span class="mt-1 max-w-[180px] truncate text-xs text-red-500" title="{{ $log->error }}">
