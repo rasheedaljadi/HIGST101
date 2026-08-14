@@ -990,7 +990,60 @@ class Importer extends AbstractImporter
 
         $this->saveFlatData($flatData);
 
+        $this->recordAuditLogsForBatch($batch);
+
         return true;
+    }
+
+    /**
+     * Record audit logs for products imported via DataTransfer batch.
+     */
+    protected function recordAuditLogsForBatch(ImportBatchContract $batch): void
+    {
+        if (! Schema::hasTable('aliexpress_product_imports')) {
+            return;
+        }
+
+        try {
+            foreach ($batch->data as $rowData) {
+                $sku = $rowData['sku'] ?? null;
+
+                if (! $sku) {
+                    continue;
+                }
+
+                $product = DB::table('products')->where('sku', $sku)->first();
+
+                if (! $product) {
+                    continue;
+                }
+
+                $identifier = 'CSV-'.$sku;
+
+                DB::table('aliexpress_product_imports')->updateOrInsert(
+                    ['aliexpress_product_id' => $identifier],
+                    [
+                        'product_id' => $product->id,
+                        'type' => $product->type ?? ($rowData['type'] ?? 'simple'),
+                        'status' => 'success',
+                        'sku' => $sku,
+                        'variants_count' => 0,
+                        'images_count' => 0,
+                        'error' => null,
+                        'payload_snapshot' => json_encode([
+                            'title' => $rowData['name'] ?? $sku,
+                            'source' => 'DataTransfer CSV Import',
+                            'import_id' => $batch->import_id,
+                            'batch_id' => $batch->id,
+                        ], JSON_UNESCAPED_UNICODE),
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            // Best effort log recording
+        }
     }
 
     /**

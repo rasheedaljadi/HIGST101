@@ -149,7 +149,7 @@
                                 <td class="py-3 px-4">
                                     <div class="flex items-center gap-3">
                                         @if($firstImg)
-                                            <img src="{{ $firstImg }}" alt="Product Image" title="{{ $log->product_name ?? $snapshot['title'] ?? 'منتج' }}" class="h-12 w-12 flex-shrink-0 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shadow-sm">
+                                            <img src="{{ $firstImg }}" alt="Product Image" title="{{ $log->product_name ?? $log->product?->name ?? $snapshot['title'] ?? 'منتج' }}" class="h-12 w-12 flex-shrink-0 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shadow-sm">
                                         @else
                                             <div class="h-12 w-12 flex-shrink-0 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400">
                                                 <span class="icon-products text-lg"></span>
@@ -173,17 +173,24 @@
                                     </div>
                                 </td>
 
-                                {{-- 3. AliExpress Product ID --}}
+                                {{-- 3. AliExpress / Source Product ID --}}
                                 <td class="py-3 px-4 font-mono text-xs">
-                                    <a 
-                                        href="https://www.aliexpress.com/item/{{ $log->aliexpress_product_id }}.html" 
-                                        target="_blank" 
-                                        class="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
-                                        title="فتح المنتج في علي إكسبرس"
-                                    >
-                                        <span>{{ $log->aliexpress_product_id }}</span>
-                                        <span class="icon-external text-xs"></span>
-                                    </a>
+                                    @if(str_starts_with((string)$log->aliexpress_product_id, 'CSV-'))
+                                        <span class="inline-flex items-center gap-1 text-gray-700 dark:text-gray-300 font-semibold" title="تم الاستيراد عبر ملف CSV DataTransfer">
+                                            <span>{{ $log->aliexpress_product_id }}</span>
+                                            <span class="px-1 py-0.2 text-[10px] rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">CSV</span>
+                                        </span>
+                                    @else
+                                        <a 
+                                            href="https://www.aliexpress.com/item/{{ $log->aliexpress_product_id }}.html" 
+                                            target="_blank" 
+                                            class="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
+                                            title="فتح المنتج في علي إكسبرس"
+                                        >
+                                            <span>{{ $log->aliexpress_product_id }}</span>
+                                            <span class="icon-external text-xs"></span>
+                                        </a>
+                                    @endif
                                 </td>
 
                                 {{-- 4. Status --}}

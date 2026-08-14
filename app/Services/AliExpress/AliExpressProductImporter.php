@@ -476,6 +476,7 @@ class AliExpressProductImporter
                 'shipping_company' => $shipping['company'] ?? null,
                 'shipping_tracking' => $shipping['tracking'] ?? null,
                 'shipping_synced_at' => $shipping !== null ? now() : null,
+                'updated_at' => now(),
             ]
         );
     }

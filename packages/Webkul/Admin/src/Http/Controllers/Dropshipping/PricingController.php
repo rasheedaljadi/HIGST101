@@ -201,11 +201,19 @@ class PricingController extends Controller
      */
     public function productImportHistory(Request $request)
     {
+        $currentLocale = app()->getLocale();
+        $defaultChannelLocale = core()->getDefaultLocaleCodeFromDefaultChannel();
+
         $query = AliExpressProductImport::with(['product'])
             ->leftJoin('products as p', 'aliexpress_product_imports.product_id', '=', 'p.id')
-            ->leftJoin('product_flat as pf', function ($join) {
+            ->leftJoin('product_flat as pf', function ($join) use ($currentLocale, $defaultChannelLocale) {
                 $join->on('aliexpress_product_imports.product_id', '=', 'pf.product_id')
-                    ->where('pf.locale', '=', 'ar');
+                    ->where(function ($q) use ($currentLocale, $defaultChannelLocale) {
+                        $q->where('pf.locale', '=', $currentLocale)
+                            ->orWhere('pf.locale', '=', strtolower($currentLocale))
+                            ->orWhere('pf.locale', '=', strtoupper($currentLocale))
+                            ->orWhere('pf.locale', '=', $defaultChannelLocale);
+                    });
             })
             ->select(
                 'aliexpress_product_imports.*',
@@ -231,7 +239,10 @@ class PricingController extends Controller
             $query->where('aliexpress_product_imports.status', $status);
         }
 
-        $imports = $query->orderByDesc('aliexpress_product_imports.id')->paginate(25)->withQueryString();
+        $imports = $query->orderByDesc('aliexpress_product_imports.updated_at')
+            ->orderByDesc('aliexpress_product_imports.id')
+            ->paginate(25)
+            ->withQueryString();
 
         // High-level statistics
         $stats = [
