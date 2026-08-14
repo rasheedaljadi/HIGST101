@@ -8,27 +8,23 @@ $kernel->bootstrap();
 $setting = \App\Models\AliExpressSetting::current();
 echo "===========================================\n";
 echo "AliExpress Setting include_shipping_in_price: " . ($setting->include_shipping_in_price ? 'ENABLED (true)' : 'DISABLED (false)') . "\n";
-echo "===========================================\n";
+echo "===========================================\n\n";
 
-echo "Running recalculateAll() with shipping included...\n";
-$service = app(\App\Services\Pricing\PriceRecalculationService::class);
-$count = $service->recalculateAll(\App\Enums\PricingTrigger::MANUAL);
-echo "Recalculated prices for {$count} source offers.\n\n";
+$productIds = [1, 44, 114, 185, 222, 329, 650, 657, 658];
 
-$products = \App\Models\AliExpressProductImport::whereNotNull('product_id')->take(8)->get();
+foreach ($productIds as $pid) {
+    $bagistoProduct = \Webkul\Product\Models\Product::find($pid);
+    $aeImport = \App\Models\AliExpressProductImport::where('product_id', $pid)->first();
+    $sourceOffer = \App\Models\HigestSourceOffer::where('product_id', $pid)->first();
+    $history = \App\Models\HigestCalculatedPriceHistory::where('product_id', $pid)->latest()->first();
 
-foreach ($products as $p) {
-    $bagistoProduct = \Webkul\Product\Models\Product::find($p->product_id);
-    $sourceOffer = \App\Models\HigestSourceOffer::where('product_id', $p->product_id)->first();
-    $history = \App\Models\HigestCalculatedPriceHistory::where('product_id', $p->product_id)->latest()->first();
-
-    echo "Product ID: {$p->product_id} | AE ID: {$p->aliexpress_product_id}\n";
-    echo "  - Stored Shipping Cost (AliExpress): " . ($p->base_shipping_cost !== null ? $p->base_shipping_cost . ' ' . $p->shipping_currency : 'None/Not Synced') . "\n";
-    echo "  - Supplier Cost: " . ($sourceOffer ? $sourceOffer->acquisition_cost : 'N/A') . "\n";
-    echo "  - New Catalog Price: " . ($bagistoProduct ? $bagistoProduct->price : 'N/A') . "\n";
-    if ($history && $history->breakdown_json) {
-        $freight = $history->breakdown_json['freight_adjustment'] ?? null;
-        echo "  - Freight Breakdown: " . json_encode($freight, JSON_UNESCAPED_UNICODE) . "\n";
+    echo "Product ID: {$pid}\n";
+    echo "  - AliExpress Stored Shipping Cost: " . ($aeImport ? $aeImport->base_shipping_cost . ' ' . $aeImport->shipping_currency : 'N/A') . "\n";
+    echo "  - Supplier Item Cost: " . ($sourceOffer ? $sourceOffer->acquisition_cost : 'N/A') . "\n";
+    echo "  - Current Selling Price in Catalog: " . ($bagistoProduct ? $bagistoProduct->price : 'N/A') . "\n";
+    if ($history) {
+        echo "  - History Selling Price: {$history->selling_price}\n";
+        echo "  - Calculation Breakdown: " . json_encode($history->breakdown_json, JSON_UNESCAPED_UNICODE) . "\n";
     }
     echo "-------------------------------------------\n";
 }
