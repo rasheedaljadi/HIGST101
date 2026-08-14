@@ -4787,6 +4787,20 @@ return [
                             'title' => 'Type',
                         ],
                     ],
+
+                    'dropshipping-shipping' => [
+                        'description' => 'Description',
+                        'page-title' => 'Dropshipping Shipping',
+                        'rate' => 'Rate',
+                        'status' => 'Status',
+                        'title' => 'Title',
+                        'title-info' => 'Configure dropshipping shipping carrier to calculate delivery rates from suppliers.',
+                        'type' => [
+                            'per-order' => 'Per Order',
+                            'per-unit' => 'Per Unit',
+                            'title' => 'Type',
+                        ],
+                    ],
                 ],
 
                 'payment-methods' => [

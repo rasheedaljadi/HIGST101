@@ -19,4 +19,14 @@ return [
         'default_rate' => '0',
         'class' => 'Webkul\Shipping\Carriers\Free',
     ],
+
+    'dropshipping' => [
+        'code' => 'dropshipping',
+        'title' => 'Dropshipping Shipping',
+        'description' => 'Dropshipping Carrier Shipping',
+        'active' => true,
+        'default_rate' => '10',
+        'type' => 'per_order',
+        'class' => 'Webkul\Shipping\Carriers\Dropshipping',
+    ],
 ];

@@ -1960,6 +1960,57 @@ return [
             ],
         ],
     ], [
+        'key' => 'sales.carriers.dropshipping',
+        'name' => 'admin::app.configuration.index.sales.shipping-methods.dropshipping-shipping.page-title',
+        'info' => 'admin::app.configuration.index.sales.shipping-methods.dropshipping-shipping.title-info',
+        'sort' => 3,
+        'fields' => [
+            [
+                'name' => 'title',
+                'title' => 'admin::app.configuration.index.sales.shipping-methods.dropshipping-shipping.title',
+                'type' => 'text',
+                'depends' => 'active:1',
+                'validation' => 'required_if:active,1',
+                'channel_based' => true,
+                'locale_based' => true,
+            ], [
+                'name' => 'description',
+                'title' => 'admin::app.configuration.index.sales.shipping-methods.dropshipping-shipping.description',
+                'type' => 'textarea',
+                'channel_based' => true,
+                'locale_based' => true,
+            ], [
+                'name' => 'default_rate',
+                'title' => 'admin::app.configuration.index.sales.shipping-methods.dropshipping-shipping.rate',
+                'type' => 'text',
+                'depends' => 'active:1',
+                'validation' => 'required_if:active,1|numeric',
+                'channel_based' => true,
+                'locale_based' => false,
+            ], [
+                'name' => 'type',
+                'title' => 'admin::app.configuration.index.sales.shipping-methods.dropshipping-shipping.type.title',
+                'type' => 'select',
+                'options' => [
+                    [
+                        'title' => 'admin::app.configuration.index.sales.shipping-methods.dropshipping-shipping.type.per-unit',
+                        'value' => 'per_unit',
+                    ], [
+                        'title' => 'admin::app.configuration.index.sales.shipping-methods.dropshipping-shipping.type.per-order',
+                        'value' => 'per_order',
+                    ],
+                ],
+                'channel_based' => true,
+                'locale_based' => false,
+            ], [
+                'name' => 'active',
+                'title' => 'admin::app.configuration.index.sales.shipping-methods.dropshipping-shipping.status',
+                'type' => 'boolean',
+                'channel_based' => true,
+                'locale_based' => false,
+            ],
+        ],
+    ], [
         'key' => 'sales.payment_methods',
         'name' => 'admin::app.configuration.index.sales.payment-methods.page-title',
         'info' => 'admin::app.configuration.index.sales.payment-methods.info',
