@@ -167,6 +167,11 @@
                 {!! view_render_event("bagisto.admin.catalog.product.edit.form.column_{$column}.before", ['product' => $product]) !!}
 
                 <div class="flex flex-col gap-2 {{ $column == 1 ? 'flex-1 max-xl:flex-auto' : 'w-[360px] max-w-full max-sm:w-full' }}">
+                    @if ($column == 1 && $aeImport)
+                        <!-- Dropshipping Supplier Shipping & Cost Card (Placed before General section & beside Price) -->
+                        @include('admin::catalog.products.edit.dropshipping-shipping', ['import' => $aeImport, 'product' => $product])
+                    @endif
+
                     @foreach ($groups as $group)
                         @php $customAttributes = $product->getEditableAttributes($group); @endphp
 
@@ -346,11 +351,6 @@
                         @foreach ($product->getTypeInstance()->getAdditionalViews() as $view)
                             @includeIf($view)
                         @endforeach
-
-                        <!-- Dropshipping Supplier Shipping & Cost Card -->
-                        @if ($aeImport)
-                            @include('admin::catalog.products.edit.dropshipping-shipping', ['import' => $aeImport, 'product' => $product])
-                        @endif
                     @elseif (! $isSingleColumn)
                         <!-- Channels View Blade File -->
                         @include('admin::catalog.products.edit.channels')
