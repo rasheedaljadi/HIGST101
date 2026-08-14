@@ -116,13 +116,30 @@ class AliExpressFreightService
 
         $best ??= $options[0];
 
+        $company = $this->stringOrNull($best['company'] ?? ($best['code'] ?? null));
+        $code = (string) ($best['code'] ?? '');
+        $serviceName = (string) ($best['service_name'] ?? '');
+
+        $isChoice = (bool) (
+            ($company !== null && (
+                stripos($company, 'selection') !== false ||
+                stripos($company, 'choice') !== false
+            )) ||
+            stripos($code, 'selection') !== false ||
+            stripos($code, 'choice') !== false ||
+            stripos($serviceName, 'selection') !== false ||
+            stripos($serviceName, 'choice') !== false ||
+            ! empty($best['is_choice'])
+        );
+
         return [
             'cost' => $this->extractCost($best),
             'currency' => (string) ($best['shipping_fee_currency'] ?? $currency),
             'min_days' => $this->intOrNull($best['min_delivery_days'] ?? null),
             'max_days' => $this->intOrNull($best['max_delivery_days'] ?? ($best['guaranteed_delivery_days'] ?? null)),
-            'company' => $this->stringOrNull($best['company'] ?? ($best['code'] ?? null)),
+            'company' => $company,
             'tracking' => (bool) ($best['tracking'] ?? false),
+            'is_choice' => $isChoice,
         ];
     }
 

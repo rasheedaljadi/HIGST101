@@ -468,7 +468,10 @@ class AliExpressProductImporter
                 'variants_count' => (int) $created['variants_count'],
                 'images_count' => count($dto->imageUrls),
                 'error' => null,
-                'payload_snapshot' => $this->payloadSnapshot($dto, $urlKey),
+                'payload_snapshot' => array_merge($this->payloadSnapshot($dto, $urlKey), [
+                    'shipping' => $shipping,
+                    'is_choice' => (bool) ($shipping['is_choice'] ?? false),
+                ]),
                 'base_shipping_cost' => $shipping['cost'] ?? null,
                 'shipping_currency' => $shipping['currency'] ?? null,
                 'shipping_min_days' => $shipping['min_days'] ?? null,

@@ -273,10 +273,26 @@
                                 {{-- 7. AliExpress Shipping Data --}}
                                 <td class="py-3 px-4 text-xs">
                                     @if($log->base_shipping_cost !== null)
+                                        @php
+                                            $shippingCompany = $log->shipping_company ?? '';
+                                            $isChoice = stripos($shippingCompany, 'selection') !== false 
+                                                || stripos($shippingCompany, 'choice') !== false 
+                                                || !empty($snapshot['is_choice']) 
+                                                || !empty($snapshot['shipping']['is_choice']);
+                                        @endphp
+
                                         <div class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
                                             ${{ number_format($log->base_shipping_cost, 2) }} {{ $log->shipping_currency ?? 'USD' }}
                                         </div>
-                                        <div class="text-[11px] text-gray-600 dark:text-gray-300 truncate max-w-[140px]" title="{{ $log->shipping_company }}">
+
+                                        @if($isChoice)
+                                            <div class="my-1 inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 border border-amber-300 dark:border-amber-700 shadow-xs" title="خدمة شحن Choice والتزام AliExpress المضمون">
+                                                <span class="rounded bg-amber-400 px-1 py-0.2 text-[9px] font-black text-black leading-tight">Choice</span>
+                                                <span class="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">التزام AliExpress</span>
+                                            </div>
+                                        @endif
+
+                                        <div class="text-[11px] text-gray-600 dark:text-gray-300 truncate max-w-[150px]" title="{{ $log->shipping_company }}">
                                             {{ $log->shipping_company ?? 'AliExpress Shipping' }}
                                         </div>
                                         <div class="text-[10px] text-gray-500">
@@ -312,12 +328,13 @@
                                     <script type="application/json" id="snapshot-data-{{ $log->id }}">
                                         {!! json_encode([
                                             'id' => $log->id,
-                                            'product_name' => $log->product_name ?? $snapshot['title'] ?? 'منتج',
+                                            'product_name' => $log->product_name ?? $log->product?->name ?? $snapshot['title'] ?? 'منتج',
                                             'sku' => $log->catalog_sku ?? $log->sku,
                                             'aliexpress_id' => $log->aliexpress_product_id,
                                             'status' => $log->status,
                                             'shipping_cost' => $log->base_shipping_cost,
                                             'shipping_company' => $log->shipping_company,
+                                            'is_choice' => $isChoice ?? false,
                                             'shipping_window' => ($log->shipping_min_days ?? '?') . ' - ' . ($log->shipping_max_days ?? '?') . ' days',
                                             'variants' => $variants,
                                             'axes' => $axes,
@@ -387,7 +404,13 @@
                     </div>
                     <div>
                         <span class="text-gray-500 block">شركة التوصيل:</span>
-                        <span class="font-bold text-gray-900 dark:text-white truncate block" id="modalCompany"></span>
+                        <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <span class="font-bold text-gray-900 dark:text-white truncate block" id="modalCompany"></span>
+                            <span id="modalChoiceBadge" style="display: none;" class="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 border border-amber-300 dark:border-amber-700 shadow-xs">
+                                <span class="rounded bg-amber-400 px-1 py-0.2 text-[9px] font-black text-black leading-tight">Choice</span>
+                                <span class="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">التزام AliExpress</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -439,6 +462,12 @@
                     document.getElementById('modalSku').innerText = data.sku || '—';
                     document.getElementById('modalShipping').innerText = data.shipping_cost ? '$' + Number(data.shipping_cost).toFixed(2) : 'غير متوفر';
                     document.getElementById('modalCompany').innerText = data.shipping_company || '—';
+                    
+                    const choiceBadge = document.getElementById('modalChoiceBadge');
+                    if (choiceBadge) {
+                        choiceBadge.style.display = data.is_choice ? 'inline-flex' : 'none';
+                    }
+
                     document.getElementById('modalJsonContent').innerText = window.currentModalJsonString;
 
                     const modal = document.getElementById('snapshotModal');
