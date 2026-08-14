@@ -119,7 +119,6 @@
                             <th class="py-3 px-4">تكلفة المورد الأصلية</th>
                             <th class="py-3 px-4">المتغيرات والمخزون</th>
                             <th class="py-3 px-4">شحن علي إكسبرس</th>
-                            <th class="py-3 px-4">الوسائط والمواصفات</th>
                             <th class="py-3 px-4">تاريخ الاستيراد</th>
                             <th class="py-3 px-4 text-center">البيانات الخام</th>
                         </tr>
@@ -269,26 +268,13 @@
                                     @endif
                                 </td>
 
-                                {{-- 8. Media & SEO --}}
-                                <td class="py-3 px-4 text-xs text-gray-600 dark:text-gray-400">
-                                    <div>📷 {{ $log->images_count ?? count($snapshot['image_urls'] ?? []) }} صور</div>
-                                    @if(!empty($snapshot['videos_count']))
-                                        <div>🎥 {{ $snapshot['videos_count'] }} فيديو</div>
-                                    @endif
-                                    @if(!empty($log->url_key))
-                                        <div class="text-[10px] text-gray-500 font-mono truncate max-w-[120px]" title="{{ $log->url_key }}">
-                                            /{{ $log->url_key }}
-                                        </div>
-                                    @endif
-                                </td>
-
-                                {{-- 9. Timestamps --}}
+                                {{-- 8. Timestamps --}}
                                 <td class="py-3 px-4 font-mono text-xs text-gray-500">
                                     <div>{{ $log->created_at?->format('Y-m-d') }}</div>
                                     <div class="text-[10px] text-gray-400">{{ $log->created_at?->format('H:i:s') }}</div>
                                 </td>
 
-                                {{-- 10. Actions / Raw Snapshot Modal Trigger --}}
+                                {{-- 9. Actions / Raw Snapshot Modal Trigger --}}
                                 <td class="py-3 px-4 text-center">
                                     <button 
                                         type="button" 
@@ -325,7 +311,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="py-8 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="9" class="py-8 text-center text-gray-500 dark:text-gray-400">
                                     لا توجد سجلات استيراد مطابقة للبحث.
                                 </td>
                             </tr>
