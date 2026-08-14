@@ -6,9 +6,11 @@ use App\Jobs\AliExpress\SyncProductJob;
 use App\Models\AliExpressProductImport;
 use App\Services\AliExpress\AliExpressProductSyncer;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Spatie\ResponseCache\Facades\ResponseCache;
 use Throwable;
 use Webkul\Fulfillment\Models\SyncRun;
 use Webkul\Product\Helpers\Indexers\Flat;
@@ -199,6 +201,18 @@ class AliExpressSyncProducts extends Command
                 }
             } catch (Throwable $e) {
                 Log::warning('Could not complete SyncRun record: '.$e->getMessage());
+            }
+        }
+
+        if ($success > 0) {
+            try {
+                Artisan::call('cache:clear');
+                if (class_exists(ResponseCache::class)) {
+                    ResponseCache::clear();
+                }
+                $this->info('✓ Catalog cache cleared.');
+            } catch (Throwable $e) {
+                // Ignore silent cache clear errors
             }
         }
 

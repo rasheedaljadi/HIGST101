@@ -12,6 +12,10 @@ use App\Models\HigestSourceOffer;
 use App\Services\AliExpress\AliExpressFreightService;
 use App\Services\Pricing\PriceRecalculationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
+use Spatie\ResponseCache\Facades\ResponseCache;
+use Throwable;
 use Webkul\Admin\Http\Controllers\Controller;
 
 class PricingController extends Controller
@@ -19,6 +23,21 @@ class PricingController extends Controller
     public function __construct(
         protected PriceRecalculationService $recalculationService,
     ) {}
+
+    /**
+     * Clear application and response caches after catalog pricing changes.
+     */
+    protected function clearCatalogCache(): void
+    {
+        try {
+            Artisan::call('cache:clear');
+            if (class_exists(ResponseCache::class)) {
+                ResponseCache::clear();
+            }
+        } catch (Throwable $e) {
+            Log::warning('PricingController: failed to clear cache: '.$e->getMessage());
+        }
+    }
 
     /**
      * Redirect standalone pricing index route to the Key Management Pricing tab.
@@ -57,8 +76,9 @@ class PricingController extends Controller
 
         // Recalculate prices for products affected by this new rule
         $affectedCount = $this->recalculationService->recalculateForRule($rule);
+        $this->clearCatalogCache();
 
-        session()->flash('success', "تم إضافة قاعدة التسعير بنجاح وإعادة حساب {$affectedCount} منتج.");
+        session()->flash('success', "تم إضافة قاعدة التسعير بنجاح وإعادة حساب {$affectedCount} منتج وتحديث الذاكرة المؤقتة.");
 
         return redirect()->back();
     }
@@ -94,8 +114,9 @@ class PricingController extends Controller
 
         // Recalculate affected products (rule version was auto-incremented by model boot)
         $affectedCount = $this->recalculationService->recalculateForRule($rule);
+        $this->clearCatalogCache();
 
-        $message = "تم تحديث قاعدة التسعير (النسخة {$rule->version}) وإعادة حساب {$affectedCount} منتج.";
+        $message = "تم تحديث قاعدة التسعير (النسخة {$rule->version}) وإعادة حساب {$affectedCount} منتج وتحديث الذاكرة المؤقتة.";
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json([
@@ -119,8 +140,9 @@ class PricingController extends Controller
 
         // Recalculate all prices (fallback rules will be resolved)
         $affectedCount = $this->recalculationService->recalculateAll(PricingTrigger::RULE_CHANGE);
+        $this->clearCatalogCache();
 
-        $message = "تم حذف قاعدة التسعير وإعادة حساب {$affectedCount} منتج.";
+        $message = "تم حذف قاعدة التسعير وإعادة حساب {$affectedCount} منتج وتحديث الذاكرة المؤقتة.";
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json([
@@ -152,8 +174,9 @@ class PricingController extends Controller
     public function recalculate()
     {
         $count = $this->recalculationService->recalculateAll(PricingTrigger::MANUAL);
+        $this->clearCatalogCache();
 
-        session()->flash('success', "تمت إعادة حساب أسعار {$count} منتج بنجاح عبر محرك التسعير.");
+        session()->flash('success', "تمت إعادة حساب أسعار {$count} منتج بنجاح عبر محرك التسعير وتحديث الذاكرة المؤقتة.");
 
         return redirect()->back();
     }
@@ -190,6 +213,8 @@ class PricingController extends Controller
         if ($offer !== null) {
             $this->recalculationService->recalculateOffer($offer, PricingTrigger::MANUAL);
         }
+
+        $this->clearCatalogCache();
 
         $modeLabel = $override->isManual() ? 'اليدوي (Manual Override)' : 'الآلي (Automated Pricing)';
         session()->flash('success', "تم تحديث وضع التسعير للمنتج إلى {$modeLabel} بنجاح.");

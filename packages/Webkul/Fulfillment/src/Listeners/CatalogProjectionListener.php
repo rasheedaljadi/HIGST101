@@ -3,6 +3,8 @@
 namespace Webkul\Fulfillment\Listeners;
 
 use App\Enums\PricingTrigger;
+use App\Models\AliExpressProductImport;
+use App\Models\AliExpressSetting;
 use App\Models\HigestSourceOffer;
 use App\Services\Pricing\CatalogPriceWriter;
 use App\Services\Pricing\DTO\PricingContext;
@@ -12,6 +14,8 @@ use App\Services\Pricing\SourceOfferRecorder;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Spatie\ResponseCache\Facades\ResponseCache;
+use Throwable;
 use Webkul\Attribute\Models\Attribute;
 use Webkul\Fulfillment\DataObjects\ProjectionDecision;
 use Webkul\Fulfillment\Services\Domain\ProjectionVersionGuard;
@@ -164,11 +168,21 @@ class CatalogProjectionListener
                 return null;
             }
 
+            $settings = AliExpressSetting::current();
+            $shippingCost = 0.0;
+            if ($settings->include_shipping_in_price) {
+                $aeImport = AliExpressProductImport::where('product_id', $parentId)->first();
+                if ($aeImport && $aeImport->base_shipping_cost !== null) {
+                    $shippingCost = (float) $aeImport->base_shipping_cost;
+                }
+            }
+
             if ($rule !== null) {
                 $context = new PricingContext(
                     sourceProvider: 'aliexpress',
                     currency: $offer->source_currency,
                     acquisitionOriginalCost: $offer->acquisition_original_cost !== null ? (float) $offer->acquisition_original_cost : null,
+                    shippingCost: $shippingCost,
                 );
                 $result = $this->pricingEngine->calculate((float) $newPrice, $rule, $context);
 
@@ -208,6 +222,14 @@ class CatalogProjectionListener
         // Reindex price and flat table OUTSIDE transaction (C6)
         if ($reindexParentId) {
             $this->catalogPriceWriter->reindex($reindexParentId);
+
+            try {
+                if (class_exists(ResponseCache::class)) {
+                    ResponseCache::clear();
+                }
+            } catch (Throwable $e) {
+                // Ignore silent cache clear errors
+            }
         }
     }
 }

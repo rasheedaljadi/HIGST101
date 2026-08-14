@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Spatie\ResponseCache\Facades\ResponseCache;
 use Throwable;
 use Webkul\Fulfillment\Models\SyncRun;
 use Webkul\Fulfillment\Services\Application\InboxEventProcessor;
@@ -120,6 +121,14 @@ class AliExpressSyncController extends Controller
 
             // Reload import to get updated values
             $import->refresh();
+
+            try {
+                if (class_exists(ResponseCache::class)) {
+                    ResponseCache::clear();
+                }
+            } catch (Throwable $e) {
+                // Ignore silent cache clear errors
+            }
 
             return response()->json([
                 'success' => true,
