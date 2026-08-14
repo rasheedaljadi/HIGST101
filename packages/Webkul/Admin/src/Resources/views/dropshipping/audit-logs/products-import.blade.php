@@ -286,8 +286,8 @@
                                         <span>التفاصيل</span>
                                     </button>
 
-                                    {{-- Hidden Snapshot Data Container --}}
-                                    <template id="snapshot-data-{{ $log->id }}">
+                                    {{-- Hidden Snapshot Data Container (Safe for Vue 3 DOM hydration) --}}
+                                    <script type="application/json" id="snapshot-data-{{ $log->id }}">
                                         {!! json_encode([
                                             'id' => $log->id,
                                             'product_name' => $log->product_name ?? $snapshot['title'] ?? 'منتج',
@@ -305,8 +305,8 @@
                                                 'meta_description' => $log->meta_description ?? $snapshot['meta_description'] ?? null,
                                             ],
                                             'raw_json' => $snapshot,
-                                        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
-                                    </template>
+                                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}
+                                    </script>
                                 </td>
                             </tr>
                         @empty
@@ -328,7 +328,7 @@
     </div>
 
     {{-- Snapshot Inspection Modal --}}
-    <div id="snapshotModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/50 backdrop-blur-sm transition-opacity flex items-center justify-center p-4">
+    <div id="snapshotModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm transition-opacity items-center justify-center p-4">
         <div class="relative w-full max-w-4xl rounded-2xl bg-white shadow-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col max-h-[90vh]">
             {{-- Modal Header --}}
             <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-800">
@@ -396,37 +396,51 @@
         </div>
     </div>
 
-    {{-- Modal Script --}}
-    <script>
-        let currentModalJsonString = '';
+    @pushOnce('scripts')
+        <script>
+            window.currentModalJsonString = '';
 
-        function openSnapshotModal(importId) {
-            const template = document.getElementById('snapshot-data-' + importId);
-            if (!template) return;
+            window.openSnapshotModal = function(importId) {
+                const el = document.getElementById('snapshot-data-' + importId);
+                if (!el) {
+                    console.error('Snapshot script element not found for import ID:', importId);
+                    return;
+                }
 
-            const data = JSON.parse(template.innerHTML);
-            currentModalJsonString = JSON.stringify(data.raw_json, null, 2);
+                try {
+                    const data = JSON.parse(el.textContent);
+                    window.currentModalJsonString = JSON.stringify(data.raw_json || {}, null, 2);
 
-            document.getElementById('modalTitle').innerText = data.product_name || 'سجل الاستيراد #' + data.id;
-            document.getElementById('modalSubtitle').innerText = 'سجل رقم #' + data.id + ' | رمز: ' + (data.sku || '—');
-            document.getElementById('modalAeId').innerText = data.aliexpress_id || '—';
-            document.getElementById('modalSku').innerText = data.sku || '—';
-            document.getElementById('modalShipping').innerText = data.shipping_cost ? '$' + Number(data.shipping_cost).toFixed(2) : 'غير متوفر';
-            document.getElementById('modalCompany').innerText = data.shipping_company || '—';
-            document.getElementById('modalJsonContent').innerText = currentModalJsonString;
+                    document.getElementById('modalTitle').innerText = data.product_name || 'سجل الاستيراد #' + data.id;
+                    document.getElementById('modalSubtitle').innerText = 'سجل رقم #' + data.id + ' | رمز: ' + (data.sku || '—');
+                    document.getElementById('modalAeId').innerText = data.aliexpress_id || '—';
+                    document.getElementById('modalSku').innerText = data.sku || '—';
+                    document.getElementById('modalShipping').innerText = data.shipping_cost ? '$' + Number(data.shipping_cost).toFixed(2) : 'غير متوفر';
+                    document.getElementById('modalCompany').innerText = data.shipping_company || '—';
+                    document.getElementById('modalJsonContent').innerText = window.currentModalJsonString;
 
-            document.getElementById('snapshotModal').classList.remove('hidden');
-        }
+                    const modal = document.getElementById('snapshotModal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                    }
+                } catch (e) {
+                    console.error('Error parsing snapshot JSON data:', e);
+                }
+            };
 
-        function closeSnapshotModal() {
-            document.getElementById('snapshotModal').classList.add('hidden');
-        }
+            window.closeSnapshotModal = function() {
+                const modal = document.getElementById('snapshotModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            };
 
-        function copyModalJson() {
-            if (!currentModalJsonString) return;
-            navigator.clipboard.writeText(currentModalJsonString).then(() => {
-                alert('تم نسخ كود الـ JSON بنجاح.');
-            });
-        }
-    </script>
+            window.copyModalJson = function() {
+                if (!window.currentModalJsonString) return;
+                navigator.clipboard.writeText(window.currentModalJsonString).then(() => {
+                    alert('تم نسخ كود الـ JSON بنجاح.');
+                });
+            };
+        </script>
+    @endpushOnce
 </x-admin::layouts>
