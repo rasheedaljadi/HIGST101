@@ -3,6 +3,8 @@
 namespace App\Services\Pricing;
 
 use App\Enums\PricingTrigger;
+use App\Models\AliExpressProductImport;
+use App\Models\AliExpressSetting;
 use App\Models\HigestPricingRule;
 use App\Models\HigestSourceOffer;
 use App\Services\Pricing\DTO\PricingContext;
@@ -79,10 +81,20 @@ class PriceRecalculationService
             return null;
         }
 
+        $settings = AliExpressSetting::current();
+        $shippingCost = 0.0;
+        if ($settings->include_shipping_in_price && $offer->source_provider === 'aliexpress') {
+            $aeImport = AliExpressProductImport::where('product_id', $offer->product_id)->first();
+            if ($aeImport && $aeImport->base_shipping_cost !== null) {
+                $shippingCost = (float) $aeImport->base_shipping_cost;
+            }
+        }
+
         $context = new PricingContext(
             sourceProvider: $offer->source_provider,
             currency: $offer->source_currency,
             acquisitionOriginalCost: $offer->acquisition_original_cost !== null ? (float) $offer->acquisition_original_cost : null,
+            shippingCost: $shippingCost,
         );
         $result = $this->engine->calculate((float) $offer->acquisition_cost, $rule, $context);
 
@@ -110,8 +122,18 @@ class PriceRecalculationService
 
         $count = 0;
         $reindexProductIds = [];
+        $settings = AliExpressSetting::current();
 
-        $query->orderBy('id')->chunk(100, function ($offers) use (&$count, &$reindexProductIds, $trigger) {
+        $query->orderBy('id')->chunk(100, function ($offers) use (&$count, &$reindexProductIds, $trigger, $settings) {
+            $shippingCosts = [];
+            if ($settings->include_shipping_in_price) {
+                $productIds = $offers->pluck('product_id')->unique()->all();
+                $shippingCosts = AliExpressProductImport::whereIn('product_id', $productIds)
+                    ->whereNotNull('base_shipping_cost')
+                    ->pluck('base_shipping_cost', 'product_id')
+                    ->all();
+            }
+
             foreach ($offers as $offer) {
                 $categoryId = $this->resolver->resolveCategoryId($offer->product_id);
                 $rule = $this->resolver->resolve($offer->product_id, $categoryId);
@@ -120,10 +142,16 @@ class PriceRecalculationService
                     continue;
                 }
 
+                $shippingCost = 0.0;
+                if ($settings->include_shipping_in_price && $offer->source_provider === 'aliexpress') {
+                    $shippingCost = (float) ($shippingCosts[$offer->product_id] ?? 0.0);
+                }
+
                 $context = new PricingContext(
                     sourceProvider: $offer->source_provider,
                     currency: $offer->source_currency,
                     acquisitionOriginalCost: $offer->acquisition_original_cost !== null ? (float) $offer->acquisition_original_cost : null,
+                    shippingCost: $shippingCost,
                 );
                 $result = $this->engine->calculate((float) $offer->acquisition_cost, $rule, $context);
 

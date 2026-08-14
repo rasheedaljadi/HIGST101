@@ -1164,7 +1164,18 @@ class AliExpressProductImporter
             return;
         }
 
-        $context = new PricingContext(sourceProvider: 'aliexpress', currency: $dto->currency);
+        $settings = AliExpressSetting::current();
+        $shippingCost = 0.0;
+        if ($settings->include_shipping_in_price) {
+            $aeImport = AliExpressProductImport::where('product_id', $product->id)
+                ->orWhere('aliexpress_product_id', (string) $dto->aliexpressProductId)
+                ->first();
+            if ($aeImport && $aeImport->base_shipping_cost !== null) {
+                $shippingCost = (float) $aeImport->base_shipping_cost;
+            }
+        }
+
+        $context = new PricingContext(sourceProvider: 'aliexpress', currency: $dto->currency, shippingCost: $shippingCost);
 
         if ($type === 'configurable') {
             $product = Product::with(['variants'])->findOrFail($product->id);
@@ -1199,6 +1210,7 @@ class AliExpressProductImporter
                     sourceProvider: 'aliexpress',
                     currency: $dto->currency,
                     acquisitionOriginalCost: $supplierOriginalCost,
+                    shippingCost: $shippingCost,
                 );
 
                 $result = $this->pricingEngine->calculate($supplierCost, $rule, $variantContext);
@@ -1215,7 +1227,7 @@ class AliExpressProductImporter
                 );
             }
 
-            $this->updateParentRepresentativePrice($product, $rule, new PricingContext(sourceProvider: 'aliexpress', currency: $dto->currency));
+            $this->updateParentRepresentativePrice($product, $rule, new PricingContext(sourceProvider: 'aliexpress', currency: $dto->currency, shippingCost: $shippingCost));
         } else {
             // Simple product: single SKU (variant_id = product_id)
             $variant = $dto->variants[0];
@@ -1239,6 +1251,7 @@ class AliExpressProductImporter
                 sourceProvider: 'aliexpress',
                 currency: $dto->currency,
                 acquisitionOriginalCost: $supplierOriginalCost,
+                shippingCost: $shippingCost,
             );
 
             $result = $this->pricingEngine->calculate($supplierCost, $rule, $simpleContext);

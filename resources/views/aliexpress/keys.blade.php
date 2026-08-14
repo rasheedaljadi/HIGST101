@@ -304,6 +304,40 @@
                         </div>
                     </div>
 
+                    {{-- Include AliExpress Shipping in Product Price Toggle Card --}}
+                    <div class="rounded-xl border border-blue-200 bg-blue-50/60 p-5 dark:border-blue-900/50 dark:bg-blue-950/20 flex flex-col gap-3 transition-all">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400">
+                                    <span class="icon-shipping text-2xl"></span>
+                                </div>
+                                <div>
+                                    <label for="include_shipping_in_price" class="text-sm font-bold text-gray-800 dark:text-white cursor-pointer font-sans">
+                                        دمج تكلفة شحن AliExpress تلقائياً في سعر بيع المنتج (Free Shipping Model)
+                                    </label>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5 font-sans">
+                                        عند التفعيل: يقوم محرك التسعير بجلب تكلفة شحن المورد وإضافتها إلى تكلفة المنتج قبل تطبيق هامش الربح، ليظهر السعر النهائي للعميل في المتجر شاملاً رسوم الشحن بالكامل.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <input
+                                    type="hidden"
+                                    name="include_shipping_in_price"
+                                    value="0"
+                                />
+                                <input
+                                    type="checkbox"
+                                    id="include_shipping_in_price"
+                                    name="include_shipping_in_price"
+                                    value="1"
+                                    {{ old('include_shipping_in_price', $settings->include_shipping_in_price) ? 'checked' : '' }}
+                                    class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="flex items-center gap-3 py-1">
                         <input
                             type="hidden"

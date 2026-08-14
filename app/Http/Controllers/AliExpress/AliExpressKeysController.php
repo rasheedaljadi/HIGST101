@@ -92,6 +92,7 @@ class AliExpressKeysController extends Controller
                 'shipping_margin' => ['nullable', 'numeric', 'min:0'],
                 'shipping_extra_days' => ['nullable', 'integer', 'min:0', 'max:365'],
                 'shipping_enabled' => ['nullable', 'boolean'],
+                'include_shipping_in_price' => ['nullable', 'boolean'],
             ];
         } elseif ($section === 'warehouse') {
             $rules = [
@@ -114,6 +115,7 @@ class AliExpressKeysController extends Controller
             'authorize_url' => 'رابط المصادقة',
             'shipping_margin' => 'هامش الشحن',
             'shipping_extra_days' => 'أيام التوصيل الإضافية',
+            'include_shipping_in_price' => 'دمج تكلفة الشحن في السعر',
 
             'warehouse_contact_name' => 'اسم مسؤول المستودع',
             'warehouse_contact_number' => 'رقم هاتف المستودع',
@@ -148,6 +150,7 @@ class AliExpressKeysController extends Controller
             $settings->shipping_margin = $validated['shipping_margin'] ?? 0;
             $settings->shipping_extra_days = $validated['shipping_extra_days'] ?? 0;
             $settings->shipping_enabled = (bool) ($validated['shipping_enabled'] ?? false);
+            $settings->include_shipping_in_price = (bool) ($validated['include_shipping_in_price'] ?? false);
             $settings->save();
         } elseif ($section === 'warehouse') {
             // Update default inventory source warehouse address details directly
