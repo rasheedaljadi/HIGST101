@@ -11,14 +11,50 @@
         || !empty($snapshot['shipping']['is_choice'])
     );
 
-    // Calculate supplier cost from variants / snapshot
+    // Determine if we are editing a specific child variant
+    $isVariant = !empty($product->parent_id);
+
     $supplierMinPrice = null;
     $supplierMaxPrice = null;
-    if (!empty($snapshot['variants']) && is_array($snapshot['variants'])) {
-        $prices = array_filter(array_column($snapshot['variants'], 'price'), 'is_numeric');
-        if (!empty($prices)) {
-            $supplierMinPrice = min($prices);
-            $supplierMaxPrice = max($prices);
+
+    if ($isVariant) {
+        // 1. If editing a specific child variant, fetch its exact acquisition cost
+        $offer = \App\Models\HigestSourceOffer::where('variant_id', $product->id)->first();
+        if ($offer && $offer->acquisition_cost !== null) {
+            $supplierMinPrice = (float) $offer->acquisition_cost;
+            $supplierMaxPrice = (float) $offer->acquisition_cost;
+        } elseif ($product->cost !== null && is_numeric($product->cost)) {
+            $supplierMinPrice = (float) $product->cost;
+            $supplierMaxPrice = (float) $product->cost;
+        }
+    } else {
+        // 2. If editing a parent configurable product with variants, calculate min-max from child variants
+        if ($product->variants && $product->variants->isNotEmpty()) {
+            $variantIds = $product->variants->pluck('id')->all();
+            $offerCosts = \App\Models\HigestSourceOffer::whereIn('variant_id', $variantIds)
+                ->whereNotNull('acquisition_cost')
+                ->pluck('acquisition_cost')
+                ->map(fn($v) => (float) $v)
+                ->all();
+
+            if (!empty($offerCosts)) {
+                $supplierMinPrice = min($offerCosts);
+                $supplierMaxPrice = max($offerCosts);
+            }
+        }
+    }
+
+    // Fallback: If still null, calculate from snapshot variants or product cost
+    if ($supplierMinPrice === null) {
+        if (!empty($snapshot['variants']) && is_array($snapshot['variants'])) {
+            $prices = array_filter(array_column($snapshot['variants'], 'price'), 'is_numeric');
+            if (!empty($prices)) {
+                $supplierMinPrice = min($prices);
+                $supplierMaxPrice = max($prices);
+            }
+        } elseif (!empty($product->cost) && is_numeric($product->cost)) {
+            $supplierMinPrice = (float) $product->cost;
+            $supplierMaxPrice = (float) $product->cost;
         }
     }
 
@@ -89,7 +125,7 @@
             <div class="p-2.5 rounded-lg border border-gray-150 dark:border-gray-800 bg-white dark:bg-gray-900/40">
                 <span class="text-gray-500 block mb-1">تكلفة الشحن:</span>
                 @if($baseShipping !== null)
-                    <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-sm">
+                    <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-sm" dir="ltr">
                         ${{ number_format($baseShipping, 2) }} {{ $import->shipping_currency ?? 'USD' }}
                     </span>
                 @else
@@ -103,10 +139,10 @@
                 <span class="font-bold text-gray-800 dark:text-gray-200 block truncate" title="{{ $import->shipping_company }}">
                     {{ $import->shipping_company ?? '—' }}
                 </span>
-                <span class="text-[10px] text-gray-500">
-                    {{ $import->shipping_min_days ?? '?' }}-{{ $import->shipping_max_days ?? '?' }} يوم 
+                <span class="text-[10px] text-gray-500" dir="ltr">
+                    {{ $import->shipping_min_days ?? '?' }}-{{ $import->shipping_max_days ?? '?' }} days
                     @if($import->shipping_tracking)
-                        • تتبع ✅
+                        • Tracking ✅
                     @endif
                 </span>
             </div>
@@ -119,8 +155,8 @@
             </p>
 
             <div class="flex justify-between text-gray-600 dark:text-gray-300">
-                <span>سعر المنتج من المورد:</span>
-                <span class="font-mono font-semibold">
+                <span>{{ $isVariant ? 'سعر المتغير من المورد:' : 'سعر المنتج من المورد:' }}</span>
+                <span class="font-mono font-semibold" dir="ltr">
                     @if($supplierMinPrice !== null)
                         ${{ number_format($supplierMinPrice, 2) }}
                         @if($supplierMaxPrice !== null && $supplierMaxPrice > $supplierMinPrice)
@@ -134,14 +170,14 @@
 
             <div class="flex justify-between text-gray-600 dark:text-gray-300">
                 <span>تكلفة الشحن (AliExpress):</span>
-                <span class="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                <span class="font-mono font-semibold text-emerald-600 dark:text-emerald-400" dir="ltr">
                     {{ $baseShipping !== null ? '+$' . number_format($baseShipping, 2) : '—' }}
                 </span>
             </div>
 
             <div class="flex justify-between border-t border-blue-200 dark:border-blue-800 pt-1 font-bold text-gray-900 dark:text-white">
-                <span>إجمالي تكلفة الشراء عليك:</span>
-                <span class="font-mono text-blue-700 dark:text-blue-300">
+                <span>{{ $isVariant ? 'إجمالي تكلفة شراء المتغير عليك:' : 'إجمالي تكلفة الشراء عليك:' }}</span>
+                <span class="font-mono text-blue-700 dark:text-blue-300" dir="ltr">
                     @if($totalLandedCostMin !== null)
                         ${{ number_format($totalLandedCostMin, 2) }}
                         @if($totalLandedCostMax !== null && $totalLandedCostMax > $totalLandedCostMin)
@@ -154,8 +190,8 @@
             </div>
 
             <div class="flex justify-between pt-0.5 text-gray-600 dark:text-gray-300 text-[11px]">
-                <span>سعر البيع الحالي في المتجر:</span>
-                <span class="font-mono font-bold text-gray-800 dark:text-gray-200">
+                <span>{{ $isVariant ? 'سعر بيع هذا المتغير في المتجر:' : 'سعر البيع الحالي في المتجر:' }}</span>
+                <span class="font-mono font-bold text-gray-800 dark:text-gray-200" dir="ltr">
                     ${{ number_format($storePrice, 2) }}
                 </span>
             </div>
