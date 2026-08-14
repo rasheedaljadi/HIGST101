@@ -125,14 +125,14 @@ return [
         'key' => 'sales.wallet_promotions',
         'name' => 'إعدادات العروض الترويجية للمحفظة (Wallet Promotions)',
         'info' => 'التحكم في أوضاع التشغيل، صندوق المعالجة الذري، ومطابقة الأرصدة',
-        'icon' => 'settings/promotions.svg',
+        'icon' => 'settings/payment-method.svg',
         'sort' => 12,
     ],
     [
         'key' => 'sales.wallet_promotions.settings',
         'name' => 'إعدادات التشغيل والـ Outbox',
         'info' => 'تحديد وضع التشغيل ومهلات المعالجة',
-        'icon' => 'settings/promotions.svg',
+        'icon' => 'settings/payment-method.svg',
         'sort' => 1,
         'fields' => [
             [
