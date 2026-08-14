@@ -5,6 +5,7 @@ namespace App\Services\AliExpress;
 use App\Enums\PricingTrigger;
 use App\Exceptions\AliExpress\AliExpressImportException;
 use App\Models\AliExpressProductImport;
+use App\Models\AliExpressSetting;
 use App\Models\AliExpressToken;
 use App\Models\ExternalVariantProjection;
 use App\Models\HigestPricingRule;
