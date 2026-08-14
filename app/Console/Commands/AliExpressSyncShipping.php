@@ -27,7 +27,8 @@ class AliExpressSyncShipping extends Command
     {
         $query = AliExpressProductImport::query()
             ->where('status', 'success')
-            ->whereNotNull('product_id');
+            ->whereNotNull('product_id')
+            ->whereHas('product');
 
         if (! $this->option('all')) {
             $query->whereNull('base_shipping_cost');

@@ -77,9 +77,8 @@ class AliExpressProductSyncer
 
             // 2. Load the local product
             if ($import->product_id === null) {
-                $import->update([
-                    'status' => 'failed',
-                    'error' => 'No local product is linked to this import.',
+                Log::channel('aliexpress')->info('AliExpress sync skipped: import has no local product attached.', [
+                    'aliexpress_product_id' => $id,
                 ]);
 
                 return;
@@ -88,9 +87,9 @@ class AliExpressProductSyncer
             $product = Product::with(['variants.inventories'])->find($import->product_id);
 
             if (! $product) {
-                $import->update([
-                    'status' => 'failed',
-                    'error' => 'Local product no longer exists in the Bagisto database.',
+                Log::channel('aliexpress')->info('AliExpress sync skipped: local product was deleted from catalog.', [
+                    'aliexpress_product_id' => $id,
+                    'product_id' => $import->product_id,
                 ]);
 
                 return;

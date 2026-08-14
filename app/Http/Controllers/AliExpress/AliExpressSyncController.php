@@ -24,8 +24,10 @@ class AliExpressSyncController extends Controller
     {
         $search = $request->query('search', '');
 
-        // 1. Paginated imports
-        $query = AliExpressProductImport::with('product')
+        // 1. Paginated imports (Only active catalog products)
+        $query = AliExpressProductImport::whereNotNull('product_id')
+            ->whereHas('product')
+            ->with('product')
             ->orderBy('id', 'desc');
 
         if (! empty($search)) {
@@ -38,14 +40,20 @@ class AliExpressSyncController extends Controller
 
         $imports = $query->paginate(15, ['*'], 'imports_page')->withQueryString();
 
-        // Calculate statistics for the LAST sync session (within 10 minutes of the latest updated record)
-        $latestImport = AliExpressProductImport::orderBy('updated_at', 'desc')->first();
+        // Calculate statistics for the LAST sync session of active catalog products
+        $latestImport = AliExpressProductImport::whereNotNull('product_id')
+            ->whereHas('product')
+            ->orderBy('updated_at', 'desc')
+            ->first();
 
         if ($latestImport) {
             $latestTime = $latestImport->updated_at;
             $threshold = $latestTime->copy()->subMinutes(10);
 
-            $lastSyncImports = AliExpressProductImport::where('updated_at', '>=', $threshold)->get();
+            $lastSyncImports = AliExpressProductImport::whereNotNull('product_id')
+                ->whereHas('product')
+                ->where('updated_at', '>=', $threshold)
+                ->get();
 
             $totalCount = $lastSyncImports->count();
             $successCount = $lastSyncImports->where('status', 'success')->count();
@@ -146,6 +154,7 @@ class AliExpressSyncController extends Controller
     {
         $ids = AliExpressProductImport::where('status', 'success')
             ->whereNotNull('product_id')
+            ->whereHas('product')
             ->pluck('id');
 
         return response()->json([

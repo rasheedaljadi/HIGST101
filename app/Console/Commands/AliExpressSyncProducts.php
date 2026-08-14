@@ -72,7 +72,9 @@ class AliExpressSyncProducts extends Command
         if ($id) {
             $query->where('product_id', $id);
         } else {
-            $query->where('status', 'success')->whereNotNull('product_id');
+            $query->where('status', 'success')
+                ->whereNotNull('product_id')
+                ->whereHas('product');
         }
 
         $imports = $query->get();
