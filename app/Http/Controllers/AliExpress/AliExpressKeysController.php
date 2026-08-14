@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\AliExpress;
 
+use App\Enums\PricingTrigger;
 use App\Http\Controllers\Controller;
 use App\Models\AliExpressSetting;
 use App\Models\HigestPricingRule;
 use App\Services\AliExpress\AliExpressOAuthService;
+use App\Services\Pricing\PriceRecalculationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Spatie\ResponseCache\Facades\ResponseCache;
 use Throwable;
 
 /**
@@ -147,11 +151,30 @@ class AliExpressKeysController extends Controller
             $settings->sync_schedule = $validated['sync_schedule'] ?? 'daily';
             $settings->save();
         } elseif ($section === 'shipping') {
+            $newIncludeShipping = (bool) ($validated['include_shipping_in_price'] ?? false);
+
             $settings->shipping_margin = $validated['shipping_margin'] ?? 0;
             $settings->shipping_extra_days = $validated['shipping_extra_days'] ?? 0;
             $settings->shipping_enabled = (bool) ($validated['shipping_enabled'] ?? false);
-            $settings->include_shipping_in_price = (bool) ($validated['include_shipping_in_price'] ?? false);
+            $settings->include_shipping_in_price = $newIncludeShipping;
             $settings->save();
+
+            // Automatically recalculate catalog selling prices and clear cache in real-time
+            $recalculatedMessage = '';
+            try {
+                $recalculator = app(PriceRecalculationService::class);
+                $count = $recalculator->recalculateAll(PricingTrigger::RULE_CHANGE);
+
+                Artisan::call('cache:clear');
+                if (class_exists(ResponseCache::class)) {
+                    ResponseCache::clear();
+                }
+
+                $statusText = $newIncludeShipping ? 'شاملة الشحن' : 'بدون شحن المورد';
+                $recalculatedMessage = "، وتمت إعادة احتساب أسعار كافة المنتجات ({$count} منتج - {$statusText}) وتحديث الذاكرة المؤقتة بنجاح";
+            } catch (Throwable $e) {
+                Log::channel('aliexpress')->error('Auto price recalculation failed on shipping settings update: '.$e->getMessage());
+            }
         } elseif ($section === 'warehouse') {
             // Update default inventory source warehouse address details directly
             DB::table('inventory_sources')
@@ -181,9 +204,10 @@ class AliExpressKeysController extends Controller
             'warehouse' => 'عنوان مستودع هايست وعناوين الشحن',
         ];
 
-        session()->flash('success', "تم حفظ {$sectionNames[$section]} بنجاح.");
+        $recalculatedSuffix = $recalculatedMessage ?? '';
+        session()->flash('success', "تم حفظ {$sectionNames[$section]}{$recalculatedSuffix}.");
 
-        return redirect()->route('admin.dropshipping.keys.index');
+        return redirect()->to(route('admin.dropshipping.keys.index').'#'.$section);
     }
 
     /**
