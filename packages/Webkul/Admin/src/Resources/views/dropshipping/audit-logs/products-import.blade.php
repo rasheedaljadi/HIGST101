@@ -145,28 +145,27 @@
                                     #{{ $log->id }}
                                 </td>
 
-                                {{-- 2. Product Name & Catalog Info --}}
-                                <td class="py-3 px-4 min-w-[220px]">
-                                    <div class="flex items-start gap-3">
+                                {{-- 2. Product Thumbnail & Catalog Info --}}
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-3">
                                         @if($firstImg)
-                                            <img src="{{ $firstImg }}" alt="Product Image" class="h-10 w-10 flex-shrink-0 rounded-lg object-cover border border-gray-200 dark:border-gray-700">
+                                            <img src="{{ $firstImg }}" alt="Product Image" title="{{ $log->product_name ?? $snapshot['title'] ?? 'منتج' }}" class="h-12 w-12 flex-shrink-0 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shadow-sm">
                                         @else
-                                            <div class="h-10 w-10 flex-shrink-0 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                                            <div class="h-12 w-12 flex-shrink-0 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400">
                                                 <span class="icon-products text-lg"></span>
                                             </div>
                                         @endif
 
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-gray-900 dark:text-white line-clamp-2" title="{{ $log->product_name ?? $snapshot['title'] ?? 'منتج بدون اسم' }}">
-                                                {{ $log->product_name ?? $snapshot['title'] ?? 'منتج بدون اسم' }}
-                                            </span>
-
-                                            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
-                                                <span>SKU: {{ $log->catalog_sku ?? $log->sku ?? '—' }}</span>
+                                        <div class="flex flex-col gap-1 text-xs font-mono">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-gray-800 dark:text-gray-200">SKU: {{ $log->catalog_sku ?? $log->sku ?? '—' }}</span>
                                                 @if($log->product_id)
-                                                    <span class="text-blue-600 dark:text-blue-400">PID: #{{ $log->product_id }}</span>
+                                                    <span class="text-blue-600 dark:text-blue-400 font-bold">PID: #{{ $log->product_id }}</span>
                                                 @endif
-                                                <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                            </div>
+
+                                            <div>
+                                                <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 text-[11px]">
                                                     {{ $log->type ?? 'configurable' }}
                                                 </span>
                                             </div>
