@@ -97,6 +97,7 @@ class AliExpressKeysController extends Controller
                 'shipping_extra_days' => ['nullable', 'integer', 'min:0', 'max:365'],
                 'shipping_enabled' => ['nullable', 'boolean'],
                 'include_shipping_in_price' => ['nullable', 'boolean'],
+                'exclude_choice_from_shipping_price' => ['nullable', 'boolean'],
             ];
         } elseif ($section === 'warehouse') {
             $rules = [
@@ -120,6 +121,7 @@ class AliExpressKeysController extends Controller
             'shipping_margin' => 'هامش الشحن',
             'shipping_extra_days' => 'أيام التوصيل الإضافية',
             'include_shipping_in_price' => 'دمج تكلفة الشحن في السعر',
+            'exclude_choice_from_shipping_price' => 'استثناء منتجات Choice من دمج الشحن',
 
             'warehouse_contact_name' => 'اسم مسؤول المستودع',
             'warehouse_contact_number' => 'رقم هاتف المستودع',
@@ -152,11 +154,13 @@ class AliExpressKeysController extends Controller
             $settings->save();
         } elseif ($section === 'shipping') {
             $newIncludeShipping = (bool) ($validated['include_shipping_in_price'] ?? false);
+            $newExcludeChoice = (bool) ($validated['exclude_choice_from_shipping_price'] ?? false);
 
             $settings->shipping_margin = $validated['shipping_margin'] ?? 0;
             $settings->shipping_extra_days = $validated['shipping_extra_days'] ?? 0;
             $settings->shipping_enabled = (bool) ($validated['shipping_enabled'] ?? false);
             $settings->include_shipping_in_price = $newIncludeShipping;
+            $settings->exclude_choice_from_shipping_price = $newExcludeChoice;
             $settings->save();
 
             // Automatically recalculate catalog selling prices and clear cache in real-time
@@ -170,7 +174,8 @@ class AliExpressKeysController extends Controller
                     ResponseCache::clear();
                 }
 
-                $statusText = $newIncludeShipping ? 'شاملة الشحن' : 'بدون شحن المورد';
+                $choiceText = $newExcludeChoice ? ' (مع استثناء Choice)' : '';
+                $statusText = $newIncludeShipping ? "شاملة الشحن{$choiceText}" : 'بدون شحن المورد';
                 $recalculatedMessage = "، وتمت إعادة احتساب أسعار كافة المنتجات ({$count} منتج - {$statusText}) وتحديث الذاكرة المؤقتة بنجاح";
             } catch (Throwable $e) {
                 Log::channel('aliexpress')->error('Auto price recalculation failed on shipping settings update: '.$e->getMessage());

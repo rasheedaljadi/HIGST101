@@ -88,4 +88,32 @@ class AliExpressProductImport extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
+
+    /**
+     * Determine if this product is tagged as Choice / AliExpress Commitment.
+     */
+    public function isChoice(): bool
+    {
+        $snap = $this->payload_snapshot;
+        if (is_array($snap)) {
+            if (! empty($snap['is_choice'])) {
+                return true;
+            }
+            if (! empty($snap['shipping']['is_choice'])) {
+                return true;
+            }
+        }
+
+        if ($this->shipping_company) {
+            $company = $this->shipping_company;
+            if (
+                stripos($company, 'selection') !== false ||
+                stripos($company, 'choice') !== false
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

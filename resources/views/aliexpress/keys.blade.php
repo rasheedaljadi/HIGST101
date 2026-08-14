@@ -287,7 +287,7 @@
                     </div>
 
                     {{-- Include AliExpress Shipping in Product Price Toggle Card --}}
-                    <div class="rounded-xl border border-blue-200 bg-blue-50/60 p-5 dark:border-blue-900/50 dark:bg-blue-950/20 flex flex-col gap-3 transition-all">
+                    <div class="rounded-xl border border-blue-200 bg-blue-50/60 p-5 dark:border-blue-900/50 dark:bg-blue-950/20 flex flex-col gap-4 transition-all">
                         <div class="flex items-center justify-between gap-4">
                             <div class="flex items-center gap-3">
                                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400">
@@ -315,6 +315,38 @@
                                     value="1"
                                     {{ old('include_shipping_in_price', $settings->include_shipping_in_price) ? 'checked' : '' }}
                                     class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
+                                />
+                            </div>
+                        </div>
+
+                        {{-- Exception for Choice / AliExpress Commitment --}}
+                        <div class="border-t border-blue-200/80 dark:border-blue-900/40 pt-3.5 flex items-center justify-between gap-4">
+                            <div class="flex items-start gap-3">
+                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 mt-0.5">
+                                    <span class="icon-check text-lg"></span>
+                                </div>
+                                <div>
+                                    <label for="exclude_choice_from_shipping_price" class="text-xs font-bold text-gray-800 dark:text-white cursor-pointer font-sans">
+                                        استثناء منتجات Choice (التزام AliExpress) من دمج تكلفة الشحن
+                                    </label>
+                                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 font-sans leading-relaxed">
+                                        عند التفعيل: المنتجات التي تحمل علامة Choice وشحن التزام AliExpress لن يتم إضافة تكلفة شحنها إلى سعر بيع المنتج، وستبقى معتمدة على سعر التكلفة المباشر فقط.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <input
+                                    type="hidden"
+                                    name="exclude_choice_from_shipping_price"
+                                    value="0"
+                                />
+                                <input
+                                    type="checkbox"
+                                    id="exclude_choice_from_shipping_price"
+                                    name="exclude_choice_from_shipping_price"
+                                    value="1"
+                                    {{ old('exclude_choice_from_shipping_price', $settings->exclude_choice_from_shipping_price ?? true) ? 'checked' : '' }}
+                                    class="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
                                 />
                             </div>
                         </div>

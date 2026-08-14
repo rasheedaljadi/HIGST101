@@ -1171,7 +1171,10 @@ class AliExpressProductImporter
                 ->orWhere('aliexpress_product_id', (string) $dto->aliexpressProductId)
                 ->first();
             if ($aeImport && $aeImport->base_shipping_cost !== null) {
-                $shippingCost = (float) $aeImport->base_shipping_cost;
+                $isChoice = $aeImport->isChoice();
+                if (! ($settings->exclude_choice_from_shipping_price && $isChoice)) {
+                    $shippingCost = (float) $aeImport->base_shipping_cost;
+                }
             }
         }
 

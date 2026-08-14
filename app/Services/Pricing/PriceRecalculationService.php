@@ -86,7 +86,10 @@ class PriceRecalculationService
         if ($settings->include_shipping_in_price && $offer->source_provider === 'aliexpress') {
             $aeImport = AliExpressProductImport::where('product_id', $offer->product_id)->first();
             if ($aeImport && $aeImport->base_shipping_cost !== null) {
-                $shippingCost = (float) $aeImport->base_shipping_cost;
+                $isChoice = $aeImport->isChoice();
+                if (! ($settings->exclude_choice_from_shipping_price && $isChoice)) {
+                    $shippingCost = (float) $aeImport->base_shipping_cost;
+                }
             }
         }
 
@@ -125,13 +128,13 @@ class PriceRecalculationService
         $settings = AliExpressSetting::current();
 
         $query->orderBy('id')->chunk(100, function ($offers) use (&$count, &$reindexProductIds, $trigger, $settings) {
-            $shippingCosts = [];
+            $shippingImports = [];
             if ($settings->include_shipping_in_price) {
                 $productIds = $offers->pluck('product_id')->unique()->all();
-                $shippingCosts = AliExpressProductImport::whereIn('product_id', $productIds)
+                $shippingImports = AliExpressProductImport::whereIn('product_id', $productIds)
                     ->whereNotNull('base_shipping_cost')
-                    ->pluck('base_shipping_cost', 'product_id')
-                    ->all();
+                    ->get()
+                    ->keyBy('product_id');
             }
 
             foreach ($offers as $offer) {
@@ -144,7 +147,13 @@ class PriceRecalculationService
 
                 $shippingCost = 0.0;
                 if ($settings->include_shipping_in_price && $offer->source_provider === 'aliexpress') {
-                    $shippingCost = (float) ($shippingCosts[$offer->product_id] ?? 0.0);
+                    $aeImport = $shippingImports[$offer->product_id] ?? null;
+                    if ($aeImport && $aeImport->base_shipping_cost !== null) {
+                        $isChoice = $aeImport->isChoice();
+                        if (! ($settings->exclude_choice_from_shipping_price && $isChoice)) {
+                            $shippingCost = (float) $aeImport->base_shipping_cost;
+                        }
+                    }
                 }
 
                 $context = new PricingContext(
