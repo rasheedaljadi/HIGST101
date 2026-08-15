@@ -135,11 +135,12 @@
                         <button 
                             type="button" 
                             onclick="toggleManualShippingEdit()"
-                            class="inline-flex items-center gap-1 text-red-500 hover:text-red-600 transition-transform hover:scale-110 cursor-pointer p-0.5"
+                            class="inline-flex items-center justify-center p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-950/60 text-blue-600 dark:text-blue-400 transition-all hover:scale-110 cursor-pointer"
                             title="تحرير وتحديد سعر الشحن يدوياً للمنتج وجميع متغيراته"
                         >
-                            <svg class="w-4 h-4 fill-current text-red-500 hover:text-red-600 animate-pulse" viewBox="0 0 24 24">
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
                         </button>
                     @endif
@@ -161,10 +162,10 @@
                 </div>
 
                 @if($canEditManualShipping)
-                    <div id="shipping-cost-edit-mode" class="hidden mt-1.5">
-                        <div class="flex items-center gap-1.5">
-                            <div class="relative flex-1">
-                                <span class="absolute inset-y-0 start-0 flex items-center px-2 text-gray-500 font-mono text-xs">$</span>
+                    <div id="shipping-cost-edit-mode" class="hidden mt-2 pt-2 border-t border-gray-150 dark:border-gray-800">
+                        <div class="space-y-2">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 start-0 flex items-center px-2 text-gray-500 font-mono text-xs font-bold">$</span>
                                 <input 
                                     type="number" 
                                     id="manual_shipping_cost_input"
@@ -172,29 +173,34 @@
                                     min="0"
                                     value="{{ $baseShipping !== null ? number_format($baseShipping, 2, '.', '') : '' }}"
                                     placeholder="0.00"
-                                    class="w-full ps-6 pe-2 py-1 text-xs font-mono border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                    class="w-full ps-6 pe-2 py-1.5 text-xs font-mono font-bold border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
-                            <button 
-                                type="button" 
-                                onclick="saveManualShippingCost({{ $import->id }}, this)"
-                                class="px-2 py-1 text-xs font-semibold rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1 cursor-pointer"
-                                title="حفظ وينطبق على جميع المتغيرات"
-                            >
-                                <span class="icon-check text-xs"></span>
-                                <span>حفظ</span>
-                            </button>
-                            <button 
-                                type="button" 
-                                onclick="toggleManualShippingEdit()"
-                                class="px-1.5 py-1 text-xs font-semibold rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors cursor-pointer"
-                                title="إلغاء"
-                            >
-                                ✕
-                            </button>
+                            <div class="flex items-center gap-1.5">
+                                <button 
+                                    type="button" 
+                                    onclick="saveManualShippingCost({{ $import->id }}, this)"
+                                    class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all shadow-xs cursor-pointer"
+                                    title="حفظ وينطبق على جميع المتغيرات"
+                                >
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span>حفظ السعر</span>
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onclick="toggleManualShippingEdit()"
+                                    class="inline-flex items-center justify-center px-2.5 py-1.5 text-xs font-medium rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all cursor-pointer"
+                                    title="إلغاء"
+                                >
+                                    إلغاء
+                                </button>
+                            </div>
                         </div>
-                        <p class="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-                            ⚡ سينطبق السعر اليدوي للشحن على المنتج وكل متغيراته.
+                        <p class="text-[10px] text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1">
+                            <span>⚡</span>
+                            <span>سينطبق السعر على المنتج وكافة متغيراته.</span>
                         </p>
                     </div>
                 @endif
@@ -349,7 +355,11 @@
                 return;
             }
 
-            if (btnEl) btnEl.disabled = true;
+            const origHtml = btnEl ? btnEl.innerHTML : '';
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = '<span class="inline-block animate-spin text-xs">⏳</span> <span>جاري الحفظ...</span>';
+            }
 
             const saveUrl = "{{ route('admin.audit-logs.products-import.update-manual-shipping', ['id' => ':id']) }}".replace(':id', importId);
 
@@ -373,13 +383,19 @@
                     setTimeout(() => window.location.reload(), 800);
                 } else {
                     alert(res.body.message || 'حدث خطأ أثناء حفظ سعر الشحن.');
-                    if (btnEl) btnEl.disabled = false;
+                    if (btnEl) {
+                        btnEl.disabled = false;
+                        btnEl.innerHTML = origHtml;
+                    }
                 }
             })
             .catch(err => {
                 console.error('Error saving manual shipping cost:', err);
                 alert('حدث خطأ في الاتصال أثناء حفظ سعر الشحن.');
-                if (btnEl) btnEl.disabled = false;
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = origHtml;
+                }
             });
         };
     </script>
