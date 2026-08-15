@@ -338,111 +338,72 @@
             </x-slot>
 
             <!-- Filter Item Content -->
-            <x-slot:content class="!p-0">
-                <!-- Search Box For Categories -->
-                <div
-                    class="flex flex-col gap-1 mb-2"
-                    v-if="categories.length > 5"
-                >
+            <x-slot:content class="!p-0 space-y-3 pb-3">
+                <!-- Level 1: Main Category Dropdown -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        {{ app()->getLocale() == 'ar' ? 'الفئة الرئيسية (المستوى الأول):' : 'Main Category (Level 1):' }}
+                    </label>
                     <div class="relative">
-                        <div class="icon-search pointer-events-none absolute top-3 flex items-center text-2xl max-md:text-xl max-sm:top-2.5 ltr:left-3 rtl:right-3"></div>
-
-                        <input
-                            type="text"
-                            class="block w-full rounded-xl border border-zinc-200 px-11 py-3.5 text-sm font-medium text-gray-900 max-md:rounded-lg max-md:px-10 max-md:py-3 max-md:font-normal max-sm:text-xs"
-                            placeholder="@lang('shop::app.categories.filters.search.title')"
-                            v-model="searchQuery"
-                        />
+                        <select
+                            v-model="selectedMainCategoryId"
+                            @change="onMainCategoryChange"
+                            class="block w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
+                        >
+                            <option value="">
+                                {{ app()->getLocale() == 'ar' ? '— كل الفئات الرئيسية —' : '— All Main Categories —' }}
+                            </option>
+                            <option
+                                v-for="cat in categories"
+                                :key="'main_cat_' + cat.id"
+                                :value="cat.id"
+                            >
+                                @{{ cat.name }}
+                            </option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Hierarchical Category List -->
-                <ul class="pb-3 text-base text-gray-700 max-h-[360px] overflow-y-auto journal-scroll space-y-1">
-                    <li
-                        v-for="cat in filteredCategories"
-                        :key="'parent_cat_' + cat.id"
-                        class="rounded-lg p-0.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40"
-                    >
-                        <!-- Level 1: Main Category -->
-                        <div class="flex select-none items-center justify-between gap-x-2 ltr:pl-1 rtl:pr-1 py-1">
-                            <div class="flex items-center gap-x-3 flex-1 min-w-0">
-                                <input
-                                    type="checkbox"
-                                    :id="`filter_cat_${cat.id}`"
-                                    class="peer hidden"
-                                    :value="Number(cat.id)"
-                                    v-model="appliedValues"
-                                    @change="onCategoryCheck(cat)"
-                                />
-
-                                <label
-                                    class="icon-uncheck peer-checked:icon-check-box cursor-pointer text-2xl text-navyBlue peer-checked:text-navyBlue max-sm:text-xl shrink-0"
-                                    role="checkbox"
-                                    tabindex="0"
-                                    :for="`filter_cat_${cat.id}`"
-                                >
-                                </label>
-
-                                <label
-                                    class="cursor-pointer py-0.5 text-sm font-semibold text-gray-900 dark:text-gray-100 max-sm:text-xs truncate flex-1"
-                                    :for="`filter_cat_${cat.id}`"
-                                >
-                                    @{{ cat.name }}
-                                </label>
-                            </div>
-
-                            <!-- Expand/Collapse toggle for Level 2 Subcategories -->
-                            <button
-                                type="button"
-                                v-if="cat.children && cat.children.length"
-                                @click.stop="toggleExpand(cat.id)"
-                                class="p-1 rounded text-gray-500 hover:text-navyBlue hover:bg-gray-200/60 dark:hover:bg-gray-700/60 transition-all cursor-pointer shrink-0"
-                                :title="isExpanded(cat.id) ? 'إغلاق' : 'عرض الفئات الفرعية'"
-                            >
-                                <span
-                                    class="icon-arrow-down text-sm inline-block transition-transform duration-200"
-                                    :class="{ 'rotate-180': isExpanded(cat.id) }"
-                                ></span>
-                            </button>
-                        </div>
-
-                        <!-- Level 2: Subcategories -->
-                        <ul
-                            v-if="cat.children && cat.children.length && (isExpanded(cat.id) || searchQuery)"
-                            class="ltr:pl-5 rtl:pr-5 space-y-1 mt-1 border-l-2 rtl:border-r-2 rtl:border-l-0 border-blue-200 dark:border-blue-800 ltr:ml-3 rtl:mr-3 py-1"
+                <!-- Level 2: Subcategories (Visible when selected main category has children) -->
+                <div
+                    v-if="currentSubcategories && currentSubcategories.length"
+                    class="space-y-1.5 pt-1"
+                >
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        {{ app()->getLocale() == 'ar' ? 'الفئة الفرعية (المستوى الثاني):' : 'Subcategory (Level 2):' }}
+                    </label>
+                    <div class="relative">
+                        <select
+                            v-model="selectedSubCategoryId"
+                            @change="onSubCategoryChange"
+                            class="block w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
                         >
-                            <li
-                                v-for="subCat in cat.children"
+                            <option value="">
+                                {{ app()->getLocale() == 'ar' ? '— كل الفئات الفرعية التابعة —' : '— All Subcategories —' }}
+                            </option>
+                            <option
+                                v-for="subCat in currentSubcategories"
                                 :key="'sub_cat_' + subCat.id"
-                                class="flex select-none items-center gap-x-2.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800/60 ltr:pl-1 rtl:pr-1 py-0.5"
+                                :value="subCat.id"
                             >
-                                <input
-                                    type="checkbox"
-                                    :id="`filter_cat_${subCat.id}`"
-                                    class="peer hidden"
-                                    :value="Number(subCat.id)"
-                                    v-model="appliedValues"
-                                    @change="applyValue"
-                                />
+                                @{{ subCat.name }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
 
-                                <label
-                                    class="icon-uncheck peer-checked:icon-check-box cursor-pointer text-xl text-navyBlue peer-checked:text-navyBlue max-sm:text-lg shrink-0"
-                                    role="checkbox"
-                                    tabindex="0"
-                                    :for="`filter_cat_${subCat.id}`"
-                                >
-                                </label>
-
-                                <label
-                                    class="w-full cursor-pointer py-0.5 text-xs font-normal text-gray-700 dark:text-gray-300 max-sm:text-[11px] truncate"
-                                    :for="`filter_cat_${subCat.id}`"
-                                >
-                                    @{{ subCat.name }}
-                                </label>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+                <!-- Clear Category Selection Button if active -->
+                <div v-if="selectedMainCategoryId" class="flex items-center justify-between pt-1 text-xs">
+                    <span class="text-gray-500">الفئة المحددة</span>
+                    <button
+                        type="button"
+                        @click="clearCategorySelection"
+                        class="text-red-500 hover:text-red-700 hover:underline cursor-pointer inline-flex items-center gap-1 font-medium"
+                    >
+                        <span>إلغاء التحديد</span>
+                        <span>✕</span>
+                    </button>
+                </div>
             </x-slot>
         </x-shop::accordion>
     </script>
@@ -565,7 +526,8 @@
                     this.filters.applied = {};
 
                     if (this.$refs.categoryFilterComponent) {
-                        this.$refs.categoryFilterComponent.appliedValues = [];
+                        this.$refs.categoryFilterComponent.selectedMainCategoryId = '';
+                        this.$refs.categoryFilterComponent.selectedSubCategoryId = '';
                     }
 
                     /**
@@ -593,9 +555,8 @@
 
             data() {
                 return {
-                    appliedValues: [],
-                    expandedCats: {},
-                    searchQuery: '',
+                    selectedMainCategoryId: '',
+                    selectedSubCategoryId: '',
                 };
             },
 
@@ -619,55 +580,77 @@
             },
 
             computed: {
-                filteredCategories() {
-                    if (! this.searchQuery) {
-                        return this.categories || [];
+                currentSubcategories() {
+                    if (! this.selectedMainCategoryId) {
+                        return [];
                     }
 
-                    let search = this.searchQuery.toLowerCase();
-                    return (this.categories || []).filter(cat => {
-                        let matchParent = cat.name && cat.name.toLowerCase().includes(search);
-                        let matchChildren = cat.children && cat.children.some(child => child.name && child.name.toLowerCase().includes(search));
-                        return matchParent || matchChildren;
-                    });
+                    let mainCat = (this.categories || []).find(c => String(c.id) === String(this.selectedMainCategoryId));
+                    return mainCat && mainCat.children ? mainCat.children : [];
                 }
             },
 
             methods: {
                 syncApplied() {
                     let applied = this.appliedCategoryIds || this.$parent?.$data?.filters?.applied?.['category_id'];
-                    if (applied) {
-                        let list = Array.isArray(applied) ? applied : String(applied).split(',');
-                        this.appliedValues = list.map(v => isNaN(v) ? v : Number(v));
+                    if (! applied || (Array.isArray(applied) && !applied.length)) {
+                        this.selectedMainCategoryId = '';
+                        this.selectedSubCategoryId = '';
+                        return;
+                    }
 
-                        // Auto-expand parent categories of selected subcategories
-                        (this.categories || []).forEach(cat => {
-                            if (cat.children && cat.children.some(c => this.appliedValues.includes(Number(c.id)))) {
-                                this.expandedCats[cat.id] = true;
-                            }
-                        });
+                    let ids = (Array.isArray(applied) ? applied : String(applied).split(',')).map(v => String(v));
+                    let currentId = ids[0];
+
+                    if (! currentId) {
+                        this.selectedMainCategoryId = '';
+                        this.selectedSubCategoryId = '';
+                        return;
+                    }
+
+                    // Check if currentId is a Main category
+                    let isMain = (this.categories || []).some(c => String(c.id) === currentId);
+                    if (isMain) {
+                        this.selectedMainCategoryId = currentId;
+                        this.selectedSubCategoryId = '';
+                        return;
+                    }
+
+                    // Check if currentId is a Subcategory
+                    for (let cat of (this.categories || [])) {
+                        if (cat.children && cat.children.some(child => String(child.id) === currentId)) {
+                            this.selectedMainCategoryId = String(cat.id);
+                            this.selectedSubCategoryId = currentId;
+                            return;
+                        }
+                    }
+
+                    this.selectedMainCategoryId = currentId;
+                },
+
+                onMainCategoryChange() {
+                    this.selectedSubCategoryId = '';
+                    if (this.selectedMainCategoryId) {
+                        this.$emit('values-applied', [this.selectedMainCategoryId]);
                     } else {
-                        this.appliedValues = [];
+                        this.$emit('values-applied', []);
                     }
                 },
 
-                applyValue() {
-                    this.$emit('values-applied', this.appliedValues);
-                },
-
-                onCategoryCheck(cat) {
-                    if (cat.children && cat.children.length && this.appliedValues.includes(Number(cat.id))) {
-                        this.expandedCats[cat.id] = true;
+                onSubCategoryChange() {
+                    if (this.selectedSubCategoryId) {
+                        this.$emit('values-applied', [this.selectedSubCategoryId]);
+                    } else if (this.selectedMainCategoryId) {
+                        this.$emit('values-applied', [this.selectedMainCategoryId]);
+                    } else {
+                        this.$emit('values-applied', []);
                     }
-                    this.applyValue();
                 },
 
-                toggleExpand(catId) {
-                    this.expandedCats[catId] = !this.expandedCats[catId];
-                },
-
-                isExpanded(catId) {
-                    return !!this.expandedCats[catId];
+                clearCategorySelection() {
+                    this.selectedMainCategoryId = '';
+                    this.selectedSubCategoryId = '';
+                    this.$emit('values-applied', []);
                 }
             }
         });
