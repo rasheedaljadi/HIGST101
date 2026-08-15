@@ -131,24 +131,37 @@
                         </x-admin::form.control-group>
 
                         <!-- Channels -->
-                        <x-admin::form.control-group>
+                        <div class="mb-4">
                             <x-admin::form.control-group.label class="required">
                                 @lang('offline_payments::app.admin.form.channels')
                             </x-admin::form.control-group.label>
 
-                            <x-admin::form.control-group.control
-                                type="multiselect"
-                                name="channel_ids[]"
-                                rules="required"
-                                :label="trans('offline_payments::app.admin.form.channels')"
-                            >
-                                @foreach ($channels as $channel)
-                                    <option value="{{ $channel->id }}">{{ $channel->name }}</option>
-                                @endforeach
-                            </x-admin::form.control-group.control>
+                            @php($selectedOptionIds = old('channel_ids', []))
+
+                            @foreach ($channels as $channel)
+                                <x-admin::form.control-group class="!mb-2 flex items-center gap-2.5">
+                                    <x-admin::form.control-group.control
+                                        type="checkbox"
+                                        :id="'channel_' . $channel->id"
+                                        name="channel_ids[]"
+                                        rules="required"
+                                        :value="$channel->id"
+                                        :for="'channel_' . $channel->id"
+                                        :label="trans('offline_payments::app.admin.form.channels')"
+                                        :checked="in_array($channel->id, $selectedOptionIds)"
+                                    />
+
+                                    <label
+                                        class="cursor-pointer text-xs font-medium text-gray-600 dark:text-gray-300"
+                                        for="{{ 'channel_' . $channel->id }}"
+                                    >
+                                        {{ $channel->name }}
+                                    </label>
+                                </x-admin::form.control-group>
+                            @endforeach
 
                             <x-admin::form.control-group.error control-name="channel_ids[]" />
-                        </x-admin::form.control-group>
+                        </div>
 
                         <!-- Sort Order -->
                         <x-admin::form.control-group>
