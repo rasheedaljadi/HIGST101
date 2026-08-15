@@ -91,16 +91,67 @@ class CategoryController extends APIController
      */
     public function getAttributes(): JsonResource
     {
-        if (! request('category_id')) {
-            $filterableAttributes = $this->attributeRepository->getFilterableAttributes();
+        $categoryId = request('category_id');
+        $searchQuery = request('query');
 
-            return AttributeResource::collection($filterableAttributes);
+        if ($categoryId) {
+            $category = $this->categoryRepository->find($categoryId);
+            if ($category && ! empty($category->filterableAttributes) && $category->filterableAttributes->count()) {
+                $filterableAttributes = $category->filterableAttributes;
+            } else {
+                $filterableAttributes = $this->attributeRepository->getFilterableAttributes();
+            }
+        } else {
+            $filterableAttributes = $this->attributeRepository->getFilterableAttributes();
         }
 
-        $category = $this->categoryRepository->findOrFail(request('category_id'));
+        if ($categoryId || $searchQuery) {
+            $productQuery = DB::table('products')
+                ->select('products.id')
+                ->distinct()
+                ->leftJoin('product_channels', 'products.id', '=', 'product_channels.product_id')
+                ->where('product_channels.channel_id', core()->getCurrentChannel()->id);
 
-        if (empty($filterableAttributes = $category->filterableAttributes)) {
-            $filterableAttributes = $this->attributeRepository->getFilterableAttributes();
+            if ($categoryId) {
+                $subCatIds = DB::table('categories')->where('parent_id', $categoryId)->pluck('id')->toArray();
+                $allCatIds = array_merge([$categoryId], $subCatIds);
+
+                $productQuery->join('product_categories', 'product_categories.product_id', '=', 'products.id')
+                    ->whereIn('product_categories.category_id', $allCatIds);
+            }
+
+            if ($searchQuery) {
+                $productQuery->join('product_attribute_values as name_pav', function ($join) {
+                    $join->on('products.id', '=', 'name_pav.product_id')
+                        ->where('name_pav.attribute_id', function ($q) {
+                            $q->select('id')->from('attributes')->where('code', 'name')->limit(1);
+                        });
+                })->where('name_pav.text_value', 'like', '%'.urldecode($searchQuery).'%');
+            }
+
+            $productIds = $productQuery->pluck('id')->toArray();
+
+            $variantIds = DB::table('products')
+                ->whereIn('parent_id', $productIds)
+                ->pluck('id')
+                ->toArray();
+
+            $allProductIds = array_unique(array_merge($productIds, $variantIds));
+
+            if (! empty($allProductIds)) {
+                $usedAttributeIds = DB::table('product_attribute_values')
+                    ->whereIn('product_id', $allProductIds)
+                    ->where(function ($q) {
+                        $q->whereNotNull('integer_value')->orWhereNotNull('text_value');
+                    })
+                    ->pluck('attribute_id')
+                    ->unique()
+                    ->toArray();
+
+                $filterableAttributes = $filterableAttributes->filter(function ($attribute) use ($usedAttributeIds) {
+                    return $attribute->code === 'price' || $attribute->type === 'price' || in_array($attribute->id, $usedAttributeIds);
+                })->values();
+            }
         }
 
         return AttributeResource::collection($filterableAttributes);

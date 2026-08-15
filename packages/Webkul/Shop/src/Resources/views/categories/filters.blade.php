@@ -473,9 +473,14 @@
                 },
 
                 getFilters() {
+                    const queryParams = new URLSearchParams(window.location.search);
+                    const selectedCatId = this.filters?.applied?.['category_id']?.[0] || queryParams.get('category_id') || "{{ isset($category) ? $category->id : '' }}";
+                    const searchQuery = queryParams.get('query') || '';
+
                     this.$axios.get('{{ route("shop.api.categories.attributes") }}', {
                             params: {
-                                category_id: "{{ isset($category) ? $category->id : ''  }}",
+                                category_id: selectedCatId,
+                                query: searchQuery,
                             }
                         })
                         .then((response) => {
@@ -510,13 +515,7 @@
                         delete this.filters.applied['category_id'];
                     }
 
-                    if (this.$refs.filterItemComponent) {
-                        this.$refs.filterItemComponent.forEach((filterItem) => {
-                            if (filterItem.filter && filterItem.filter.code !== 'price') {
-                                filterItem.fetchFilterOptions(true);
-                            }
-                        });
-                    }
+                    this.getFilters();
 
                     this.$emit('filter-applied', this.filters.applied);
                 },
