@@ -237,11 +237,9 @@ class AliExpressProductImporter
         $targetCategoryId = $options['target_category_id'] ?? $options['category_id'] ?? null;
         $resolvedCategoryId = $this->resolveProductCategoryId($dto, $targetCategoryId !== null ? (int) $targetCategoryId : null);
 
-        // Train the continuous learning engine with the resolved category
+        // Train the continuous learning engine strictly from explicit admin choices (Ground Truth Only)
         if ($targetCategoryId !== null && (int) $targetCategoryId > 0) {
             $this->learningEngine->learnFromProduct($dto, $resolvedCategoryId, 'admin_override');
-        } elseif ($resolvedCategoryId !== 714 && $resolvedCategoryId > 1) {
-            $this->learningEngine->learnFromProduct($dto, $resolvedCategoryId, 'auto_inferred');
         }
 
         // Single unified parent update carrying shared fields AND the
