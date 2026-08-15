@@ -141,7 +141,27 @@
                 >
                 </v-category-filter>
 
-                <!-- Filters Items Vue Component -->
+                <!-- Permanent Price Filter Accordion -->
+                <x-shop::accordion class="last:border-b-0">
+                    <x-slot:header class="px-0 py-2.5 max-sm:!pb-1.5">
+                        <div class="flex items-center justify-between">
+                            <p class="text-lg font-semibold max-sm:text-base max-sm:font-medium">
+                                @lang('shop::app.categories.filters.price')
+                            </p>
+                        </div>
+                    </x-slot>
+
+                    <x-slot:content class="!p-0">
+                        <v-price-filter
+                            :key="priceRefreshKey"
+                            :default-price-range="filters.applied['price'] ? filters.applied['price'].join(',') : null"
+                            @set-price-range="applyPriceFilter($event)"
+                        >
+                        </v-price-filter>
+                    </x-slot>
+                </x-shop::accordion>
+
+                <!-- Dynamic Attribute Filters Items Vue Component -->
                 <v-filter-item
                     ref="filterItemComponent"
                     :key="filterIndex"
@@ -439,6 +459,8 @@
                 return {
                     isLoading: true,
 
+                    priceRefreshKey: 0,
+
                     categories: [],
 
                     filters: {
@@ -520,6 +542,16 @@
                     this.$emit('filter-applied', this.filters.applied);
                 },
 
+                applyPriceFilter(values) {
+                    if (values) {
+                        this.filters.applied['price'] = [values];
+                    } else {
+                        delete this.filters.applied['price'];
+                    }
+
+                    this.$emit('filter-applied', this.filters.applied);
+                },
+
                 applyFilter(filter, values) {
                     if (values.length) {
                         this.filters.applied[filter.code] = values;
@@ -541,18 +573,9 @@
                         this.$refs.categoryFilterComponent.selectedSubCategoryId = '';
                     }
 
-                    /**
-                     * Clearing child components. Improvisation needed here.
-                     */
-                    if (this.$refs.filterItemComponent) {
-                        this.$refs.filterItemComponent.forEach((filterItem) => {
-                            if (filterItem.filter.code === 'price') {
-                                filterItem.$data.appliedValues = null;
-                            } else {
-                                filterItem.$data.appliedValues = [];
-                            }
-                        });
-                    }
+                    this.priceRefreshKey++;
+
+                    this.getFilters();
 
                     this.$emit('filter-applied', this.filters.applied);
                 },
