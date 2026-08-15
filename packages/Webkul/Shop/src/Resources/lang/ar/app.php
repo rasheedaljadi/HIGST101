@@ -964,6 +964,7 @@ return [
             'clear-all' => 'مسح الكل',
             'filter' => 'فلتر',
             'filters' => 'الفلاتر:',
+            'price' => 'السعر',
 
             'search' => [
                 'load-more' => 'تحميل المزيد',

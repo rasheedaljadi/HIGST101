@@ -964,6 +964,7 @@ return [
             'clear-all' => 'Clear All',
             'filter' => 'Filter',
             'filters' => 'Filters:',
+            'price' => 'Price',
 
             'search' => [
                 'load-more' => 'Load More',
