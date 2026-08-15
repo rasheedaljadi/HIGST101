@@ -4,6 +4,19 @@
         استيراد المنتجات
     </x-slot>
 
+    @php
+        $categoriesData = (isset($categories) ? $categories : collect())->mapWithKeys(function ($cat) {
+            $children = $cat->children ? $cat->children->map(function ($sub) {
+                return [
+                    'id' => (int) $sub->id,
+                    'name' => $sub->translate('ar')?->name ?? $sub->translate(app()->getLocale())?->name ?? $sub->name,
+                ];
+            })->values() : collect();
+
+            return [(int) $cat->id => $children];
+        });
+    @endphp
+
     <div class="flex flex-col gap-6 pt-3 px-2 sm:px-4 lg:pt-3 lg:px-4">
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-gray-800 dark:text-white font-sans">
@@ -38,12 +51,13 @@
                         <select
                             id="ae-main-category"
                             class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none cursor-pointer bg-white"
+                            onchange="window.handleMainCategoryChange && window.handleMainCategoryChange(this.value)"
                         >
                             <option value="">— تحديد تلقائي ذكي (موصى به) —</option>
                             @if(isset($categories))
                                 @foreach ($categories as $mainCat)
                                     <option value="{{ $mainCat->id }}">
-                                        {{ $mainCat->translate(app()->getLocale())?->name ?? $mainCat->name }}
+                                        {{ $mainCat->translate('ar')?->name ?? $mainCat->translate(app()->getLocale())?->name ?? $mainCat->name }}
                                     </option>
                                 @endforeach
                             @endif
@@ -111,48 +125,42 @@
 
     @push('scripts')
         <script>
+            window.categoriesData = @json($categoriesData);
+
+            window.handleMainCategoryChange = function (mainId) {
+                const subSelect = document.getElementById('ae-sub-category');
+                if (! subSelect) return;
+
+                subSelect.innerHTML = '<option value="">— كافة الفئات الفرعية التابعة —</option>';
+
+                const children = (window.categoriesData && mainId) ? window.categoriesData[mainId] : null;
+
+                if (children && children.length > 0) {
+                    children.forEach(function (sub) {
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = sub.name;
+                        subSelect.appendChild(opt);
+                    });
+                    subSelect.disabled = false;
+                } else {
+                    subSelect.disabled = true;
+                }
+            };
+
+            // Global delegation for change event
+            document.addEventListener('change', function (e) {
+                if (e.target && e.target.id === 'ae-main-category') {
+                    window.handleMainCategoryChange(e.target.value);
+                }
+            });
+
             (function () {
                 const streamUrl = "{{ route('admin.dropshipping.import.stream') }}";
                 let source = null;
 
-                // Category children mapping
-                const categoriesData = @json(
-                    (isset($categories) ? $categories : collect())->mapWithKeys(function ($cat) {
-                        return [$cat->id => $cat->children->map(function ($sub) {
-                            return [
-                                'id' => $sub->id,
-                                'name' => $sub->translate(app()->getLocale())?->name ?? $sub->name,
-                            ];
-                        })];
-                    })
-                );
-
                 function $(id) {
                     return document.getElementById(id);
-                }
-
-                function setupCategoryListeners() {
-                    const mainSelect = $('ae-main-category');
-                    const subSelect = $('ae-sub-category');
-
-                    if (! mainSelect || ! subSelect) return;
-
-                    mainSelect.addEventListener('change', function () {
-                        const selectedMainId = this.value;
-                        subSelect.innerHTML = '<option value="">— كافة الفئات الفرعية التابعة —</option>';
-
-                        if (selectedMainId && categoriesData[selectedMainId] && categoriesData[selectedMainId].length > 0) {
-                            categoriesData[selectedMainId].forEach(function (sub) {
-                                const opt = document.createElement('option');
-                                opt.value = sub.id;
-                                opt.textContent = sub.name;
-                                subSelect.appendChild(opt);
-                            });
-                            subSelect.disabled = false;
-                        } else {
-                            subSelect.disabled = true;
-                        }
-                    });
                 }
 
                 function getSelectedCategoryId() {
@@ -296,9 +304,6 @@
                         finish();
                     });
                 }
-
-                // Initialize category listeners on page load
-                setupCategoryListeners();
 
                 // Event delegation on document survives Vue re-rendering the
                 // #app subtree (which would drop element-bound listeners).

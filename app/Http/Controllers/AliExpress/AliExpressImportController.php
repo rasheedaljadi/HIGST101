@@ -48,8 +48,8 @@ class AliExpressImportController extends Controller
         $root = $this->categoryRepository->getRootCategories()->first();
 
         $categories = $root
-            ? Category::where('parent_id', $root->id)->with('children')->orderBy('position')->get()
-            : Category::whereNull('parent_id')->with('children')->get();
+            ? Category::where('parent_id', $root->id)->with('children.translations')->orderBy('position')->get()
+            : Category::whereNull('parent_id')->with('children.translations')->get();
 
         return view('aliexpress.import', [
             'categories' => $categories,
