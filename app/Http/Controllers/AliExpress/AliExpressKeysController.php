@@ -48,9 +48,18 @@ class AliExpressKeysController extends Controller
             ->where('code', 'default')
             ->first();
 
-        $pricingRules = HigestPricingRule::orderByDesc('priority')
-            ->orderByDesc('updated_at')
-            ->get();
+        $pricingRule = HigestPricingRule::where('scope', 'global')->first()
+            ?? HigestPricingRule::orderByDesc('priority')->first()
+            ?? HigestPricingRule::create([
+                'name' => 'قاعدة التسعير العامة',
+                'scope' => 'global',
+                'type' => 'percentage',
+                'value' => 30.00,
+                'source_discount_policy' => 'PASS_TO_CUSTOMER',
+                'priority' => 0,
+                'version' => 1,
+                'status' => true,
+            ]);
 
         $pricingCategories = DB::table('categories')
             ->join('category_translations', 'categories.id', '=', 'category_translations.category_id')
@@ -65,7 +74,7 @@ class AliExpressKeysController extends Controller
             'tokenAccount' => $token?->account,
             'tokenExpiresAt' => $token?->access_token_expires_at,
             'warehouse' => $warehouse,
-            'pricingRules' => $pricingRules,
+            'pricingRule' => $pricingRule,
             'pricingCategories' => $pricingCategories,
         ]);
     }

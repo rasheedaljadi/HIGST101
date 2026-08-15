@@ -525,16 +525,16 @@
             <div class="p-6 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900 flex flex-col gap-6">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
                     <div>
-                        <h2 class="text-base font-bold text-gray-800 dark:text-white font-sans">محرك التسعير والهوامش الربحية (Pricing Engine V1.1)</h2>
+                        <h2 class="text-base font-bold text-gray-800 dark:text-white font-sans">محرك التسعير وهامش الربح</h2>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-sans">
-                            إدارة قواعد هامش الربح المستقلة، التحديث الآلي لأسعار البيع، وسجل حركات التسعير.
+                            ضبط وتعديل قاعدة تسعير منتجات الدروب شوبينج، التحديث الآلي لأسعار البيع، وسجل حركات التسعير.
                         </p>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <form action="{{ route('admin.dropshipping.pricing.recalculate') }}" method="POST">
                             @csrf
-                            <button type="submit" class="transparent-button text-sm font-semibold border px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1 font-sans">
+                            <button type="submit" class="transparent-button text-sm font-semibold border px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1 font-sans cursor-pointer">
                                 ⚡ إعادة حساب الأسعار الآن
                             </button>
                         </form>
@@ -545,262 +545,120 @@
                     </div>
                 </div>
 
-                {{-- Rule Creation Form --}}
-                <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <h3 class="text-sm font-bold mb-3 text-gray-800 dark:text-white font-sans">➕ إضافة قاعدة تسعير جديدة</h3>
-
-                    <form action="{{ route('admin.dropshipping.pricing.rules.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 items-end">
-                        @csrf
-
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">اسم القاعدة</label>
-                            <input type="text" name="name" required placeholder="مثال: هامش العام 30%" class="w-full border rounded-md px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500" />
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">النطاق (Scope)</label>
-                            <select id="create_rule_scope" name="scope" required onchange="toggleCreateScopeField()" class="w-full border rounded-md px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans">
-                                <option value="global">عام (Global)</option>
-                                <option value="category" disabled class="text-gray-400">فئة معينة (Category) — (ميزة مستقبلية ⏳)</option>
-                            </select>
-                        </div>
-
-                        <div id="create_scope_id_wrapper" class="hidden">
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">الفئة المعنية</label>
-                            <select id="create_rule_scope_id" name="scope_id" class="w-full border rounded-md px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans">
-                                <option value="">-- اختر الفئة --</option>
-                                @foreach($pricingCategories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }} (ID: {{ $category->id }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">نوع الهامش</label>
-                            <select name="type" required class="w-full border rounded-md px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans">
-                                <option value="percentage">نسبة مئوية (%)</option>
-                                <option value="fixed">مبلغ ثابت ($)</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">القيمة</label>
-                            <input type="number" step="0.01" name="value" required placeholder="30.00" class="w-full border rounded-md px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans" />
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">سياسة خصم المصدر</label>
-                            <select name="source_discount_policy" required class="w-full border rounded-md px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans">
-                                <option value="PASS_TO_CUSTOMER">تمرير للعميل (عرض التخفيض)</option>
-                                <option value="ABSORB_BY_HIGEST">امتصاص HIGEST (سعر صافي)</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">الأولوية</label>
-                            <input type="number" name="priority" value="0" min="0" placeholder="0" class="w-full border rounded-md px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 font-sans" />
-                        </div>
-
-                        <div>
-                            <button type="submit" class="w-full primary-button py-1.5 px-4 font-semibold text-sm rounded-md transition-all font-sans">
-                                حفظ القاعدة
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                {{-- Rules Table --}}
-                <div class="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-                    <div class="p-3 bg-gray-50 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
-                        <h3 class="text-sm font-bold dark:text-white font-sans">قواعد التسعير المفعلة</h3>
-                        <span class="text-xs text-gray-500 font-sans">الأولوية الأعلى تُنفذ أولاً</span>
-                    </div>
-
-                    <table class="w-full text-right border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold">
-                                <th class="p-3 border-b">الرقم</th>
-                                <th class="p-3 border-b">اسم القاعدة</th>
-                                <th class="p-3 border-b">النطاق</th>
-                                <th class="p-3 border-b">النوع</th>
-                                <th class="p-3 border-b">القيمة</th>
-                                <th class="p-3 border-b">سياسة خصم المصدر</th>
-                                <th class="p-3 border-b">الأولوية</th>
-                                <th class="p-3 border-b">النسخة</th>
-                                <th class="p-3 border-b">الحالة</th>
-                                <th class="p-3 border-b">الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-800 text-sm">
-                            @forelse($pricingRules as $rule)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                    <td class="p-3 font-mono">#{{ $rule->id }}</td>
-                                    <td class="p-3 font-bold dark:text-white">{{ $rule->name }}</td>
-                                    <td class="p-3">
-                                        <span class="px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 font-mono">
-                                            {{ strtoupper($rule->scope) }} {{ $rule->scope_id ? "(#{$rule->scope_id})" : '' }}
-                                        </span>
-                                    </td>
-                                    <td class="p-3">{{ $rule->type === 'percentage' ? 'نسبة مئوية' : 'مبلغ ثابت' }}</td>
-                                    <td class="p-3 font-bold text-emerald-600 dark:text-emerald-400">
-                                        {{ $rule->type === 'percentage' ? $rule->value . '%' : '$' . number_format($rule->value, 2) }}
-                                    </td>
-                                    <td class="p-3">
-                                        @php
-                                            $policyVal = is_object($rule->source_discount_policy) ? $rule->source_discount_policy->value : $rule->source_discount_policy;
-                                        @endphp
-                                        @if($policyVal === 'ABSORB_BY_HIGEST')
-                                            <span class="px-2 py-0.5 text-xs rounded bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-semibold" title="امتصاص خصم المصدر لـ HIGEST">امتصاص HIGEST</span>
-                                        @else
-                                            <span class="px-2 py-0.5 text-xs rounded bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 font-semibold" title="تمرير الخصم للعميل">تمرير للعميل</span>
-                                        @endif
-                                    </td>
-                                    <td class="p-3">{{ $rule->priority }}</td>
-                                    <td class="p-3 font-mono text-xs">v{{ $rule->version }}</td>
-                                    <td class="p-3">
-                                        @if($rule->status)
-                                            <span class="px-2 py-0.5 text-xs rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 font-semibold">نشط</span>
-                                        @else
-                                            <span class="px-2 py-0.5 text-xs rounded bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400 font-semibold">معطل</span>
-                                        @endif
-                                    </td>
-                                    <td class="p-3">
-                                        <div class="flex items-center gap-3">
-                                            <button type="button" onclick="openEditRuleModal({{ json_encode($rule) }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs font-bold transition-all cursor-pointer">
-                                                تعديل
-                                            </button>
-
-                                            <button type="button" onclick="openDeleteRuleModal({{ $rule->id }}, '{{ addslashes($rule->name) }}')" class="text-red-600 hover:text-red-800 dark:text-red-400 text-xs font-bold cursor-pointer transition-all">
-                                                حذف
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="10" class="p-6 text-center text-gray-500 dark:text-gray-400 text-sm font-sans">
-                                        لا توجد قواعد تسعير معرفة حالياً (الهامش الافتراضي عند عدم وجود قواعد هو 0%).
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        {{-- Edit Rule Modal Overlay --}}
-        <div id="editRuleModal" class="hidden">
-            <div id="editRuleModalCard" class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden font-sans transition-all">
-                <div class="flex items-center justify-between px-6 py-4 bg-slate-900 dark:bg-slate-950 text-white">
-                    <h3 class="text-base font-bold flex items-center gap-2">
-                        <span>✏️</span>
-                        <span>تعديل قاعدة التسعير</span>
-                    </h3>
-                    <button type="button" onclick="closeEditRuleModal()" class="text-gray-400 hover:text-white text-xl font-bold transition-all cursor-pointer">&times;</button>
-                </div>
-
-                <form id="editRuleForm" method="POST" action="" class="p-6 flex flex-col gap-4">
+                {{-- Single Pricing Rule Edit Form --}}
+                <form method="POST" action="{{ route('admin.dropshipping.pricing.rules.update', $pricingRule->id) }}" class="flex flex-col gap-5">
                     @csrf
                     @method('PUT')
 
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">اسم القاعدة</label>
-                        <input type="text" id="edit_rule_name" name="name" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans" />
-                    </div>
+                    <input type="hidden" name="scope" value="{{ $pricingRule->scope ?? 'global' }}" />
+                    <input type="hidden" name="priority" value="{{ $pricingRule->priority ?? 0 }}" />
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">النطاق (Scope)</label>
-                            <select id="edit_rule_scope" name="scope" required onchange="toggleEditScopeField()" class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
-                                <option value="global">عام (Global)</option>
-                                <option value="category" disabled class="text-gray-400">فئة معينة (Category) — (ميزة مستقبلية ⏳)</option>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {{-- Rule Name --}}
+                        <div class="flex flex-col gap-1.5">
+                            <label class="required text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                اسم قاعدة التسعير
+                            </label>
+                            <input
+                                type="text"
+                                name="name"
+                                value="{{ old('name', $pricingRule->name) }}"
+                                required
+                                placeholder="مثال: قاعدة التسعير العامة"
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                            />
+                        </div>
+
+                        {{-- Margin Type --}}
+                        <div class="flex flex-col gap-1.5">
+                            <label class="required text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                نوع الهامش الربحي
+                            </label>
+                            <select
+                                name="type"
+                                required
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                            >
+                                <option value="percentage" {{ old('type', $pricingRule->type) === 'percentage' ? 'selected' : '' }}>نسبة مئوية (%)</option>
+                                <option value="fixed" {{ old('type', $pricingRule->type) === 'fixed' ? 'selected' : '' }}>مبلغ ثابت ($)</option>
                             </select>
                         </div>
 
-                        <div id="edit_scope_id_wrapper" class="hidden">
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">الفئة المعنية</label>
-                            <select id="edit_rule_scope_id" name="scope_id" class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
-                                <option value="">-- اختر الفئة --</option>
-                                @foreach($pricingCategories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }} (ID: {{ $category->id }})</option>
-                                @endforeach
+                        {{-- Margin Value --}}
+                        <div class="flex flex-col gap-1.5">
+                            <label class="required text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                قيمة الهامش
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="value"
+                                value="{{ old('value', $pricingRule->value) }}"
+                                required
+                                placeholder="30.00"
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                            />
+                        </div>
+
+                        {{-- Source Discount Policy --}}
+                        <div class="flex flex-col gap-1.5">
+                            <label class="required text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                سياسة خصم المصدر (AliExpress Source Discount)
+                            </label>
+                            @php
+                                $currentPolicy = is_object($pricingRule->source_discount_policy) ? $pricingRule->source_discount_policy->value : $pricingRule->source_discount_policy;
+                            @endphp
+                            <select
+                                name="source_discount_policy"
+                                required
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                            >
+                                <option value="PASS_TO_CUSTOMER" {{ old('source_discount_policy', $currentPolicy) === 'PASS_TO_CUSTOMER' ? 'selected' : '' }}>
+                                    تمرير للعميل (عرض التخفيض الأصلي للمنتج)
+                                </option>
+                                <option value="ABSORB_BY_HIGEST" {{ old('source_discount_policy', $currentPolicy) === 'ABSORB_BY_HIGEST' ? 'selected' : '' }}>
+                                    امتصاص HIGEST (احتساب السعر الصافي بدون إظهار التخفيض)
+                                </option>
                             </select>
                         </div>
-                    </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">نوع الهامش</label>
-                            <select id="edit_rule_type" name="type" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
-                                <option value="percentage">نسبة مئوية (%)</option>
-                                <option value="fixed">مبلغ ثابت ($)</option>
+                        {{-- Status --}}
+                        <div class="flex flex-col gap-1.5">
+                            <label class="required text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                حالة القاعدة
+                            </label>
+                            <select
+                                name="status"
+                                required
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                            >
+                                <option value="1" {{ old('status', $pricingRule->status) ? 'selected' : '' }}>نشط (مفعلة)</option>
+                                <option value="0" {{ !old('status', $pricingRule->status) ? 'selected' : '' }}>معطل (غير مفعلة)</option>
                             </select>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">القيمة</label>
-                            <input type="number" step="0.01" id="edit_rule_value" name="value" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans" />
+                        {{-- Version & Meta Info --}}
+                        <div class="flex flex-col justify-end">
+                            <div class="rounded-md bg-gray-50 dark:bg-gray-800/80 p-2.5 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 font-sans">
+                                <span class="font-bold">رقم النسخة:</span> v{{ $pricingRule->version }} &nbsp;|&nbsp;
+                                <span class="font-bold">آخر تحديث:</span> {{ $pricingRule->updated_at ? $pricingRule->updated_at->diffForHumans() : 'الآن' }}
+                            </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">سياسة خصم المصدر (AliExpress Source Discount Policy)</label>
-                        <select id="edit_rule_source_discount_policy" name="source_discount_policy" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
-                            <option value="PASS_TO_CUSTOMER">تمرير الخصم للعميل (عرض التخفيض PASS_TO_CUSTOMER)</option>
-                            <option value="ABSORB_BY_HIGEST">امتصاص الخصم لـ HIGEST (سعر صافي ABSORB_BY_HIGEST)</option>
-                        </select>
-                    </div>
+                    <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-4 mt-2">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-sans">
+                            💡 سيتم تطبيق التعديلات وإعادة احتساب أسعار منتجات المتجر تلقائياً وتحديث الكاش عند الحفظ.
+                        </p>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">الأولوية</label>
-                            <input type="number" id="edit_rule_priority" name="priority" value="0" class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans" />
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300 font-sans">الحالة</label>
-                            <select id="edit_rule_status" name="status" required class="w-full border rounded-lg px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-amber-500 font-sans">
-                                <option value="1">نشط</option>
-                                <option value="0">معطل</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800 mt-2">
-                        <button type="button" onclick="closeEditRuleModal()" style="background-color: #f3f4f6 !important; color: #374151 !important; font-weight: 600 !important;" class="px-4 py-2.5 text-sm font-semibold rounded-xl transition-all font-sans cursor-pointer">
-                            إلغاء
+                        <button
+                            type="submit"
+                            class="primary-button py-2 px-6 font-bold text-sm rounded-md transition-all font-sans cursor-pointer"
+                        >
+                            حفظ وتطبيق قاعدة التسعير
                         </button>
-                        <button type="submit" style="background-color: #d97706 !important; color: #ffffff !important; font-weight: 700 !important;" class="px-5 py-2.5 text-sm font-semibold rounded-xl font-sans shadow-md cursor-pointer transition-all">
-                            حفظ التغييرات
-                        </button>
                     </div>
-                </form>
-            </div>
-        </div>
-
-        {{-- System Delete Confirmation Modal Overlay --}}
-        <div id="deleteRuleModal" class="hidden">
-            <div id="deleteRuleModalCard" class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 text-center font-sans transition-all">
-                <div class="w-14 h-14 bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">
-                    🗑️
-                </div>
-
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">تأكيد حذف قاعدة التسعير</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-                    هل أنت تأكد من حذف قاعدة التسعير <span id="delete_rule_name_display" class="font-bold text-gray-900 dark:text-white"></span>؟<br>
-                    <span class="text-xs text-red-500 font-semibold block mt-1">تنبيه: لا يمكن التراجع عن هذا الإجراء وسيتراجع النظام لتكلفة المصدر (هامش 0%).</span>
-                </p>
-
-                <form id="deleteRuleForm" method="POST" action="" class="flex items-center justify-center gap-3">
-                    @csrf
-                    @method('DELETE')
-                    <button type="button" onclick="closeDeleteRuleModal()" style="background-color: #f3f4f6 !important; color: #374151 !important; font-weight: 600 !important;" class="w-1/2 py-2.5 px-4 text-sm font-semibold rounded-xl transition-all cursor-pointer">
-                        إلغاء
-                    </button>
-                    <button type="submit" style="background-color: #dc2626 !important; color: #ffffff !important; font-weight: 700 !important;" class="w-1/2 py-2.5 px-4 text-sm font-semibold rounded-xl shadow-md cursor-pointer transition-all">
-                        تأكيد الحذف
-                    </button>
                 </form>
             </div>
         </div>
@@ -858,145 +716,7 @@
                 }
 
                 switchTab(activeTab);
-                toggleCreateScopeField();
             });
-
-            function toggleCreateScopeField() {
-                const scopeSelect = document.getElementById('create_rule_scope');
-                const container = document.getElementById('create_scope_id_wrapper');
-                const scopeIdSelect = document.getElementById('create_rule_scope_id');
-                
-                if (scopeSelect && container) {
-                    if (scopeSelect.value === 'category') {
-                        container.classList.remove('hidden');
-                    } else {
-                        container.classList.add('hidden');
-                        if (scopeIdSelect) scopeIdSelect.value = '';
-                    }
-                }
-            }
-
-            function toggleEditScopeField() {
-                const scopeSelect = document.getElementById('edit_rule_scope');
-                const container = document.getElementById('edit_scope_id_wrapper');
-                const scopeIdSelect = document.getElementById('edit_rule_scope_id');
-                
-                if (scopeSelect && container) {
-                    if (scopeSelect.value === 'category') {
-                        container.classList.remove('hidden');
-                    } else {
-                        container.classList.add('hidden');
-                        if (scopeIdSelect) scopeIdSelect.value = '';
-                    }
-                }
-            }
-
-            function openEditRuleModal(rule) {
-                const modal = document.getElementById('editRuleModal');
-                const form = document.getElementById('editRuleForm');
-                const card = document.getElementById('editRuleModalCard');
-                
-                form.action = "{{ url('admin/dropshipping/pricing/rules') }}/" + rule.id;
-                
-                document.getElementById('edit_rule_name').value = rule.name;
-                document.getElementById('edit_rule_scope').value = rule.scope;
-                document.getElementById('edit_rule_scope_id').value = rule.scope_id || '';
-                document.getElementById('edit_rule_type').value = rule.type;
-                document.getElementById('edit_rule_value').value = rule.value;
-                const policyVal = typeof rule.source_discount_policy === 'object' && rule.source_discount_policy !== null ? rule.source_discount_policy.value : (rule.source_discount_policy || 'PASS_TO_CUSTOMER');
-                document.getElementById('edit_rule_source_discount_policy').value = policyVal;
-                document.getElementById('edit_rule_priority').value = rule.priority;
-                document.getElementById('edit_rule_status').value = rule.status ? '1' : '0';
-                
-                toggleEditScopeField();
-                
-                if (modal) {
-                    if (modal.parentNode !== document.body) {
-                        document.body.appendChild(modal);
-                    }
-                    modal.style.position = 'fixed';
-                    modal.style.top = '0';
-                    modal.style.left = '0';
-                    modal.style.right = '0';
-                    modal.style.bottom = '0';
-                    modal.style.width = '100vw';
-                    modal.style.height = '100vh';
-                    modal.style.zIndex = '9999999';
-                    modal.style.display = 'flex';
-                    modal.style.alignItems = 'center';
-                    modal.style.justifyContent = 'center';
-                    modal.style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
-                    modal.style.backdropFilter = 'blur(8px)';
-                    modal.style.webkitBackdropFilter = 'blur(8px)';
-                    modal.classList.remove('hidden');
-                }
-
-                if (card) {
-                    card.style.maxWidth = '540px';
-                    card.style.width = '90%';
-                    card.style.margin = 'auto';
-                    card.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.5)';
-                }
-
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeEditRuleModal() {
-                const modal = document.getElementById('editRuleModal');
-                if (modal) {
-                    modal.style.display = 'none';
-                    modal.classList.add('hidden');
-                }
-                document.body.style.overflow = 'auto';
-            }
-
-            function openDeleteRuleModal(id, name) {
-                const modal = document.getElementById('deleteRuleModal');
-                const form = document.getElementById('deleteRuleForm');
-                const card = document.getElementById('deleteRuleModalCard');
-                
-                form.action = "{{ url('admin/dropshipping/pricing/rules') }}/" + id;
-                document.getElementById('delete_rule_name_display').innerText = '"' + name + '"';
-                
-                if (modal) {
-                    if (modal.parentNode !== document.body) {
-                        document.body.appendChild(modal);
-                    }
-                    modal.style.position = 'fixed';
-                    modal.style.top = '0';
-                    modal.style.left = '0';
-                    modal.style.right = '0';
-                    modal.style.bottom = '0';
-                    modal.style.width = '100vw';
-                    modal.style.height = '100vh';
-                    modal.style.zIndex = '9999999';
-                    modal.style.display = 'flex';
-                    modal.style.alignItems = 'center';
-                    modal.style.justifyContent = 'center';
-                    modal.style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
-                    modal.style.backdropFilter = 'blur(8px)';
-                    modal.style.webkitBackdropFilter = 'blur(8px)';
-                    modal.classList.remove('hidden');
-                }
-
-                if (card) {
-                    card.style.maxWidth = '440px';
-                    card.style.width = '90%';
-                    card.style.margin = 'auto';
-                    card.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.5)';
-                }
-
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeDeleteRuleModal() {
-                const modal = document.getElementById('deleteRuleModal');
-                if (modal) {
-                    modal.style.display = 'none';
-                    modal.classList.add('hidden');
-                }
-                document.body.style.overflow = 'auto';
-            }
         </script>
     </div>
 </x-admin::layouts>
