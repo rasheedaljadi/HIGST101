@@ -34,4 +34,5 @@ Route::controller(PricingController::class)->prefix('audit-logs')->group(functio
     Route::get('/pricing', 'history')->name('admin.audit-logs.pricing.index');
     Route::get('/products-import', 'productImportHistory')->name('admin.audit-logs.products-import.index');
     Route::post('/products-import/{id}/sync-shipping', 'syncProductShipping')->name('admin.audit-logs.products-import.sync-shipping');
+    Route::post('/products-import/{id}/update-manual-shipping', 'updateManualShipping')->name('admin.audit-logs.products-import.update-manual-shipping');
 });

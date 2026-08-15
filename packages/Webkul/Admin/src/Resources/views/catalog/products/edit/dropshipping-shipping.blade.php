@@ -59,6 +59,11 @@
     }
 
     $baseShipping = $import->base_shipping_cost !== null ? (float) $import->base_shipping_cost : null;
+    $isManualShipping = !empty($snapshot['is_manual_shipping']);
+    $isShippingApiFailed = ($baseShipping === null) || $isManualShipping;
+    // Manual shipping editing applies ONLY to the main product ($isVariant is false) AND only when API shipping fetch failed/unsynced
+    $canEditManualShipping = ! $isVariant && $isShippingApiFailed;
+
     $storePrice = (float) $product->price;
 
     $totalLandedCostMin = $supplierMinPrice !== null && $baseShipping !== null ? $supplierMinPrice + $baseShipping : null;
@@ -122,14 +127,76 @@
         {{-- 2. Shipping Details Grid --}}
         <div class="grid grid-cols-2 gap-2.5">
             {{-- Shipping Cost --}}
-            <div class="p-2.5 rounded-lg border border-gray-150 dark:border-gray-800 bg-white dark:bg-gray-900/40">
-                <span class="text-gray-500 block mb-1">تكلفة الشحن:</span>
-                @if($baseShipping !== null)
-                    <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-sm" dir="ltr">
-                        ${{ number_format($baseShipping, 2) }} {{ $import->shipping_currency ?? 'USD' }}
-                    </span>
-                @else
-                    <span class="text-gray-400 font-medium">غير متزامن</span>
+            <div class="p-2.5 rounded-lg border border-gray-150 dark:border-gray-800 bg-white dark:bg-gray-900/40 relative">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                    <span class="text-gray-500 block">تكلفة الشحن:</span>
+
+                    @if($canEditManualShipping)
+                        <button 
+                            type="button" 
+                            onclick="toggleManualShippingEdit()"
+                            class="inline-flex items-center gap-1 text-red-500 hover:text-red-600 transition-transform hover:scale-110 cursor-pointer p-0.5"
+                            title="تحرير وتحديد سعر الشحن يدوياً للمنتج وجميع متغيراته"
+                        >
+                            <svg class="w-4 h-4 fill-current text-red-500 hover:text-red-600 animate-pulse" viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                        </button>
+                    @endif
+                </div>
+
+                <div id="shipping-cost-display-mode" class="flex items-center justify-between">
+                    @if($baseShipping !== null)
+                        <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-sm" dir="ltr">
+                            ${{ number_format($baseShipping, 2) }} {{ $import->shipping_currency ?? 'USD' }}
+                        </span>
+                        @if($isManualShipping)
+                            <span class="text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 rounded font-semibold">
+                                يدوي (كل المتغيرات)
+                            </span>
+                        @endif
+                    @else
+                        <span class="text-gray-400 font-medium">غير متزامن</span>
+                    @endif
+                </div>
+
+                @if($canEditManualShipping)
+                    <div id="shipping-cost-edit-mode" class="hidden mt-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <div class="relative flex-1">
+                                <span class="absolute inset-y-0 start-0 flex items-center px-2 text-gray-500 font-mono text-xs">$</span>
+                                <input 
+                                    type="number" 
+                                    id="manual_shipping_cost_input"
+                                    step="0.01" 
+                                    min="0"
+                                    value="{{ $baseShipping !== null ? number_format($baseShipping, 2, '.', '') : '' }}"
+                                    placeholder="0.00"
+                                    class="w-full ps-6 pe-2 py-1 text-xs font-mono border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <button 
+                                type="button" 
+                                onclick="saveManualShippingCost({{ $import->id }}, this)"
+                                class="px-2 py-1 text-xs font-semibold rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1 cursor-pointer"
+                                title="حفظ وينطبق على جميع المتغيرات"
+                            >
+                                <span class="icon-check text-xs"></span>
+                                <span>حفظ</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                onclick="toggleManualShippingEdit()"
+                                class="px-1.5 py-1 text-xs font-semibold rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                                title="إلغاء"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                            ⚡ سينطبق السعر اليدوي للشحن على المنتج وكل متغيراته.
+                        </p>
+                    </div>
                 @endif
             </div>
 
@@ -253,6 +320,66 @@
                 }
                 btnEl.disabled = false;
                 icon.className = origClass;
+            });
+        };
+
+        window.toggleManualShippingEdit = function() {
+            const displayMode = document.getElementById('shipping-cost-display-mode');
+            const editMode = document.getElementById('shipping-cost-edit-mode');
+            if (!displayMode || !editMode) return;
+
+            if (editMode.classList.contains('hidden')) {
+                editMode.classList.remove('hidden');
+                displayMode.classList.add('hidden');
+                const input = document.getElementById('manual_shipping_cost_input');
+                if (input) input.focus();
+            } else {
+                editMode.classList.add('hidden');
+                displayMode.classList.remove('hidden');
+            }
+        };
+
+        window.saveManualShippingCost = function(importId, btnEl) {
+            const input = document.getElementById('manual_shipping_cost_input');
+            if (!input || !importId) return;
+
+            const val = parseFloat(input.value);
+            if (isNaN(val) || val < 0) {
+                alert('الرجاء إدخال سعر شحن صحيح.');
+                return;
+            }
+
+            if (btnEl) btnEl.disabled = true;
+
+            const saveUrl = "{{ route('admin.audit-logs.products-import.update-manual-shipping', ['id' => ':id']) }}".replace(':id', importId);
+
+            fetch(saveUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    base_shipping_cost: val
+                })
+            })
+            .then(res => res.json().then(data => ({ status: res.status, body: data })))
+            .then(res => {
+                if (res.status === 200 && res.body.success) {
+                    if (window.emitter) {
+                        window.emitter.emit('add-flash', { type: 'success', message: res.body.message || 'تم حفظ سعر الشحن اليدوي وتطبيقه على كل متغيرات المنتج.' });
+                    }
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    alert(res.body.message || 'حدث خطأ أثناء حفظ سعر الشحن.');
+                    if (btnEl) btnEl.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error('Error saving manual shipping cost:', err);
+                alert('حدث خطأ في الاتصال أثناء حفظ سعر الشحن.');
+                if (btnEl) btnEl.disabled = false;
             });
         };
     </script>

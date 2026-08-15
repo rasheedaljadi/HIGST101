@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Spatie\ResponseCache\Facades\ResponseCache;
 use Throwable;
 use Webkul\Admin\Http\Controllers\Controller;
+use Webkul\Product\Models\Product;
 
 class PricingController extends Controller
 {
@@ -322,6 +323,7 @@ class PricingController extends Controller
 
         $snapshot['shipping'] = $shipping;
         $snapshot['is_choice'] = (bool) ($shipping['is_choice'] ?? false);
+        unset($snapshot['is_manual_shipping'], $snapshot['manual_shipping_cost']);
 
         $import->forceFill([
             'base_shipping_cost' => $shipping['cost'],
@@ -347,6 +349,87 @@ class PricingController extends Controller
                 'tracking' => $shipping['tracking'],
                 'is_choice' => $shipping['is_choice'] ?? false,
             ],
+        ]);
+    }
+
+    /**
+     * Manually set shipping cost for an imported product and propagate to all its variants.
+     */
+    public function updateManualShipping(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'base_shipping_cost' => 'required|numeric|min:0',
+        ]);
+
+        $import = AliExpressProductImport::find($id);
+
+        if (! $import) {
+            return response()->json([
+                'success' => false,
+                'message' => 'سجل الاستيراد غير موجود.',
+            ], 404);
+        }
+
+        $cost = (float) $validated['base_shipping_cost'];
+        $snapshot = is_array($import->payload_snapshot)
+            ? $import->payload_snapshot
+            : (json_decode((string) $import->payload_snapshot, true) ?? []);
+
+        $snapshot['is_manual_shipping'] = true;
+        $snapshot['manual_shipping_cost'] = $cost;
+
+        // Update parent import record
+        $import->forceFill([
+            'base_shipping_cost' => $cost,
+            'shipping_currency' => $import->shipping_currency ?: 'USD',
+            'shipping_company' => $import->shipping_company ?: 'الشحن اليدوي (Manual)',
+            'shipping_synced_at' => now(),
+            'payload_snapshot' => $snapshot,
+            'updated_at' => now(),
+        ])->save();
+
+        // If this product has linked child variants, propagate this shipping cost to all variants
+        if ($import->product_id) {
+            $product = Product::find($import->product_id);
+            if ($product) {
+                $variantIds = $product->variants ? $product->variants->pluck('id')->all() : [];
+
+                if (! empty($variantIds)) {
+                    AliExpressProductImport::whereIn('product_id', $variantIds)
+                        ->get()
+                        ->each(function ($variantImport) use ($cost) {
+                            $vSnap = is_array($variantImport->payload_snapshot)
+                                ? $variantImport->payload_snapshot
+                                : (json_decode((string) $variantImport->payload_snapshot, true) ?? []);
+                            $vSnap['is_manual_shipping'] = true;
+                            $vSnap['manual_shipping_cost'] = $cost;
+
+                            $variantImport->forceFill([
+                                'base_shipping_cost' => $cost,
+                                'shipping_synced_at' => now(),
+                                'payload_snapshot' => $vSnap,
+                            ])->save();
+                        });
+                }
+
+                // Recalculate prices for all variant offers of this product & its variants
+                $allProductIds = array_merge([$product->id], $variantIds);
+                $offers = HigestSourceOffer::whereIn('product_id', $allProductIds)
+                    ->orWhereIn('variant_id', $allProductIds)
+                    ->get();
+
+                foreach ($offers as $offer) {
+                    $this->recalculationService->recalculateOne($offer->variant_id, PricingTrigger::MANUAL);
+                }
+            }
+        }
+
+        $this->clearCatalogCache();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حفظ تكلفة الشحن اليدوية وتطبيقها على جميع متغيرات المنتج بنجاح.',
+            'base_shipping_cost' => $cost,
         ]);
     }
 }
