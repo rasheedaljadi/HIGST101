@@ -132,6 +132,15 @@
                     </p>
                 </div>
 
+                <!-- Category Filter Component (Level 1 Main + Level 2 Subcategories) -->
+                <v-category-filter
+                    ref="categoryFilterComponent"
+                    :categories="categories"
+                    :applied-category-ids="filters.applied['category_id'] || []"
+                    @values-applied="applyCategoryFilter($event)"
+                >
+                </v-category-filter>
+
                 <!-- Filters Items Vue Component -->
                 <v-filter-item
                     ref="filterItemComponent"
@@ -313,6 +322,131 @@
         </x-shop::accordion>
     </script>
 
+    <!-- Category Filter Vue template -->
+    <script
+        type="text/x-template"
+        id="v-category-filter-template"
+    >
+        <x-shop::accordion class="last:border-b-0" :is-active="true" v-if="categories && categories.length">
+            <!-- Filter Item Header -->
+            <x-slot:header class="px-0 py-2.5 max-sm:!pb-1.5">
+                <div class="flex items-center justify-between">
+                    <p class="text-lg font-semibold max-sm:text-base max-sm:font-medium">
+                        {{ app()->getLocale() == 'ar' ? 'الفئات' : 'Categories' }}
+                    </p>
+                </div>
+            </x-slot>
+
+            <!-- Filter Item Content -->
+            <x-slot:content class="!p-0">
+                <!-- Search Box For Categories -->
+                <div
+                    class="flex flex-col gap-1 mb-2"
+                    v-if="categories.length > 5"
+                >
+                    <div class="relative">
+                        <div class="icon-search pointer-events-none absolute top-3 flex items-center text-2xl max-md:text-xl max-sm:top-2.5 ltr:left-3 rtl:right-3"></div>
+
+                        <input
+                            type="text"
+                            class="block w-full rounded-xl border border-zinc-200 px-11 py-3.5 text-sm font-medium text-gray-900 max-md:rounded-lg max-md:px-10 max-md:py-3 max-md:font-normal max-sm:text-xs"
+                            placeholder="@lang('shop::app.categories.filters.search.title')"
+                            v-model="searchQuery"
+                        />
+                    </div>
+                </div>
+
+                <!-- Hierarchical Category List -->
+                <ul class="pb-3 text-base text-gray-700 max-h-[360px] overflow-y-auto journal-scroll space-y-1">
+                    <li
+                        v-for="cat in filteredCategories"
+                        :key="'parent_cat_' + cat.id"
+                        class="rounded-lg p-0.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                    >
+                        <!-- Level 1: Main Category -->
+                        <div class="flex select-none items-center justify-between gap-x-2 ltr:pl-1 rtl:pr-1 py-1">
+                            <div class="flex items-center gap-x-3 flex-1 min-w-0">
+                                <input
+                                    type="checkbox"
+                                    :id="`filter_cat_${cat.id}`"
+                                    class="peer hidden"
+                                    :value="Number(cat.id)"
+                                    v-model="appliedValues"
+                                    @change="onCategoryCheck(cat)"
+                                />
+
+                                <label
+                                    class="icon-uncheck peer-checked:icon-check-box cursor-pointer text-2xl text-navyBlue peer-checked:text-navyBlue max-sm:text-xl shrink-0"
+                                    role="checkbox"
+                                    tabindex="0"
+                                    :for="`filter_cat_${cat.id}`"
+                                >
+                                </label>
+
+                                <label
+                                    class="cursor-pointer py-0.5 text-sm font-semibold text-gray-900 dark:text-gray-100 max-sm:text-xs truncate flex-1"
+                                    :for="`filter_cat_${cat.id}`"
+                                >
+                                    @{{ cat.name }}
+                                </label>
+                            </div>
+
+                            <!-- Expand/Collapse toggle for Level 2 Subcategories -->
+                            <button
+                                type="button"
+                                v-if="cat.children && cat.children.length"
+                                @click.stop="toggleExpand(cat.id)"
+                                class="p-1 rounded text-gray-500 hover:text-navyBlue hover:bg-gray-200/60 dark:hover:bg-gray-700/60 transition-all cursor-pointer shrink-0"
+                                :title="isExpanded(cat.id) ? 'إغلاق' : 'عرض الفئات الفرعية'"
+                            >
+                                <span
+                                    class="icon-arrow-down text-sm inline-block transition-transform duration-200"
+                                    :class="{ 'rotate-180': isExpanded(cat.id) }"
+                                ></span>
+                            </button>
+                        </div>
+
+                        <!-- Level 2: Subcategories -->
+                        <ul
+                            v-if="cat.children && cat.children.length && (isExpanded(cat.id) || searchQuery)"
+                            class="ltr:pl-5 rtl:pr-5 space-y-1 mt-1 border-l-2 rtl:border-r-2 rtl:border-l-0 border-blue-200 dark:border-blue-800 ltr:ml-3 rtl:mr-3 py-1"
+                        >
+                            <li
+                                v-for="subCat in cat.children"
+                                :key="'sub_cat_' + subCat.id"
+                                class="flex select-none items-center gap-x-2.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800/60 ltr:pl-1 rtl:pr-1 py-0.5"
+                            >
+                                <input
+                                    type="checkbox"
+                                    :id="`filter_cat_${subCat.id}`"
+                                    class="peer hidden"
+                                    :value="Number(subCat.id)"
+                                    v-model="appliedValues"
+                                    @change="applyValue"
+                                />
+
+                                <label
+                                    class="icon-uncheck peer-checked:icon-check-box cursor-pointer text-xl text-navyBlue peer-checked:text-navyBlue max-sm:text-lg shrink-0"
+                                    role="checkbox"
+                                    tabindex="0"
+                                    :for="`filter_cat_${subCat.id}`"
+                                >
+                                </label>
+
+                                <label
+                                    class="w-full cursor-pointer py-0.5 text-xs font-normal text-gray-700 dark:text-gray-300 max-sm:text-[11px] truncate"
+                                    :for="`filter_cat_${subCat.id}`"
+                                >
+                                    @{{ subCat.name }}
+                                </label>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </x-slot>
+        </x-shop::accordion>
+    </script>
+
     <script
         type="text/x-template"
         id="v-price-filter-template"
@@ -344,6 +478,8 @@
                 return {
                     isLoading: true,
 
+                    categories: [],
+
                     filters: {
                         available: {},
 
@@ -353,12 +489,24 @@
             },
 
             mounted() {
+                this.getCategories();
+
                 this.getFilters();
 
                 this.setFilters();
             },
 
             methods: {
+                getCategories() {
+                    this.$axios.get('{{ route("shop.api.categories.tree") }}')
+                        .then((response) => {
+                            this.categories = response.data.data || [];
+                        })
+                        .catch((error) => {
+                            console.log('Error fetching category tree:', error);
+                        });
+                },
+
                 getFilters() {
                     this.$axios.get('{{ route("shop.api.categories.attributes") }}', {
                             params: {
@@ -390,6 +538,16 @@
                     this.$emit('filter-applied', this.filters.applied);
                 },
 
+                applyCategoryFilter(values) {
+                    if (values && values.length) {
+                        this.filters.applied['category_id'] = values;
+                    } else {
+                        delete this.filters.applied['category_id'];
+                    }
+
+                    this.$emit('filter-applied', this.filters.applied);
+                },
+
                 applyFilter(filter, values) {
                     if (values.length) {
                         this.filters.applied[filter.code] = values;
@@ -406,20 +564,112 @@
                      */
                     this.filters.applied = {};
 
+                    if (this.$refs.categoryFilterComponent) {
+                        this.$refs.categoryFilterComponent.appliedValues = [];
+                    }
+
                     /**
                      * Clearing child components. Improvisation needed here.
                      */
-                    this.$refs.filterItemComponent.forEach((filterItem) => {
-                        if (filterItem.filter.code === 'price') {
-                            filterItem.$data.appliedValues = null;
-                        } else {
-                            filterItem.$data.appliedValues = [];
-                        }
-                    });
+                    if (this.$refs.filterItemComponent) {
+                        this.$refs.filterItemComponent.forEach((filterItem) => {
+                            if (filterItem.filter.code === 'price') {
+                                filterItem.$data.appliedValues = null;
+                            } else {
+                                filterItem.$data.appliedValues = [];
+                            }
+                        });
+                    }
 
                     this.$emit('filter-applied', this.filters.applied);
                 },
             },
+        });
+
+        app.component('v-category-filter', {
+            template: '#v-category-filter-template',
+
+            props: ['categories', 'appliedCategoryIds'],
+
+            data() {
+                return {
+                    appliedValues: [],
+                    expandedCats: {},
+                    searchQuery: '',
+                };
+            },
+
+            created() {
+                this.syncApplied();
+            },
+
+            watch: {
+                appliedCategoryIds: {
+                    handler() {
+                        this.syncApplied();
+                    },
+                    deep: true,
+                },
+                categories: {
+                    handler() {
+                        this.syncApplied();
+                    },
+                    deep: true,
+                }
+            },
+
+            computed: {
+                filteredCategories() {
+                    if (! this.searchQuery) {
+                        return this.categories || [];
+                    }
+
+                    let search = this.searchQuery.toLowerCase();
+                    return (this.categories || []).filter(cat => {
+                        let matchParent = cat.name && cat.name.toLowerCase().includes(search);
+                        let matchChildren = cat.children && cat.children.some(child => child.name && child.name.toLowerCase().includes(search));
+                        return matchParent || matchChildren;
+                    });
+                }
+            },
+
+            methods: {
+                syncApplied() {
+                    let applied = this.appliedCategoryIds || this.$parent?.$data?.filters?.applied?.['category_id'];
+                    if (applied) {
+                        let list = Array.isArray(applied) ? applied : String(applied).split(',');
+                        this.appliedValues = list.map(v => isNaN(v) ? v : Number(v));
+
+                        // Auto-expand parent categories of selected subcategories
+                        (this.categories || []).forEach(cat => {
+                            if (cat.children && cat.children.some(c => this.appliedValues.includes(Number(c.id)))) {
+                                this.expandedCats[cat.id] = true;
+                            }
+                        });
+                    } else {
+                        this.appliedValues = [];
+                    }
+                },
+
+                applyValue() {
+                    this.$emit('values-applied', this.appliedValues);
+                },
+
+                onCategoryCheck(cat) {
+                    if (cat.children && cat.children.length && this.appliedValues.includes(Number(cat.id))) {
+                        this.expandedCats[cat.id] = true;
+                    }
+                    this.applyValue();
+                },
+
+                toggleExpand(catId) {
+                    this.expandedCats[catId] = !this.expandedCats[catId];
+                },
+
+                isExpanded(catId) {
+                    return !!this.expandedCats[catId];
+                }
+            }
         });
 
         app.component('v-filter-item', {
