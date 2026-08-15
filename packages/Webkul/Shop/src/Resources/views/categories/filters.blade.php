@@ -459,7 +459,11 @@
 
             methods: {
                 getCategories() {
-                    this.$axios.get('{{ route("shop.api.categories.tree") }}')
+                    this.$axios.get('{{ route("shop.api.categories.tree") }}', {
+                            params: {
+                                only_with_products: 1
+                            }
+                        })
                         .then((response) => {
                             this.categories = response.data.data || [];
                         })

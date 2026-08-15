@@ -53,7 +53,37 @@ class CategoryController extends APIController
     {
         $categories = $this->categoryRepository->getVisibleCategoryTree(core()->getCurrentChannel()->root_category_id);
 
+        if (request()->boolean('only_with_products')) {
+            $categoryIdsWithProducts = DB::table('product_categories')
+                ->join('products', 'products.id', '=', 'product_categories.product_id')
+                ->join('product_channels', 'product_channels.product_id', '=', 'products.id')
+                ->where('product_channels.channel_id', core()->getCurrentChannel()->id)
+                ->pluck('product_categories.category_id')
+                ->unique()
+                ->toArray();
+
+            $categories = $this->filterCategoriesTree($categories, $categoryIdsWithProducts);
+        }
+
         return CategoryTreeResource::collection($categories);
+    }
+
+    /**
+     * Filter category tree recursively to keep only categories with products or with children that have products.
+     */
+    protected function filterCategoriesTree($categories, array $categoryIdsWithProducts)
+    {
+        return $categories->filter(function ($category) use ($categoryIdsWithProducts) {
+            if ($category->children && $category->children->count()) {
+                $filteredChildren = $this->filterCategoriesTree($category->children, $categoryIdsWithProducts);
+                $category->setRelation('children', $filteredChildren);
+            }
+
+            $hasDirectProducts = in_array($category->id, $categoryIdsWithProducts);
+            $hasValidChildren = $category->children && $category->children->count() > 0;
+
+            return $hasDirectProducts || $hasValidChildren;
+        })->values();
     }
 
     /**
