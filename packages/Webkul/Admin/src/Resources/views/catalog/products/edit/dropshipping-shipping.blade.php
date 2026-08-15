@@ -250,26 +250,28 @@
                 </span>
             </div>
 
-            <div class="flex justify-between border-t border-blue-200 dark:border-blue-800 pt-1 font-bold text-gray-900 dark:text-white">
-                <span>{{ $isVariant ? 'إجمالي تكلفة شراء المتغير عليك:' : 'إجمالي تكلفة الشراء عليك:' }}</span>
-                <span class="font-mono text-blue-700 dark:text-blue-300" dir="ltr">
-                    @if($totalLandedCostMin !== null)
-                        ${{ number_format($totalLandedCostMin, 2) }}
-                        @if($totalLandedCostMax !== null && $totalLandedCostMax > $totalLandedCostMin)
-                            - ${{ number_format($totalLandedCostMax, 2) }}
+            @if($isVariant)
+                <div class="flex justify-between border-t border-blue-200 dark:border-blue-800 pt-1 font-bold text-gray-900 dark:text-white">
+                    <span>إجمالي تكلفة شراء المتغير عليك:</span>
+                    <span class="font-mono text-blue-700 dark:text-blue-300" dir="ltr">
+                        @if($totalLandedCostMin !== null)
+                            ${{ number_format($totalLandedCostMin, 2) }}
+                            @if($totalLandedCostMax !== null && $totalLandedCostMax > $totalLandedCostMin)
+                                - ${{ number_format($totalLandedCostMax, 2) }}
+                            @endif
+                        @else
+                            —
                         @endif
-                    @else
-                        —
-                    @endif
-                </span>
-            </div>
+                    </span>
+                </div>
 
-            <div class="flex justify-between pt-0.5 text-gray-600 dark:text-gray-300 text-[11px]">
-                <span>{{ $isVariant ? 'سعر بيع هذا المتغير في المتجر:' : 'سعر البيع الحالي في المتجر:' }}</span>
-                <span class="font-mono font-bold text-gray-800 dark:text-gray-200" dir="ltr">
-                    ${{ number_format($storePrice, 2) }}
-                </span>
-            </div>
+                <div class="flex justify-between pt-0.5 text-gray-600 dark:text-gray-300 text-[11px]">
+                    <span>سعر بيع هذا المتغير في المتجر:</span>
+                    <span class="font-mono font-bold text-gray-800 dark:text-gray-200" dir="ltr">
+                        ${{ number_format($storePrice, 2) }}
+                    </span>
+                </div>
+            @endif
         </div>
 
         {{-- 4. Last Sync Timestamp --}}
