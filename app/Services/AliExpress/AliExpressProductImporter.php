@@ -13,6 +13,8 @@ use App\Models\HigestSourceOffer;
 use App\Services\AliExpress\DTO\NormalizedProduct;
 use App\Services\AliExpress\DTO\NormalizedVariant;
 use App\Services\AliExpress\DTO\ResolvedAxes;
+use App\Services\AliExpress\Learning\AliExpressInferenceEngine;
+use App\Services\AliExpress\Learning\AliExpressLearningEngine;
 use App\Services\Pricing\CatalogPriceWriter;
 use App\Services\Pricing\DTO\PricingContext;
 use App\Services\Pricing\PricingEngine;
@@ -31,9 +33,6 @@ use Webkul\Product\Helpers\Indexers\Flat;
 use Webkul\Product\Helpers\Indexers\Inventory as InventoryIndexer;
 use Webkul\Product\Helpers\Indexers\Price as PriceIndexer;
 use Webkul\Product\Models\Product;
-use Webkul\Product\Models\ProductAttributeValue;
-use Webkul\Product\Repositories\ProductRepository;
-
 /**
  * Orchestrates the synchronous import of a single AliExpress product into the
  * Bagisto catalog.
@@ -71,6 +70,9 @@ use Webkul\Product\Repositories\ProductRepository;
  * All handled failure modes throw {@see AliExpressImportException}; every branch
  * logs to the "aliexpress" channel with ids/codes/counts only — never secrets.
  */
+use Webkul\Product\Models\ProductAttributeValue;
+use Webkul\Product\Repositories\ProductRepository;
+
 class AliExpressProductImporter
 {
     /**
@@ -93,6 +95,8 @@ class AliExpressProductImporter
         protected CategoryRepository $categoryRepository,
         protected AliExpressCategorySynchronizer $categorySynchronizer,
         protected AliExpressCategoryGuesser $categoryGuesser,
+        protected AliExpressLearningEngine $learningEngine,
+        protected AliExpressInferenceEngine $inferenceEngine,
         protected Flat $flatIndexer,
         protected InventoryIndexer $inventoryIndexer,
         protected PriceIndexer $priceIndexer,
@@ -232,6 +236,13 @@ class AliExpressProductImporter
 
         $targetCategoryId = $options['target_category_id'] ?? $options['category_id'] ?? null;
         $resolvedCategoryId = $this->resolveProductCategoryId($dto, $targetCategoryId !== null ? (int) $targetCategoryId : null);
+
+        // Train the continuous learning engine with the resolved category
+        if ($targetCategoryId !== null && (int) $targetCategoryId > 0) {
+            $this->learningEngine->learnFromProduct($dto, $resolvedCategoryId, 'admin_override');
+        } elseif ($resolvedCategoryId !== 714 && $resolvedCategoryId > 1) {
+            $this->learningEngine->learnFromProduct($dto, $resolvedCategoryId, 'auto_inferred');
+        }
 
         // Single unified parent update carrying shared fields AND the
         // type-specific payload. For configurable we MUST include the full
@@ -670,9 +681,10 @@ class AliExpressProductImporter
     /**
      * Resolve the category the imported product should be assigned to:
      *   1. Manual admin pre-selection (if provided in import options).
-     *   2. Mirrored AliExpress category (created on demand via CategorySynchronizer).
-     *   3. Keyword-based title guess (via CategoryGuesser).
-     *   4. Fallback to dedicated "Other / أخرى" category.
+     *   2. Continuous Learning Inference Engine (learned category bridges + keyword weights).
+     *   3. Mirrored AliExpress category (created on demand via CategorySynchronizer).
+     *   4. Keyword-based title guess (via CategoryGuesser static rules).
+     *   5. Fallback to dedicated "Other / أخرى" category.
      */
     protected function resolveProductCategoryId(NormalizedProduct $dto, ?int $overrideCategoryId = null): int
     {
@@ -690,7 +702,24 @@ class AliExpressProductImporter
             }
         }
 
-        // 2. Mirrored AliExpress Category
+        // 2. Continuous Learning Inference Engine (Dynamic Category Bridges & N-Gram Statistical Weights)
+        try {
+            $predictedCategory = $this->inferenceEngine->predictCategory($dto);
+            if ($predictedCategory !== null && $predictedCategory > 0) {
+                Log::channel('aliexpress')->info('Using category predicted by Continuous Learning Engine', [
+                    'aliexpress_product_id' => $dto->aliexpressProductId,
+                    'predicted_category_id' => $predictedCategory,
+                ]);
+
+                return $predictedCategory;
+            }
+        } catch (Throwable $e) {
+            Log::channel('aliexpress')->warning('Continuous Learning Engine prediction failed; continuing fallback chain', [
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        // 3. Mirrored AliExpress Category (Static Synchronizer)
         if ($dto->aliexpressCategoryId !== null) {
             try {
                 $categoryId = $this->categorySynchronizer->resolveCategoryId($dto->aliexpressCategoryId);
@@ -706,7 +735,7 @@ class AliExpressProductImporter
             }
         }
 
-        // 3. Keyword-based title guess
+        // 4. Keyword-based title guess (Static Guesser Dictionary)
         // The product's legacy AliExpress category id usually cannot be
         // resolved (the category-by-id APIs require permissions the app lacks),
         // so guess a top-level category from the product title before falling
@@ -728,7 +757,7 @@ class AliExpressProductImporter
             ]);
         }
 
-        // 4. Default "Other" Fallback
+        // 5. Default "Other" Fallback
         return $this->resolveDefaultCategoryId();
     }
 
