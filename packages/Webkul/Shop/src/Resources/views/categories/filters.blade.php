@@ -159,7 +159,7 @@
         type="text/x-template"
         id="v-filter-item-template"
     >
-        <x-shop::accordion class="last:border-b-0">
+        <x-shop::accordion class="last:border-b-0" v-if="filter.type === 'price' || (options && options.length) || isLoadingMore">
             <!-- Filter Item Header -->
             <x-slot:header class="px-0 py-2.5 max-sm:!pb-1.5">
                 <div class="flex items-center justify-between">
@@ -506,6 +506,14 @@
                         delete this.filters.applied['category_id'];
                     }
 
+                    if (this.$refs.filterItemComponent) {
+                        this.$refs.filterItemComponent.forEach((filterItem) => {
+                            if (filterItem.filter && filterItem.filter.code !== 'price') {
+                                filterItem.fetchFilterOptions(true);
+                            }
+                        });
+                    }
+
                     this.$emit('filter-applied', this.filters.applied);
                 },
 
@@ -742,10 +750,16 @@
 
                     const url = `{{ route("shop.api.categories.attribute_options", 'attribute_id') }}`.replace('attribute_id', this.filter.id);
 
+                    const queryParams = new URLSearchParams(window.location.search);
+                    const categoryId = "{{ isset($category) ? $category->id : '' }}" || queryParams.get('category_id') || this.$parent?.$data?.filters?.applied?.['category_id']?.[0] || '';
+                    const searchQuery = queryParams.get('query') || '';
+
                     this.$axios.get(url, {
                         params: {
                             page: this.currentPage,
                             search: this.searchQuery,
+                            category_id: categoryId,
+                            query: searchQuery,
                         }
                     })
                     .then(response => {

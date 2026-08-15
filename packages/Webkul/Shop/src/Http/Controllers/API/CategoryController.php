@@ -4,6 +4,7 @@ namespace Webkul\Shop\Http\Controllers\API;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 use Webkul\Attribute\Enums\AttributeTypeEnum;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Category\Repositories\CategoryRepository;
@@ -92,6 +93,75 @@ class CategoryController extends APIController
             ->with([
                 'translation' => fn ($query) => $query->where('locale', core()->getCurrentLocale()->code),
             ]);
+
+        $categoryId = request('category_id');
+        $searchQuery = request('query');
+
+        if ($categoryId || $searchQuery) {
+            $productQuery = DB::table('products')
+                ->select('products.id')
+                ->distinct()
+                ->leftJoin('product_channels', 'products.id', '=', 'product_channels.product_id')
+                ->where('product_channels.channel_id', core()->getCurrentChannel()->id);
+
+            if ($categoryId) {
+                $productQuery->join('product_categories', 'product_categories.product_id', '=', 'products.id')
+                    ->whereIn('product_categories.category_id', explode(',', $categoryId));
+            }
+
+            if ($searchQuery) {
+                $productQuery->join('product_attribute_values as name_pav', function ($join) {
+                    $join->on('products.id', '=', 'name_pav.product_id')
+                        ->where('name_pav.attribute_id', function ($q) {
+                            $q->select('id')->from('attributes')->where('code', 'name')->limit(1);
+                        });
+                })->where('name_pav.text_value', 'like', '%'.urldecode($searchQuery).'%');
+            }
+
+            $productIds = $productQuery->pluck('id')->toArray();
+
+            $variantIds = DB::table('products')
+                ->whereIn('parent_id', $productIds)
+                ->pluck('id')
+                ->toArray();
+
+            $allProductIds = array_unique(array_merge($productIds, $variantIds));
+
+            if (empty($allProductIds)) {
+                return AttributeOptionResource::collection(collect());
+            }
+
+            if (in_array($attribute->type, [AttributeTypeEnum::SELECT->value])) {
+                $usedOptionIds = DB::table('product_attribute_values')
+                    ->where('attribute_id', $attributeId)
+                    ->whereIn('product_id', $allProductIds)
+                    ->whereNotNull('integer_value')
+                    ->pluck('integer_value')
+                    ->unique()
+                    ->toArray();
+            } else {
+                $textValues = DB::table('product_attribute_values')
+                    ->where('attribute_id', $attributeId)
+                    ->whereIn('product_id', $allProductIds)
+                    ->whereNotNull('text_value')
+                    ->pluck('text_value')
+                    ->toArray();
+
+                $usedOptionIds = [];
+
+                foreach ($textValues as $val) {
+                    foreach (explode(',', $val) as $id) {
+                        if (is_numeric(trim($id))) {
+                            $usedOptionIds[] = (int) trim($id);
+                        }
+                    }
+                }
+
+                $usedOptionIds = array_unique($usedOptionIds);
+            }
+
+            $query->whereIn('attribute_options.id', $usedOptionIds);
+        }
 
         if ($search = request('search')) {
             $query->where(function ($query) use ($search) {
