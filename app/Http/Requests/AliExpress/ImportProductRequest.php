@@ -32,6 +32,8 @@ class ImportProductRequest extends FormRequest
     {
         return [
             'identifier' => ['required', 'string', 'max:2048'],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'target_category_id' => ['nullable', 'integer', 'exists:categories,id'],
         ];
     }
 
@@ -44,6 +46,8 @@ class ImportProductRequest extends FormRequest
             'identifier.required' => 'الرجاء إدخال معرف منتج AliExpress أو رابط المنتج.',
             'identifier.string' => 'يجب أن يكون معرف المنتج أو الرابط نصًا صالحًا.',
             'identifier.max' => 'معرف المنتج أو الرابط طويل جدًا (الحد الأقصى 2048 حرفًا).',
+            'category_id.exists' => 'الفئة المحددة غير موجودة في المتجر.',
+            'target_category_id.exists' => 'الفئة المحددة غير موجودة في المتجر.',
         ];
     }
 }

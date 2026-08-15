@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
+use Webkul\Category\Models\Category;
+use Webkul\Category\Repositories\CategoryRepository;
 
 /**
  * Admin-facing entry point for the AliExpress single-product import (Req 1, 11, 12).
@@ -33,6 +35,7 @@ class AliExpressImportController extends Controller
 {
     public function __construct(
         protected AliExpressProductImporter $importer,
+        protected CategoryRepository $categoryRepository,
     ) {}
 
     /**
@@ -42,7 +45,15 @@ class AliExpressImportController extends Controller
      */
     public function index(): View
     {
-        return view('aliexpress.import');
+        $root = $this->categoryRepository->getRootCategories()->first();
+
+        $categories = $root
+            ? Category::where('parent_id', $root->id)->with('children')->orderBy('position')->get()
+            : Category::whereNull('parent_id')->with('children')->get();
+
+        return view('aliexpress.import', [
+            'categories' => $categories,
+        ]);
     }
 
     /**
@@ -56,8 +67,14 @@ class AliExpressImportController extends Controller
     public function stream(Request $request): StreamedResponse
     {
         $identifier = (string) $request->query('identifier', '');
+        $categoryId = $request->query('category_id') ?? $request->query('target_category_id');
 
-        $response = new StreamedResponse(function () use ($identifier) {
+        $options = [];
+        if ($categoryId && is_numeric($categoryId) && (int) $categoryId > 0) {
+            $options['target_category_id'] = (int) $categoryId;
+        }
+
+        $response = new StreamedResponse(function () use ($identifier, $options) {
             $emit = function (string $event, array $data): void {
                 echo 'event: '.$event."\n";
                 echo 'data: '.json_encode($data, JSON_UNESCAPED_UNICODE)."\n\n";
@@ -84,7 +101,7 @@ class AliExpressImportController extends Controller
                     $emit('progress', ['step' => $step, 'percent' => $percent, 'message' => $message]);
                 });
 
-                $import = $this->importer->import($identifier);
+                $import = $this->importer->import($identifier, $options);
 
                 $emit('progress', ['step' => 'complete', 'percent' => 100, 'message' => 'اكتمل الاستيراد']);
 
@@ -120,7 +137,14 @@ class AliExpressImportController extends Controller
     public function store(ImportProductRequest $request): RedirectResponse
     {
         try {
-            $import = $this->importer->import($request->input('identifier'));
+            $categoryId = $request->input('category_id') ?? $request->input('target_category_id');
+
+            $options = [];
+            if ($categoryId && is_numeric($categoryId) && (int) $categoryId > 0) {
+                $options['target_category_id'] = (int) $categoryId;
+            }
+
+            $import = $this->importer->import($request->input('identifier'), $options);
 
             $editUrl = route('admin.catalog.products.edit', $import->product_id);
 

@@ -178,7 +178,7 @@ class AliExpressProductImporter
         // audit row is written in the catch block, AFTER the rollback, so it
         // survives (Req 12.3, 12.4).
         try {
-            return DB::transaction(function () use ($dto) {
+            return DB::transaction(function () use ($dto, $options) {
                 $type = $dto->isConfigurable ? 'configurable' : 'simple';
 
                 if ($dto->isConfigurable) {
@@ -189,7 +189,7 @@ class AliExpressProductImporter
                     $created = $this->createSimpleProduct($dto);
                 }
 
-                return $this->finalizeProduct($dto, $created, $type);
+                return $this->finalizeProduct($dto, $created, $type, $options);
             });
         } catch (Throwable $e) {
             $this->recordFailure($dto, $e);
@@ -216,8 +216,9 @@ class AliExpressProductImporter
      *
      * @param  array<string, mixed>  $created  Return of createConfigurable/SimpleProduct().
      * @param  'configurable'|'simple'  $type
+     * @param  array<string, mixed>  $options
      */
-    protected function finalizeProduct(NormalizedProduct $dto, array $created, string $type): AliExpressProductImport
+    protected function finalizeProduct(NormalizedProduct $dto, array $created, string $type, array $options = []): AliExpressProductImport
     {
         /** @var Product $product */
         $product = $created['product'];
@@ -228,6 +229,9 @@ class AliExpressProductImporter
         // long note below). Its display text comes from that locale's content.
         $primaryLocale = core()->getDefaultLocaleCodeFromDefaultChannel();
         $primaryText = $dto->textForLocale($this->matchLocaleKey($dto, $primaryLocale));
+
+        $targetCategoryId = $options['target_category_id'] ?? $options['category_id'] ?? null;
+        $resolvedCategoryId = $this->resolveProductCategoryId($dto, $targetCategoryId !== null ? (int) $targetCategoryId : null);
 
         // Single unified parent update carrying shared fields AND the
         // type-specific payload. For configurable we MUST include the full
@@ -260,7 +264,7 @@ class AliExpressProductImporter
             'weight' => 0,
             'tax_category_id' => '',
             'price' => $created['price'],
-            'categories' => [$this->resolveProductCategoryId($dto)],
+            'categories' => [$resolvedCategoryId],
         ];
 
         if ($type === 'configurable') {
@@ -664,13 +668,29 @@ class AliExpressProductImporter
     }
 
     /**
-     * Resolve the category the imported product should be assigned to: the
-     * Bagisto category mirroring the product's AliExpress category (created on
-     * demand), falling back to the default/root category when it cannot be
-     * resolved (Req 6.4).
+     * Resolve the category the imported product should be assigned to:
+     *   1. Manual admin pre-selection (if provided in import options).
+     *   2. Mirrored AliExpress category (created on demand via CategorySynchronizer).
+     *   3. Keyword-based title guess (via CategoryGuesser).
+     *   4. Fallback to dedicated "Other / أخرى" category.
      */
-    protected function resolveProductCategoryId(NormalizedProduct $dto): int
+    protected function resolveProductCategoryId(NormalizedProduct $dto, ?int $overrideCategoryId = null): int
     {
+        // 1. Pre-Import Manual Category Override (Layer 3)
+        if ($overrideCategoryId !== null && $overrideCategoryId > 0) {
+            $categoryExists = DB::table('categories')->where('id', $overrideCategoryId)->exists();
+
+            if ($categoryExists) {
+                Log::channel('aliexpress')->info('Using manual pre-selected category for imported product', [
+                    'aliexpress_product_id' => $dto->aliexpressProductId,
+                    'target_category_id' => $overrideCategoryId,
+                ]);
+
+                return (int) $overrideCategoryId;
+            }
+        }
+
+        // 2. Mirrored AliExpress Category
         if ($dto->aliexpressCategoryId !== null) {
             try {
                 $categoryId = $this->categorySynchronizer->resolveCategoryId($dto->aliexpressCategoryId);
@@ -686,6 +706,7 @@ class AliExpressProductImporter
             }
         }
 
+        // 3. Keyword-based title guess
         // The product's legacy AliExpress category id usually cannot be
         // resolved (the category-by-id APIs require permissions the app lacks),
         // so guess a top-level category from the product title before falling
@@ -707,6 +728,7 @@ class AliExpressProductImporter
             ]);
         }
 
+        // 4. Default "Other" Fallback
         return $this->resolveDefaultCategoryId();
     }
 

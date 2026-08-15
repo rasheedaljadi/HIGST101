@@ -29,6 +29,48 @@
                     <p id="ae-input-error" class="mt-1.5 hidden text-sm font-semibold text-rose-500 dark:text-rose-450"></p>
                 </div>
 
+                {{-- Optional Category Pre-Selection (Level 1 Main Category & Level 2 Subcategory) --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            الفئة الرئيسية المستهدفة (اختياري)
+                        </label>
+                        <select
+                            id="ae-main-category"
+                            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none cursor-pointer bg-white"
+                        >
+                            <option value="">— تحديد تلقائي ذكي (موصى به) —</option>
+                            @if(isset($categories))
+                                @foreach ($categories as $mainCat)
+                                    <option value="{{ $mainCat->id }}">
+                                        {{ $mainCat->translate(app()->getLocale())?->name ?? $mainCat->name }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5" id="ae-sub-category-wrapper">
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            الفئة الفرعية (اختياري)
+                        </label>
+                        <select
+                            id="ae-sub-category"
+                            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none cursor-pointer bg-white disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
+                            disabled
+                        >
+                            <option value="">— كافة الفئات الفرعية التابعة —</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 pt-1">
+                        <span class="inline-block text-amber-500">💡</span>
+                        <span>
+                            <strong>ملاحظة:</strong> يمكنك ترك تحديد الفئة فارغاً، وسيقوم النظام بتصنيف المنتج تلقائياً بناءً على مواصفاته وبياناته.
+                        </span>
+                    </div>
+                </div>
+
                 <div class="flex items-center">
                     <button
                         type="button"
@@ -73,8 +115,59 @@
                 const streamUrl = "{{ route('admin.dropshipping.import.stream') }}";
                 let source = null;
 
+                // Category children mapping
+                const categoriesData = @json(
+                    (isset($categories) ? $categories : collect())->mapWithKeys(function ($cat) {
+                        return [$cat->id => $cat->children->map(function ($sub) {
+                            return [
+                                'id' => $sub->id,
+                                'name' => $sub->translate(app()->getLocale())?->name ?? $sub->name,
+                            ];
+                        })];
+                    })
+                );
+
                 function $(id) {
                     return document.getElementById(id);
+                }
+
+                function setupCategoryListeners() {
+                    const mainSelect = $('ae-main-category');
+                    const subSelect = $('ae-sub-category');
+
+                    if (! mainSelect || ! subSelect) return;
+
+                    mainSelect.addEventListener('change', function () {
+                        const selectedMainId = this.value;
+                        subSelect.innerHTML = '<option value="">— كافة الفئات الفرعية التابعة —</option>';
+
+                        if (selectedMainId && categoriesData[selectedMainId] && categoriesData[selectedMainId].length > 0) {
+                            categoriesData[selectedMainId].forEach(function (sub) {
+                                const opt = document.createElement('option');
+                                opt.value = sub.id;
+                                opt.textContent = sub.name;
+                                subSelect.appendChild(opt);
+                            });
+                            subSelect.disabled = false;
+                        } else {
+                            subSelect.disabled = true;
+                        }
+                    });
+                }
+
+                function getSelectedCategoryId() {
+                    const subSelect = $('ae-sub-category');
+                    const mainSelect = $('ae-main-category');
+
+                    if (subSelect && subSelect.value) {
+                        return subSelect.value;
+                    }
+
+                    if (mainSelect && mainSelect.value) {
+                        return mainSelect.value;
+                    }
+
+                    return '';
                 }
 
                 function setProgress(percent, msg) {
@@ -152,7 +245,13 @@
                     resetUi();
                     setButtonBusy(true);
 
-                    source = new EventSource(streamUrl + '?identifier=' + encodeURIComponent(identifier));
+                    const targetCategoryId = getSelectedCategoryId();
+                    let url = streamUrl + '?identifier=' + encodeURIComponent(identifier);
+                    if (targetCategoryId) {
+                        url += '&category_id=' + encodeURIComponent(targetCategoryId);
+                    }
+
+                    source = new EventSource(url);
 
                     source.addEventListener('progress', function (e) {
                         const data = JSON.parse(e.data);
@@ -197,6 +296,9 @@
                         finish();
                     });
                 }
+
+                // Initialize category listeners on page load
+                setupCategoryListeners();
 
                 // Event delegation on document survives Vue re-rendering the
                 // #app subtree (which would drop element-bound listeners).
