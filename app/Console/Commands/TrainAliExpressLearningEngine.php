@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AliExpress\AliExpressProductImport;
+use App\Models\AliExpressProductImport;
 use App\Services\AliExpress\Learning\AliExpressLearningEngine;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
