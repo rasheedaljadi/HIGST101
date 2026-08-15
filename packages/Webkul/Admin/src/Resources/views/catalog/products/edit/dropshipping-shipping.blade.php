@@ -180,21 +180,23 @@
                                 <button 
                                     type="button" 
                                     onclick="saveManualShippingCost({{ $import->id }}, this)"
-                                    class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all shadow-xs cursor-pointer"
+                                    class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md shadow-xs cursor-pointer transition-all"
+                                    style="background-color: #2563eb !important; color: #ffffff !important; border: 1px solid #1d4ed8 !important;"
                                     title="حفظ وينطبق على جميع المتغيرات"
                                 >
-                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="stroke: #ffffff !important;">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
-                                    <span>حفظ السعر</span>
+                                    <span style="color: #ffffff !important; font-weight: bold;">حفظ السعر</span>
                                 </button>
                                 <button 
                                     type="button" 
                                     onclick="toggleManualShippingEdit()"
-                                    class="inline-flex items-center justify-center px-2.5 py-1.5 text-xs font-medium rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all cursor-pointer"
+                                    class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all"
+                                    style="background-color: #f3f4f6 !important; color: #374151 !important; border: 1px solid #d1d5db !important;"
                                     title="إلغاء"
                                 >
-                                    إلغاء
+                                    <span style="color: #374151 !important;">إلغاء</span>
                                 </button>
                             </div>
                         </div>
