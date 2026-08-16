@@ -5,8 +5,10 @@ namespace Webkul\Fulfillment\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Webkul\Fulfillment\Events\OrderAccepted;
+use Webkul\Fulfillment\Events\Procurement\ProcurementCompleted;
 use Webkul\Fulfillment\Listeners\InitiateFulfillmentListener;
 use Webkul\Fulfillment\Listeners\OrderLifecycleListener;
+use Webkul\Fulfillment\Listeners\ProcurementCompletedListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,12 @@ class EventServiceProvider extends ServiceProvider
         Event::listen(
             OrderAccepted::class,
             InitiateFulfillmentListener::class
+        );
+
+        // Procurement Inbound Receipt Trigger
+        Event::listen(
+            ProcurementCompleted::class,
+            ProcurementCompletedListener::class
         );
 
         // Order Lifecycle & Bookkeeping Triggers

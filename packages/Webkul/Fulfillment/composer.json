@@ -13,6 +13,11 @@
             "Webkul\\Fulfillment\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Webkul\\Fulfillment\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [

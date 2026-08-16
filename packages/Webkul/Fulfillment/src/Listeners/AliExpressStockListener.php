@@ -156,11 +156,34 @@ class AliExpressStockListener
 
     protected function defaultInventorySourceId(): int
     {
-        $source = core()->getDefaultChannel()
-            ->inventory_sources
-            ->where('status', 1)
-            ->first();
+        $channel = core()->getDefaultChannel();
+        if ($channel && isset($channel->inventory_sources)) {
+            $source = $channel->inventory_sources
+                ->where('code', 'default')
+                ->where('status', 1)
+                ->first();
 
-        return (int) ($source->id ?? 1);
+            if ($source) {
+                return (int) $source->id;
+            }
+        }
+
+        $defaultSource = DB::table('inventory_sources')->where('code', 'default')->first();
+        if ($defaultSource) {
+            return (int) $defaultSource->id;
+        }
+
+        return (int) DB::table('inventory_sources')->insertGetId([
+            'code' => 'default',
+            'name' => 'Default (External Availability Projection)',
+            'status' => 1,
+            'country' => 'YE',
+            'state' => 'SAN',
+            'city' => 'Sanaa',
+            'street' => 'External Dropshipping Projection',
+            'postcode' => '00000',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

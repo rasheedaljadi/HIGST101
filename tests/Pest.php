@@ -39,6 +39,8 @@ uses(PayUTestCase::class)->in('../packages/Webkul/PayU/tests');
 uses(RazorpayTestCase::class)->in('../packages/Webkul/Razorpay/tests');
 uses(ShopTestCase::class)->in('../packages/Webkul/Shop/tests');
 uses(TestCase::class)->in('../packages/Webkul/Wallet/tests');
+uses(TestCase::class)->in('../packages/Webkul/DeliveryManagement/tests');
+uses(TestCase::class)->in('../packages/Webkul/Fulfillment/tests');
 uses(TestCase::class)->in('Feature/Wallet');
 uses(MapperTestCase::class)->in('Unit/AliExpress');
 

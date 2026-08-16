@@ -120,6 +120,7 @@
             "Webkul\\Customer\\Tests\\": "packages/Webkul/Customer/tests",
             "Webkul\\DataGrid\\Tests\\": "packages/Webkul/DataGrid/tests",
             "Webkul\\DeliveryManagement\\Tests\\": "packages/Webkul/DeliveryManagement/tests",
+            "Webkul\\Fulfillment\\Tests\\": "packages/Webkul/Fulfillment/tests",
             "Webkul\\Installer\\Tests\\": "packages/Webkul/Installer/tests",
             "Webkul\\Payment\\Tests\\": "packages/Webkul/Payment/tests",
             "Webkul\\PayU\\Tests\\": "packages/Webkul/PayU/tests",

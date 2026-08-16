@@ -223,4 +223,31 @@ class OrderAllocation extends Model implements OrderAllocationContract
         $other->canceled_qty = 0;
         $other->save();
     }
+
+    /**
+     * Rebind allocation from supplier to local warehouse inventory.
+     * Preserves single reservation quantity and increments version via OptimisticLocking trait.
+     *
+     * @throws InvalidStateTransitionException
+     */
+    public function rebindToWarehouse(string $warehouseSourceCode = 'hayest_central'): void
+    {
+        if ($this->state !== 'reserved') {
+            throw new InvalidStateTransitionException("Cannot rebind allocation in state: {$this->state}");
+        }
+
+        $oldType = $this->allocation_type;
+        $oldSource = $this->source_code;
+
+        $this->allocation_type = 'warehouse';
+        $this->source_code = $warehouseSourceCode;
+        $this->save();
+
+        $this->logs()->create([
+            'action' => 'rebind',
+            'old_qty' => $this->reserved_qty,
+            'new_qty' => $this->reserved_qty,
+            'reason' => "Rebound allocation from {$oldType}:{$oldSource} to warehouse:{$warehouseSourceCode}",
+        ]);
+    }
 }

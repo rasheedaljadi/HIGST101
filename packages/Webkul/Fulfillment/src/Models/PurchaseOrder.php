@@ -45,6 +45,11 @@ class PurchaseOrder extends Model implements PurchaseOrderContract
         'supplier_currency',
         'payload_snapshot',
         'submitted_at',
+        'receipt_status',
+        'receipt_confirmed_at',
+        'receipt_confirmed_by',
+        'receipt_notes',
+        'receipt_discrepancy_data',
     ];
 
     /**
@@ -57,7 +62,9 @@ class PurchaseOrder extends Model implements PurchaseOrderContract
         return [
             'payload_snapshot' => 'array',
             'supplier_snapshot' => 'array',
+            'receipt_discrepancy_data' => 'array',
             'submitted_at' => 'datetime',
+            'receipt_confirmed_at' => 'datetime',
         ];
     }
 
@@ -216,12 +223,14 @@ class PurchaseOrder extends Model implements PurchaseOrderContract
                 self::STATE_AWAITING_PAYMENT,
                 'supplier_processing',
                 self::STATE_SHIPPED,
+                self::STATE_DELIVERED,
                 self::STATE_NEEDS_MANUAL_REVIEW,
                 self::STATE_CANCELED,
             ],
             self::STATE_AWAITING_PAYMENT => [
                 'supplier_processing',
                 self::STATE_SHIPPED,
+                self::STATE_DELIVERED,
                 self::STATE_NEEDS_MANUAL_REVIEW,
                 self::STATE_CANCELED,
             ],
@@ -241,6 +250,7 @@ class PurchaseOrder extends Model implements PurchaseOrderContract
                 self::STATE_PENDING,
                 self::STATE_SUBMITTED,
                 self::STATE_SHIPPED,
+                self::STATE_DELIVERED,
                 self::STATE_CANCELED,
             ],
             self::STATE_CANCELED => [], // Terminal
