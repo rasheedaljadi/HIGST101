@@ -19,6 +19,8 @@ class DeliveryManagementServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'delivery');
 
+        $this->loadRoutesFrom(__DIR__.'/../Routes/delivery-routes.php');
+
         Event::listen('checkout.order.save.after', [OrderCreatedListener::class, 'handle']);
         Event::listen('sales.order.save.after', [OrderCreatedListener::class, 'handle']);
     }
