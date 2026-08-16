@@ -4,6 +4,7 @@ namespace Webkul\Admin\Http\Controllers;
 
 use Illuminate\View\View;
 use Webkul\Notification\Repositories\NotificationRepository;
+use Webkul\Product\Models\ProductProxy;
 use Webkul\Wallet\Models\WalletTopUp;
 use Webkul\Wallet\Models\WalletWithdrawalRequest;
 
@@ -78,6 +79,26 @@ class NotificationController extends Controller
                 $notification->setAttribute('order', $syntheticOrder);
                 $notification->setRelation('order', (object) $syntheticOrder);
                 $notification->order_id = $notification->id;
+            } elseif (in_array($notification->type, ['low_stock', 'out_of_stock'])) {
+                $isOutOfStock = ($notification->type === 'out_of_stock');
+                $product = class_exists(ProductProxy::class) && $notification->entity_id
+                    ? ProductProxy::find($notification->entity_id)
+                    : null;
+
+                $productName = $product ? ($product->name ?? $product->sku) : ($notification->title ?? 'المنتج');
+                $sku = $product ? $product->sku : '';
+                $prefix = $isOutOfStock ? 'نفاد مخزون: ' : 'انخفاض مخزون: ';
+                $titleText = $prefix.$productName.($sku ? ' ('.$sku.')' : '');
+
+                $syntheticOrder = [
+                    'id' => $titleText,
+                    'status' => $isOutOfStock ? 'canceled' : 'pending',
+                    'datetime' => $notification->created_at ? $notification->created_at->diffForHumans() : 'الآن',
+                ];
+
+                $notification->setAttribute('order', $syntheticOrder);
+                $notification->setRelation('order', (object) $syntheticOrder);
+                $notification->order_id = $notification->id;
             }
         }
 
@@ -111,6 +132,20 @@ class NotificationController extends Controller
 
             if ($notification->type === 'wallet_withdrawal') {
                 return redirect()->route('admin.wallet.withdrawals.index');
+            }
+
+            if (in_array($notification->type, ['low_stock', 'out_of_stock'])) {
+                $productId = $notification->entity_id;
+                if ($productId) {
+                    $product = class_exists(ProductProxy::class)
+                        ? ProductProxy::find($productId)
+                        : null;
+                    $targetId = ($product && $product->parent_id) ? $product->parent_id : $productId;
+
+                    return redirect()->route('admin.catalog.products.edit', $targetId);
+                }
+
+                return redirect()->route('admin.catalog.products.index');
             }
 
             if ($notification->order_id) {

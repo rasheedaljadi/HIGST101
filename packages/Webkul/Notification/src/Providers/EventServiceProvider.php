@@ -16,6 +16,12 @@ class EventServiceProvider extends ServiceProvider
     {
         Event::listen('checkout.order.save.after', 'Webkul\Notification\Listeners\Order@createOrder');
 
+        Event::listen('checkout.order.save.after', 'Webkul\Notification\Listeners\StockNotificationListener@afterOrderCreated');
+
+        Event::listen('catalog.product.create.after', 'Webkul\Notification\Listeners\StockNotificationListener@afterProductCreated');
+
+        Event::listen('catalog.product.update.after', 'Webkul\Notification\Listeners\StockNotificationListener@afterProductUpdated');
+
         Event::listen('sales.order.update-status.after', 'Webkul\Notification\Listeners\Order@updateOrder');
 
         Event::listen('sales.invoice.save.after', 'Webkul\Notification\Listeners\Order@createInvoice');
@@ -23,5 +29,7 @@ class EventServiceProvider extends ServiceProvider
         Event::listen('sales.shipment.save.after', 'Webkul\Notification\Listeners\Order@createShipment');
 
         Event::listen('sales.refund.save.after', 'Webkul\Notification\Listeners\Order@createRefund');
+
+        Event::listen('sales.refund.save.after', 'Webkul\Notification\Listeners\StockNotificationListener@afterRefundCreated');
     }
 }

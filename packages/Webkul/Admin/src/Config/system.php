@@ -1209,6 +1209,11 @@ return [
                 'type' => 'boolean',
                 'default',
             ], [
+                'name' => 'low_stock_threshold',
+                'title' => 'admin::app.configuration.index.catalog.inventory.product-stock-options.low-stock-threshold',
+                'type' => 'number',
+                'default' => '5',
+            ], [
                 'name' => 'out_of_stock_threshold',
                 'title' => 'admin::app.configuration.index.catalog.inventory.product-stock-options.out-of-stock-threshold',
                 'type' => 'number',
