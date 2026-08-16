@@ -132,11 +132,14 @@
                     </p>
                 </div>
 
-                <!-- Category Filter Component (Level 1 Main + Level 2 Subcategories) -->
+                <!-- Context-Aware Category Filter Component -->
                 <v-category-filter
                     ref="categoryFilterComponent"
                     :categories="categories"
                     :applied-category-ids="filters.applied['category_id'] || []"
+                    :is-search-page="{{ (isset($isSearchPage) && $isSearchPage) || request()->routeIs('shop.search.index') || !isset($category) ? 'true' : 'false' }}"
+                    :current-category-id="{{ isset($category) ? $category->id : 'null' }}"
+                    :current-category-name="'{{ isset($category) ? addslashes($category->name) : '' }}'"
                     @values-applied="applyCategoryFilter($event)"
                 >
                 </v-category-filter>
@@ -347,12 +350,13 @@
         type="text/x-template"
         id="v-category-filter-template"
     >
-        <x-shop::accordion class="last:border-b-0" :is-active="true" v-if="categories && categories.length">
+        <!-- 1. Search Page: Show Full Categories Filter (Level 1 Main + Level 2 Subcategories) -->
+        <x-shop::accordion class="last:border-b-0" :is-active="true" v-if="isSearchPage && categories && categories.length">
             <!-- Filter Item Header -->
             <x-slot:header class="px-0 py-2.5 max-sm:!pb-1.5">
                 <div class="flex items-center justify-between">
                     <p class="text-lg font-semibold max-sm:text-base max-sm:font-medium">
-                        {{ app()->getLocale() == 'ar' ? 'الفئات' : 'Categories' }}
+                        {{ app()->getLocale() == 'ar' ? 'تصفية حسب الفئات' : 'Filter by Category' }}
                     </p>
                 </div>
             </x-slot>
@@ -362,7 +366,7 @@
                 <!-- Level 1: Main Category Dropdown -->
                 <div class="space-y-1.5">
                     <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        {{ app()->getLocale() == 'ar' ? 'الفئة الرئيسية (المستوى الأول):' : 'Main Category (Level 1):' }}
+                        {{ app()->getLocale() == 'ar' ? 'الفئة الرئيسية:' : 'Main Category:' }}
                     </label>
                     <div class="relative">
                         <select
@@ -390,7 +394,7 @@
                     class="space-y-1.5 pt-1"
                 >
                     <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        {{ app()->getLocale() == 'ar' ? 'الفئة الفرعية (المستوى الثاني):' : 'Subcategory (Level 2):' }}
+                        {{ app()->getLocale() == 'ar' ? 'الفئة الفرعية:' : 'Subcategory:' }}
                     </label>
                     <div class="relative">
                         <select
@@ -425,6 +429,53 @@
                     </button>
                 </div>
             </x-slot>
+        </x-shop::accordion>
+
+        <!-- 2. Specific Category Page: Show only current category's subcategories (if any exist) -->
+        <x-shop::accordion class="last:border-b-0" :is-active="true" v-else-if="!isSearchPage && subcategoriesOfCurrentCategory && subcategoriesOfCurrentCategory.length">
+            <!-- Filter Item Header -->
+            <x-slot:header class="px-0 py-2.5 max-sm:!pb-1.5">
+                <div class="flex items-center justify-between">
+                    <p class="text-lg font-semibold max-sm:text-base max-sm:font-medium">
+                        {{ app()->getLocale() == 'ar' ? 'الأقسام الفرعية' : 'Subcategories' }}
+                    </p>
+                </div>
+            </x-slot>
+
+            <!-- Filter Item Content -->
+            <x-slot:content class="!p-0 space-y-2 pb-3">
+                <div class="relative">
+                    <select
+                        v-model="selectedDirectSubCategoryId"
+                        @change="onDirectSubCategoryChange"
+                        class="block w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
+                    >
+                        <option value="">
+                            {{ app()->getLocale() == 'ar' ? '— كل منتجات هذا القسم —' : '— All in this category —' }}
+                        </option>
+                        <option
+                            v-for="sub in subcategoriesOfCurrentCategory"
+                            :key="'sub_direct_' + sub.id"
+                            :value="sub.id"
+                        >
+                            @{{ sub.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Clear Direct Subcategory Selection if active -->
+                <div v-if="selectedDirectSubCategoryId" class="flex items-center justify-between pt-1 text-xs">
+                    <span class="text-gray-500">القسم المحدد</span>
+                    <button
+                        type="button"
+                        @click="clearDirectSubCategorySelection"
+                        class="text-red-500 hover:text-red-700 hover:underline cursor-pointer inline-flex items-center gap-1 font-medium"
+                    >
+                        <span>عرض كل القسم</span>
+                        <span>✕</span>
+                    </button>
+                </div>
+            </x-slot:content>
         </x-shop::accordion>
     </script>
 
@@ -585,12 +636,34 @@
         app.component('v-category-filter', {
             template: '#v-category-filter-template',
 
-            props: ['categories', 'appliedCategoryIds'],
+            props: {
+                categories: {
+                    type: Array,
+                    default: () => [],
+                },
+                appliedCategoryIds: {
+                    type: [Array, String],
+                    default: () => [],
+                },
+                isSearchPage: {
+                    type: Boolean,
+                    default: true,
+                },
+                currentCategoryId: {
+                    type: [Number, String],
+                    default: null,
+                },
+                currentCategoryName: {
+                    type: String,
+                    default: '',
+                },
+            },
 
             data() {
                 return {
                     selectedMainCategoryId: '',
                     selectedSubCategoryId: '',
+                    selectedDirectSubCategoryId: '',
                 };
             },
 
@@ -621,15 +694,46 @@
 
                     let mainCat = (this.categories || []).find(c => String(c.id) === String(this.selectedMainCategoryId));
                     return mainCat && mainCat.children ? mainCat.children : [];
-                }
+                },
+
+                subcategoriesOfCurrentCategory() {
+                    if (this.isSearchPage || ! this.currentCategoryId) {
+                        return [];
+                    }
+
+                    let current = this.findCategoryById(this.categories, this.currentCategoryId);
+                    return current && current.children ? current.children : [];
+                },
             },
 
             methods: {
+                findCategoryById(cats, id) {
+                    if (! cats || ! cats.length || ! id) {
+                        return null;
+                    }
+
+                    for (let c of cats) {
+                        if (String(c.id) === String(id)) {
+                            return c;
+                        }
+
+                        if (c.children && c.children.length) {
+                            let found = this.findCategoryById(c.children, id);
+                            if (found) {
+                                return found;
+                            }
+                        }
+                    }
+
+                    return null;
+                },
+
                 syncApplied() {
                     let applied = this.appliedCategoryIds || this.$parent?.$data?.filters?.applied?.['category_id'];
                     if (! applied || (Array.isArray(applied) && !applied.length)) {
                         this.selectedMainCategoryId = '';
                         this.selectedSubCategoryId = '';
+                        this.selectedDirectSubCategoryId = '';
                         return;
                     }
 
@@ -639,6 +743,12 @@
                     if (! currentId) {
                         this.selectedMainCategoryId = '';
                         this.selectedSubCategoryId = '';
+                        this.selectedDirectSubCategoryId = '';
+                        return;
+                    }
+
+                    if (! this.isSearchPage && this.currentCategoryId) {
+                        this.selectedDirectSubCategoryId = currentId;
                         return;
                     }
 
@@ -681,11 +791,24 @@
                     }
                 },
 
+                onDirectSubCategoryChange() {
+                    if (this.selectedDirectSubCategoryId) {
+                        this.$emit('values-applied', [this.selectedDirectSubCategoryId]);
+                    } else {
+                        this.$emit('values-applied', []);
+                    }
+                },
+
                 clearCategorySelection() {
                     this.selectedMainCategoryId = '';
                     this.selectedSubCategoryId = '';
                     this.$emit('values-applied', []);
-                }
+                },
+
+                clearDirectSubCategorySelection() {
+                    this.selectedDirectSubCategoryId = '';
+                    this.$emit('values-applied', []);
+                },
             }
         });
 

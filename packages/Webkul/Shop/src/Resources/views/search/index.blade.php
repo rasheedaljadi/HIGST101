@@ -84,7 +84,7 @@
             <div class="container px-[60px] max-lg:px-8 max-sm:px-4">
                 <div class="flex items-start gap-10 max-lg:gap-5 md:mt-10">
                     <!-- Product Listing Filters -->
-                    @include('shop::categories.filters')
+                    @include('shop::categories.filters', ['isSearchPage' => true])
 
                     <!-- Product Listing Container -->
                     <div class="flex-1">
