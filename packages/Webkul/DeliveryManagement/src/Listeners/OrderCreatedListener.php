@@ -47,7 +47,7 @@ class OrderCreatedListener
                 try {
                     $deliveryPointSnapshot = $this->governorateDeliveryValidator->validateDeliveryPoint($stateCode, $deliveryPointId);
                 } catch (\Throwable $e) {
-                    Log::channel('delivery')->warning("Could not build live delivery point snapshot for Order #{$order->id}: ".$e->getMessage());
+                    Log::warning("[Delivery] Could not build live delivery point snapshot for Order #{$order->id}: ".$e->getMessage());
                 }
             }
 
@@ -72,11 +72,11 @@ class OrderCreatedListener
                     'delivery_point_snapshot' => $deliveryPointSnapshot,
                     'status' => DeliveryAssignment::STATUS_READY_FOR_ASSIGNMENT,
                     'attempt_count' => 0,
-                    'max_attempts' => 3,
+                    'max_attempts' => (int) config('delivery.max_delivery_attempts', 3),
                 ]
             );
         } catch (\Throwable $e) {
-            Log::channel('delivery')->error("Failed to initialize DeliveryAssignment for Order #{$order->id}: ".$e->getMessage());
+            Log::error("[Delivery] Failed to initialize DeliveryAssignment for Order #{$order->id}: ".$e->getMessage());
         }
     }
 }

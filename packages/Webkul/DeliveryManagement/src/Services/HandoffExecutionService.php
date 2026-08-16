@@ -177,7 +177,7 @@ class HandoffExecutionService
                 'idempotency_key' => $idempotencyKey ?: $assignment->idempotency_key,
             ]);
 
-            Log::channel('delivery')->info("Handoff completed for Order #{$orderId}, Shipment #{$shipment->id}, Assignment #{$assignment->id}");
+            Log::info("[Delivery] Handoff completed for Order #{$orderId}, Shipment #{$shipment->id}, Assignment #{$assignment->id}");
 
             return $assignment->fresh();
         });

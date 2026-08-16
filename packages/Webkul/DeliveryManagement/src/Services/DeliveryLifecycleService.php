@@ -237,7 +237,7 @@ class DeliveryLifecycleService
                 $this->orderRepository->updateOrderStatus($order, OrderModel::STATUS_COMPLETED);
             }
 
-            Log::channel('delivery')->info("Delivery confirmed for Order #{$order->id}, Assignment #{$assignment->id} by Actor #{$actorId} ({$actorType})");
+            Log::info("[Delivery] Delivery confirmed for Order #{$order->id}, Assignment #{$assignment->id} by Actor #{$actorId} ({$actorType})");
 
             return $assignment->fresh();
         });
@@ -383,7 +383,7 @@ class DeliveryLifecycleService
             // 4. Update order status to canceled
             $this->orderRepository->updateOrderStatus($order, OrderModel::STATUS_CANCELED);
 
-            Log::channel('delivery')->info("Order #{$order->id} returned to hayest_central and stock restored. Supervisor #{$supervisorId}");
+            Log::info("[Delivery] Order #{$order->id} returned to hayest_central and stock restored. Supervisor #{$supervisorId}");
 
             return $assignment->fresh();
         });

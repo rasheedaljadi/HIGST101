@@ -62,12 +62,14 @@ class DeliveryAgentController extends Controller
         /** @var DeliveryAssignment $assignment */
         $assignment = DeliveryAssignment::with(['order', 'deliveryPoint', 'attemptLogs', 'cashCollections'])->findOrFail($id);
 
+        $isAdmin = ($user->role?->permission_type === 'all' || $user->role?->name === 'Administrator');
+
         // Access control
         if (! isset($user->delivery_point_id) || ! $user->delivery_point_id) {
-            if ($assignment->delivery_boy_id !== $user->id && ! $user->hasRole('admin')) {
+            if ($assignment->delivery_boy_id !== $user->id && ! $isAdmin) {
                 abort(403, 'Unauthorized access to assignment.');
             }
-        } elseif ($assignment->delivery_point_id !== (int) $user->delivery_point_id && ! $user->hasRole('admin')) {
+        } elseif ($assignment->delivery_point_id !== (int) $user->delivery_point_id && ! $isAdmin) {
             abort(403, 'Unauthorized access to assignment.');
         }
 
