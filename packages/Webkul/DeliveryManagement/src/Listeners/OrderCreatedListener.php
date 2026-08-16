@@ -31,6 +31,11 @@ class OrderCreatedListener
             $shippingMethod = (string) $order->shipping_method;
             $deliveryType = $this->shippingMethodAdapter->canonicalize($shippingMethod);
 
+            // If the shipping method does not map to home_delivery or delivery_point (e.g. legacy/external carrier), do not force a delivery assignment
+            if (empty($deliveryType)) {
+                return;
+            }
+
             $additional = is_array($shippingAddress->additional)
                 ? $shippingAddress->additional
                 : json_decode($shippingAddress->additional ?? '[]', true);

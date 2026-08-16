@@ -12,11 +12,13 @@ use Webkul\Checkout\Models\CartAddress;
 use Webkul\Checkout\Models\CartPayment;
 use Webkul\DeliveryManagement\Database\Seeders\DeliveryGovernorateRulesSeeder;
 use Webkul\DeliveryManagement\Models\DeliveryAssignment;
+use Webkul\DeliveryManagement\Models\DeliveryGovernorateRule;
 use Webkul\DeliveryManagement\Models\DeliveryPoint;
 use Webkul\DeliveryManagement\Services\GovernorateDeliveryValidator;
 use Webkul\DeliveryManagement\Services\PaymentEligibilityChecker;
 use Webkul\DeliveryManagement\Services\ShippingMethodAdapter;
 use Webkul\Payment\Payment\CashOnDelivery;
+use Webkul\Payment\Payment\MoneyTransfer;
 use Webkul\Product\Models\Product;
 use Webkul\Sales\Models\Order;
 use Webkul\Sales\Models\OrderAddress;
@@ -38,6 +40,17 @@ class Phase3CheckoutPaymentEligibilityTest extends TestCase
 
         DB::table('core_config')->updateOrInsert(
             ['code' => 'sales.payment_methods.cashondelivery.active'],
+            [
+                'value' => '1',
+                'channel_code' => 'default',
+                'locale_code' => 'ar',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        DB::table('core_config')->updateOrInsert(
+            ['code' => 'sales.payment_methods.moneytransfer.active'],
             [
                 'value' => '1',
                 'channel_code' => 'default',
@@ -96,15 +109,19 @@ class Phase3CheckoutPaymentEligibilityTest extends TestCase
     }
 
     /**
-     * 1. Canonical Shipping Adapter maps all legacy and canonical codes.
+     * 1. Canonical Shipping Adapter maps exclusive codes and rejects generic/unknown carrier codes.
      */
     public function test_canonical_shipping_adapter_maps_legacy_and_canonical_codes(): void
     {
         $this->assertEquals('home_delivery', $this->shippingMethodAdapter->canonicalize('homedelivery_standard'));
         $this->assertEquals('home_delivery', $this->shippingMethodAdapter->canonicalize('homedelivery'));
         $this->assertEquals('home_delivery', $this->shippingMethodAdapter->canonicalize('home_delivery'));
-        $this->assertEquals('home_delivery', $this->shippingMethodAdapter->canonicalize('flatrate_flatrate'));
-        $this->assertEquals('home_delivery', $this->shippingMethodAdapter->canonicalize('flatrate'));
+
+        // Flatrate and generic carrier methods are rejected and return null
+        $this->assertNull($this->shippingMethodAdapter->canonicalize('flatrate_flatrate'));
+        $this->assertNull($this->shippingMethodAdapter->canonicalize('flatrate'));
+        $this->assertNull($this->shippingMethodAdapter->canonicalize('free_free'));
+        $this->assertNull($this->shippingMethodAdapter->canonicalize(null));
 
         $this->assertEquals('delivery_point', $this->shippingMethodAdapter->canonicalize('deliverypoint_pickup'));
         $this->assertEquals('delivery_point', $this->shippingMethodAdapter->canonicalize('deliverypoint'));
@@ -115,6 +132,25 @@ class Phase3CheckoutPaymentEligibilityTest extends TestCase
         $this->assertTrue($this->shippingMethodAdapter->isDeliveryPoint('deliverypoint_pickup'));
         $this->assertFalse($this->shippingMethodAdapter->isDeliveryPoint('homedelivery_standard'));
         $this->assertFalse($this->shippingMethodAdapter->isHomeDelivery('deliverypoint_pickup'));
+        $this->assertFalse($this->shippingMethodAdapter->isHomeDelivery('flatrate_flatrate'));
+    }
+
+    /**
+     * 1b. Flatrate_flatrate does NOT automatically grant COD or home_delivery privileges.
+     */
+    public function test_flatrate_flatrate_does_not_grant_cod_automatically(): void
+    {
+        $this->assertFalse($this->paymentEligibilityChecker->isEligible(
+            paymentMethod: 'cashondelivery',
+            stateCode: 'SAN',
+            deliveryType: 'flatrate_flatrate'
+        ));
+
+        $this->assertFalse($this->paymentEligibilityChecker->isEligible(
+            paymentMethod: 'cashondelivery',
+            stateCode: 'SAN',
+            deliveryType: 'flatrate'
+        ));
     }
 
     /**
@@ -481,6 +517,107 @@ class Phase3CheckoutPaymentEligibilityTest extends TestCase
         $this->assertEquals('Sanaa Central Pickup Hub', $assignment->delivery_point_snapshot['name']);
         $this->assertEquals('مركز توزيع صنعاء الرئيسي', $assignment->delivery_point_snapshot['name_ar']);
         $this->assertEquals('Sixty Meter Road, near Sanaa Mall', $assignment->delivery_point_snapshot['address']);
+    }
+
+    /**
+     * 8b. Historical order without snapshot (e.g. legacy flatrate) is NOT mutated and does not create DeliveryAssignment.
+     */
+    public function test_historical_legacy_order_without_snapshot_is_not_mutated(): void
+    {
+        $order = Order::create([
+            'increment_id' => 'ORD-LEGACY-'.uniqid(),
+            'status' => 'completed',
+            'is_guest' => 1,
+            'customer_email' => 'legacy@example.com',
+            'customer_first_name' => 'Old',
+            'customer_last_name' => 'Customer',
+            'shipping_method' => 'flatrate_flatrate',
+            'shipping_title' => 'Flat Rate',
+            'grand_total' => 8000,
+            'base_grand_total' => 8000,
+        ]);
+
+        $shippingAddress = OrderAddress::create([
+            'order_id' => $order->id,
+            'address_type' => 'order_shipping',
+            'first_name' => 'Old',
+            'last_name' => 'Customer',
+            'email' => 'legacy@example.com',
+            'phone' => '777111222',
+            'address' => 'Historical Address',
+            'city' => 'Sanaa',
+            'state' => 'SAN',
+            'country' => 'YE',
+        ]);
+
+        $order->setRelation('shipping_address', $shippingAddress);
+
+        event('sales.order.save.after', $order);
+
+        $assignment = DeliveryAssignment::where('order_id', $order->id)->first();
+        $this->assertNull($assignment);
+    }
+
+    /**
+     * 8c. Changing governorate rules dynamically does NOT alter existing historical order snapshots.
+     */
+    public function test_changing_governorate_rules_does_not_alter_historical_order_snapshot(): void
+    {
+        $order = Order::create([
+            'increment_id' => 'ORD-GOV-CHANGE-'.uniqid(),
+            'status' => 'pending',
+            'is_guest' => 1,
+            'customer_email' => 'customer@example.com',
+            'customer_first_name' => 'Historical',
+            'customer_last_name' => 'Buyer',
+            'shipping_method' => 'homedelivery_standard',
+            'shipping_title' => 'Home Delivery',
+            'grand_total' => 12000,
+            'base_grand_total' => 12000,
+        ]);
+
+        $shippingAddress = OrderAddress::create([
+            'order_id' => $order->id,
+            'address_type' => 'order_shipping',
+            'first_name' => 'Historical',
+            'last_name' => 'Buyer',
+            'email' => 'customer@example.com',
+            'phone' => '777888999',
+            'address' => 'Historical Hadda Street',
+            'city' => 'Sanaa',
+            'state' => 'SAN',
+            'country' => 'YE',
+        ]);
+
+        $order->setRelation('shipping_address', $shippingAddress);
+
+        event('sales.order.save.after', $order);
+
+        $assignment = DeliveryAssignment::where('order_id', $order->id)->first();
+        $this->assertNotNull($assignment);
+        $this->assertEquals('Historical Hadda Street', $assignment->customer_address_snapshot['address']);
+
+        // Now modify or disable governorate rules
+        DeliveryGovernorateRule::where('state_code', 'SAN')->update(['is_enabled' => false]);
+
+        $assignment->refresh();
+        $this->assertEquals('Historical Hadda Street', $assignment->customer_address_snapshot['address']);
+        $this->assertEquals('home_delivery', $assignment->delivery_type);
+    }
+
+    /**
+     * 8d. Payment::setCart does not break other payment methods like MoneyTransfer.
+     */
+    public function test_payment_set_cart_does_not_break_other_payment_methods(): void
+    {
+        $cart = $this->createTestCart([
+            'shipping_method' => 'homedelivery_standard',
+        ]);
+
+        $moneyTransfer = app(MoneyTransfer::class);
+        $moneyTransfer->setCart($cart);
+
+        $this->assertTrue($moneyTransfer->isAvailable());
     }
 
     /**

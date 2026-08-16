@@ -9,18 +9,12 @@ class ShippingMethodAdapter
     public const CANONICAL_DELIVERY_POINT = 'delivery_point';
 
     /**
-     * Known mapping from carrier method codes or legacy aliases to canonical delivery types.
+     * Explicit mapping from known carrier method codes to canonical delivery types.
      */
     protected const METHOD_MAP = [
         'homedelivery_standard' => self::CANONICAL_HOME_DELIVERY,
         'homedelivery' => self::CANONICAL_HOME_DELIVERY,
         'home_delivery' => self::CANONICAL_HOME_DELIVERY,
-        'flatrate_flatrate' => self::CANONICAL_HOME_DELIVERY,
-        'flatrate' => self::CANONICAL_HOME_DELIVERY,
-        'free_free' => self::CANONICAL_HOME_DELIVERY,
-        'free' => self::CANONICAL_HOME_DELIVERY,
-        'dropshipping_dropshipping' => self::CANONICAL_HOME_DELIVERY,
-        'dropshipping' => self::CANONICAL_HOME_DELIVERY,
 
         'deliverypoint_pickup' => self::CANONICAL_DELIVERY_POINT,
         'deliverypoint' => self::CANONICAL_DELIVERY_POINT,
@@ -30,16 +24,17 @@ class ShippingMethodAdapter
 
     /**
      * Convert any shipping method code or delivery type string to its canonical equivalent.
+     * Returns null if the code is not explicitly recognized as home delivery or delivery point.
      */
-    public function canonicalize(?string $code): string
+    public function canonicalize(?string $code): ?string
     {
         if (empty($code)) {
-            return self::CANONICAL_HOME_DELIVERY;
+            return null;
         }
 
         $normalized = strtolower(trim($code));
 
-        return self::METHOD_MAP[$normalized] ?? self::CANONICAL_HOME_DELIVERY;
+        return self::METHOD_MAP[$normalized] ?? null;
     }
 
     /**

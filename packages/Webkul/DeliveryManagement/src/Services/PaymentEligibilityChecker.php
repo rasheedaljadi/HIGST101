@@ -17,13 +17,18 @@ class PaymentEligibilityChecker
     public function isEligible(
         string $paymentMethod,
         string $stateCode,
-        string $deliveryType,
+        ?string $deliveryType,
         ?int $deliveryPointId = null,
         float $cartAmount = 0.0
     ): bool {
         $paymentMethod = strtolower(trim($paymentMethod));
         $stateCode = strtoupper(trim($stateCode));
         $canonicalType = $this->shippingMethodAdapter->canonicalize($deliveryType);
+
+        // If delivery type cannot be canonicalized to home_delivery or delivery_point, it is not eligible
+        if (empty($canonicalType)) {
+            return false;
+        }
 
         // Fetch active governorate rule for state + delivery type
         $rule = $this->governorateDeliveryValidator->getActiveRule($stateCode, $canonicalType);
@@ -32,9 +37,11 @@ class PaymentEligibilityChecker
             return false;
         }
 
-        // Strict COD safety guard: COD is NEVER allowed for delivery points
-        if ($paymentMethod === 'cashondelivery' && $canonicalType === ShippingMethodAdapter::CANONICAL_DELIVERY_POINT) {
-            return false;
+        // Strict COD safety guard: COD is NEVER allowed for delivery points or unknown/unconfirmed methods
+        if ($paymentMethod === 'cashondelivery') {
+            if ($canonicalType !== ShippingMethodAdapter::CANONICAL_HOME_DELIVERY) {
+                return false;
+            }
         }
 
         // Check min order amount if configured
@@ -96,7 +103,7 @@ class PaymentEligibilityChecker
                 if ($canonicalType === ShippingMethodAdapter::CANONICAL_DELIVERY_POINT) {
                     $message = 'الدفع عند الاستلام غير متاح عند الاستلام من نقاط التوصيل. يرجى اختيار وسيلة دفع إلكترونية أو تحويل.';
                 } else {
-                    $message = 'الدفع عند الاستلام غير متاح في المحافظة المحددة.';
+                    $message = 'الدفع عند الاستلام غير متاح في المحافظة أو لطريقة التوصيل المحددة.';
                 }
             } else {
                 $message = 'طريقة الدفع المحددة غير متاحة للمحافظة أو طريقة التوصيل المختارة.';

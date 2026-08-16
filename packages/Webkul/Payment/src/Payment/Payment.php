@@ -4,6 +4,7 @@ namespace Webkul\Payment\Payment;
 
 use Illuminate\Database\Eloquent\Collection;
 use Webkul\Checkout\Facades\Cart;
+use Webkul\DeliveryManagement\Services\PaymentEligibilityChecker;
 
 abstract class Payment
 {
@@ -21,7 +22,18 @@ abstract class Payment
      */
     public function isAvailable()
     {
-        return $this->getConfigData('active');
+        $active = (bool) ($this->getConfigData('active') ?? config('payment_methods.'.$this->getCode().'.active', true));
+
+        if (! $active) {
+            return false;
+        }
+
+        if (class_exists(PaymentEligibilityChecker::class) && $this->cart) {
+            return app(PaymentEligibilityChecker::class)
+                ->isCartEligible($this->getCode(), $this->cart);
+        }
+
+        return true;
     }
 
     /**

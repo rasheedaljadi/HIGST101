@@ -31,10 +31,18 @@ class GovernorateDeliveryValidator
     /**
      * Get the active delivery rule for a state code and delivery type.
      */
-    public function getActiveRule(string $stateCode, string $deliveryType): ?DeliveryGovernorateRule
+    public function getActiveRule(string $stateCode, ?string $deliveryType): ?DeliveryGovernorateRule
     {
+        if (empty($deliveryType)) {
+            return null;
+        }
+
         $stateCode = strtoupper(trim($stateCode));
         $canonicalType = $this->shippingMethodAdapter->canonicalize($deliveryType);
+
+        if (empty($canonicalType)) {
+            return null;
+        }
 
         $query = DeliveryGovernorateRule::query()
             ->where('state_code', $stateCode)
@@ -56,7 +64,7 @@ class GovernorateDeliveryValidator
     /**
      * Check if a delivery type is enabled for a given state code.
      */
-    public function isDeliveryTypeEnabled(string $stateCode, string $deliveryType): bool
+    public function isDeliveryTypeEnabled(string $stateCode, ?string $deliveryType): bool
     {
         return $this->getActiveRule($stateCode, $deliveryType) !== null;
     }
