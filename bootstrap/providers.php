@@ -15,6 +15,7 @@ use Webkul\Customer\Providers\CustomerServiceProvider;
 use Webkul\DataGrid\Providers\DataGridServiceProvider;
 use Webkul\DataTransfer\Providers\DataTransferServiceProvider;
 use Webkul\DebugBar\Providers\DebugBarServiceProvider;
+use Webkul\DeliveryManagement\Providers\DeliveryManagementServiceProvider;
 use Webkul\FlashDeal\Providers\FlashDealServiceProvider;
 use Webkul\FPC\Providers\FPCServiceProvider;
 use Webkul\Fulfillment\Providers\FulfillmentServiceProvider;
@@ -97,4 +98,5 @@ return [
     ThemeServiceProvider::class,
     UserServiceProvider::class,
     WalletServiceProvider::class,
+    DeliveryManagementServiceProvider::class,
 ];

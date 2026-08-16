@@ -1,0 +1,31 @@
+{
+    "name": "bagisto/delivery-management",
+    "description": "Delivery Management Module for Hayest",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hayest Team",
+            "email": "dev@higesto.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Webkul\\DeliveryManagement\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Webkul\\DeliveryManagement\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\DeliveryManagement\\Providers\\DeliveryManagementServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}

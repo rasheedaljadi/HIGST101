@@ -42,3 +42,10 @@ skills-lock.json
 /vendor
 yarn.lock
 yarn-error.log
+/scratch
+*.json.temp
+all_shipping_data.json
+non_direct_shipping.json
+output.txt
+*.timestamp-*.mjs
+
