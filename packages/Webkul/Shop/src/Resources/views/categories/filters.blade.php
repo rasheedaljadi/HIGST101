@@ -350,133 +350,135 @@
         type="text/x-template"
         id="v-category-filter-template"
     >
-        <!-- 1. Search Page: Show Full Categories Filter (Level 1 Main + Level 2 Subcategories) -->
-        <x-shop::accordion class="last:border-b-0" :is-active="true" v-if="isSearchPage && categories && categories.length">
-            <!-- Filter Item Header -->
-            <x-slot:header class="px-0 py-2.5 max-sm:!pb-1.5">
-                <div class="flex items-center justify-between">
-                    <p class="text-lg font-semibold max-sm:text-base max-sm:font-medium">
-                        {{ app()->getLocale() == 'ar' ? 'تصفية حسب الفئات' : 'Filter by Category' }}
-                    </p>
-                </div>
-            </x-slot>
+        <div>
+            <!-- 1. Search Page: Show Full Categories Filter (Level 1 Main + Level 2 Subcategories) -->
+            <x-shop::accordion class="last:border-b-0" :is-active="true" v-if="isSearchPage && categories && categories.length">
+                <!-- Filter Item Header -->
+                <x-slot:header class="px-0 py-2.5 max-sm:!pb-1.5">
+                    <div class="flex items-center justify-between">
+                        <p class="text-lg font-semibold max-sm:text-base max-sm:font-medium">
+                            {{ app()->getLocale() == 'ar' ? 'تصفية حسب الفئات' : 'Filter by Category' }}
+                        </p>
+                    </div>
+                </x-slot>
 
-            <!-- Filter Item Content -->
-            <x-slot:content class="!p-0 space-y-3 pb-3">
-                <!-- Level 1: Main Category Dropdown -->
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        {{ app()->getLocale() == 'ar' ? 'الفئة الرئيسية:' : 'Main Category:' }}
-                    </label>
+                <!-- Filter Item Content -->
+                <x-slot:content class="!p-0 space-y-3 pb-3">
+                    <!-- Level 1: Main Category Dropdown -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            {{ app()->getLocale() == 'ar' ? 'الفئة الرئيسية:' : 'Main Category:' }}
+                        </label>
+                        <div class="relative">
+                            <select
+                                v-model="selectedMainCategoryId"
+                                @change="onMainCategoryChange"
+                                class="block w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
+                            >
+                                <option value="">
+                                    {{ app()->getLocale() == 'ar' ? '— كل الفئات الرئيسية —' : '— All Main Categories —' }}
+                                </option>
+                                <option
+                                    v-for="cat in categories"
+                                    :key="'main_cat_' + cat.id"
+                                    :value="cat.id"
+                                >
+                                    @{{ cat.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Level 2: Subcategories (Visible when selected main category has children) -->
+                    <div
+                        v-if="currentSubcategories && currentSubcategories.length"
+                        class="space-y-1.5 pt-1"
+                    >
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            {{ app()->getLocale() == 'ar' ? 'الفئة الفرعية:' : 'Subcategory:' }}
+                        </label>
+                        <div class="relative">
+                            <select
+                                v-model="selectedSubCategoryId"
+                                @change="onSubCategoryChange"
+                                class="block w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
+                            >
+                                <option value="">
+                                    {{ app()->getLocale() == 'ar' ? '— كل الفئات الفرعية التابعة —' : '— All Subcategories —' }}
+                                </option>
+                                <option
+                                    v-for="subCat in currentSubcategories"
+                                    :key="'sub_cat_' + subCat.id"
+                                    :value="subCat.id"
+                                >
+                                    @{{ subCat.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Clear Category Selection Button if active -->
+                    <div v-if="selectedMainCategoryId" class="flex items-center justify-between pt-1 text-xs">
+                        <span class="text-gray-500">الفئة المحددة</span>
+                        <button
+                            type="button"
+                            @click="clearCategorySelection"
+                            class="text-red-500 hover:text-red-700 hover:underline cursor-pointer inline-flex items-center gap-1 font-medium"
+                        >
+                            <span>إلغاء التحديد</span>
+                            <span>✕</span>
+                        </button>
+                    </div>
+                </x-slot>
+            </x-shop::accordion>
+
+            <!-- 2. Specific Category Page: Show only current category's subcategories (if any exist) -->
+            <x-shop::accordion class="last:border-b-0" :is-active="true" v-if="!isSearchPage && subcategoriesOfCurrentCategory && subcategoriesOfCurrentCategory.length">
+                <!-- Filter Item Header -->
+                <x-slot:header class="px-0 py-2.5 max-sm:!pb-1.5">
+                    <div class="flex items-center justify-between">
+                        <p class="text-lg font-semibold max-sm:text-base max-sm:font-medium">
+                            {{ app()->getLocale() == 'ar' ? 'الأقسام الفرعية' : 'Subcategories' }}
+                        </p>
+                    </div>
+                </x-slot>
+
+                <!-- Filter Item Content -->
+                <x-slot:content class="!p-0 space-y-2 pb-3">
                     <div class="relative">
                         <select
-                            v-model="selectedMainCategoryId"
-                            @change="onMainCategoryChange"
+                            v-model="selectedDirectSubCategoryId"
+                            @change="onDirectSubCategoryChange"
                             class="block w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
                         >
                             <option value="">
-                                {{ app()->getLocale() == 'ar' ? '— كل الفئات الرئيسية —' : '— All Main Categories —' }}
+                                {{ app()->getLocale() == 'ar' ? '— كل منتجات هذا القسم —' : '— All in this category —' }}
                             </option>
                             <option
-                                v-for="cat in categories"
-                                :key="'main_cat_' + cat.id"
-                                :value="cat.id"
+                                v-for="sub in subcategoriesOfCurrentCategory"
+                                :key="'sub_direct_' + sub.id"
+                                :value="sub.id"
                             >
-                                @{{ cat.name }}
+                                @{{ sub.name }}
                             </option>
                         </select>
                     </div>
-                </div>
 
-                <!-- Level 2: Subcategories (Visible when selected main category has children) -->
-                <div
-                    v-if="currentSubcategories && currentSubcategories.length"
-                    class="space-y-1.5 pt-1"
-                >
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        {{ app()->getLocale() == 'ar' ? 'الفئة الفرعية:' : 'Subcategory:' }}
-                    </label>
-                    <div class="relative">
-                        <select
-                            v-model="selectedSubCategoryId"
-                            @change="onSubCategoryChange"
-                            class="block w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
+                    <!-- Clear Direct Subcategory Selection if active -->
+                    <div v-if="selectedDirectSubCategoryId" class="flex items-center justify-between pt-1 text-xs">
+                        <span class="text-gray-500">القسم المحدد</span>
+                        <button
+                            type="button"
+                            @click="clearDirectSubCategorySelection"
+                            class="text-red-500 hover:text-red-700 hover:underline cursor-pointer inline-flex items-center gap-1 font-medium"
                         >
-                            <option value="">
-                                {{ app()->getLocale() == 'ar' ? '— كل الفئات الفرعية التابعة —' : '— All Subcategories —' }}
-                            </option>
-                            <option
-                                v-for="subCat in currentSubcategories"
-                                :key="'sub_cat_' + subCat.id"
-                                :value="subCat.id"
-                            >
-                                @{{ subCat.name }}
-                            </option>
-                        </select>
+                            <span>عرض كل القسم</span>
+                            <span>✕</span>
+                        </button>
                     </div>
-                </div>
-
-                <!-- Clear Category Selection Button if active -->
-                <div v-if="selectedMainCategoryId" class="flex items-center justify-between pt-1 text-xs">
-                    <span class="text-gray-500">الفئة المحددة</span>
-                    <button
-                        type="button"
-                        @click="clearCategorySelection"
-                        class="text-red-500 hover:text-red-700 hover:underline cursor-pointer inline-flex items-center gap-1 font-medium"
-                    >
-                        <span>إلغاء التحديد</span>
-                        <span>✕</span>
-                    </button>
-                </div>
-            </x-slot>
-        </x-shop::accordion>
-
-        <!-- 2. Specific Category Page: Show only current category's subcategories (if any exist) -->
-        <x-shop::accordion class="last:border-b-0" :is-active="true" v-else-if="!isSearchPage && subcategoriesOfCurrentCategory && subcategoriesOfCurrentCategory.length">
-            <!-- Filter Item Header -->
-            <x-slot:header class="px-0 py-2.5 max-sm:!pb-1.5">
-                <div class="flex items-center justify-between">
-                    <p class="text-lg font-semibold max-sm:text-base max-sm:font-medium">
-                        {{ app()->getLocale() == 'ar' ? 'الأقسام الفرعية' : 'Subcategories' }}
-                    </p>
-                </div>
-            </x-slot>
-
-            <!-- Filter Item Content -->
-            <x-slot:content class="!p-0 space-y-2 pb-3">
-                <div class="relative">
-                    <select
-                        v-model="selectedDirectSubCategoryId"
-                        @change="onDirectSubCategoryChange"
-                        class="block w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
-                    >
-                        <option value="">
-                            {{ app()->getLocale() == 'ar' ? '— كل منتجات هذا القسم —' : '— All in this category —' }}
-                        </option>
-                        <option
-                            v-for="sub in subcategoriesOfCurrentCategory"
-                            :key="'sub_direct_' + sub.id"
-                            :value="sub.id"
-                        >
-                            @{{ sub.name }}
-                        </option>
-                    </select>
-                </div>
-
-                <!-- Clear Direct Subcategory Selection if active -->
-                <div v-if="selectedDirectSubCategoryId" class="flex items-center justify-between pt-1 text-xs">
-                    <span class="text-gray-500">القسم المحدد</span>
-                    <button
-                        type="button"
-                        @click="clearDirectSubCategorySelection"
-                        class="text-red-500 hover:text-red-700 hover:underline cursor-pointer inline-flex items-center gap-1 font-medium"
-                    >
-                        <span>عرض كل القسم</span>
-                        <span>✕</span>
-                    </button>
-                </div>
-            </x-slot:content>
-        </x-shop::accordion>
+                </x-slot:content>
+            </x-shop::accordion>
+        </div>
     </script>
 
     <script
