@@ -5,6 +5,7 @@ namespace App\Services\AliExpress;
 use App\Exceptions\AliExpress\AliExpressImportException;
 use App\Services\AliExpress\DTO\NormalizedVariantAxis;
 use App\Services\AliExpress\DTO\ResolvedAxes;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Webkul\Attribute\Contracts\Attribute as AttributeContract;
 use Webkul\Attribute\Models\AttributeGroup;
@@ -89,7 +90,8 @@ class AliExpressAttributeResolver
      */
     protected function resolveAttribute(NormalizedVariantAxis $axis): AttributeContract
     {
-        $code = $axis->code;
+        $normalizedCode = AliExpressAxisNormalizer::normalizeAxisCode($axis->name);
+        $code = $normalizedCode ?? $axis->code;
 
         $attribute = $this->findAttributeByCode($code);
 
@@ -102,7 +104,8 @@ class AliExpressAttributeResolver
         }
 
         if ($attribute === null) {
-            $attribute = $this->createSelectAttribute($code, $axis->name, $axis->values);
+            $displayName = AliExpressAxisNormalizer::getCanonicalDisplayName($axis->name, $code) ?? $axis->name;
+            $attribute = $this->createSelectAttribute($code, $displayName, $axis->values);
         }
 
         if (! $attribute instanceof AttributeContract) {
@@ -156,38 +159,52 @@ class AliExpressAttributeResolver
             $options[] = $this->optionPayload($label, $code);
         }
 
-        $attribute = $this->attributeRepository->create([
-            'code' => $code,
-            'admin_name' => $name !== '' ? $name : $code,
-            'type' => 'select',
-            'is_configurable' => 1,
-            'is_required' => 0,
-            'is_unique' => 0,
-            'is_filterable' => 0,
-            'is_comparable' => 0,
-            'is_visible_on_front' => 0,
-            'value_per_locale' => 0,
-            'value_per_channel' => 0,
-            'validation' => '',
-            'position' => 0,
-            // Render variants as visual swatches (color circles / text chips)
-            // on the storefront instead of a dropdown, matching AliExpress.
-            'swatch_type' => AliExpressAttributeDictionary::swatchTypeForAxis($name !== '' ? $name : $code),
-            'options' => $options,
-        ]);
+        try {
+            $attribute = $this->attributeRepository->create([
+                'code' => $code,
+                'admin_name' => $name !== '' ? $name : $code,
+                'type' => 'select',
+                'is_configurable' => 1,
+                'is_required' => 0,
+                'is_unique' => 0,
+                'is_filterable' => 0,
+                'is_comparable' => 0,
+                'is_visible_on_front' => 0,
+                'value_per_locale' => 0,
+                'value_per_channel' => 0,
+                'validation' => '',
+                'position' => 0,
+                // Render variants as visual swatches (color circles / text chips)
+                // on the storefront instead of a dropdown, matching AliExpress.
+                'swatch_type' => AliExpressAttributeDictionary::swatchTypeForAxis($name !== '' ? $name : $code),
+                'options' => $options,
+            ]);
 
-        // Map the new attribute into every attribute family's first group so
-        // it surfaces on the admin product edit page (configurable variation
-        // matrix). Without a family-group mapping, Bagisto's edit form does not
-        // render the attribute at all, so color/size would be invisible there.
-        $this->mapAttributeToFamilies($attribute);
+            // Map the new attribute into every attribute family's first group so
+            // it surfaces on the admin product edit page (configurable variation
+            // matrix). Without a family-group mapping, Bagisto's edit form does not
+            // render the attribute at all, so color/size would be invisible there.
+            $this->mapAttributeToFamilies($attribute);
 
-        // Create the attribute name translation for every store locale so the
-        // admin/storefront show a readable label (e.g. "Color"/"اللون") instead
-        // of a blank name.
-        $this->translateAttributeName($attribute, $name !== '' ? $name : $code);
+            // Create the attribute name translation for every store locale so the
+            // admin/storefront show a readable label (e.g. "Color"/"اللون") instead
+            // of a blank name.
+            $this->translateAttributeName($attribute, $name !== '' ? $name : $code);
 
-        return $attribute;
+            return $attribute;
+        } catch (QueryException $e) {
+            // Safe race condition handling: if another concurrent worker created the same attribute code,
+            // check for duplicate entry key error on attributes_code_unique and load it.
+            if ($e->getCode() === '23000' && (str_contains($e->getMessage(), 'attributes_code_unique') || str_contains($e->getMessage(), 'Duplicate entry') || ($e->errorInfo[1] ?? 0) === 1062)) {
+                $existing = $this->findAttributeByCode($code);
+                if ($existing !== null) {
+                    return $existing;
+                }
+            }
+
+            // Re-throw all other query exceptions (connection, permission, schema errors)
+            throw $e;
+        }
     }
 
     /**

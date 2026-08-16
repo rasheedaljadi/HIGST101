@@ -339,9 +339,9 @@ class AliExpressProductMapper
 
         $skuList = $this->normalizeList($skuList);
 
-        // Accumulate axes keyed by AliExpress property name, preserving order
+        // Accumulate axes keyed by canonical code, preserving order
         // and distinct values.
-        $axesByName = [];
+        $axesByCode = [];
         $variants = [];
 
         foreach ($skuList as $sku) {
@@ -383,17 +383,26 @@ class AliExpressProductMapper
                     continue;
                 }
 
-                $optionsByAxis[$name] = $value;
+                $canonicalCode = AliExpressAxisNormalizer::normalizeAxisCode($name, $prefix);
+                if ($canonicalCode === null) {
+                    continue;
+                }
 
-                if (! isset($axesByName[$name])) {
-                    $axesByName[$name] = [
-                        'code' => $prefix.Str::slug($name, '_'),
+                $displayName = AliExpressAxisNormalizer::getCanonicalDisplayName($name, $canonicalCode);
+                $axisKey = $displayName ?? $name;
+
+                $optionsByAxis[$axisKey] = $value;
+
+                if (! isset($axesByCode[$canonicalCode])) {
+                    $axesByCode[$canonicalCode] = [
+                        'name' => $axisKey,
+                        'code' => $canonicalCode,
                         'values' => [],
                     ];
                 }
 
-                if (! in_array($value, $axesByName[$name]['values'], true)) {
-                    $axesByName[$name]['values'][] = $value;
+                if (! in_array($value, $axesByCode[$canonicalCode]['values'], true)) {
+                    $axesByCode[$canonicalCode]['values'][] = $value;
                 }
 
                 $skuImage = $this->nullableString($this->firstOf($property, ['sku_image', 'image']));
@@ -425,8 +434,8 @@ class AliExpressProductMapper
         }
 
         $axes = [];
-        foreach ($axesByName as $name => $data) {
-            $axes[] = new NormalizedVariantAxis($name, $data['code'], $data['values']);
+        foreach ($axesByCode as $code => $data) {
+            $axes[] = new NormalizedVariantAxis($data['name'], $data['code'], $data['values']);
         }
 
         return [$axes, $variants];

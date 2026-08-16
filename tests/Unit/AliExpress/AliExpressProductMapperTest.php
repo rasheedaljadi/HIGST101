@@ -124,6 +124,8 @@ it('parses the gallery image urls from the semicolon-separated string and de-dup
         'https://img.example.com/g1.jpg',
         'https://img.example.com/g2.jpg',
         'https://img.example.com/g3.jpg',
+        'https://img.example.com/red.jpg',
+        'https://img.example.com/blue.jpg',
     ]);
 });
 

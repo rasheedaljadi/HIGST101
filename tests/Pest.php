@@ -1,6 +1,7 @@
 <?php
 
 use Tests\TestCase;
+use Tests\Unit\AliExpress\MapperTestCase;
 use Webkul\Admin\Tests\AdminTestCase;
 use Webkul\Core\Tests\CoreTestCase;
 use Webkul\Customer\Tests\CustomerTestCase;
@@ -39,6 +40,7 @@ uses(RazorpayTestCase::class)->in('../packages/Webkul/Razorpay/tests');
 uses(ShopTestCase::class)->in('../packages/Webkul/Shop/tests');
 uses(TestCase::class)->in('../packages/Webkul/Wallet/tests');
 uses(TestCase::class)->in('Feature/Wallet');
+uses(MapperTestCase::class)->in('Unit/AliExpress');
 
 /*
 |--------------------------------------------------------------------------

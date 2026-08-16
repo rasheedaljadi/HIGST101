@@ -39,9 +39,9 @@ beforeEach(function () {
 });
 
 it('creates a missing attribute as a configurable select with its options (Req 8.1)', function () {
-    $code = 'ae_color_'.uniqueAxisSuffix();
+    $code = 'ae_custom_attr_one_'.uniqueAxisSuffix();
 
-    $axis = new NormalizedVariantAxis('Color', $code, ['Red', 'Blue']);
+    $axis = new NormalizedVariantAxis($code, $code, ['Red', 'Blue']);
 
     $resolved = $this->resolver->resolveAxes([$axis]);
 
@@ -64,12 +64,12 @@ it('creates a missing attribute as a configurable select with its options (Req 8
 });
 
 it('reuses an existing configurable select attribute instead of duplicating it (Req 8.4)', function () {
-    $code = 'ae_size_'.uniqueAxisSuffix();
+    $code = 'ae_custom_size_two_'.uniqueAxisSuffix();
 
     // Pre-create the attribute the resolver should reuse.
     $existing = $this->attributeRepository->create([
         'code' => $code,
-        'admin_name' => 'Size',
+        'admin_name' => $code,
         'type' => 'select',
         'is_configurable' => 1,
         'is_required' => 0,
@@ -88,7 +88,7 @@ it('reuses an existing configurable select attribute instead of duplicating it (
 
     $countBefore = $this->attributeRepository->count();
 
-    $axis = new NormalizedVariantAxis('Size', $code, ['S', 'M']);
+    $axis = new NormalizedVariantAxis($code, $code, ['S', 'M']);
 
     $resolved = $this->resolver->resolveAxes([$axis]);
 
@@ -101,12 +101,12 @@ it('reuses an existing configurable select attribute instead of duplicating it (
 });
 
 it('reuses an option case-insensitively rather than creating a duplicate (Req 8.4)', function () {
-    $code = 'ae_color_'.uniqueAxisSuffix();
+    $code = 'ae_custom_col_three_'.uniqueAxisSuffix();
 
     // Existing attribute already owns an option labelled "Red".
     $existing = $this->attributeRepository->create([
         'code' => $code,
-        'admin_name' => 'Color',
+        'admin_name' => $code,
         'type' => 'select',
         'is_configurable' => 1,
         'is_required' => 0,
@@ -128,7 +128,7 @@ it('reuses an option case-insensitively rather than creating a duplicate (Req 8.
     $optionCountBefore = $existing->options()->count();
 
     // Axis value differs only by case ("red" vs "Red").
-    $axis = new NormalizedVariantAxis('Color', $code, ['red']);
+    $axis = new NormalizedVariantAxis($code, $code, ['red']);
 
     $resolved = $this->resolver->resolveAxes([$axis]);
 
@@ -141,9 +141,9 @@ it('reuses an option case-insensitively rather than creating a duplicate (Req 8.
 });
 
 it('returns numeric option ids owned by the attribute and maps code => ids (Req 8.2, 8.3)', function () {
-    $code = 'ae_material_'.uniqueAxisSuffix();
+    $code = 'ae_custom_mat_four_'.uniqueAxisSuffix();
 
-    $axis = new NormalizedVariantAxis('Material', $code, ['Cotton', 'Wool']);
+    $axis = new NormalizedVariantAxis($code, $code, ['Cotton', 'Wool']);
 
     $resolved = $this->resolver->resolveAxes([$axis]);
 
