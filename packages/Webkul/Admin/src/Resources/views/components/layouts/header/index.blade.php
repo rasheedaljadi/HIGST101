@@ -569,13 +569,33 @@
                 <!-- Content -->
                 <div class="grid">
                     <a
-                        class="flex items-start gap-1.5 border-b p-3 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950"
+                        class="flex items-start gap-2.5 border-b p-3 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950"
                         v-for="notification in notifications"
                         :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id || notification.id)"
                     >
                         <!-- Notification Icon -->
                         <span
-                            v-if="notification.order && notification.order.status && (notification.order.status in notificationStatusIcon)"
+                            v-if="notification.type === 'order_reminder'"
+                            class="h-fit icon-information rounded-full bg-amber-100 text-2xl text-amber-600 dark:!text-amber-600"
+                        >
+                        </span>
+                        <span
+                            v-else-if="notification.type === 'low_stock'"
+                            class="h-fit icon-information rounded-full bg-orange-100 text-2xl text-orange-600 dark:!text-orange-600"
+                        >
+                        </span>
+                        <span
+                            v-else-if="notification.type === 'out_of_stock'"
+                            class="h-fit icon-cancel-1 rounded-full bg-red-100 text-2xl text-red-600 dark:!text-red-600"
+                        >
+                        </span>
+                        <span
+                            v-else-if="notification.type === 'scheduled_sync'"
+                            class="h-fit icon-processing rounded-full bg-blue-100 text-2xl text-blue-600 dark:!text-blue-600"
+                        >
+                        </span>
+                        <span
+                            v-else-if="notification.order && notification.order.status && (notification.order.status in notificationStatusIcon)"
                             class="h-fit"
                             :class="notificationStatusIcon[notification.order.status]"
                         >
@@ -586,20 +606,23 @@
                         >
                         </span>
 
-                        <div class="grid">
-                            <!-- Order Id & Status -->
-                            <p class="text-gray-800 dark:text-white">
-                                <template v-if="notification.order">
+                        <div class="grid flex-1">
+                            <!-- Title / Status -->
+                            <p class="text-sm text-gray-800 dark:text-white leading-snug" :class="notification.read ? 'font-normal' : 'font-semibold'">
+                                <template v-if="notification.type && notification.type !== 'order_status'">
+                                    @{{ notification.title || (notification.order ? notification.order.id : ('إشعار #' + notification.id)) }}
+                                </template>
+                                <template v-else-if="notification.order">
                                     #@{{ notification.order.id }}
                                     @{{ orderTypeMessages[notification.order.status] || '' }}
                                 </template>
                                 <template v-else>
-                                    #إشعار @{{ notification.id }}
+                                    إشعار #@{{ notification.id }}
                                 </template>
                             </p>
 
                             <!-- Created Date In human Readable Format -->
-                            <p class="text-xs text-gray-600 dark:text-gray-300">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                 @{{ notification.order ? notification.order.datetime : (notification.created_at || '') }}
                             </p>
                         </div>

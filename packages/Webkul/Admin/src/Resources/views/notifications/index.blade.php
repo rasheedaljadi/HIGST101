@@ -60,28 +60,61 @@
                             v-if="notifications.length"
                         >
                             <a
-                                :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id)"
-                                class="flex h-14 items-start gap-1.5 p-4 hover:bg-gray-50 dark:hover:bg-gray-950"
+                                :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id || notification.id)"
+                                class="flex h-auto items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-950 border-b border-gray-100 dark:border-gray-800 last:border-0"
                                 v-for="notification in notifications"
                             >
                                 <span
-                                    v-if="notification.order.status in orderType"
+                                    v-if="notification.type === 'order_reminder'"
+                                    class="h-fit rounded-full text-2xl icon-information text-amber-600 bg-amber-100 p-1"
+                                >
+                                </span>
+                                <span
+                                    v-else-if="notification.type === 'low_stock'"
+                                    class="h-fit rounded-full text-2xl icon-information text-orange-600 bg-orange-100 p-1"
+                                >
+                                </span>
+                                <span
+                                    v-else-if="notification.type === 'out_of_stock'"
+                                    class="h-fit rounded-full text-2xl icon-cancel-1 text-red-600 bg-red-100 p-1"
+                                >
+                                </span>
+                                <span
+                                    v-else-if="notification.type === 'scheduled_sync'"
+                                    class="h-fit rounded-full text-2xl icon-processing text-blue-600 bg-blue-100 p-1"
+                                >
+                                </span>
+                                <span
+                                    v-else-if="notification.order && notification.order.status in orderType"
                                     class="h-fit rounded-full text-2xl"
                                     :class="orderType[notification.order.status].icon"
                                 >
                                 </span>
+                                <span
+                                    v-else
+                                    class="h-fit rounded-full text-2xl icon-information text-blue-600 bg-blue-100 p-1"
+                                >
+                                </span>
 
-                                <div class="grid">
+                                <div class="grid flex-1">
                                     <p
-                                        class="text-gray-800 dark:text-white"
+                                        class="text-sm text-gray-800 dark:text-white leading-snug"
                                         :class="notification.read ? 'font-normal' : 'font-semibold'"
                                     >
-                                        #@{{ notification.order.id }}
-                                        @{{ orderType[notification.order.status].message }}
+                                        <template v-if="notification.type && notification.type !== 'order_status'">
+                                            @{{ notification.title || (notification.order ? notification.order.id : ('إشعار #' + notification.id)) }}
+                                        </template>
+                                        <template v-else-if="notification.order">
+                                            #@{{ notification.order.id }}
+                                            @{{ orderType[notification.order.status] ? orderType[notification.order.status].message : '' }}
+                                        </template>
+                                        <template v-else>
+                                            إشعار #@{{ notification.id }}
+                                        </template>
                                     </p>
 
-                                    <p class="text-xs text-gray-600 dark:text-gray-300">
-                                        @{{ notification.order.datetime }}
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        @{{ notification.order ? notification.order.datetime : (notification.created_at || '') }}
                                     </p>
                                 </div>
                             </a>
