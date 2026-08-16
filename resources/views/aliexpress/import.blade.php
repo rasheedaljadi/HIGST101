@@ -45,8 +45,8 @@
                         <p id="ae-input-error" class="mt-1.5 text-sm font-semibold text-rose-500 dark:text-rose-450" v-if="inputError" v-text="inputError"></p>
                     </div>
 
-                    {{-- Category Pre-Selection (Main Category & Subcategory) --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800">
+                    {{-- Category Pre-Selection (Main Category & Subcategory Side by Side in Same Row) --}}
+                    <div class="grid grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800">
                         {{-- Main Category --}}
                         <div class="flex flex-col gap-1.5">
                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -84,7 +84,7 @@
                             </select>
                         </div>
 
-                        <div class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 pt-1">
+                        <div class="col-span-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 pt-1">
                             <span class="inline-block text-amber-500">💡</span>
                             <span>
                                 <strong>ملاحظة:</strong> يمكنك ترك تحديد الفئة فارغاً، وسيقوم النظام بتصنيف المنتج تلقائياً بناءً على مواصفاته وبياناته.
