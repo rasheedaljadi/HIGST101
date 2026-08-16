@@ -2,7 +2,9 @@
 
 namespace Webkul\DeliveryManagement\Providers;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Webkul\DeliveryManagement\Listeners\OrderCreatedListener;
 
 class DeliveryManagementServiceProvider extends ServiceProvider
 {
@@ -16,6 +18,9 @@ class DeliveryManagementServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'delivery');
 
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'delivery');
+
+        Event::listen('checkout.order.save.after', [OrderCreatedListener::class, 'handle']);
+        Event::listen('sales.order.save.after', [OrderCreatedListener::class, 'handle']);
     }
 
     /**
@@ -26,6 +31,11 @@ class DeliveryManagementServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(
             dirname(__DIR__).'/Config/delivery.php',
             'delivery'
+        );
+
+        $this->mergeConfigFrom(
+            dirname(__DIR__).'/Config/carriers.php',
+            'carriers'
         );
     }
 }

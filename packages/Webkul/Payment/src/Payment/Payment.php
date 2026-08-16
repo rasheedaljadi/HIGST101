@@ -89,10 +89,17 @@ abstract class Payment
     /**
      * Set cart.
      *
-     * @var void
+     * @param  \Webkul\Checkout\Contracts\Cart|null  $cart
+     * @return void
      */
-    public function setCart()
+    public function setCart($cart = null)
     {
+        if ($cart) {
+            $this->cart = $cart;
+
+            return;
+        }
+
         if (! $this->cart) {
             $this->cart = Cart::getCart();
         }

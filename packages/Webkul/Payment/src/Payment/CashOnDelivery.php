@@ -3,6 +3,7 @@
 namespace Webkul\Payment\Payment;
 
 use Illuminate\Support\Facades\Storage;
+use Webkul\DeliveryManagement\Services\PaymentEligibilityChecker;
 
 class CashOnDelivery extends Payment
 {
@@ -31,7 +32,19 @@ class CashOnDelivery extends Payment
             $this->setCart();
         }
 
-        return $this->getConfigData('active') && $this->cart?->hasOnlyStockableItems();
+        $active = $this->getConfigData('active') ?? config('payment_methods.'.$this->code.'.active', true);
+        $stockable = ! $this->cart || $this->cart->hasOnlyStockableItems();
+
+        if (! $active || ! $stockable) {
+            return false;
+        }
+
+        if (class_exists(PaymentEligibilityChecker::class)) {
+            return app(PaymentEligibilityChecker::class)
+                ->isCartEligible($this->code, $this->cart);
+        }
+
+        return true;
     }
 
     /**

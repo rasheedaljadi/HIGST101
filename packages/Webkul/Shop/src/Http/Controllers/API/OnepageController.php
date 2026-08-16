@@ -2,11 +2,16 @@
 
 namespace Webkul\Shop\Http\Controllers\API;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 use Webkul\CartRule\Exceptions\CouponUsageLimitExceededException;
 use Webkul\Checkout\Facades\Cart;
 use Webkul\Customer\Repositories\CustomerRepository;
+use Webkul\DeliveryManagement\Services\GovernorateDeliveryValidator;
+use Webkul\DeliveryManagement\Services\PaymentEligibilityChecker;
+use Webkul\DeliveryManagement\Services\ShippingMethodAdapter;
 use Webkul\Payment\Facades\Payment;
 use Webkul\Sales\Repositories\OrderRepository;
 use Webkul\Sales\Transformers\OrderResource;
@@ -23,7 +28,10 @@ class OnepageController extends APIController
      */
     public function __construct(
         protected OrderRepository $orderRepository,
-        protected CustomerRepository $customerRepository
+        protected CustomerRepository $customerRepository,
+        protected ShippingMethodAdapter $shippingMethodAdapter,
+        protected GovernorateDeliveryValidator $governorateDeliveryValidator,
+        protected PaymentEligibilityChecker $paymentEligibilityChecker
     ) {}
 
     /**
@@ -39,7 +47,7 @@ class OnepageController extends APIController
     /**
      * Store address.
      */
-    public function storeAddress(CartAddressRequest $cartAddressRequest): JsonResource
+    public function storeAddress(CartAddressRequest $cartAddressRequest): JsonResource|Response
     {
         $params = $cartAddressRequest->all();
 
@@ -58,6 +66,32 @@ class OnepageController extends APIController
                 'redirect' => true,
                 'redirect_url' => route('shop.checkout.cart.index'),
             ]);
+        }
+
+        // Validate governorate state code for Yemen
+        $shippingState = $params['shipping']['state'] ?? $params['billing']['state'] ?? null;
+        if ($shippingState && ! $this->governorateDeliveryValidator->isValidStateCode($shippingState)) {
+            return response()->json([
+                'message' => 'المحافظة المحددة غير صالحة.',
+                'errors' => [
+                    'shipping.state' => ['المحافظة المحددة غير صالحة.'],
+                ],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        // Handle delivery point snapshot if delivery_point_id is present
+        $deliveryPointId = $params['shipping']['delivery_point_id'] ?? $params['billing']['delivery_point_id'] ?? null;
+        if ($deliveryPointId && $shippingState) {
+            try {
+                $pointSnapshot = $this->governorateDeliveryValidator->validateDeliveryPoint($shippingState, (int) $deliveryPointId);
+                $params['shipping']['additional']['delivery_point_id'] = (int) $deliveryPointId;
+                $params['shipping']['additional']['delivery_point_snapshot'] = $pointSnapshot;
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'errors' => $e->errors(),
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
         }
 
         Cart::saveAddresses($params);
@@ -95,7 +129,51 @@ class OnepageController extends APIController
     {
         $validatedData = $this->validate(request(), [
             'shipping_method' => 'required',
+            'delivery_point_id' => 'nullable|integer',
         ]);
+
+        $cart = Cart::getCart();
+        $stateCode = (string) ($cart?->shipping_address?->state ?? '');
+        $shippingMethod = $validatedData['shipping_method'];
+
+        // Validate governorate shipping rule
+        if (! empty($stateCode) && ! $this->governorateDeliveryValidator->isDeliveryTypeEnabled($stateCode, $shippingMethod)) {
+            return response()->json([
+                'message' => 'طريقة التوصيل المحددة غير مفعلة في هذه المحافظة.',
+                'errors' => [
+                    'shipping_method' => ['طريقة التوصيل المحددة غير مفعلة في هذه المحافظة.'],
+                ],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        // Validate delivery point if delivery point method chosen
+        if ($this->shippingMethodAdapter->isDeliveryPoint($shippingMethod)) {
+            $deliveryPointId = $validatedData['delivery_point_id'] ?? null;
+            if (! $deliveryPointId && $cart?->shipping_address) {
+                $additional = is_array($cart->shipping_address->additional)
+                    ? $cart->shipping_address->additional
+                    : json_decode($cart->shipping_address->additional ?? '[]', true);
+                $deliveryPointId = $additional['delivery_point_id'] ?? null;
+            }
+
+            try {
+                $pointSnapshot = $this->governorateDeliveryValidator->validateDeliveryPoint($stateCode, $deliveryPointId ? (int) $deliveryPointId : null);
+                if ($cart?->shipping_address) {
+                    $additional = is_array($cart->shipping_address->additional)
+                        ? $cart->shipping_address->additional
+                        : json_decode($cart->shipping_address->additional ?? '[]', true);
+                    $additional['delivery_point_id'] = (int) $deliveryPointId;
+                    $additional['delivery_point_snapshot'] = $pointSnapshot;
+                    $cart->shipping_address->additional = $additional;
+                    $cart->shipping_address->save();
+                }
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'errors' => $e->errors(),
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+        }
 
         if (
             Cart::hasError()
@@ -115,13 +193,35 @@ class OnepageController extends APIController
     /**
      * Store payment method.
      *
-     * @return array
+     * @return array|JsonResponse
      */
     public function storePaymentMethod()
     {
         $validatedData = $this->validate(request(), [
             'payment' => 'required',
         ]);
+
+        $cart = Cart::getCart();
+        $paymentMethod = $validatedData['payment']['method'] ?? '';
+
+        // Point 2: Server-side check for payment eligibility (e.g. COD restrictions)
+        if (! $this->paymentEligibilityChecker->isCartEligible($paymentMethod, $cart)) {
+            $canonicalType = $this->shippingMethodAdapter->canonicalize($cart?->shipping_method ?? '');
+            if (strtolower(trim($paymentMethod)) === 'cashondelivery') {
+                $errorMsg = ($canonicalType === ShippingMethodAdapter::CANONICAL_DELIVERY_POINT)
+                    ? 'الدفع عند الاستلام غير متاح عند الاستلام من نقاط التوصيل. يرجى اختيار وسيلة دفع إلكترونية أو تحويل.'
+                    : 'الدفع عند الاستلام غير متاح في المحافظة المحددة.';
+            } else {
+                $errorMsg = 'طريقة الدفع المحددة غير متاحة للمحافظة أو طريقة التوصيل المختارة.';
+            }
+
+            return response()->json([
+                'message' => $errorMsg,
+                'errors' => [
+                    'payment' => [$errorMsg],
+                ],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         if (
             Cart::hasError()
@@ -161,7 +261,7 @@ class OnepageController extends APIController
         } catch (\Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $cart = Cart::getCart();
@@ -249,6 +349,41 @@ class OnepageController extends APIController
 
         if (! $cart->payment) {
             throw new \Exception(trans('shop::app.checkout.cart.specify-payment-method'));
+        }
+
+        // Point 3: Final server-side validation against bypasses
+        $stateCode = (string) ($cart->shipping_address?->state ?? '');
+        $shippingMethod = (string) ($cart->shipping_method ?? $cart->selected_shipping_rate?->method ?? '');
+        $paymentMethod = (string) ($cart->payment?->method ?? '');
+
+        if (! empty($stateCode) && ! $this->governorateDeliveryValidator->isDeliveryTypeEnabled($stateCode, $shippingMethod)) {
+            throw new \Exception('طريقة التوصيل المحددة غير مفعلة في هذه المحافظة.');
+        }
+
+        if ($this->shippingMethodAdapter->isDeliveryPoint($shippingMethod)) {
+            $additional = is_array($cart->shipping_address->additional)
+                ? $cart->shipping_address->additional
+                : json_decode($cart->shipping_address->additional ?? '[]', true);
+            $deliveryPointId = isset($additional['delivery_point_id']) ? (int) $additional['delivery_point_id'] : null;
+
+            if (! $deliveryPointId) {
+                throw new \Exception('نقطة الاستلام مطلوبة لطريقة التوصيل المحددة.');
+            }
+
+            $this->governorateDeliveryValidator->validateDeliveryPoint($stateCode, $deliveryPointId);
+        }
+
+        if (! $this->paymentEligibilityChecker->isCartEligible($paymentMethod, $cart)) {
+            $canonicalType = $this->shippingMethodAdapter->canonicalize($shippingMethod);
+            if (strtolower(trim($paymentMethod)) === 'cashondelivery') {
+                $errorMsg = ($canonicalType === ShippingMethodAdapter::CANONICAL_DELIVERY_POINT)
+                    ? 'الدفع عند الاستلام غير متاح عند الاستلام من نقاط التوصيل.'
+                    : 'الدفع عند الاستلام غير متاح في المحافظة المحددة.';
+            } else {
+                $errorMsg = 'طريقة الدفع المحددة غير متاحة للمحافظة أو طريقة التوصيل المختارة.';
+            }
+
+            throw new \Exception($errorMsg);
         }
     }
 }
