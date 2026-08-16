@@ -115,6 +115,19 @@ class NotificationController extends Controller
                 $notification->setAttribute('order', $syntheticOrder);
                 $notification->setRelation('order', (object) $syntheticOrder);
                 $notification->order_id = $notification->id;
+            } elseif ($notification->type === 'order_reminder') {
+                $orderId = $notification->order_id ?? $notification->entity_id;
+                $titleText = $notification->title ?? ('تذكير: طلب #'.$orderId.' غير مقفل');
+
+                $syntheticOrder = [
+                    'id' => $titleText,
+                    'status' => 'pending',
+                    'datetime' => $notification->created_at ? $notification->created_at->diffForHumans() : 'الآن',
+                ];
+
+                $notification->setAttribute('order', $syntheticOrder);
+                $notification->setRelation('order', (object) $syntheticOrder);
+                $notification->order_id = $notification->order_id ?: $notification->id;
             }
         }
 
@@ -152,6 +165,10 @@ class NotificationController extends Controller
 
             if ($notification->type === 'scheduled_sync') {
                 return redirect()->route('admin.dropshipping.sync.index');
+            }
+
+            if ($notification->type === 'order_reminder' && $notification->order_id) {
+                return redirect()->route('admin.sales.orders.view', $notification->order_id);
             }
 
             if (in_array($notification->type, ['low_stock', 'out_of_stock'])) {

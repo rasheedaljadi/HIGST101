@@ -2227,6 +2227,28 @@ return [
             ],
         ],
     ], [
+        'key' => 'sales.order_settings.reminder',
+        'name' => 'تذكير الطلبات غير المقفلة',
+        'info' => 'إرسال إشعارات تذكيرية دورية للأدمن عند وجود طلبات غير مغلقة لفترة معينة',
+        'sort' => 5,
+        'fields' => [
+            [
+                'name' => 'enabled',
+                'title' => 'تفعيل التذكير الدوري',
+                'info' => 'تفعيل إشعارات التذكير التلقائية للطلبات غير المقفلة',
+                'type' => 'boolean',
+                'default' => true,
+            ], [
+                'name' => 'interval_days',
+                'title' => 'الفترة الزمنية للتذكير (بالأيام)',
+                'info' => 'تكرار إرسال التذكير كل كم يوم (افتراضياً: 5 أيام)',
+                'type' => 'number',
+                'default' => 5,
+                'validation' => 'required|min:1',
+                'depends' => 'enabled:1',
+            ],
+        ],
+    ], [
         'key' => 'sales.invoice_settings',
         'name' => 'admin::app.configuration.index.sales.invoice-settings.title',
         'info' => 'admin::app.configuration.index.sales.invoice-settings.info',

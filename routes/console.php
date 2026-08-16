@@ -24,3 +24,12 @@ Schedule::command('wallet:promotions:process-outbox --batch=50 --lease=60')
     ->withoutOverlapping()
     ->runInBackground();
 
+/**
+ * HIGEST Unclosed Orders Periodic Reminder Scheduler (09:00 AM Daily)
+ */
+Schedule::command('orders:check-unclosed-reminders')
+    ->dailyAt('09:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+
