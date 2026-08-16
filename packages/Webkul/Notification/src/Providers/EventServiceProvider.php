@@ -4,6 +4,9 @@ namespace Webkul\Notification\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Webkul\Fulfillment\Events\SyncCompleted;
+use Webkul\Fulfillment\Events\SyncFailed;
+use Webkul\Notification\Listeners\ScheduledSyncNotificationListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -31,5 +34,19 @@ class EventServiceProvider extends ServiceProvider
         Event::listen('sales.refund.save.after', 'Webkul\Notification\Listeners\Order@createRefund');
 
         Event::listen('sales.refund.save.after', 'Webkul\Notification\Listeners\StockNotificationListener@afterRefundCreated');
+
+        if (class_exists(SyncCompleted::class)) {
+            Event::listen(
+                SyncCompleted::class,
+                [ScheduledSyncNotificationListener::class, 'handleSyncCompleted']
+            );
+        }
+
+        if (class_exists(SyncFailed::class)) {
+            Event::listen(
+                SyncFailed::class,
+                [ScheduledSyncNotificationListener::class, 'handleSyncFailed']
+            );
+        }
     }
 }

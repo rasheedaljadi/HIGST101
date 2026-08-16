@@ -99,6 +99,22 @@ class NotificationController extends Controller
                 $notification->setAttribute('order', $syntheticOrder);
                 $notification->setRelation('order', (object) $syntheticOrder);
                 $notification->order_id = $notification->id;
+            } elseif ($notification->type === 'scheduled_sync') {
+                $isFailed = str_contains($notification->title ?? '', 'فشل');
+                $hasWarnings = str_contains($notification->title ?? '', 'تنبيهات') || str_contains($notification->title ?? '', 'ملاحظات');
+
+                $status = $isFailed ? 'canceled' : ($hasWarnings ? 'pending' : 'completed');
+                $titleText = $notification->title ?? 'مزامنة مجدولة';
+
+                $syntheticOrder = [
+                    'id' => $titleText,
+                    'status' => $status,
+                    'datetime' => $notification->created_at ? $notification->created_at->diffForHumans() : 'الآن',
+                ];
+
+                $notification->setAttribute('order', $syntheticOrder);
+                $notification->setRelation('order', (object) $syntheticOrder);
+                $notification->order_id = $notification->id;
             }
         }
 
@@ -132,6 +148,10 @@ class NotificationController extends Controller
 
             if ($notification->type === 'wallet_withdrawal') {
                 return redirect()->route('admin.wallet.withdrawals.index');
+            }
+
+            if ($notification->type === 'scheduled_sync') {
+                return redirect()->route('admin.dropshipping.sync.index');
             }
 
             if (in_array($notification->type, ['low_stock', 'out_of_stock'])) {
