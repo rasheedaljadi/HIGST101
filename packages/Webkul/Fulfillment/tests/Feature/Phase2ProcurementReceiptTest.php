@@ -352,9 +352,25 @@ class Phase2ProcurementReceiptTest extends TestCase
         $allocation = $fixture['allocation'];
         $orderItemId = $fixture['orderItemId'];
 
-        $this->assertEquals('supplier', $allocation->allocation_type);
-        $this->assertEquals('aliexpress', $allocation->source_code);
-        $this->assertEquals(2, $allocation->reserved_qty);
+        // Assert initial state before rebind
+        $activeSupplierBefore = OrderAllocation::where('order_item_id', $orderItemId)
+            ->where('allocation_type', 'supplier')
+            ->where('state', 'reserved')
+            ->count();
+        $this->assertEquals(1, $activeSupplierBefore);
+
+        $activeWarehouseBefore = OrderAllocation::where('order_item_id', $orderItemId)
+            ->where('allocation_type', 'warehouse')
+            ->where('source_code', 'hayest_central')
+            ->where('state', 'reserved')
+            ->count();
+        $this->assertEquals(0, $activeWarehouseBefore);
+
+        $totalReservedBefore = OrderAllocation::where('order_item_id', $orderItemId)
+            ->where('state', 'reserved')
+            ->sum('reserved_qty');
+        $this->assertEquals(2, $totalReservedBefore);
+
         $initialVersion = $allocation->version;
 
         // Perform full receipt which triggers rebind
@@ -365,39 +381,62 @@ class Phase2ProcurementReceiptTest extends TestCase
 
         $allocation->refresh();
 
-        // Verify allocation source & type updated
-        $this->assertEquals('warehouse', $allocation->allocation_type);
-        $this->assertEquals('hayest_central', $allocation->source_code);
-
-        // Verify single reservation preserved (reserved_qty is 2, not doubled to 4)
-        $this->assertEquals(2, $allocation->reserved_qty);
-        $this->assertEquals(0, $allocation->fulfilled_qty);
-
-        // Verify no active supplier allocation remains for this order item
-        $supplierAllocationsCount = OrderAllocation::where('order_item_id', $orderItemId)
+        // 1. Supplier allocation active before = 1 and after = 0
+        $activeSupplierAfter = OrderAllocation::where('order_item_id', $orderItemId)
             ->where('allocation_type', 'supplier')
             ->where('state', 'reserved')
             ->count();
-        $this->assertEquals(0, $supplierAllocationsCount);
+        $this->assertEquals(0, $activeSupplierAfter);
 
-        // Total reserved quantity for the item is exactly 2
-        $totalReserved = OrderAllocation::where('order_item_id', $orderItemId)
+        // 2. Warehouse hayest_central allocation active before = 0 and after = 1
+        $activeWarehouseAfter = OrderAllocation::where('order_item_id', $orderItemId)
+            ->where('allocation_type', 'warehouse')
+            ->where('source_code', 'hayest_central')
+            ->where('state', 'reserved')
+            ->count();
+        $this->assertEquals(1, $activeWarehouseAfter);
+
+        // 3. Sum of reserved_qty before and after is exactly equal (2 == 2)
+        $totalReservedAfter = OrderAllocation::where('order_item_id', $orderItemId)
             ->where('state', 'reserved')
             ->sum('reserved_qty');
-        $this->assertEquals(2, $totalReserved);
+        $this->assertEquals($totalReservedBefore, $totalReservedAfter);
 
-        // Verify version was incremented with optimistic locking
+        // 4. fulfilled_qty remains 0 before handoff
+        $this->assertEquals(0, $allocation->fulfilled_qty);
+
+        // 5. Version incremented with optimistic locking
         $this->assertGreaterThan($initialVersion, $allocation->version);
 
-        // Verify audit log entry
+        // 6. allocation_logs contains exactly 1 rebind record
+        $rebindLogsCount = DB::table('allocation_logs')
+            ->where('order_allocation_id', $allocation->id)
+            ->where('action', 'rebind')
+            ->count();
+        $this->assertEquals(1, $rebindLogsCount);
+
         $log = DB::table('allocation_logs')
             ->where('order_allocation_id', $allocation->id)
             ->where('action', 'rebind')
             ->first();
-
         $this->assertNotNull($log);
         $this->assertEquals(2, $log->old_qty);
         $this->assertEquals(2, $log->new_qty);
+
+        // 7. Replaying receipt event does NOT create a second allocation or duplicate rebind log
+        $this->inboundReceiptService->confirmFullReceipt(
+            purchaseOrderId: $po->id,
+            actorId: 1
+        );
+
+        $totalAllocationsAfterReplay = OrderAllocation::where('order_item_id', $orderItemId)->count();
+        $this->assertEquals(1, $totalAllocationsAfterReplay);
+
+        $rebindLogsAfterReplay = DB::table('allocation_logs')
+            ->where('order_allocation_id', $allocation->id)
+            ->where('action', 'rebind')
+            ->count();
+        $this->assertEquals(1, $rebindLogsAfterReplay);
     }
 
     /**
