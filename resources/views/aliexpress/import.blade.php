@@ -151,7 +151,7 @@
             </div>
         </script>
 
-        <script>
+        <script type="module">
             app.component('v-aliexpress-import', {
                 template: '#v-aliexpress-import-template',
 
