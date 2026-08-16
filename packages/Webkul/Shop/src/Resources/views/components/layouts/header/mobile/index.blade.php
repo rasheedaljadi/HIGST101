@@ -420,95 +420,167 @@
             </x-shop::drawer>
         </script>
 
-    <script
-        type="text/x-template"
-        id="v-mobile-category-template"
-    >
-            <!-- Wrapper with transition effects -->
-    <div class="relative h-full overflow-hidden">
-        <!-- Sliding container -->
+    <script type="text/x-template" id="v-mobile-category-template">
+        <!-- Wrapper with transition effects -->
+        <div class="relative h-full overflow-hidden">
+            <!-- Sliding container with 3 levels -->
             <div
-                class="flex h-full transition-transform duration-300"
+                class="flex h-full transition-transform duration-300 ease-in-out"
                 :class="{
-                        'ltr:translate-x-0 rtl:translate-x-0': currentViewLevel !== 'third',
-                        'ltr:-translate-x-full rtl:translate-x-full': currentViewLevel === 'third'
+                    'ltr:translate-x-0 rtl:translate-x-0': currentViewLevel === 'main',
+                    'ltr:-translate-x-full rtl:translate-x-full': currentViewLevel === 'second',
+                    'ltr:-translate-x-[200%] rtl:translate-x-[200%]': currentViewLevel === 'third'
                 }"
             >
-            <!-- First level view -->
-            <div class="flex-shrink-0 w-full h-full px-6 overflow-auto">
-                <div class="py-4">
+                <!-- 1. First Level View (Only Main Top-Level Categories) -->
+                <div class="h-full w-full flex-shrink-0 px-6 overflow-auto">
+                    <div class="py-2">
                         <div
                             v-for="category in categories"
                             :key="category.id"
-                            :class="{'mb-2': category.children && category.children.length}"
+                            class="border-b border-gray-100 dark:border-gray-800 last:border-0"
                         >
-                        <div class="flex items-center justify-between py-2 transition-colors duration-200 cursor-pointer">
-                            <a :href="category.url" class="text-base font-medium text-black">
+                            <!-- Category with Children: Click navigates to Level 2 -->
+                            <div
+                                v-if="category.children && category.children.length"
+                                class="flex items-center justify-between py-3.5 transition-colors duration-200 cursor-pointer hover:text-blue-600 group"
+                                @click="showSecondLevel(category)"
+                            >
+                                <span class="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors">
+                                    @{{ category.name }}
+                                </span>
+
+                                <span class="flex items-center gap-1.5 text-xs text-gray-400">
+                                    <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full font-medium">@{{ category.children.length }}</span>
+                                    <span class="text-lg icon-arrow-right rtl:icon-arrow-left text-gray-400 group-hover:text-blue-600 transition-transform"></span>
+                                </span>
+                            </div>
+
+                            <!-- Direct Link Category without Children -->
+                            <a
+                                v-else
+                                :href="category.url"
+                                class="flex items-center justify-between py-3.5 text-base font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 transition-colors"
+                            >
                                 @{{ category.name }}
                             </a>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Second Level Categories -->
-                            <div v-if="category.children && category.children.length" >
+                <!-- 2. Second Level View -->
+                <div class="h-full w-full flex-shrink-0 px-6 overflow-auto">
+                    <div v-if="currentFirstLevelCategory">
+                        <!-- Back Button Header -->
+                        <div class="py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-10">
+                            <button
+                                @click="goBackToMainView"
+                                class="flex items-center gap-2 text-sm font-bold text-[#001A54] dark:text-blue-400 hover:opacity-80 transition-opacity focus:outline-none"
+                            >
+                                <span class="text-base icon-arrow-left rtl:icon-arrow-right"></span>
+                                <span>@lang('shop::app.components.layouts.header.mobile.back-button')</span>
+                            </button>
+
+                            <span class="text-xs font-bold text-gray-600 dark:text-gray-300 truncate max-w-[150px]">
+                                @{{ currentFirstLevelCategory.name }}
+                            </span>
+                        </div>
+
+                        <!-- Link to View All Products in Parent Category -->
+                        <div class="py-3 border-b border-gray-100 dark:border-gray-800">
+                            <a
+                                :href="currentFirstLevelCategory.url"
+                                class="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-between"
+                            >
+                                <span>عرض كافة منتجات @{{ currentFirstLevelCategory.name }}</span>
+                                <span class="text-base icon-arrow-right rtl:icon-arrow-left"></span>
+                            </a>
+                        </div>
+
+                        <!-- Second Level Items List -->
+                        <div class="py-2">
+                            <div
+                                v-for="secondLevelCategory in currentFirstLevelCategory.children"
+                                :key="secondLevelCategory.id"
+                                class="border-b border-gray-100 dark:border-gray-800 last:border-0"
+                            >
+                                <!-- If has Level 3 children: clicking navigates to Level 3 -->
                                 <div
-                                    v-for="secondLevelCategory in category.children"
-                                    :key="secondLevelCategory.id"
+                                    v-if="secondLevelCategory.children && secondLevelCategory.children.length"
+                                    class="flex items-center justify-between py-3.5 transition-colors duration-200 cursor-pointer hover:text-blue-600 group"
+                                    @click="showThirdLevel(secondLevelCategory)"
                                 >
-                                    <div
-                                        class="flex items-center justify-between py-2 transition-colors duration-200 cursor-pointer"
-                                        @click="showThirdLevel(secondLevelCategory, category, $event)"
-                                    >
-                                    <a :href="secondLevelCategory.url" class="text-sm font-normal">
+                                    <span class="text-sm font-semibold text-gray-800 dark:text-gray-100 group-hover:text-blue-600 transition-colors">
                                         @{{ secondLevelCategory.name }}
-                                    </a>
+                                    </span>
 
-                                        <span
-                                            v-if="secondLevelCategory.children && secondLevelCategory.children.length"
-                                            class="icon-arrow-right rtl:icon-arrow-left"
-                                        ></span>
+                                    <span class="flex items-center gap-1.5 text-xs text-gray-400">
+                                        <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full font-medium">@{{ secondLevelCategory.children.length }}</span>
+                                        <span class="text-base icon-arrow-right rtl:icon-arrow-left text-gray-400 group-hover:text-blue-600 transition-transform"></span>
+                                    </span>
                                 </div>
+
+                                <!-- Direct Link to Second Level Category -->
+                                <a
+                                    v-else
+                                    :href="secondLevelCategory.url"
+                                    class="flex items-center justify-between py-3.5 text-sm font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 transition-colors"
+                                >
+                                    @{{ secondLevelCategory.name }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Third Level View -->
+                <div class="h-full w-full flex-shrink-0 px-6 overflow-auto">
+                    <div v-if="currentSecondLevelCategory">
+                        <!-- Back Button Header -->
+                        <div class="py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-10">
+                            <button
+                                @click="goBackToSecondView"
+                                class="flex items-center gap-2 text-sm font-bold text-[#001A54] dark:text-blue-400 hover:opacity-80 transition-opacity focus:outline-none"
+                            >
+                                <span class="text-base icon-arrow-left rtl:icon-arrow-right"></span>
+                                <span>رجوع</span>
+                            </button>
+
+                            <span class="text-xs font-bold text-gray-600 dark:text-gray-300 truncate max-w-[150px]">
+                                @{{ currentSecondLevelCategory.name }}
+                            </span>
+                        </div>
+
+                        <!-- Link to View All Products in Second Level Category -->
+                        <div class="py-3 border-b border-gray-100 dark:border-gray-800">
+                            <a
+                                :href="currentSecondLevelCategory.url"
+                                class="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-between"
+                            >
+                                <span>عرض كافة منتجات @{{ currentSecondLevelCategory.name }}</span>
+                                <span class="text-base icon-arrow-right rtl:icon-arrow-left"></span>
+                            </a>
+                        </div>
+
+                        <!-- Third Level Items List -->
+                        <div class="py-2">
+                            <div
+                                v-for="thirdLevelCategory in currentSecondLevelCategory.children"
+                                :key="thirdLevelCategory.id"
+                                class="border-b border-gray-100 dark:border-gray-800 last:border-0"
+                            >
+                                <a
+                                    :href="thirdLevelCategory.url"
+                                    class="flex items-center justify-between py-3.5 text-sm font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 transition-colors"
+                                >
+                                    @{{ thirdLevelCategory.name }}
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Third level view -->
-                <div
-                    class="flex-shrink-0 w-full h-full"
-                    v-if="currentViewLevel === 'third'"
-                >
-                <div class="px-6 py-4 border-b border-gray-200">
-                        <button
-                            @click="goBackToMainView"
-                            class="flex items-center justify-center gap-2 focus:outline-none"
-                            aria-label="Go back"
-                        >
-                        <span class="text-lg icon-arrow-left rtl:icon-arrow-right"></span>
-                        <div class="text-base font-medium text-black">
-                            @lang('shop::app.components.layouts.header.mobile.back-button')
-                        </div>
-                    </button>
-                </div>
-
-                <!-- Third Level Content -->
-                <div class="px-6 py-4">
-                        <div
-                            v-for="thirdLevelCategory in currentSecondLevelCategory?.children"
-                            :key="thirdLevelCategory.id"
-                            class="mb-2"
-                        >
-                            <a
-                                :href="thirdLevelCategory.url"
-                                class="block py-2 text-sm transition-colors duration-200"
-                            >
-                            @{{ thirdLevelCategory.name }}
-                        </a>
-                    </div>
-                </div>
-            </div>
         </div>
-    </div>
     </script>
 
     <script type="module">
@@ -519,8 +591,8 @@
                 return  {
                     categories: [],
                     currentViewLevel: 'main',
+                    currentFirstLevelCategory: null,
                     currentSecondLevelCategory: null,
-                    currentParentCategory: null
                 }
             },
 
@@ -537,44 +609,48 @@
             methods: {
                 initCategories() {
                     try {
-                        const stored = localStorage.getItem('categories');
+                        const stored = localStorage.getItem('categories_tree_v3');
 
                         if (stored) {
                             this.categories = JSON.parse(stored);
                             this.isLoading = false;
-                            return;
                         }
-
                     } catch (e) {}
 
                     this.getCategories();
                 },
+
                 getCategories() {
                     this.$axios.get("{{ route('shop.api.categories.tree') }}")
                         .then(response => {
                             this.categories = response.data.data;
-                            localStorage.setItem('categories', JSON.stringify(this.categories));
+                            try {
+                                localStorage.setItem('categories_tree_v3', JSON.stringify(this.categories));
+                            } catch (e) {}
                         })
                         .catch(error => {
                             console.log(error);
                         });
                 },
 
-                showThirdLevel(secondLevelCategory, parentCategory, event) {
-                    if (secondLevelCategory.children && secondLevelCategory.children.length) {
-                        this.currentSecondLevelCategory = secondLevelCategory;
-                        this.currentParentCategory = parentCategory;
-                        this.currentViewLevel = 'third';
+                showSecondLevel(category) {
+                    this.currentFirstLevelCategory = category;
+                    this.currentViewLevel = 'second';
+                },
 
-                        if (event) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-                    }
+                showThirdLevel(secondLevelCategory) {
+                    this.currentSecondLevelCategory = secondLevelCategory;
+                    this.currentViewLevel = 'third';
                 },
 
                 goBackToMainView() {
                     this.currentViewLevel = 'main';
+                    this.currentSecondLevelCategory = null;
+                },
+
+                goBackToSecondView() {
+                    this.currentViewLevel = 'second';
+                    this.currentSecondLevelCategory = null;
                 }
             },
         });
@@ -584,7 +660,11 @@
 
             methods: {
                 onDrawerClose() {
-                    this.$refs.mobileCategory.currentViewLevel = 'main';
+                    if (this.$refs.mobileCategory) {
+                        this.$refs.mobileCategory.currentViewLevel = 'main';
+                        this.$refs.mobileCategory.currentFirstLevelCategory = null;
+                        this.$refs.mobileCategory.currentSecondLevelCategory = null;
+                    }
                 }
             },
         });
