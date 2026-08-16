@@ -323,9 +323,9 @@
                     </div>
                 </x-slot>
 
-                <x-slot:content class="!px-0">
+                <x-slot:content class="!p-0 !overflow-y-auto !overflow-x-hidden">
                     <!-- Treeview Collapsible Accordion Container -->
-                    <div class="h-[calc(100vh-74px)] w-full overflow-y-auto py-2">
+                    <div class="w-full py-2">
                         <!-- Level 1 (Main Categories) -->
                         <div
                             v-for="category in categories"
@@ -334,37 +334,42 @@
                         >
                             <!-- Level 1 Category Row -->
                             <div
-                                class="flex items-center justify-between px-5 py-3.5 transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer select-none"
-                                @click="category.children && category.children.length ? toggleExpand(category.id) : null"
+                                class="flex items-center justify-between px-5 py-3.5 transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer select-none group"
+                                @click="category.children && category.children.length ? toggleExpand(category.id) : visitCategory(category.url)"
                             >
-                                <a
-                                    :href="category.url"
-                                    class="text-base font-bold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1"
-                                    @click.stop
-                                >
+                                <span class="text-base font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex-1">
                                     @{{ category.name }}
-                                </a>
+                                </span>
 
                                 <!-- Toggle Button / Arrow for Level 1 -->
-                                <button
+                                <div
                                     v-if="category.children && category.children.length"
-                                    type="button"
-                                    @click.stop="toggleExpand(category.id)"
-                                    class="p-1 text-gray-400 hover:text-blue-600 focus:outline-none transition-colors"
-                                    :aria-label="'Toggle ' + category.name"
+                                    class="flex items-center gap-2"
                                 >
+                                    <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 px-2 py-0.5 rounded-full font-medium">
+                                        @{{ category.children.length }}
+                                    </span>
                                     <span
-                                        class="text-base font-bold icon-arrow-right rtl:icon-arrow-left inline-block transition-transform duration-200"
+                                        class="text-base font-bold icon-arrow-right rtl:icon-arrow-left inline-block transition-transform duration-200 text-gray-400 group-hover:text-blue-600"
                                         :class="{'rotate-90 rtl:-rotate-90 text-blue-600 dark:text-blue-400': isExpanded(category.id)}"
                                     ></span>
-                                </button>
+                                </div>
                             </div>
 
                             <!-- Level 2 Collapsible Section (Accordion) -->
                             <div
                                 v-if="category.children && category.children.length && isExpanded(category.id)"
-                                class="bg-gray-50/70 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800/60"
+                                class="bg-gray-50/80 dark:bg-gray-900/60 border-t border-gray-100 dark:border-gray-800/60"
                             >
+                                <!-- Direct Link to Parent Category -->
+                                <a
+                                    :href="category.url"
+                                    class="flex items-center justify-between pr-8 pl-5 rtl:pr-8 rtl:pl-5 py-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline border-b border-gray-100/60 dark:border-gray-800/40 bg-blue-50/40"
+                                >
+                                    <span>عرض كافة منتجات @{{ category.name }}</span>
+                                    <span class="text-sm icon-arrow-right rtl:icon-arrow-left"></span>
+                                </a>
+
                                 <div
                                     v-for="secondLevelCategory in category.children"
                                     :key="secondLevelCategory.id"
@@ -372,50 +377,53 @@
                                 >
                                     <!-- Level 2 Category Row -->
                                     <div
-                                        class="flex items-center justify-between pr-8 pl-5 rtl:pr-8 rtl:pl-5 py-3 transition-colors duration-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/80 cursor-pointer select-none"
-                                        @click="secondLevelCategory.children && secondLevelCategory.children.length ? toggleExpand(secondLevelCategory.id) : null"
+                                        class="flex items-center justify-between pr-8 pl-5 rtl:pr-8 rtl:pl-5 py-3 transition-colors duration-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/80 cursor-pointer select-none group"
+                                        @click="secondLevelCategory.children && secondLevelCategory.children.length ? toggleExpand(secondLevelCategory.id) : visitCategory(secondLevelCategory.url)"
                                     >
-                                        <a
-                                            :href="secondLevelCategory.url"
-                                            class="text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1"
-                                            @click.stop
-                                        >
+                                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex-1">
                                             @{{ secondLevelCategory.name }}
-                                        </a>
+                                        </span>
 
                                         <!-- Toggle Button / Arrow for Level 2 -->
-                                        <button
+                                        <div
                                             v-if="secondLevelCategory.children && secondLevelCategory.children.length"
-                                            type="button"
-                                            @click.stop="toggleExpand(secondLevelCategory.id)"
-                                            class="p-1 text-gray-400 hover:text-blue-600 focus:outline-none transition-colors"
-                                            :aria-label="'Toggle ' + secondLevelCategory.name"
+                                            class="flex items-center gap-2"
                                         >
+                                            <span class="text-xs bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-300 px-1.5 py-0.5 rounded-full font-medium">
+                                                @{{ secondLevelCategory.children.length }}
+                                            </span>
                                             <span
-                                                class="text-sm icon-arrow-right rtl:icon-arrow-left inline-block transition-transform duration-200"
+                                                class="text-sm icon-arrow-right rtl:icon-arrow-left inline-block transition-transform duration-200 text-gray-400 group-hover:text-blue-600"
                                                 :class="{'rotate-90 rtl:-rotate-90 text-blue-600 dark:text-blue-400': isExpanded(secondLevelCategory.id)}"
                                             ></span>
-                                        </button>
+                                        </div>
                                     </div>
 
                                     <!-- Level 3 Collapsible Section (Accordion) -->
                                     <div
                                         v-if="secondLevelCategory.children && secondLevelCategory.children.length && isExpanded(secondLevelCategory.id)"
-                                        class="bg-gray-100/60 dark:bg-gray-900/80 border-t border-gray-100 dark:border-gray-800"
+                                        class="bg-gray-100/70 dark:bg-gray-900/80 border-t border-gray-100 dark:border-gray-800"
                                     >
+                                        <!-- Direct Link to Level 2 Category -->
+                                        <a
+                                            :href="secondLevelCategory.url"
+                                            class="flex items-center justify-between pr-12 pl-5 rtl:pr-12 rtl:pl-5 py-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline border-b border-gray-200/40"
+                                        >
+                                            <span>عرض كافة منتجات @{{ secondLevelCategory.name }}</span>
+                                            <span class="text-xs icon-arrow-right rtl:icon-arrow-left"></span>
+                                        </a>
+
                                         <div
                                             v-for="thirdLevelCategory in secondLevelCategory.children"
                                             :key="thirdLevelCategory.id"
                                             class="border-b border-gray-200/40 dark:border-gray-800/40 last:border-0"
                                         >
-                                            <div class="flex items-center justify-between pr-12 pl-5 rtl:pr-12 rtl:pl-5 py-2.5 transition-colors duration-200 hover:bg-gray-200/50 dark:hover:bg-gray-800 select-none">
-                                                <a
-                                                    :href="thirdLevelCategory.url"
-                                                    class="text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1"
-                                                >
-                                                    @{{ thirdLevelCategory.name }}
-                                                </a>
-                                            </div>
+                                            <a
+                                                :href="thirdLevelCategory.url"
+                                                class="flex items-center justify-between pr-12 pl-5 rtl:pr-12 rtl:pl-5 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-gray-200/50 transition-colors"
+                                            >
+                                                @{{ thirdLevelCategory.name }}
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -447,7 +455,7 @@
             methods: {
                 initCategories() {
                     try {
-                        const stored = localStorage.getItem('categories_tree_v4');
+                        const stored = localStorage.getItem('categories_tree_v5');
 
                         if (stored) {
                             this.categories = JSON.parse(stored);
@@ -464,7 +472,7 @@
                             this.isLoading = false;
                             this.categories = response.data.data;
                             try {
-                                localStorage.setItem('categories_tree_v4', JSON.stringify(this.categories));
+                                localStorage.setItem('categories_tree_v5', JSON.stringify(this.categories));
                             } catch (e) {}
                         })
                         .catch(error => {
@@ -482,6 +490,12 @@
 
                 isExpanded(categoryId) {
                     return !!this.expandedCategories[categoryId];
+                },
+
+                visitCategory(url) {
+                    if (url) {
+                        window.location.href = url;
+                    }
                 },
 
                 toggleCategoryDrawer() {
