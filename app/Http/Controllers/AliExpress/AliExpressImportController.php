@@ -51,8 +51,22 @@ class AliExpressImportController extends Controller
             ? Category::where('parent_id', $root->id)->with('children.translations')->orderBy('position')->get()
             : Category::whereNull('parent_id')->with('children.translations')->get();
 
+        $formattedCategories = $categories->map(function ($cat) {
+            return [
+                'id' => (int) $cat->id,
+                'name' => $cat->translate('ar')?->name ?? $cat->translate(app()->getLocale())?->name ?? $cat->name,
+                'children' => $cat->children->map(function ($sub) {
+                    return [
+                        'id' => (int) $sub->id,
+                        'name' => $sub->translate('ar')?->name ?? $sub->translate(app()->getLocale())?->name ?? $sub->name,
+                    ];
+                })->values()->all(),
+            ];
+        })->values()->all();
+
         return view('aliexpress.import', [
             'categories' => $categories,
+            'formattedCategories' => $formattedCategories,
         ]);
     }
 
