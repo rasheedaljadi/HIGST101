@@ -39,5 +39,10 @@ class DeliveryManagementServiceProvider extends ServiceProvider
             dirname(__DIR__).'/Config/carriers.php',
             'carriers'
         );
+
+        $this->mergeConfigFrom(
+            dirname(__DIR__).'/Config/admin-menu.php',
+            'menu.admin'
+        );
     }
 }
