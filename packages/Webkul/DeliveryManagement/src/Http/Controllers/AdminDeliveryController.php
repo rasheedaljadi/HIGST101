@@ -54,9 +54,15 @@ class AdminDeliveryController extends Controller
 
         $user = Auth::guard('admin')->user();
         $couriers = Admin::where('status', 1)->get();
-        $points = DeliveryPoint::where('status', 1)->get();
+        $deliveryPoints = DeliveryPoint::where('is_active', true)->get();
 
-        return view('delivery::admin.index', compact('assignments', 'user', 'couriers', 'points'));
+        return view('delivery::admin.index', [
+            'assignments' => $assignments,
+            'user' => $user,
+            'couriers' => $couriers,
+            'deliveryPoints' => $deliveryPoints,
+            'points' => $deliveryPoints,
+        ]);
     }
 
     /**
