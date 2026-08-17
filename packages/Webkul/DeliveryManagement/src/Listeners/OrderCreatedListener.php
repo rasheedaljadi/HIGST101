@@ -56,7 +56,7 @@ class OrderCreatedListener
                 'last_name' => $shippingAddress->last_name,
                 'email' => $shippingAddress->email,
                 'phone' => $shippingAddress->phone,
-                'address' => $shippingAddress->address,
+                'address' => $shippingAddress->address ?? ($shippingAddress->address1 ?? ''),
                 'city' => $shippingAddress->city,
                 'state' => $shippingAddress->state,
                 'country' => $shippingAddress->country,

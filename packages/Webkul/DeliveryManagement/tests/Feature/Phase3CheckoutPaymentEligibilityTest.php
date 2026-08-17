@@ -584,6 +584,7 @@ class Phase3CheckoutPaymentEligibilityTest extends TestCase
             'email' => 'customer@example.com',
             'phone' => '777888999',
             'address' => 'Historical Hadda Street',
+            'address1' => 'Historical Hadda Street',
             'city' => 'Sanaa',
             'state' => 'SAN',
             'country' => 'YE',

@@ -96,6 +96,7 @@ class StagingOperationalVerificationTest extends TestCase
             DB::table('product_attribute_values')->insert([
                 'product_id' => $product->id,
                 'attribute_id' => $manageStockAttrId,
+                'channel' => 'default',
                 'boolean_value' => 1,
             ]);
         }
@@ -110,6 +111,11 @@ class StagingOperationalVerificationTest extends TestCase
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+        DB::table('product_channels')->insertOrIgnore([
+            'product_id' => $product->id,
+            'channel_id' => $channelId,
+        ]);
 
         $order = Order::create([
             'increment_id' => 'STG-ORD-'.uniqid(),
