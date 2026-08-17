@@ -15,22 +15,24 @@ class DeliveryAttemptLogDataGrid extends DataGrid
         $queryBuilder = DB::table('delivery_attempt_logs')
             ->leftJoin('delivery_assignments', 'delivery_attempt_logs.delivery_assignment_id', '=', 'delivery_assignments.id')
             ->leftJoin('orders', 'delivery_assignments.order_id', '=', 'orders.id')
-            ->leftJoin('admins as couriers', 'delivery_attempt_logs.delivery_boy_id', '=', 'couriers.id')
+            ->leftJoin('admins as couriers', 'delivery_attempt_logs.attempted_by', '=', 'couriers.id')
             ->select(
                 'delivery_attempt_logs.id',
                 'delivery_attempt_logs.delivery_assignment_id',
                 'orders.increment_id as order_increment_id',
                 'delivery_attempt_logs.attempt_number',
-                'delivery_attempt_logs.reason_code',
+                'delivery_attempt_logs.status as attempt_status',
+                'delivery_attempt_logs.failure_reason',
                 'delivery_attempt_logs.notes',
                 'couriers.name as courier_name',
-                'delivery_attempt_logs.retry_scheduled_at',
+                'delivery_attempt_logs.attempted_at',
                 'delivery_attempt_logs.created_at'
             );
 
         $this->addFilter('id', 'delivery_attempt_logs.id');
         $this->addFilter('delivery_assignment_id', 'delivery_attempt_logs.delivery_assignment_id');
-        $this->addFilter('reason_code', 'delivery_attempt_logs.reason_code');
+        $this->addFilter('failure_reason', 'delivery_attempt_logs.failure_reason');
+        $this->addFilter('courier_name', 'couriers.name');
 
         return $queryBuilder;
     }
@@ -51,7 +53,7 @@ class DeliveryAttemptLogDataGrid extends DataGrid
             'type' => 'integer',
             'filterable' => true,
             'closure' => function ($row) {
-                return '<a href="'.route('admin.delivery.assignments.show', $row->delivery_assignment_id).'" class="text-blue-600 hover:underline font-bold">#'.$row->delivery_assignment_id.' ('.$row->order_increment_id.')</a>';
+                return '<a href="'.route('admin.delivery.assignments.show', $row->delivery_assignment_id).'" class="text-blue-600 hover:underline font-bold">#'.$row->delivery_assignment_id.($row->order_increment_id ? ' ('.$row->order_increment_id.')' : '').'</a>';
             },
         ]);
 
@@ -66,13 +68,13 @@ class DeliveryAttemptLogDataGrid extends DataGrid
         ]);
 
         $this->addColumn([
-            'index' => 'reason_code',
+            'index' => 'failure_reason',
             'label' => trans('delivery::app.admin.failures.failure-reason'),
             'type' => 'string',
             'searchable' => true,
             'filterable' => true,
             'closure' => function ($row) {
-                return '<div><div class="font-bold text-gray-800">'.$row->reason_code.'</div><div class="text-xs text-gray-500">'.$row->notes.'</div></div>';
+                return '<div><div class="font-bold text-gray-800 dark:text-gray-200">'.e($row->failure_reason ?: 'غير محدد').'</div>'.($row->notes ? '<div class="text-xs text-gray-500">'.e($row->notes).'</div>' : '').'</div>';
             },
         ]);
 
@@ -81,25 +83,21 @@ class DeliveryAttemptLogDataGrid extends DataGrid
             'label' => trans('delivery::app.admin.failures.courier'),
             'type' => 'string',
             'searchable' => true,
-        ]);
-
-        $this->addColumn([
-            'index' => 'created_at',
-            'label' => trans('delivery::app.admin.failures.attempt-time'),
-            'type' => 'datetime',
-            'sortable' => true,
+            'filterable' => true,
             'closure' => function ($row) {
-                return core()->formatDate($row->created_at, 'Y-m-d H:i');
+                return $row->courier_name ?: '<span class="text-gray-400">غير محدد</span>';
             },
         ]);
 
         $this->addColumn([
-            'index' => 'retry_scheduled_at',
-            'label' => trans('delivery::app.admin.failures.retry-date'),
+            'index' => 'attempted_at',
+            'label' => trans('delivery::app.admin.failures.attempt-time'),
             'type' => 'datetime',
             'sortable' => true,
             'closure' => function ($row) {
-                return $row->retry_scheduled_at ? core()->formatDate($row->retry_scheduled_at, 'Y-m-d H:i') : '<span class="text-gray-400">-</span>';
+                $time = $row->attempted_at ?: $row->created_at;
+
+                return $time ? core()->formatDate($time, 'Y-m-d H:i') : '-';
             },
         ]);
     }
@@ -107,7 +105,7 @@ class DeliveryAttemptLogDataGrid extends DataGrid
     public function prepareActions(): void
     {
         $this->addAction([
-            'icon' => 'icon-eye',
+            'icon' => 'icon-view',
             'title' => trans('delivery::app.admin.datagrid.view'),
             'method' => 'GET',
             'url' => function ($row) {

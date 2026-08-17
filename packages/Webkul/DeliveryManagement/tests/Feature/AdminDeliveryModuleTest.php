@@ -145,6 +145,11 @@ class AdminDeliveryModuleTest extends TestCase
         $failuresResponse->assertOk();
         $failuresResponse->assertSee(trans('delivery::app.admin.failures.title'));
 
+        $failuresAjaxResponse = $this->actingAs($this->admin, 'admin')->getJson(route('admin.delivery.failures.index'), [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
+        $failuresAjaxResponse->assertOk();
+
         // 7. Settlements
         $settlementsResponse = $this->actingAs($this->admin, 'admin')->get(route('admin.delivery.settlements.index'));
         $settlementsResponse->assertOk();
