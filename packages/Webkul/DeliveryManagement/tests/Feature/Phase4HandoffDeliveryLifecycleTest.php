@@ -97,6 +97,21 @@ class Phase4HandoffDeliveryLifecycleTest extends TestCase
                 'updated_at' => now(),
             ]);
 
+        DB::table('product_channels')->insertOrIgnore([
+            'product_id' => $product->id,
+            'channel_id' => $channelId,
+        ]);
+
+        $manageStockAttrId = DB::table('attributes')->where('code', 'manage_stock')->value('id');
+        if ($manageStockAttrId) {
+            DB::table('product_attribute_values')->insert([
+                'product_id' => $product->id,
+                'attribute_id' => $manageStockAttrId,
+                'channel' => 'default',
+                'boolean_value' => 1,
+            ]);
+        }
+
         // Create Order
         $order = Order::create([
             'increment_id' => 'ORD-P4-'.uniqid(),

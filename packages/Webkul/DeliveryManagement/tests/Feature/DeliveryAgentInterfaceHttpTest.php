@@ -3,6 +3,7 @@
 namespace Webkul\DeliveryManagement\Tests\Feature;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 use Webkul\Core\Models\Channel;
 use Webkul\DeliveryManagement\Database\Seeders\DeliveryGovernorateRulesSeeder;
@@ -30,6 +31,8 @@ class DeliveryAgentInterfaceHttpTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Mail::fake();
 
         $this->seed(HayestCentralInventorySourceSeeder::class);
         $this->seed(DeliveryGovernorateRulesSeeder::class);
@@ -278,22 +281,28 @@ class DeliveryAgentInterfaceHttpTest extends TestCase
     }
 
     /**
-     * Test courier confirms final customer delivery and collects COD via HTTP endpoint.
+     * Test courier confirms final customer delivery without OTP requirement via HTTP endpoint.
      */
-    public function test_courier_confirms_final_delivery_http(): void
+    public function test_courier_confirms_final_delivery_http_without_otp(): void
     {
         $courier = $this->createCourierAdmin();
         $assignment = $this->createTestOrderAssignment($courier->id);
 
         $this->actingAs($courier, 'admin')->postJson("/delivery/assignments/{$assignment->id}/start");
 
-        $response = $this->actingAs($courier, 'admin')->postJson("/delivery/assignments/{$assignment->id}/delivered", [
+        // Execute delivery without providing any OTP code
+        $payloadWithoutOtp = [
             'collected_amount' => 18000,
-        ]);
+        ];
+
+        $response = $this->actingAs($courier, 'admin')->postJson("/delivery/assignments/{$assignment->id}/delivered", $payloadWithoutOtp);
 
         $response->assertOk();
         $response->assertJsonPath('success', true);
         $response->assertJsonPath('data.status', DeliveryAssignment::STATUS_DELIVERED);
+
+        // Verify that OTP was not required or stored
+        $this->assertArrayNotHasKey('otp_code', $payloadWithoutOtp);
 
         // Verify cash collection was persisted
         $this->assertEquals(1, DB::table('delivery_cash_collections')->where('delivery_assignment_id', $assignment->id)->count());

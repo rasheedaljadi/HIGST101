@@ -16,12 +16,8 @@ class DeliveryGovernorateRulesSeeder extends Seeder
             ->where('country_code', 'YE')
             ->get();
 
-        if ($yemenStates->isEmpty()) {
-            // Fallback default Yemeni governorates
-            $stateCodes = ['SAN', 'SN', 'AD', 'TA', 'IB', 'HD', 'HJ', 'MR', 'DH', 'AB', 'LA', 'SH', 'BA', 'JA', 'MRB', 'AM', 'SD', 'RAY', 'SUQ', 'MH', 'AL'];
-        } else {
-            $stateCodes = $yemenStates->pluck('code')->toArray();
-        }
+        $baseCodes = ['SAN', 'SN', 'AD', 'TA', 'TZ', 'IB', 'HD', 'HU', 'HJ', 'MR', 'DH', 'AB', 'LA', 'SH', 'BA', 'JA', 'MRB', 'MA', 'AM', 'SD', 'RAY', 'RY', 'SUQ', 'SU', 'MH', 'AL', 'MW', 'DL'];
+        $stateCodes = array_values(array_unique(array_merge($baseCodes, $yemenStates->pluck('code')->toArray())));
 
         foreach ($stateCodes as $stateCode) {
             $isSanaaHome = ($stateCode === 'SAN');

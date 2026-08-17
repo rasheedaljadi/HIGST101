@@ -91,6 +91,15 @@ class StagingOperationalVerificationTest extends TestCase
             'qty' => $stockQty,
         ]);
 
+        $manageStockAttrId = DB::table('attributes')->where('code', 'manage_stock')->value('id');
+        if ($manageStockAttrId) {
+            DB::table('product_attribute_values')->insert([
+                'product_id' => $product->id,
+                'attribute_id' => $manageStockAttrId,
+                'boolean_value' => 1,
+            ]);
+        }
+
         $channelId = DB::table('channels')->where('code', 'default')->value('id')
             ?? DB::table('channels')->insertGetId([
                 'code' => 'default',
