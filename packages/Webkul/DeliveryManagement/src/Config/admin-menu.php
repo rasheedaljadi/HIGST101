@@ -9,7 +9,7 @@ return [
         'name' => 'delivery::app.admin.menu.delivery-management',
         'route' => 'admin.delivery.dashboard.index',
         'sort' => 3,
-        'icon' => 'icon-shipment',
+        'icon' => 'icon-ship',
     ],
 
     /**

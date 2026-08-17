@@ -22,7 +22,7 @@
 
             <div class="flex items-center gap-3">
                 <a href="{{ route('admin.delivery.assignments.index') }}" class="primary-button flex items-center gap-2">
-                    <span class="icon-shipment text-xl"></span>
+                    <span class="icon-ship text-xl"></span>
                     {{ trans('delivery::app.admin.assignments.title') }}
                 </a>
             </div>
@@ -62,7 +62,7 @@
                     <span class="text-[10px] text-gray-400 mt-0.5">قيد التوصيل الميداني للعميل</span>
                 </div>
                 <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600">
-                    <span class="icon-shipment text-xl"></span>
+                    <span class="icon-ship text-xl"></span>
                 </div>
             </a>
 
@@ -159,7 +159,7 @@
             <div class="col-span-2 p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        <span class="icon-shipment text-lg text-emerald-600"></span>
+                        <span class="icon-ship text-lg text-emerald-600"></span>
                         {{ trans('delivery::app.admin.dashboard.recent-assignments') }}
                     </h2>
                     <a href="{{ route('admin.delivery.assignments.index') }}" class="text-xs text-blue-600 hover:underline font-semibold">
