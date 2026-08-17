@@ -5,6 +5,7 @@ namespace Webkul\DeliveryManagement\Providers;
 use Webkul\Core\Providers\CoreModuleServiceProvider;
 use Webkul\DeliveryManagement\Models\DeliveryAssignment;
 use Webkul\DeliveryManagement\Models\DeliveryAttemptLog;
+use Webkul\DeliveryManagement\Models\DeliveryAuditLog;
 use Webkul\DeliveryManagement\Models\DeliveryCashCollection;
 use Webkul\DeliveryManagement\Models\DeliveryGovernorateRule;
 use Webkul\DeliveryManagement\Models\DeliveryPoint;
@@ -24,5 +25,6 @@ class ModuleServiceProvider extends CoreModuleServiceProvider
         DeliveryAttemptLog::class,
         DeliveryCashCollection::class,
         DeliverySettlement::class,
+        DeliveryAuditLog::class,
     ];
 }

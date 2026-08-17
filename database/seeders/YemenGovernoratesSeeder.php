@@ -18,7 +18,6 @@ class YemenGovernoratesSeeder extends Seeder
             $countryId = DB::table('countries')->insertGetId([
                 'code' => 'YE',
                 'name' => 'اليمن',
-                'status' => 1,
             ]);
         } else {
             $countryId = $country->id;
