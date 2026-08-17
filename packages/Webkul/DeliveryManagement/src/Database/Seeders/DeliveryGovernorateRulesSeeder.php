@@ -16,8 +16,17 @@ class DeliveryGovernorateRulesSeeder extends Seeder
             ->where('country_code', 'YE')
             ->get();
 
-        $baseCodes = ['SAN', 'SN', 'AD', 'TA', 'TZ', 'IB', 'HD', 'HU', 'HJ', 'MR', 'DH', 'AB', 'LA', 'SH', 'BA', 'JA', 'MRB', 'MA', 'AM', 'SD', 'RAY', 'RY', 'SUQ', 'SU', 'MH', 'AL', 'MW', 'DL'];
-        $stateCodes = array_values(array_unique(array_merge($baseCodes, $yemenStates->pluck('code')->toArray())));
+        if ($yemenStates->isEmpty()) {
+            // Official 22 Yemeni governorates matching YemenGovernoratesSeeder
+            $stateCodes = ['SAN', 'SN', 'AD', 'TZ', 'HU', 'IB', 'AB', 'BA', 'SH', 'HD', 'MR', 'LA', 'MA', 'JA', 'HJ', 'SD', 'MW', 'DH', 'AM', 'DL', 'RY', 'SU'];
+        } else {
+            $stateCodes = $yemenStates->pluck('code')->toArray();
+        }
+
+        // Clean up any orphan rules that do not exist in country_states
+        DB::table('delivery_governorate_rules')
+            ->whereNotIn('state_code', $stateCodes)
+            ->delete();
 
         foreach ($stateCodes as $stateCode) {
             $isSanaaHome = ($stateCode === 'SAN');

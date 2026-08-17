@@ -168,9 +168,9 @@ class Phase3CheckoutPaymentEligibilityTest extends TestCase
         $this->assertFalse($this->governorateDeliveryValidator->isDeliveryTypeEnabled('AD', 'homedelivery_standard'));
         $this->assertTrue($this->governorateDeliveryValidator->isDeliveryTypeEnabled('AD', 'delivery_point'));
 
-        // Taiz (TA)
-        $this->assertFalse($this->governorateDeliveryValidator->isDeliveryTypeEnabled('TA', 'home_delivery'));
-        $this->assertTrue($this->governorateDeliveryValidator->isDeliveryTypeEnabled('TA', 'delivery_point'));
+        // Taiz (TZ)
+        $this->assertFalse($this->governorateDeliveryValidator->isDeliveryTypeEnabled('TZ', 'home_delivery'));
+        $this->assertTrue($this->governorateDeliveryValidator->isDeliveryTypeEnabled('TZ', 'delivery_point'));
     }
 
     /**
