@@ -8,8 +8,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Webkul\DeliveryManagement\Models\DeliveryAssignment;
+use Webkul\DeliveryManagement\Models\DeliveryPoint;
 use Webkul\DeliveryManagement\Services\DeliveryLifecycleService;
 use Webkul\DeliveryManagement\Services\HandoffExecutionService;
+use Webkul\User\Models\Admin;
 
 class AdminDeliveryController extends Controller
 {
@@ -21,7 +23,7 @@ class AdminDeliveryController extends Controller
     /**
      * List delivery assignments for operations supervisors.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $query = DeliveryAssignment::with(['order', 'deliveryBoy', 'deliveryPoint', 'attemptLogs', 'cashCollections']);
 
@@ -43,10 +45,18 @@ class AdminDeliveryController extends Controller
 
         $assignments = $query->orderBy('id', 'desc')->paginate(20);
 
-        return response()->json([
-            'success' => true,
-            'data' => $assignments,
-        ]);
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => $assignments,
+            ]);
+        }
+
+        $user = Auth::guard('admin')->user();
+        $couriers = Admin::where('status', 1)->get();
+        $points = DeliveryPoint::where('status', 1)->get();
+
+        return view('delivery::admin.index', compact('assignments', 'user', 'couriers', 'points'));
     }
 
     /**
