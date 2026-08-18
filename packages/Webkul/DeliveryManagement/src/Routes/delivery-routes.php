@@ -12,8 +12,27 @@ use Webkul\DeliveryManagement\Http\Controllers\Admin\DeliverySettlementControlle
 use Webkul\DeliveryManagement\Http\Controllers\DeliveryAgentController;
 
 Route::group(['middleware' => ['web', 'admin']], function () {
-    // Courier & Point Agent Responsive Mobile Interface
+    // Route alias for /admin/delivery
+    Route::get(config('app.admin_url').'/delivery', function () {
+        $user = auth()->guard('admin')->user();
+        if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
+            return redirect()->route('delivery.index');
+        }
+
+        return redirect()->route('admin.delivery.dashboard.index');
+    })->name('admin.delivery.root');
+
+    // Courier & Point Agent Responsive Interface (available at /delivery and /admin/courier)
     Route::prefix('delivery')->as('delivery.')->group(function () {
+        Route::get('/', [DeliveryAgentController::class, 'index'])->name('index');
+        Route::get('/assignments/{id}', [DeliveryAgentController::class, 'show'])->name('show');
+        Route::post('/assignments/{id}/start', [DeliveryAgentController::class, 'startDelivery'])->name('start');
+        Route::post('/assignments/{id}/arrived-point', [DeliveryAgentController::class, 'confirmArrivalAtPoint'])->name('arrived_point');
+        Route::post('/assignments/{id}/delivered', [DeliveryAgentController::class, 'confirmCustomerDelivery'])->name('delivered');
+        Route::post('/assignments/{id}/fail', [DeliveryAgentController::class, 'recordFailure'])->name('fail');
+    });
+
+    Route::prefix(config('app.admin_url').'/courier')->as('admin.courier.')->group(function () {
         Route::get('/', [DeliveryAgentController::class, 'index'])->name('index');
         Route::get('/assignments/{id}', [DeliveryAgentController::class, 'show'])->name('show');
         Route::post('/assignments/{id}/start', [DeliveryAgentController::class, 'startDelivery'])->name('start');

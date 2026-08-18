@@ -7,7 +7,7 @@ return [
     [
         'key' => 'delivery_agent',
         'name' => 'delivery::app.admin.menu.courier-tasks',
-        'route' => 'delivery.index',
+        'route' => 'admin.courier.index',
         'sort' => 2,
         'icon' => 'icon-ship',
     ],
