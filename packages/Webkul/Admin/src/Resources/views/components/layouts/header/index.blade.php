@@ -1,5 +1,6 @@
 @php
     $admin = auth()->guard('admin')->user();
+    $isCourier = $admin && in_array($admin->role?->name, ['Courier', 'PointAgent']);
 @endphp
 
 <header class="hayest-header sticky top-0 z-[10001] flex items-center justify-between border-b border-navy-800 bg-navy-600 px-2 py-2 dark:border-gray-800 dark:bg-gray-900 sm:px-4 sm:py-2.5">
@@ -12,7 +13,7 @@
         </i>
 
         <!-- Logo -->
-        <a href="{{ route('admin.dashboard.index') }}" class="flex-shrink-0">
+        <a href="{{ $isCourier ? route('admin.courier.index') : route('admin.dashboard.index') }}" class="flex-shrink-0">
             <span class="hayest-logo-badge flex items-center justify-center rounded-xl bg-white px-3 py-1.5 shadow-md ring-1 ring-black/5 transition-all hover:shadow-lg sm:px-4 sm:py-2">
                 @if ($logo = core()->getConfigData('general.design.admin_logo.logo_image'))
                     <img
@@ -31,18 +32,20 @@
             </span>
         </a>
 
-        <!-- Mega Search Bar Vue Component -->
-        <v-mega-search class="hidden flex-1 sm:block">
-            <div class="relative flex w-full items-center ltr:ml-2 rtl:mr-2 sm:ltr:ml-2.5 sm:rtl:mr-2.5">
-                <i class="icon-search absolute top-1/2 flex -translate-y-1/2 items-center text-xl text-gray-400 ltr:left-2 rtl:right-2 sm:text-2xl sm:ltr:left-3 sm:rtl:right-3"></i>
+        @if (! $isCourier)
+            <!-- Mega Search Bar Vue Component -->
+            <v-mega-search class="hidden flex-1 sm:block">
+                <div class="relative flex w-full items-center ltr:ml-2 rtl:mr-2 sm:ltr:ml-2.5 sm:rtl:mr-2.5">
+                    <i class="icon-search absolute top-1/2 flex -translate-y-1/2 items-center text-xl text-gray-400 ltr:left-2 rtl:right-2 sm:text-2xl sm:ltr:left-3 sm:rtl:right-3"></i>
 
-                <input 
-                    type="text" 
-                    class="block h-10 w-full rounded-lg border bg-white px-8 text-sm leading-6 text-gray-600 transition-all hover:border-gray-400 focus:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 sm:h-[52px] sm:px-10 sm:text-base"
-                    placeholder="@lang('admin::app.components.layouts.header.mega-search.title')" 
-                >
-            </div>
-        </v-mega-search>
+                    <input 
+                        type="text" 
+                        class="block h-10 w-full rounded-lg border bg-white px-8 text-sm leading-6 text-gray-600 transition-all hover:border-gray-400 focus:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 sm:h-[52px] sm:px-10 sm:text-base"
+                        placeholder="@lang('admin::app.components.layouts.header.mega-search.title')" 
+                    >
+                </div>
+            </v-mega-search>
+        @endif
     </div>
 
     <div class="flex items-center gap-1 sm:gap-2.5">
