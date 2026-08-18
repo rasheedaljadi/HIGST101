@@ -12,7 +12,7 @@
         <div class="flex items-center justify-between flex-wrap gap-4">
             <div class="flex flex-col">
                 <div class="flex items-center gap-2 text-sm text-gray-500">
-                    <a href="{{ route('delivery.index') }}" class="hover:text-blue-600">
+                    <a href="{{ route('admin.courier.index') }}" class="hover:text-blue-600">
                         {{ trans('delivery::app.admin.menu.courier-tasks') }}
                     </a>
                     <span>/</span>
@@ -28,7 +28,7 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="{{ route('delivery.index') }}" class="secondary-button flex items-center gap-2 text-xs py-2 px-3">
+                <a href="{{ route('admin.courier.index') }}" class="secondary-button flex items-center gap-2 text-xs py-2 px-3">
                     <span class="icon-refresh text-base"></span>
                     تحديث القائمة
                 </a>
@@ -37,25 +37,25 @@
 
         {{-- Status Filter Tabs Bar --}}
         <div class="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2 overflow-x-auto text-xs">
-            <a href="{{ route('delivery.index') }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ $currentStatus === 'all' || !request('status') ? 'bg-blue-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
+            <a href="{{ route('admin.courier.index') }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ $currentStatus === 'all' || !request('status') ? 'bg-blue-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
                 جميع المهام ({{ $assignments->total() }})
             </a>
-            <a href="{{ route('delivery.index', ['status' => 'assigned']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'assigned' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
+            <a href="{{ route('admin.courier.index', ['status' => 'assigned']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'assigned' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
                 مسندة للمندوب
             </a>
-            <a href="{{ route('delivery.index', ['status' => 'picked_up']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'picked_up' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
+            <a href="{{ route('admin.courier.index', ['status' => 'picked_up']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'picked_up' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
                 تم الاستلام من المستودع
             </a>
-            <a href="{{ route('delivery.index', ['status' => 'out_for_delivery']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'out_for_delivery' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
+            <a href="{{ route('admin.courier.index', ['status' => 'out_for_delivery']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'out_for_delivery' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
                 في الطريق للعميل
             </a>
-            <a href="{{ route('delivery.index', ['status' => 'arrived_at_point']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'arrived_at_point' ? 'bg-cyan-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
+            <a href="{{ route('admin.courier.index', ['status' => 'arrived_at_point']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'arrived_at_point' ? 'bg-cyan-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
                 وصلت لنقطة الاستلام
             </a>
-            <a href="{{ route('delivery.index', ['status' => 'delivered']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'delivered' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
+            <a href="{{ route('admin.courier.index', ['status' => 'delivered']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'delivered' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
                 المكتملة والمسلمة
             </a>
-            <a href="{{ route('delivery.index', ['status' => 'delivery_failed']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'delivery_failed' ? 'bg-rose-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
+            <a href="{{ route('admin.courier.index', ['status' => 'delivery_failed']) }}" class="px-3.5 py-2 rounded-lg font-semibold transition-all {{ request('status') === 'delivery_failed' ? 'bg-rose-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700' }}">
                 تعذر التسليم
             </a>
         </div>
@@ -70,7 +70,7 @@
                 <p class="text-xs text-gray-500 max-w-md">
                     لا توجد شحنات مطابقة لحالة التصفية المحددة. سيتم إشعارك فور إسناد طلبات شحن جديدة إلى حسابك.
                 </p>
-                <a href="{{ route('delivery.index') }}" class="primary-button text-xs mt-2">
+                <a href="{{ route('admin.courier.index') }}" class="primary-button text-xs mt-2">
                     عرض جميع المهام
                 </a>
             </div>
@@ -150,7 +150,7 @@
                                 المحاولات: {{ $assignment->attempt_count }} / {{ $assignment->max_attempts }}
                             </span>
 
-                            <a href="{{ route('delivery.show', $assignment->id) }}" class="primary-button text-xs py-1.5 px-3 flex items-center gap-1">
+                            <a href="{{ route('admin.courier.show', $assignment->id) }}" class="primary-button text-xs py-1.5 px-3 flex items-center gap-1">
                                 <span>تفاصيل المهمة والإجراء</span>
                                 <span>←</span>
                             </a>

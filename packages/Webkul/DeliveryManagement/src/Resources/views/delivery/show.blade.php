@@ -24,7 +24,7 @@
         <div class="flex items-center justify-between flex-wrap gap-4">
             <div class="flex flex-col">
                 <div class="flex items-center gap-2 text-sm text-gray-500">
-                    <a href="{{ route('delivery.index') }}" class="hover:text-blue-600">
+                    <a href="{{ route('admin.courier.index') }}" class="hover:text-blue-600">
                         {{ trans('delivery::app.admin.menu.courier-tasks') }}
                     </a>
                     <span>/</span>
@@ -44,7 +44,7 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="{{ route('delivery.index') }}" class="secondary-button flex items-center gap-2 text-xs py-2 px-3">
+                <a href="{{ route('admin.courier.index') }}" class="secondary-button flex items-center gap-2 text-xs py-2 px-3">
                     <span>←</span>
                     العودة لقائمة المهام
                 </a>
@@ -255,7 +255,7 @@
                         <p class="text-xs text-gray-500">
                             اضغط لبدء مسار التوصيل وتأكيد خروج الشحنة معك في خط السير.
                         </p>
-                        <button type="button" onclick="executeDeliveryAction('{{ route('delivery.start', $assignment->id) }}', {})" class="primary-button w-full justify-center py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700">
+                        <button type="button" onclick="executeDeliveryAction('{{ route('admin.courier.start', $assignment->id) }}', {})" class="primary-button w-full justify-center py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700">
                             🚀 بدء خط السير والتوصيل
                         </button>
 
@@ -264,7 +264,7 @@
                             <p class="text-xs text-gray-500">
                                 عند وصولك لنقطة التوزيع، اضغط لتأكيد التسليم لنقطة الاستلام.
                             </p>
-                            <button type="button" onclick="executeDeliveryAction('{{ route('delivery.arrived_point', $assignment->id) }}', {})" class="primary-button w-full justify-center py-2.5 text-xs font-bold bg-cyan-600 hover:bg-cyan-700">
+                            <button type="button" onclick="executeDeliveryAction('{{ route('admin.courier.arrived_point', $assignment->id) }}', {})" class="primary-button w-full justify-center py-2.5 text-xs font-bold bg-cyan-600 hover:bg-cyan-700">
                                 📍 تأكيد الوصول وتسليم نقطة التوزيع
                             </button>
                         @else
@@ -383,13 +383,13 @@
             if (amountInput) {
                 payload.collected_amount = amountInput.value;
             }
-            executeDeliveryAction('{{ route('delivery.delivered', $assignment->id) }}', payload);
+            executeDeliveryAction('{{ route('admin.courier.delivered', $assignment->id) }}', payload);
         }
 
         function submitFailureAction() {
             const reason = document.getElementById('failure-reason').value;
             const retry = document.getElementById('schedule-retry').checked;
-            executeDeliveryAction('{{ route('delivery.fail', $assignment->id) }}', {
+            executeDeliveryAction('{{ route('admin.courier.fail', $assignment->id) }}', {
                 reason: reason,
                 schedule_retry: retry ? 1 : 0
             });

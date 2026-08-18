@@ -29,6 +29,16 @@ class Bouncer
         }
 
         /**
+         * Redirect Courier & Point Agent away from admin dashboard directly to their task panel
+         */
+        if ($request->routeIs('admin.dashboard.index')) {
+            $user = auth()->guard($guard)->user();
+            if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
+                return redirect()->route('admin.courier.index');
+            }
+        }
+
+        /**
          * If user status is changed by admin. Then session should be
          * logged out.
          */
@@ -98,7 +108,7 @@ class Bouncer
         $roles = acl()->getRoles();
         $currentRouteName = Route::currentRouteName();
 
-        if ($currentRouteName && str_starts_with($currentRouteName, 'delivery.')) {
+        if ($currentRouteName && (str_starts_with($currentRouteName, 'delivery.') || str_starts_with($currentRouteName, 'admin.courier.'))) {
             $user = auth()->guard('admin')->user();
             if (
                 $user && (
@@ -109,14 +119,6 @@ class Bouncer
                 )
             ) {
                 return;
-            }
-        }
-
-        if ($currentRouteName === 'admin.dashboard.index') {
-            $user = auth()->guard('admin')->user();
-            if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
-                header('Location: '.route('delivery.index'));
-                exit;
             }
         }
 

@@ -19,7 +19,7 @@ class SessionController extends Controller
     {
         if (auth()->guard('admin')->check()) {
             if (in_array(auth()->guard('admin')->user()->role?->name, ['Courier', 'PointAgent'])) {
-                return redirect()->route('delivery.index');
+                return redirect()->route('admin.courier.index');
             }
 
             return redirect()->route('admin.dashboard.index');
@@ -96,7 +96,7 @@ class SessionController extends Controller
         $user = auth()->guard('admin')->user();
 
         if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
-            return redirect()->route('delivery.index');
+            return redirect()->route('admin.courier.index');
         }
 
         $allPermissions = collect(config('acl'));
@@ -125,7 +125,7 @@ class SessionController extends Controller
         }
 
         if ($user && ($user->hasPermission('delivery') || $user->hasPermission('delivery.agent'))) {
-            return redirect()->route('delivery.index');
+            return redirect()->route('admin.courier.index');
         }
 
         return redirect()->intended(route('admin.dashboard.index'));
