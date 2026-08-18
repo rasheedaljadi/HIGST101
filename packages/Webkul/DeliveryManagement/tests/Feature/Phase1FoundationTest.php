@@ -132,7 +132,7 @@ class Phase1FoundationTest extends TestCase
             [
                 'is_enabled' => true,
                 'allowed_payment_methods' => ['cashondelivery', 'moneytransfer'],
-                'delivery_fee' => 1500.00,
+                'delivery_fee' => 5.00,
                 'min_order_amount' => 0.00,
             ]
         );

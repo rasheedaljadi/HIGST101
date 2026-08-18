@@ -40,7 +40,7 @@ class DeliveryGovernorateRulesSeeder extends Seeder
                 [
                     'is_enabled' => $isSanaaHome,
                     'allowed_payment_methods' => json_encode($isSanaaHome ? ['cashondelivery', 'moneytransfer'] : []),
-                    'delivery_fee' => $isSanaaHome ? 1500.00 : 0.00,
+                    'delivery_fee' => $isSanaaHome ? 5.00 : 0.00,
                     'min_order_amount' => 0.00,
                     'updated_at' => now(),
                     'created_at' => now(),
@@ -56,7 +56,7 @@ class DeliveryGovernorateRulesSeeder extends Seeder
                 [
                     'is_enabled' => true,
                     'allowed_payment_methods' => json_encode(['moneytransfer']),
-                    'delivery_fee' => 1000.00,
+                    'delivery_fee' => 5.00,
                     'min_order_amount' => 0.00,
                     'updated_at' => now(),
                     'created_at' => now(),
