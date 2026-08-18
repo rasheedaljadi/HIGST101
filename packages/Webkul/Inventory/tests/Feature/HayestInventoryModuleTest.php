@@ -5,6 +5,9 @@ namespace Webkul\Inventory\Tests\Feature;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
+use Webkul\Core\Models\Channel;
+use Webkul\Core\Models\Currency;
+use Webkul\Core\Models\Locale;
 use Webkul\Fulfillment\Enums\TransferStatus;
 use Webkul\Fulfillment\Services\InboundReceiptService;
 use Webkul\Fulfillment\Services\TransferManifestService;
@@ -42,6 +45,30 @@ class HayestInventoryModuleTest extends TestCase
     {
         parent::setUp();
 
+        $locale = Locale::firstOrCreate(
+            ['code' => 'ar'],
+            ['name' => 'Arabic', 'direction' => 'rtl']
+        );
+        $currency = Currency::firstOrCreate(
+            ['code' => 'USD'],
+            ['name' => 'US Dollar', 'symbol' => '$', 'decimal' => 2]
+        );
+        $channel = Channel::firstOrCreate(
+            ['code' => 'default'],
+            [
+                'theme' => 'default',
+                'hostname' => 'localhost',
+                'default_locale_id' => $locale->id,
+                'base_currency_id' => $currency->id,
+            ]
+        );
+        if (! $channel->locales()->where('locales.id', $locale->id)->exists()) {
+            $channel->locales()->attach($locale->id);
+        }
+        if (! $channel->currencies()->where('currencies.id', $currency->id)->exists()) {
+            $channel->currencies()->attach($currency->id);
+        }
+
         // 1. Roles & Admins
         $adminRole = Role::firstOrCreate(
             ['name' => 'Administrator'],
@@ -55,7 +82,7 @@ class HayestInventoryModuleTest extends TestCase
 
         $supervisorRole = Role::firstOrCreate(
             ['name' => 'Supervisor'],
-            ['permission_type' => 'custom', 'permissions' => ['inventory', 'inventory.dashboard', 'inventory.sources', 'inventory.products', 'inventory.transfers', 'inventory.transfers.create', 'inventory.transfers.dispatch', 'inventory.receipts', 'inventory.receipts.process', 'inventory.quarantine', 'inventory.quarantine.approve']]
+            ['permission_type' => 'custom', 'permissions' => ['inventory', 'inventory.dashboard', 'inventory.sources', 'inventory.products', 'inventory.products.view', 'inventory.transfers', 'inventory.transfers.create', 'inventory.transfers.view', 'inventory.transfers.dispatch', 'inventory.receipts', 'inventory.receipts.create', 'inventory.receipts.view', 'inventory.quarantine', 'inventory.quarantine.approve', 'inventory.reports', 'inventory.reports.export']]
         );
 
         $this->supervisor = Admin::firstOrCreate(
