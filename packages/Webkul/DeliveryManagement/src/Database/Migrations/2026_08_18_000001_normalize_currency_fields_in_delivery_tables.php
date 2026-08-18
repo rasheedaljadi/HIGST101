@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // 1. Normalize delivery_cash_collections
         Schema::table('delivery_cash_collections', function (Blueprint $table) {
             if (! Schema::hasColumn('delivery_cash_collections', 'order_currency_code')) {
                 $table->string('order_currency_code', 3)->nullable()->after('amount');
@@ -24,6 +25,16 @@ return new class extends Migration
             if (! Schema::hasColumn('delivery_cash_collections', 'collected_amount')) {
                 $table->decimal('collected_amount', 12, 4)->nullable()->after('collected_currency_code');
             }
+
+            // Remove legacy hardcoded 'YER' defaults
+            $table->string('currency', 3)->nullable()->default(null)->change();
+            $table->string('base_currency', 3)->nullable()->default(null)->change();
+        });
+
+        // 2. Normalize delivery_settlements
+        Schema::table('delivery_settlements', function (Blueprint $table) {
+            // Remove legacy hardcoded 'YER' default
+            $table->string('currency', 3)->nullable()->default(null)->change();
         });
     }
 
@@ -39,6 +50,13 @@ return new class extends Migration
                 'collected_currency_code',
                 'collected_amount',
             ]);
+
+            $table->string('currency', 3)->default('YER')->change();
+            $table->string('base_currency', 3)->default('YER')->change();
+        });
+
+        Schema::table('delivery_settlements', function (Blueprint $table) {
+            $table->string('currency', 3)->default('YER')->change();
         });
     }
 };

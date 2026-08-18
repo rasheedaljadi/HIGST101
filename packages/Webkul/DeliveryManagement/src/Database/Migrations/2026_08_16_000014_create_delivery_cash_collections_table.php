@@ -17,13 +17,9 @@ return new class extends Migration
             $table->unsignedInteger('order_id');
             $table->unsignedInteger('delivery_boy_id'); // FK to admins.id
             $table->decimal('amount', 12, 4);
-            $table->string('order_currency_code', 3)->nullable();
-            $table->decimal('order_amount', 12, 4)->nullable();
-            $table->string('collected_currency_code', 3)->nullable();
-            $table->decimal('collected_amount', 12, 4)->nullable();
-            $table->string('currency', 3)->nullable();
+            $table->string('currency', 3)->default('YER');
             $table->decimal('exchange_rate', 12, 6)->default(1.000000);
-            $table->string('base_currency', 3)->nullable();
+            $table->string('base_currency', 3)->default('YER');
             $table->decimal('amount_in_base_currency', 12, 4);
             $table->timestamp('rate_snapshot_at')->nullable();
             $table->timestamp('collected_at')->useCurrent();

@@ -145,20 +145,26 @@ packages/Webkul/DeliveryManagement/
 
 ---
 
-## 4. خطوات الاستئناف المباشرة (Immediate Next Steps for Resuming)
+## 5. سياسة وهندسة العملات المعتمدة (Currency Architecture & Policy)
 
-عند استئناف العمل، اتبع الخطوات المباشرة التالية بالترتيب:
+تم اعتماد سياسة العملات التالية كوحدة مرجعية موحدة لإدارة التسليم:
 
-1. **تشغيل الاختبارات والتأكد من نجاحها:**
-   ```bash
-   php artisan test packages/Webkul/DeliveryManagement/tests/Feature/AdminDeliveryModuleTest.php
-   ```
-2. **فحص التنسيق الكودي (Pint):**
-   ```bash
-   vendor/bin/pint --dirty
-   ```
-3. **التحقق من الواجهات عبر المتصفح (Browser Inspection):**
-   - فتح `http://127.0.0.1:8000/admin/delivery/dashboard`
-   - فتح `http://127.0.0.1:8000/admin/delivery/assignments`
-   - فحص استجابة الواجهات على قياسات الجوال (`390x844`) والشاشات المكتبية (`1280x800`).
-4. **تجهيز تقرير التسليم النهائي (Final Delivery Report) وعمل Commit نظيف على الفرع.**
+1. **العملة الافتراضية للنظام (Single System Currency Baseline):**
+   - يعتمد الإصدار الأول كلياً على العملة الافتراضية للنظام المسترجعة ديناميكياً من `core()->getBaseCurrencyCode()`.
+   - يتم تنسيق كافة المبالغ في الواجهات وDataGrids عبر `core()->formatPrice($amount, $currencyCode)` بدلاً من أي نصوص ثابتة.
+
+2. **قواعد التحصيل النقدي والتسويات (Collection & Settlement Rules):**
+   - إذا كانت العملة الافتراضية للنظام `USD`، يُقبل الدفع عند الاستلام (COD) والتحصيل والتسويات بالـ `USD` فقط.
+   - إذا تم طلب التحصيل بعملة مختلفة عن عملة الطلب، يُرفض الطلب فوراً برمز `422 Unprocessable Entity` واستثناء صريح في كود الخدمة، ويُمنع أي تحويل صامت.
+   - الطلبات المدفوعة مسبقاً لا تُنشئ أي سجل تحصيل نقدي `delivery_cash_collections`.
+
+3. **حقول التدقيق المالي الصريحة في قاعدة البيانات:**
+   - جدول `delivery_cash_collections`:
+     - `order_currency_code`: كود عملة الطلب (varchar 3, nullable).
+     - `order_amount`: إجمالي قيمة الطلب (decimal 12, 4, nullable).
+     - `collected_currency_code`: كود العملة المحصلة فعلياً (varchar 3, nullable).
+     - `collected_amount`: المبلغ المحصل فعلياً (decimal 12, 4, nullable).
+   - تم إزالة أي قيود `default('YER')` من جداول `delivery_cash_collections` و `delivery_settlements`، وأصبح كود النظام هو مصدر الحقيقة المالي.
+
+4. **خارطة الطريق للعملات المتعددة (Future Multi-Currency Roadmap):**
+   - عند الحاجة لدعم عملات طلبات متعددة وتحويلات أسعار الصرف مستقبلاً، يتم إدراج حقول `exchange_rate` و `amount_in_base_currency` و `rate_snapshot_at` ضمن خدمة تحويل مستقلة ومفصولة عن منطق التسليم الميداني.

@@ -3,6 +3,7 @@
 namespace Webkul\DeliveryManagement\Tests\Feature;
 
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 use Webkul\Core\Models\Channel;
 use Webkul\DeliveryManagement\Models\DeliveryAssignment;
@@ -222,5 +223,52 @@ class DynamicCurrencyDeliveryTest extends TestCase
         ]);
         $this->assertStringContainsString('SAR', $response->json('message'));
         $this->assertStringContainsString('USD', $response->json('message'));
+    }
+
+    /**
+     * Test 6: Database schema verification - no hardcoded 'YER' defaults on currency columns.
+     */
+    public function test_database_schema_has_no_hardcoded_yer_defaults(): void
+    {
+        // 1. Check delivery_cash_collections columns
+        $collectionCols = collect(DB::select('SHOW FULL COLUMNS FROM delivery_cash_collections'))->keyBy('Field');
+
+        $this->assertTrue($collectionCols->has('order_currency_code'));
+        $this->assertTrue($collectionCols->has('order_amount'));
+        $this->assertTrue($collectionCols->has('collected_currency_code'));
+        $this->assertTrue($collectionCols->has('collected_amount'));
+
+        $this->assertNull($collectionCols['currency']->Default, 'Legacy currency default must be NULL, not YER');
+        $this->assertNull($collectionCols['base_currency']->Default, 'Legacy base_currency default must be NULL, not YER');
+        $this->assertNull($collectionCols['order_currency_code']->Default);
+        $this->assertNull($collectionCols['collected_currency_code']->Default);
+
+        // 2. Check delivery_settlements columns
+        $settlementCols = collect(DB::select('SHOW FULL COLUMNS FROM delivery_settlements'))->keyBy('Field');
+        $this->assertNull($settlementCols['currency']->Default, 'Settlement currency default must be NULL, not YER');
+    }
+
+    /**
+     * Test 7: Runtime verification - inserting records without manual currency does not write YER automatically.
+     */
+    public function test_runtime_insertion_without_explicit_currency_does_not_inject_yer(): void
+    {
+        $rawId = DB::table('delivery_cash_collections')->insertGetId([
+            'delivery_assignment_id' => 9999,
+            'order_id' => 8888,
+            'delivery_boy_id' => $this->adminUser->id,
+            'amount' => 100.0000,
+            'amount_in_base_currency' => 100.0000,
+            'idempotency_key' => 'TEST-NO-YER-'.uniqid(),
+            'collected_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $row = DB::table('delivery_cash_collections')->where('id', $rawId)->first();
+        $this->assertNull($row->currency);
+        $this->assertNull($row->base_currency);
+        $this->assertNull($row->order_currency_code);
+        $this->assertNull($row->collected_currency_code);
     }
 }
