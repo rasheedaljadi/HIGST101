@@ -112,7 +112,7 @@ return [
             'pickup-point' => 'Pickup Point Available',
             'cod-home' => 'COD for Home Delivery',
             'cod-point' => 'COD for Pickup Points',
-            'delivery-fee' => 'Default Delivery Fee (YER)',
+            'delivery-fee' => 'Default Delivery Fee',
             'status' => 'Rule Status',
             'save-btn' => 'Save Rule & Audit Changes',
         ],
@@ -132,7 +132,7 @@ return [
 
         'settlements' => [
             'title' => 'Cash Collections & Settlements',
-            'description' => 'Reconcile Cash-on-Delivery collections (YER), courier float handovers, and discrepancy audits.',
+            'description' => 'Reconcile Cash-on-Delivery collections (COD), courier float handovers, and discrepancy audits.',
             'cod-collections' => 'COD Cash Collections',
             'courier-settlements' => 'Courier Float Settlements',
             'amount-expected' => 'Expected Amount',
@@ -141,7 +141,7 @@ return [
             'discrepancy' => 'Discrepancy / Shortage',
             'process-settlement' => 'Process Settlement',
             'settled-by' => 'Settled By',
-            'currency-yer' => 'Yemeni Rial (YER)',
+            'currency-yer' => 'System Currency',
         ],
 
         'audit-logs' => [

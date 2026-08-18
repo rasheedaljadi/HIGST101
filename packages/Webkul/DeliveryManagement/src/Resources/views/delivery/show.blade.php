@@ -92,7 +92,7 @@
                 </span>
                 @if($isCod)
                     <span style="font-size: 1.2rem; font-weight: 800; color: #92400e;">
-                        {{ number_format($assignment->order->grand_total ?? 0, 0) }} YER
+                        {{ core()->formatPrice((float)($assignment->order->grand_total ?? 0), $assignment->order->order_currency_code) }}
                     </span>
                 @endif
             </div>
@@ -114,7 +114,7 @@
         @endif
 
         @if(in_array($assignment->status, ['out_for_delivery', 'arrived_at_point', 'picked_up']))
-            <button class="btn btn-success" onclick="actionConfirmDelivery({{ $assignment->id }}, {{ $isCod ? ($assignment->order->grand_total ?? 0) : 'null' }})">
+            <button class="btn btn-success" onclick="actionConfirmDelivery({{ $assignment->id }}, {{ $isCod ? ($assignment->order->grand_total ?? 0) : 'null' }}, '{{ $assignment->order?->order_currency_code ?: core()->getBaseCurrencyCode() }}')">
                 ✅ تأكيد تسليم العميل {{ $isCod ? 'وتحصيل المبلغ' : '' }}
             </button>
 
@@ -182,19 +182,24 @@
         });
     }
 
-    function actionConfirmDelivery(id, codAmount) {
+    function actionConfirmDelivery(id, codAmount, currencyCode) {
         let msg = 'هل تم تسليم الشحنة للعميل بنجاح؟';
         if (codAmount) {
-            msg = `تأكيد استلام المبلغ النقدي (${codAmount} YER) وتسليم الطلب للعميل؟`;
+            msg = `تأكيد استلام المبلغ النقدي (${codAmount} ${currencyCode || ''}) وتسليم الطلب للعميل؟`;
         }
         if (!confirm(msg)) return;
 
         fetch(`/delivery/assignments/${id}/delivered`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-            body: JSON.stringify({ collected_amount: codAmount })
+            body: JSON.stringify({ collected_amount: codAmount, collected_currency: currencyCode })
         }).then(r => r.json()).then(data => {
-            if (data.success) { location.reload(); } else { alert(data.message); }
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('خطأ: ' + data.message);
+            }
         });
     }
 

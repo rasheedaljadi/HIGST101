@@ -238,16 +238,21 @@ class Phase1FoundationTest extends TestCase
             'order_id' => 1001,
             'delivery_boy_id' => 101,
             'amount' => 15000.0000,
-            'currency' => 'YER',
+            'order_currency_code' => 'USD',
+            'order_amount' => 15000.0000,
+            'collected_currency_code' => 'USD',
+            'collected_amount' => 15000.0000,
+            'currency' => 'USD',
             'exchange_rate' => 1.000000,
-            'base_currency' => 'YER',
+            'base_currency' => 'USD',
             'amount_in_base_currency' => 15000.0000,
             'collected_at' => now(),
             'idempotency_key' => $idempotencyKey,
         ]);
 
         $this->assertNotNull($collection->id);
-        $this->assertEquals('YER', $collection->currency);
+        $this->assertEquals('USD', $collection->collected_currency_code);
+        $this->assertEquals('USD', $collection->order_currency_code);
         $this->assertEquals(15000.0000, (float) $collection->amount);
         $this->assertEquals(15000.0000, (float) $collection->amount_in_base_currency);
     }

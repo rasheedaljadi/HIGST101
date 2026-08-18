@@ -94,7 +94,7 @@ class DeliveryGovernorateRuleDataGrid extends DataGrid
             'type' => 'string',
             'sortable' => true,
             'closure' => function ($row) {
-                return '<span class="font-semibold text-gray-800 dark:text-white">'.number_format((float) $row->delivery_fee, 2).' ر.ي</span>';
+                return '<span class="font-semibold text-gray-800 dark:text-white">'.core()->formatPrice((float) $row->delivery_fee, core()->getBaseCurrencyCode()).'</span>';
             },
         ]);
 

@@ -66,7 +66,9 @@ class DeliveryCashCollectionDataGrid extends DataGrid
             'type' => 'string',
             'sortable' => true,
             'closure' => function ($row) {
-                return '<span class="font-bold text-emerald-600">'.number_format((float) $row->amount, 2).' '.$row->currency.'</span>';
+                $currency = $row->currency ?: core()->getBaseCurrencyCode();
+
+                return '<span class="font-bold text-emerald-600">'.core()->formatPrice((float) $row->amount, $currency).'</span>';
             },
         ]);
 

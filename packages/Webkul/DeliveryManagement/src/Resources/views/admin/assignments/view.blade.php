@@ -78,7 +78,11 @@
                         <div>
                             <span class="text-gray-400">مبلغ التحصيل (COD):</span>
                             <span class="font-bold text-emerald-600 mr-1">
-                                {{ $assignment->cod_amount_yer > 0 ? number_format($assignment->cod_amount_yer, 2).' YER' : 'غير مطلوب تحصيل (مدفوع مسبقاً)' }}
+                                @if($assignment->order && strtolower((string)$assignment->order->payment?->method) === 'cashondelivery')
+                                    {{ core()->formatPrice((float)$assignment->order->grand_total, $assignment->order->order_currency_code) }}
+                                @else
+                                    غير مطلوب تحصيل (مدفوع مسبقاً)
+                                @endif
                             </span>
                         </div>
 

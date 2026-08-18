@@ -99,7 +99,7 @@
                                     </td>
                                     <td class="p-2.5">{{ $task->state_code }}</td>
                                     <td class="p-2.5 font-bold text-emerald-600">
-                                        {{ $task->cod_amount_yer > 0 ? number_format($task->cod_amount_yer, 2).' YER' : '-' }}
+                                        {{ $task->order && strtolower((string)$task->order->payment?->method) === 'cashondelivery' ? core()->formatPrice((float)$task->order->grand_total, $task->order->order_currency_code) : '-' }}
                                     </td>
                                     <td class="p-2.5">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-800">

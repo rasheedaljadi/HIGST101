@@ -47,13 +47,13 @@
 
 ### د. جداول البيانات الحقيقية (DataGrids)
 تم إنشاء 8 DataGrids احترافية متوافقة مع معايير Bagisto 2.4.x:
-1. `DeliveryAssignmentDataGrid.php`: قائمة طلبات التسليم مع وسوم الحالات، مبالغ COD بالريال اليمني YER، تفاصيل العميل، وروابط المعاينة.
+1. `DeliveryAssignmentDataGrid.php`: قائمة طلبات التسليم مع وسوم الحالات، مبالغ COD بالعملة النظامية للطلب، تفاصيل العميل، وروابط المعاينة.
 2. `DeliveryCourierDataGrid.php`: قائمة موظفي التوصيل مع عدادات المهام النشطة والمكتملة والمتعثرة ورصيد العهدة.
 3. `DeliveryPointDataGrid.php`: قائمة مراكز ونقاط التسليم مع السعة القصوى وعدد الشحنات الحالية والموظفين.
-4. `DeliveryGovernorateRuleDataGrid.php`: مصفوفة قواعد المحافظات (التوصيل المنزلي، نقاط الاستلام، COD، ورسوم التوصيل).
+4. `DeliveryGovernorateRuleDataGrid.php`: مصفوفة قواعد المحافظات (التوصيل المنزلي، نقاط الاستلام، COD، ورسوم التوصيل بالعملة الافتراضية).
 5. `DeliveryAttemptLogDataGrid.php`: سجل المحاولات مع أسباب التعثر وجدولة الإعادة.
-6. `DeliveryCashCollectionDataGrid.php`: سجل تحصيلات الدفع عند الاستلام (COD) بالريال اليمني.
-7. `DeliverySettlementDataGrid.php`: سجل التسويات المالية للعهد النقدية مع توضيح الفوارق والعجز.
+6. `DeliveryCashCollectionDataGrid.php`: سجل تحصيلات الدفع عند الاستلام (COD) مع توثيق عملة الطلب وعملة التحصيل والمبلغ المالي.
+7. `DeliverySettlementDataGrid.php`: سجل التسويات المالية للعهد النقدية بالعملة النظامية مع توضيح الفوارق والعجز.
 8. `DeliveryAuditLogDataGrid.php`: سجل التدقيق لكافة الإجراءات الإدارية وتغييرات الحالة والقواعد.
 
 ### هـ. وحدات التحكم والإدارة (Admin Controllers)

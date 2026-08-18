@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('expected_amount', 12, 4);
             $table->decimal('actual_amount', 12, 4);
             $table->decimal('difference', 12, 4)->default(0.0000);
-            $table->string('currency', 3)->default('YER');
+            $table->string('currency', 3)->nullable();
             $table->string('status')->default('pending'); // pending, settled, discrepancy
             $table->unsignedInteger('settled_by')->nullable(); // FK to admins.id
             $table->timestamp('settled_at')->nullable();

@@ -177,7 +177,6 @@ class AdminDeliveryModuleTest extends TestCase
             'state_code' => 'SAN',
             'payment_method' => 'cashondelivery',
             'status' => 'ready_for_assignment',
-            'cod_amount_yer' => 15000,
             'attempt_count' => 0,
             'delivery_boy_id' => $this->courier->id,
         ]);

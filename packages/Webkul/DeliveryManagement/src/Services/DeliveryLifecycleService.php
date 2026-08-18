@@ -146,7 +146,7 @@ class DeliveryLifecycleService
         int $actorId,
         string $actorType = 'courier',
         ?float $collectedAmount = null,
-        string $currency = 'YER',
+        ?string $currency = null,
         ?string $idempotencyKey = null
     ): DeliveryAssignment {
         return DB::transaction(function () use ($assignment, $actorId, $actorType, $collectedAmount, $currency, $idempotencyKey) {
@@ -173,6 +173,14 @@ class DeliveryLifecycleService
                 throw new Exception("Order #{$assignment->order_id} not found.");
             }
 
+            $orderCurrency = $order->order_currency_code ?: (core()->getBaseCurrencyCode() ?: 'USD');
+            $collectedCurrency = $currency ?: $orderCurrency;
+
+            // Rule 7: Enforce that collected currency matches order currency in Phase 1 (reject mismatch)
+            if ($currency !== null && $currency !== $orderCurrency) {
+                throw new Exception("Collected currency ({$currency}) must match order currency ({$orderCurrency}).");
+            }
+
             $isCod = strtolower((string) $order->payment?->method) === 'cashondelivery';
 
             // 2. COD Cash Collection
@@ -181,7 +189,7 @@ class DeliveryLifecycleService
                 $actualAmount = $collectedAmount !== null ? (float) $collectedAmount : $expectedAmount;
 
                 if ($actualAmount < $expectedAmount) {
-                    throw new Exception("Cash collection amount ({$actualAmount} {$currency}) is less than order grand total ({$expectedAmount} {$order->order_currency_code}).");
+                    throw new Exception("Cash collection amount ({$actualAmount} {$collectedCurrency}) is less than order grand total ({$expectedAmount} {$orderCurrency}).");
                 }
 
                 // Check existing cash collection to prevent duplicate collection
@@ -190,15 +198,23 @@ class DeliveryLifecycleService
                 if (! $existingCollection) {
                     $collectionKey = $idempotencyKey ?: ('COD-COLL-'.$assignment->id.'-'.$order->id);
 
+                    $baseCurrency = $order->base_currency_code ?: (core()->getBaseCurrencyCode() ?: $orderCurrency);
+                    $exchangeRate = (float) ($order->exchange_rate ?: 1.0);
+                    $amountInBase = $order->base_grand_total ? (float) $order->base_grand_total : $actualAmount;
+
                     DeliveryCashCollection::create([
                         'delivery_assignment_id' => $assignment->id,
                         'order_id' => $order->id,
                         'delivery_boy_id' => $assignment->delivery_boy_id ?: $actorId,
                         'amount' => $actualAmount,
-                        'currency' => 'YER',
-                        'base_currency' => core()->getBaseCurrencyCode() ?: 'YER',
-                        'exchange_rate' => 1.0,
-                        'amount_in_base_currency' => $actualAmount,
+                        'order_currency_code' => $orderCurrency,
+                        'order_amount' => $expectedAmount,
+                        'collected_currency_code' => $collectedCurrency,
+                        'collected_amount' => $actualAmount,
+                        'currency' => $collectedCurrency,
+                        'base_currency' => $baseCurrency,
+                        'exchange_rate' => $exchangeRate,
+                        'amount_in_base_currency' => $amountInBase,
                         'rate_snapshot_at' => now(),
                         'collected_at' => now(),
                         'idempotency_key' => $collectionKey,

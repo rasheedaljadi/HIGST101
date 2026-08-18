@@ -13,7 +13,7 @@ return [
     |
     */
     'enabled' => env('DELIVERY_MODULE_ENABLED', true),
-    'default_currency' => 'YER',
+    'default_currency' => env('DELIVERY_DEFAULT_CURRENCY', null),
     'max_delivery_attempts' => (int) env('DELIVERY_MAX_ATTEMPTS', 3),
     'central_warehouse_code' => 'hayest_central',
 ];

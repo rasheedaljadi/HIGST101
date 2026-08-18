@@ -38,22 +38,22 @@
         <div class="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1">
             <div class="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm border-r-4 border-r-emerald-500">
                 <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">إجمالي المبالغ المحصلة (COD)</span>
-                <div class="text-xl font-bold text-emerald-600 mt-1">{{ number_format($metrics['total_collected_yer'], 2) }} YER</div>
+                <div class="text-xl font-bold text-emerald-600 mt-1">{{ core()->formatPrice((float)$metrics['total_collected'], $metrics['currency']) }}</div>
             </div>
 
             <div class="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm border-r-4 border-r-blue-500">
                 <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">إجمالي المبالغ المسواة والموردة</span>
-                <div class="text-xl font-bold text-blue-600 mt-1">{{ number_format($metrics['total_settled_yer'], 2) }} YER</div>
+                <div class="text-xl font-bold text-blue-600 mt-1">{{ core()->formatPrice((float)$metrics['total_settled'], $metrics['currency']) }}</div>
             </div>
 
             <div class="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm border-r-4 border-r-amber-500">
                 <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">العهد النقدية المعلقة مع المناديب</span>
-                <div class="text-xl font-bold text-amber-600 mt-1">{{ number_format($metrics['unsettled_float_yer'], 2) }} YER</div>
+                <div class="text-xl font-bold text-amber-600 mt-1">{{ core()->formatPrice((float)$metrics['unsettled_float'], $metrics['currency']) }}</div>
             </div>
 
             <div class="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm border-r-4 border-r-rose-500">
                 <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">إجمالي الفروقات والعجز المالي</span>
-                <div class="text-xl font-bold text-rose-600 mt-1">{{ number_format($metrics['total_discrepancy'], 2) }} YER</div>
+                <div class="text-xl font-bold text-rose-600 mt-1">{{ core()->formatPrice((float)$metrics['total_discrepancy'], $metrics['currency']) }}</div>
             </div>
         </div>
 
@@ -82,6 +82,7 @@
 
             <form action="{{ route('admin.delivery.settlements.process') }}" method="POST" class="flex flex-col gap-4">
                 @csrf
+                <input type="hidden" name="currency" value="{{ $metrics['currency'] }}">
 
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -97,9 +98,9 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                        المبلغ المورد للصندوق فعلياً (YER) <span class="text-red-500">*</span>
+                        المبلغ المورد للصندوق فعلياً ({{ $metrics['currency'] }}) <span class="text-red-500">*</span>
                     </label>
-                    <input type="number" step="0.01" name="total_submitted_yer" required class="w-full text-xs rounded border border-gray-300 dark:border-gray-700 p-2 bg-transparent" placeholder="0.00">
+                    <input type="number" step="0.01" name="total_submitted" required class="w-full text-xs rounded border border-gray-300 dark:border-gray-700 p-2 bg-transparent" placeholder="0.00">
                 </div>
 
                 <div>

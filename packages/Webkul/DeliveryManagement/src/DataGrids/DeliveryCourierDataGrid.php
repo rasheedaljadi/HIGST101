@@ -119,7 +119,7 @@ class DeliveryCourierDataGrid extends DataGrid
             'type' => 'string',
             'sortable' => true,
             'closure' => function ($row) {
-                return '<span class="font-bold text-amber-600">'.number_format((float) $row->unsettled_cod, 2).' YER</span>';
+                return '<span class="font-bold text-amber-600">'.core()->formatPrice((float) $row->unsettled_cod, core()->getBaseCurrencyCode()).'</span>';
             },
         ]);
     }

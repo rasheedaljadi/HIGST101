@@ -29,18 +29,24 @@ class DeliverySettlementController extends Controller
 
         $couriers = Admin::where('status', 1)->get();
 
+        $baseCurrency = core()->getBaseCurrencyCode() ?: 'USD';
+
         $totalCollected = (float) DB::table('delivery_cash_collections')->sum('amount');
         $totalSettled = (float) DB::table('delivery_settlements')->where('status', 'settled')->sum('actual_amount');
         $totalDifference = (float) DB::table('delivery_settlements')->sum('difference');
 
         $metrics = [
+            'total_collected' => $totalCollected,
+            'total_settled' => $totalSettled,
+            'unsettled_float' => max(0, $totalCollected - $totalSettled),
+            'total_discrepancy' => $totalDifference,
+            'currency' => $baseCurrency,
             'total_collected_yer' => $totalCollected,
             'total_settled_yer' => $totalSettled,
             'unsettled_float_yer' => max(0, $totalCollected - $totalSettled),
-            'total_discrepancy' => $totalDifference,
         ];
 
-        return view('delivery::admin.settlements.index', compact('couriers', 'metrics'));
+        return view('delivery::admin.settlements.index', compact('couriers', 'metrics', 'baseCurrency'));
     }
 
     public function process(Request $request): RedirectResponse
@@ -49,16 +55,19 @@ class DeliverySettlementController extends Controller
 
         $request->validate([
             'delivery_boy_id' => 'required|integer|exists:admins,id',
-            'total_submitted_yer' => 'required|numeric|min:0',
+            'total_submitted' => 'nullable|numeric|min:0',
+            'total_submitted_yer' => 'nullable|numeric|min:0',
+            'currency' => 'nullable|string|max:3',
             'notes' => 'nullable|string|max:500',
         ]);
 
         $courierId = (int) $request->input('delivery_boy_id');
-        $submitted = (float) $request->input('total_submitted_yer');
+        $submitted = (float) ($request->input('total_submitted') ?? $request->input('total_submitted_yer') ?? 0);
+        $currency = $request->input('currency') ?: (core()->getBaseCurrencyCode() ?: 'USD');
 
         $pendingCollections = DeliveryCashCollection::where('delivery_boy_id', $courierId)->get();
 
-        $totalCollected = $pendingCollections->sum('amount');
+        $totalCollected = (float) $pendingCollections->sum('amount');
         $difference = $totalCollected - $submitted;
 
         try {
@@ -70,7 +79,7 @@ class DeliverySettlementController extends Controller
                 'expected_amount' => $totalCollected,
                 'actual_amount' => $submitted,
                 'difference' => $difference,
-                'currency' => 'YER',
+                'currency' => $currency,
                 'status' => $difference == 0 ? 'settled' : 'discrepancy',
                 'settled_by' => $user->id,
                 'settled_at' => now(),

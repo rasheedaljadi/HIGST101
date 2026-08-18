@@ -42,7 +42,8 @@ class DeliveryAssignmentDataGrid extends DataGrid
                 'delivery_assignments.payment_method',
                 'delivery_assignments.status',
                 'delivery_assignments.attempt_count',
-                'delivery_assignments.cod_amount_yer',
+                'orders.grand_total as cod_amount',
+                'orders.order_currency_code as currency_code',
                 'couriers.name as courier_name',
                 'delivery_points.name as point_name',
                 'delivery_assignments.created_at',
@@ -96,21 +97,17 @@ class DeliveryAssignmentDataGrid extends DataGrid
             'type' => 'string',
             'searchable' => true,
             'filterable' => true,
-            'sortable' => true,
             'closure' => function ($row) {
-                return '<a href="'.route('admin.sales.orders.view', $row->order_id).'" class="text-blue-600 hover:underline font-semibold">#'.$row->order_increment_id.'</a>';
+                return '<a href="'.route('admin.delivery.assignments.show', $row->id).'" class="text-blue-600 hover:underline font-bold">#'.$row->order_increment_id.'</a>';
             },
         ]);
 
         $this->addColumn([
-            'index' => 'customer',
+            'index' => 'customer_name',
             'label' => trans('delivery::app.admin.datagrid.customer'),
             'type' => 'string',
             'closure' => function ($row) {
-                $name = trim(($row->customer_first_name ?? '').' '.($row->customer_last_name ?? ''));
-                $phone = $row->customer_phone ?? '';
-
-                return '<div><div class="font-medium">'.($name ?: 'N/A').'</div><div class="text-xs text-gray-500">'.$phone.'</div></div>';
+                return '<div><div class="font-medium text-gray-800 dark:text-white">'.$row->customer_first_name.' '.$row->customer_last_name.'</div><div class="text-xs text-gray-500">'.$row->customer_phone.'</div></div>';
             },
         ]);
 
@@ -120,6 +117,9 @@ class DeliveryAssignmentDataGrid extends DataGrid
             'type' => 'string',
             'filterable' => true,
             'sortable' => true,
+            'closure' => function ($row) {
+                return '<span class="font-semibold text-gray-800 dark:text-white">'.$row->governorate.'</span>';
+            },
         ]);
 
         $this->addColumn([
@@ -127,41 +127,42 @@ class DeliveryAssignmentDataGrid extends DataGrid
             'label' => trans('delivery::app.admin.datagrid.type'),
             'type' => 'string',
             'filterable' => true,
+            'sortable' => true,
             'closure' => function ($row) {
                 return $row->delivery_type === 'home_delivery'
-                    ? '<span class="px-2 py-0.5 rounded text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 font-medium">'.trans('delivery::app.admin.datagrid.home-delivery').'</span>'
-                    : '<span class="px-2 py-0.5 rounded text-xs bg-cyan-50 text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-300 font-medium">'.trans('delivery::app.admin.datagrid.delivery-point').'</span>';
+                    ? '<span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-semibold">🏠 منزلي</span>'
+                    : '<span class="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 text-xs font-semibold">📍 نقطة استلام</span>';
             },
         ]);
 
         $this->addColumn([
             'index' => 'payment_method',
-            'label' => trans('delivery::app.admin.datagrid.payment'),
+            'label' => trans('delivery::app.admin.datagrid.payment-method'),
             'type' => 'string',
             'filterable' => true,
             'closure' => function ($row) {
-                $isCod = str_contains($row->payment_method ?? '', 'cod') || $row->payment_method === 'cashondelivery';
+                if ($row->payment_method === 'cashondelivery') {
+                    return '<span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800 font-semibold">💵 عند الاستلام (COD)</span>';
+                }
 
-                return $isCod
-                    ? '<span class="px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 font-medium">'.trans('delivery::app.admin.datagrid.cod').'</span>'
-                    : '<span class="px-2 py-0.5 rounded text-xs bg-green-50 text-green-800 dark:bg-green-950/50 dark:text-green-400 font-medium">'.trans('delivery::app.admin.datagrid.prepaid').'</span>';
+                return '<span class="px-2 py-0.5 rounded text-xs bg-sky-100 text-sky-800 font-semibold">💳 مسبق الدفع</span>';
             },
         ]);
 
         $this->addColumn([
-            'index' => 'agent',
-            'label' => trans('delivery::app.admin.datagrid.agent'),
+            'index' => 'agent_info',
+            'label' => trans('delivery::app.admin.datagrid.assigned-to'),
             'type' => 'string',
             'closure' => function ($row) {
                 if ($row->delivery_type === 'home_delivery') {
                     return $row->courier_name
-                        ? '<span class="text-xs font-semibold text-gray-800 dark:text-gray-200">'.$row->courier_name.'</span>'
-                        : '<span class="text-xs text-rose-500 italic">غير مسند</span>';
+                        ? '<span class="font-medium text-indigo-700 dark:text-indigo-400">🚴 '.$row->courier_name.'</span>'
+                        : '<span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">بانتظار مندوب</span>';
                 }
 
                 return $row->point_name
-                    ? '<span class="text-xs font-semibold text-gray-800 dark:text-gray-200">'.$row->point_name.'</span>'
-                    : '<span class="text-xs text-rose-500 italic">نقطة غير محددة</span>';
+                    ? '<span class="font-medium text-purple-700 dark:text-purple-400">🏢 '.$row->point_name.'</span>'
+                    : '<span class="text-xs text-gray-400">غير محدد</span>';
             },
         ]);
 
@@ -172,26 +173,26 @@ class DeliveryAssignmentDataGrid extends DataGrid
             'filterable' => true,
             'sortable' => true,
             'closure' => function ($row) {
-                $status = $row->status;
-                $label = trans("delivery::app.admin.states.{$status}");
+                $status = (string) $row->status;
+                $label = trans("delivery::app.admin.assignments.status.{$status}");
 
                 switch ($status) {
                     case 'ready_for_assignment':
-                        return '<span class="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-900 text-xs font-semibold">'.$label.'</span>';
+                        return '<span class="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700 text-xs font-semibold">'.$label.'</span>';
                     case 'assigned':
-                        return '<span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-900 text-xs font-semibold">'.$label.'</span>';
+                        return '<span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-300 dark:border-blue-700 text-xs font-semibold">'.$label.'</span>';
                     case 'picked_up':
-                        return '<span class="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-400 border border-purple-200 dark:border-purple-900 text-xs font-semibold">'.$label.'</span>';
+                        return '<span class="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 text-xs font-semibold">'.$label.'</span>';
                     case 'out_for_delivery':
-                        return '<span class="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900 text-xs font-semibold">'.$label.'</span>';
+                        return '<span class="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-300 dark:border-purple-700 text-xs font-semibold animate-pulse">'.$label.'</span>';
                     case 'arrived_at_point':
-                        return '<span class="px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-900 text-xs font-semibold">'.$label.'</span>';
+                        return '<span class="px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700 text-xs font-semibold">'.$label.'</span>';
                     case 'delivered':
-                        return '<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 text-xs font-semibold">'.$label.'</span>';
+                        return '<span class="px-2.5 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border border-green-300 dark:border-green-700 text-xs font-semibold">✓ '.$label.'</span>';
                     case 'delivery_failed':
-                        return '<span class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-900 text-xs font-semibold">'.$label.'</span>';
+                        return '<span class="px-2.5 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border border-red-300 dark:border-red-700 text-xs font-semibold">✗ '.$label.' ('.$row->attempt_count.')</span>';
                     case 'retry_scheduled':
-                        return '<span class="px-2.5 py-1 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-400 border border-orange-200 dark:border-orange-900 text-xs font-semibold">'.$label.'</span>';
+                        return '<span class="px-2.5 py-1 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 border border-orange-300 dark:border-orange-700 text-xs font-semibold">🔄 '.$label.'</span>';
                     case 'returned_to_hayest':
                         return '<span class="px-2.5 py-1 rounded-full bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700 text-xs font-semibold">'.$label.'</span>';
                     default:
@@ -201,16 +202,18 @@ class DeliveryAssignmentDataGrid extends DataGrid
         ]);
 
         $this->addColumn([
-            'index' => 'cod_amount_yer',
+            'index' => 'cod_amount',
             'label' => trans('delivery::app.admin.datagrid.cod-amount'),
             'type' => 'string',
             'sortable' => true,
             'closure' => function ($row) {
-                if (! $row->cod_amount_yer || $row->cod_amount_yer <= 0) {
+                if (strtolower((string) $row->payment_method) !== 'cashondelivery' || ! $row->cod_amount || (float) $row->cod_amount <= 0) {
                     return '<span class="text-gray-400">-</span>';
                 }
 
-                return '<span class="font-bold text-emerald-600">'.number_format($row->cod_amount_yer, 2).' YER</span>';
+                $currency = $row->currency_code ?: core()->getBaseCurrencyCode();
+
+                return '<span class="font-bold text-emerald-600">'.core()->formatPrice((float) $row->cod_amount, $currency).'</span>';
             },
         ]);
 
@@ -234,7 +237,7 @@ class DeliveryAssignmentDataGrid extends DataGrid
     public function prepareActions()
     {
         $this->addAction([
-            'icon' => 'icon-eye',
+            'icon' => 'icon-view',
             'title' => trans('delivery::app.admin.datagrid.view'),
             'method' => 'GET',
             'url' => function ($row) {

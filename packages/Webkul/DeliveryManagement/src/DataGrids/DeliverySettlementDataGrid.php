@@ -64,7 +64,9 @@ class DeliverySettlementDataGrid extends DataGrid
             'type' => 'string',
             'sortable' => true,
             'closure' => function ($row) {
-                return '<span class="font-bold text-gray-800">'.number_format((float) $row->expected_amount, 2).' '.$row->currency.'</span>';
+                $currency = $row->currency ?: core()->getBaseCurrencyCode();
+
+                return '<span class="font-bold text-gray-800">'.core()->formatPrice((float) $row->expected_amount, $currency).'</span>';
             },
         ]);
 
@@ -74,7 +76,9 @@ class DeliverySettlementDataGrid extends DataGrid
             'type' => 'string',
             'sortable' => true,
             'closure' => function ($row) {
-                return '<span class="font-bold text-emerald-600">'.number_format((float) $row->actual_amount, 2).' '.$row->currency.'</span>';
+                $currency = $row->currency ?: core()->getBaseCurrencyCode();
+
+                return '<span class="font-bold text-emerald-600">'.core()->formatPrice((float) $row->actual_amount, $currency).'</span>';
             },
         ]);
 
@@ -85,11 +89,13 @@ class DeliverySettlementDataGrid extends DataGrid
             'sortable' => true,
             'closure' => function ($row) {
                 $diff = (float) $row->difference;
+                $currency = $row->currency ?: core()->getBaseCurrencyCode();
+
                 if ($diff == 0) {
                     return '<span class="text-xs text-emerald-600 font-bold">0.00 (مطابق)</span>';
                 }
 
-                return '<span class="text-xs text-rose-600 font-bold">'.number_format($diff, 2).' '.$row->currency.' (عجز/فارق)</span>';
+                return '<span class="text-xs text-rose-600 font-bold">'.core()->formatPrice($diff, $currency).' (عجز/فارق)</span>';
             },
         ]);
 

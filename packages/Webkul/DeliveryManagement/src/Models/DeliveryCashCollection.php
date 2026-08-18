@@ -27,6 +27,10 @@ class DeliveryCashCollection extends Model implements DeliveryCashCollectionCont
         'order_id',
         'delivery_boy_id',
         'amount',
+        'order_currency_code',
+        'order_amount',
+        'collected_currency_code',
+        'collected_amount',
         'currency',
         'exchange_rate',
         'base_currency',
@@ -43,6 +47,8 @@ class DeliveryCashCollection extends Model implements DeliveryCashCollectionCont
      */
     protected $casts = [
         'amount' => 'decimal:4',
+        'order_amount' => 'decimal:4',
+        'collected_amount' => 'decimal:4',
         'exchange_rate' => 'decimal:6',
         'amount_in_base_currency' => 'decimal:4',
         'collected_at' => 'datetime',

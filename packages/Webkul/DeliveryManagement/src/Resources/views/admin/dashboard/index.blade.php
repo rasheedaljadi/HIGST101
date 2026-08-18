@@ -119,7 +119,7 @@
                 <div class="flex flex-col">
                     <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">{{ trans('delivery::app.admin.dashboard.cod-collected-today') }}</span>
                     <span class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{{ number_format((float) $stats['cod_collected_today'], 2) }}</span>
-                    <span class="text-[10px] text-gray-400 mt-0.5">YER (تسويات معلقة: {{ $stats['pending_settlements'] }})</span>
+                    <span class="text-[10px] text-gray-400 mt-0.5">{{ core()->getBaseCurrencyCode() ?: 'USD' }} (تسويات معلقة: {{ $stats['pending_settlements'] }})</span>
                 </div>
                 <div class="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600">
                     <span class="icon-wallet text-xl"></span>

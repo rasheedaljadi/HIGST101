@@ -148,7 +148,19 @@ class DeliveryAgentController extends Controller
 
         $request->validate([
             'collected_amount' => 'nullable|numeric|min:0',
+            'collected_currency' => 'nullable|string|max:3',
         ]);
+
+        $orderCurrency = $assignment->order?->order_currency_code ?: (core()->getBaseCurrencyCode() ?: 'USD');
+        $collectedCurrency = $request->input('collected_currency') ?: $orderCurrency;
+
+        // Rule 7: Reject mismatch in Phase 1
+        if ($request->filled('collected_currency') && $request->input('collected_currency') !== $orderCurrency) {
+            return response()->json([
+                'success' => false,
+                'message' => "عملة التحصيل ({$request->input('collected_currency')}) لا تطابق عملة الطلب ({$orderCurrency}).",
+            ], 422);
+        }
 
         try {
             $updated = $this->deliveryLifecycleService->confirmCustomerDelivery(
@@ -156,7 +168,7 @@ class DeliveryAgentController extends Controller
                 actorId: $user->id,
                 actorType: 'courier',
                 collectedAmount: $request->input('collected_amount') ? (float) $request->input('collected_amount') : null,
-                currency: 'YER',
+                currency: $collectedCurrency,
                 idempotencyKey: $request->input('idempotency_key')
             );
 
