@@ -179,12 +179,14 @@ class Inventory extends AbstractIndexer
      */
     public function getQuantity()
     {
-        $channelInventorySourceIds = $this->channel->inventory_sources->where('status', 1)->pluck('id');
+        $channelInventorySourceIds = $this->channel->inventory_sources
+            ->filter(fn ($source) => (bool) $source->status && (bool) $source->is_salable)
+            ->pluck('id');
 
         $qty = 0;
 
         foreach ($this->product->inventories as $inventory) {
-            if (is_numeric($channelInventorySourceIds->search($inventory->inventory_source_id))) {
+            if ($channelInventorySourceIds->contains($inventory->inventory_source_id)) {
                 $qty += $inventory->qty;
             }
         }
@@ -206,10 +208,10 @@ class Inventory extends AbstractIndexer
      */
     public function getChannels()
     {
-        if ($this->channels) {
-            return $this->channels;
+        if (method_exists($this->channelRepository, 'skipCache')) {
+            return $this->channelRepository->resetModel()->skipCache(true)->with('inventory_sources')->all();
         }
 
-        return $this->channels = $this->channelRepository->all();
+        return $this->channelRepository->with('inventory_sources')->all();
     }
 }
