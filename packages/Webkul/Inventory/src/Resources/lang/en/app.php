@@ -3,7 +3,7 @@
 return [
     'admin' => [
         'menu' => [
-            'inventory' => 'Hayest Inventory',
+            'inventory' => 'Inventory Management',
             'dashboard' => 'Dashboard Overview',
             'sources' => 'Sources & Balances',
             'products' => 'Product Stock by Source',
@@ -14,7 +14,7 @@ return [
             'reports' => 'Inventory Reports',
         ],
         'acl' => [
-            'inventory' => 'Hayest Inventory Management',
+            'inventory' => 'Inventory Management',
             'dashboard' => 'Dashboard Summary',
             'sources' => 'Sources & Balances',
             'products' => 'Product Stock by Source',

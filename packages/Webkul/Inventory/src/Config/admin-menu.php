@@ -6,7 +6,7 @@ return [
         'name' => 'inventory::app.admin.menu.inventory',
         'route' => 'admin.inventory.dashboard.index',
         'sort' => 3,
-        'icon' => 'icon-inventory',
+        'icon' => 'icon-attribute-block',
     ],
     [
         'key' => 'inventory.dashboard',
