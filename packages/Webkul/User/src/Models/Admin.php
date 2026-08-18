@@ -115,7 +115,30 @@ class Admin extends Authenticatable implements AdminContract
             return false;
         }
 
-        return in_array($permission, $this->role->permissions);
+        $permissions = $this->role->permissions;
+        if (is_string($permissions)) {
+            $permissions = json_decode($permissions, true) ?: [];
+        }
+
+        if (in_array($permission, $permissions)) {
+            return true;
+        }
+
+        // Support dot notation hierarchy (e.g. 'delivery' grants 'delivery.assigned', etc.)
+        foreach ($permissions as $p) {
+            if (str_starts_with($permission, $p.'.')) {
+                return true;
+            }
+        }
+
+        if (
+            in_array($this->role?->name, ['Courier', 'PointAgent'])
+            && ($permission === 'delivery' || str_starts_with($permission, 'delivery.') || str_starts_with($permission, 'delivery_agent'))
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

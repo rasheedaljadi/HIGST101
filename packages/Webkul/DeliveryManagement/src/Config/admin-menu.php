@@ -5,53 +5,60 @@ return [
      * Top-level Menu Item: مهام التوصيل (للمندوب)
      */
     [
-        'key' => 'delivery_agent',
+        'key' => 'delivery',
         'name' => 'delivery::app.admin.menu.courier-tasks',
         'route' => 'admin.courier.index',
         'sort' => 2,
         'icon' => 'icon-ship',
     ],
     [
-        'key' => 'delivery_agent.all',
+        'key' => 'delivery.all',
         'name' => 'delivery::app.admin.menu.all-tasks',
         'route' => 'admin.courier.index',
         'sort' => 1,
+        'icon' => '',
     ],
     [
-        'key' => 'delivery_agent.assigned',
+        'key' => 'delivery.assigned',
         'name' => 'delivery::app.admin.menu.assigned-tasks',
         'route' => 'admin.courier.assigned',
         'sort' => 2,
+        'icon' => '',
     ],
     [
-        'key' => 'delivery_agent.picked_up',
+        'key' => 'delivery.picked_up',
         'name' => 'delivery::app.admin.menu.picked-up-tasks',
         'route' => 'admin.courier.picked_up',
         'sort' => 3,
+        'icon' => '',
     ],
     [
-        'key' => 'delivery_agent.out_for_delivery',
+        'key' => 'delivery.out_for_delivery',
         'name' => 'delivery::app.admin.menu.out-for-delivery-tasks',
         'route' => 'admin.courier.out_for_delivery',
         'sort' => 4,
+        'icon' => '',
     ],
     [
-        'key' => 'delivery_agent.arrived_at_point',
+        'key' => 'delivery.arrived_at_point',
         'name' => 'delivery::app.admin.menu.arrived-point-tasks',
         'route' => 'admin.courier.arrived_at_point',
         'sort' => 5,
+        'icon' => '',
     ],
     [
-        'key' => 'delivery_agent.delivered',
+        'key' => 'delivery.delivered',
         'name' => 'delivery::app.admin.menu.delivered-tasks',
         'route' => 'admin.courier.delivered_tasks',
         'sort' => 6,
+        'icon' => '',
     ],
     [
-        'key' => 'delivery_agent.delivery_failed',
+        'key' => 'delivery.delivery_failed',
         'name' => 'delivery::app.admin.menu.failed-tasks',
         'route' => 'admin.courier.failed_tasks',
         'sort' => 7,
+        'icon' => '',
     ],
 
     /**
