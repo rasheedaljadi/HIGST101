@@ -4,6 +4,7 @@ return [
     'admin' => [
         'menu' => [
             'delivery-management' => 'Delivery Management',
+            'courier-tasks' => 'Courier Tasks',
             'dashboard' => 'Dashboard',
             'assignments' => 'Delivery Assignments',
             'couriers' => 'Couriers',

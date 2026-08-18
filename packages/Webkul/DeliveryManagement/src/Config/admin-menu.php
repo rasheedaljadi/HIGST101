@@ -2,6 +2,17 @@
 
 return [
     /**
+     * Top-level Menu Item: مهام التوصيل (للمندوب)
+     */
+    [
+        'key' => 'delivery_agent',
+        'name' => 'delivery::app.admin.menu.courier-tasks',
+        'route' => 'delivery.index',
+        'sort' => 2,
+        'icon' => 'icon-ship',
+    ],
+
+    /**
      * Top-level Menu Item: إدارة التسليم
      */
     [

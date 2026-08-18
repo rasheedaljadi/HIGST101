@@ -4,6 +4,7 @@ return [
     'admin' => [
         'menu' => [
             'delivery-management' => 'إدارة التسليم',
+            'courier-tasks' => 'مهام التوصيل',
             'dashboard' => 'لوحة المتابعة',
             'assignments' => 'طلبات التسليم',
             'couriers' => 'موظفو التوصيل',
