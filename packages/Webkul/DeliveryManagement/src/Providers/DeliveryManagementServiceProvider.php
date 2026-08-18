@@ -4,6 +4,7 @@ namespace Webkul\DeliveryManagement\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Webkul\DeliveryManagement\Commands\SeedE2EIntegrationTestFlow;
 use Webkul\DeliveryManagement\Listeners\OrderCreatedListener;
 
 class DeliveryManagementServiceProvider extends ServiceProvider
@@ -23,6 +24,12 @@ class DeliveryManagementServiceProvider extends ServiceProvider
 
         Event::listen('checkout.order.save.after', [OrderCreatedListener::class, 'handle']);
         Event::listen('sales.order.save.after', [OrderCreatedListener::class, 'handle']);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                SeedE2EIntegrationTestFlow::class,
+            ]);
+        }
     }
 
     /**
