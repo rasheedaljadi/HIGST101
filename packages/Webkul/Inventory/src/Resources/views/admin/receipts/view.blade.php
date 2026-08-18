@@ -92,7 +92,7 @@
                                 <th class="p-2.5">SKU</th>
                                 <th class="p-2.5">السليم (Good)</th>
                                 <th class="p-2.5">التالف (Damaged)</th>
-                                <th class="p-2.5">الناقص (Missing)</th>
+                                <th class="p-2.5">الناقص / العجز (Missing)</th>
                                 <th class="p-2.5">الحالة</th>
                             </tr>
                         </thead>
@@ -105,7 +105,7 @@
                                     <td class="p-2.5 font-bold text-amber-600">{{ $item->qty_missing }}</td>
                                     <td class="p-2.5">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 dark:bg-gray-800">
-                                            {{ $item->condition }}
+                                            {{ trans("inventory::app.admin.item_conditions.{$item->condition}") ?: $item->condition }}
                                         </span>
                                     </td>
                                 </tr>

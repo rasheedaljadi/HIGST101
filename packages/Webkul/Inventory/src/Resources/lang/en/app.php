@@ -149,6 +149,31 @@ return [
             'received' => 'Fully Received',
             'discrepancy' => 'Discrepancy Reported',
         ],
+        'item_conditions' => [
+            'good' => 'Good Condition',
+            'damaged' => 'Damaged',
+            'missing' => 'Missing / Shortage',
+            'wrong' => 'Wrong Item',
+            'pending' => 'Pending Inspection',
+        ],
+        'receipt_statuses' => [
+            'completed' => 'Completed & Verified',
+            'draft' => 'Draft',
+            'discrepancy' => 'Discrepancy',
+        ],
+        'allocation_states' => [
+            'reserved' => 'Reserved for Order',
+            'delivered' => 'Delivered',
+            'cancelled' => 'Cancelled',
+            'auto' => 'Auto Allocation',
+            'manual' => 'Manual Allocation',
+        ],
+        'origin_types' => [
+            'domestic' => 'Domestic (Yemen)',
+            'imported' => 'Imported (Dropship)',
+            'dropship' => 'Dropship',
+            'unknown' => 'Unclassified',
+        ],
         'datagrid' => [
             'id' => 'ID',
             'code' => 'Code',

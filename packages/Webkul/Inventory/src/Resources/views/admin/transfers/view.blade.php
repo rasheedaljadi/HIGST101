@@ -113,7 +113,7 @@
                                     <td class="p-2.5 text-amber-600 font-semibold">{{ $item->qty_received_missing }}</td>
                                     <td class="p-2.5">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 dark:bg-gray-800">
-                                            {{ $item->item_condition }}
+                                            {{ trans("inventory::app.admin.item_conditions.{$item->item_condition}") ?: $item->item_condition }}
                                         </span>
                                     </td>
                                 </tr>

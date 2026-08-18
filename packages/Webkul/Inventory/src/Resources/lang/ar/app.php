@@ -136,11 +136,11 @@ return [
         ],
         'source_types' => [
             'virtual_projection' => 'إسقاط افتراضي للكتالوج',
-            'sourcing_staging' => 'تجميع وتوريد خارجي (SA)',
+            'sourcing_staging' => 'تجميع وتوريد خارجي (الرياض)',
             'quarantine' => 'حجر وفحص جودة',
-            'dropship_distribution' => 'مركز توزيع دروبشوبنج (YE)',
-            'internal_stock' => 'مستودع بضاعة جاهزة (YE)',
-            'general' => 'مستودع عام',
+            'dropship_distribution' => 'مركز توزيع دروبشوبنج (صنعاء)',
+            'internal_stock' => 'مستودع بضاعة جاهزة (صنعاء)',
+            'general' => 'مستودع عام (Legacy)',
         ],
         'transfer_statuses' => [
             'draft' => 'مسودة',
@@ -148,6 +148,31 @@ return [
             'partially_received' => 'مستلم جزئياً',
             'received' => 'مستلم بالكامل',
             'discrepancy' => 'مستلم مع وجود فروقات',
+        ],
+        'item_conditions' => [
+            'good' => 'سليم (Good)',
+            'damaged' => 'تالف (Damaged)',
+            'missing' => 'ناقص / عجز (Missing)',
+            'wrong' => 'صنف مختلف',
+            'pending' => 'قيد الفحص',
+        ],
+        'receipt_statuses' => [
+            'completed' => 'مكتمل ومعتمد',
+            'draft' => 'مسودة',
+            'discrepancy' => 'فروقات وعجز',
+        ],
+        'allocation_states' => [
+            'reserved' => 'محجوز للطلب',
+            'delivered' => 'تم التسليم',
+            'cancelled' => 'ملغى',
+            'auto' => 'حجز تلقائي',
+            'manual' => 'حجز يدوي',
+        ],
+        'origin_types' => [
+            'domestic' => 'محلي جاهز (اليمن)',
+            'imported' => 'مستورد (دروبشوبنج)',
+            'dropship' => 'دروبشوبنج',
+            'unknown' => 'غير مصنف',
         ],
         'datagrid' => [
             'id' => 'المعرف',

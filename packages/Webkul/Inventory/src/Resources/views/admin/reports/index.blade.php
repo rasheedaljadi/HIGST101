@@ -166,7 +166,11 @@
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                 @if($type === 'movements')
                                     <td class="p-2.5 text-gray-400">#{{ $item->id }}</td>
-                                    <td class="p-2.5 font-medium">{{ $item->movement_type }}</td>
+                                    <td class="p-2.5 font-medium">
+                                        <span class="px-2 py-0.5 rounded text-[10px] bg-gray-100 dark:bg-gray-800">
+                                            {{ trans("inventory::app.admin.movements.{$item->movement_type}") ?: $item->movement_type }}
+                                        </span>
+                                    </td>
                                     <td class="p-2.5 font-bold">{{ $item->sku }}</td>
                                     <td class="p-2.5 font-bold {{ $item->quantity >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">{{ $item->quantity }}</td>
                                     <td class="p-2.5 text-gray-500">{{ $item->source_name ?: '-' }}</td>
@@ -178,7 +182,7 @@
                                     <td class="p-2.5 font-bold">{{ $item->code }}</td>
                                     <td class="p-2.5">{{ $item->name }}</td>
                                     <td class="p-2.5">{{ $item->country }}</td>
-                                    <td class="p-2.5">{{ $item->source_type }}</td>
+                                    <td class="p-2.5">{{ trans("inventory::app.admin.source_types.{$item->source_type}") ?: $item->source_type }}</td>
                                     <td class="p-2.5">{{ $item->is_salable ? 'نعم' : 'لا' }}</td>
                                     <td class="p-2.5">{{ number_format($item->total_skus) }}</td>
                                     <td class="p-2.5 font-bold text-blue-600">{{ number_format($item->total_quantity) }}</td>
@@ -186,7 +190,11 @@
                                     <td class="p-2.5 font-bold text-blue-600">{{ $item->manifest_number }}</td>
                                     <td class="p-2.5">{{ $item->source_name }}</td>
                                     <td class="p-2.5">{{ $item->destination_name }}</td>
-                                    <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] bg-gray-100 dark:bg-gray-800">{{ $item->status }}</span></td>
+                                    <td class="p-2.5">
+                                        <span class="px-2 py-0.5 rounded text-[10px] bg-gray-100 dark:bg-gray-800">
+                                            {{ trans("inventory::app.admin.transfer_statuses.{$item->status}") ?: $item->status }}
+                                        </span>
+                                    </td>
                                     <td class="p-2.5">{{ $item->carrier_name ?: '-' }}</td>
                                     <td class="p-2.5">{{ $item->tracking_number ?: '-' }}</td>
                                     <td class="p-2.5">{{ $item->total_items_count }}</td>
@@ -195,7 +203,11 @@
                                     <td class="p-2.5 font-bold text-emerald-600">{{ $item->receipt_number }}</td>
                                     <td class="p-2.5">{{ $item->transfer_manifest_number ?: '-' }}</td>
                                     <td class="p-2.5">{{ $item->destination_name }}</td>
-                                    <td class="p-2.5">{{ $item->status }}</td>
+                                    <td class="p-2.5">
+                                        <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                                            {{ trans("inventory::app.admin.receipt_statuses.{$item->status}") ?: $item->status }}
+                                        </span>
+                                    </td>
                                     <td class="p-2.5 text-emerald-600 font-bold">{{ $item->total_received_good }}</td>
                                     <td class="p-2.5 text-rose-600 font-bold">{{ $item->total_received_damaged }}</td>
                                     <td class="p-2.5 text-amber-600 font-bold">{{ $item->total_received_missing }}</td>
@@ -204,10 +216,10 @@
                                     <td class="p-2.5 font-bold">#{{ $item->id }}</td>
                                     <td class="p-2.5 font-bold text-blue-600">#{{ $item->order_increment_id ?: $item->order_id }}</td>
                                     <td class="p-2.5 font-bold">{{ $item->sku }}</td>
-                                    <td class="p-2.5">{{ $item->allocation_type }}</td>
+                                    <td class="p-2.5">{{ trans("inventory::app.admin.allocation_states.{$item->allocation_type}") ?: $item->allocation_type }}</td>
                                     <td class="p-2.5">{{ $item->source_code }}</td>
                                     <td class="p-2.5 font-bold text-amber-600">{{ $item->reserved_qty }}</td>
-                                    <td class="p-2.5">{{ $item->state }}</td>
+                                    <td class="p-2.5">{{ trans("inventory::app.admin.allocation_states.{$item->state}") ?: $item->state }}</td>
                                 @elseif($type === 'reconciliation')
                                     <td class="p-2.5 font-bold">{{ $item->sku }}</td>
                                     <td class="p-2.5">{{ $item->source_name }}</td>
@@ -223,7 +235,7 @@
                                     <td class="p-2.5 text-gray-400">#{{ $item->id }}</td>
                                     <td class="p-2.5 font-bold">{{ $item->sku }}</td>
                                     <td class="p-2.5">{{ $item->type }}</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">{{ $item->origin_type }}</td>
+                                    <td class="p-2.5 text-rose-600 font-bold">{{ trans("inventory::app.admin.origin_types.{$item->origin_type}") ?: $item->origin_type }}</td>
                                     <td class="p-2.5 font-bold">{{ number_format($item->total_stock) }}</td>
                                     <td class="p-2.5 text-gray-400">{{ core()->formatDate($item->created_at, 'Y-m-d H:i') }}</td>
                                 @endif

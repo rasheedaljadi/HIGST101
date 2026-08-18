@@ -84,7 +84,7 @@
             {{-- Items Grid --}}
             <div class="flex flex-col gap-3">
                 <h3 class="text-sm font-bold text-gray-800 dark:text-white">
-                    نتائج فحص البنود المستلمة (Good / Damaged / Missing)
+                    نتائج فحص وتصنيف البنود المستلمة (سليم / تالف / عجز ونقص)
                 </h3>
 
                 <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex flex-col gap-3">
@@ -96,7 +96,7 @@
                                 <input type="hidden" name="items[{{ $index }}][inventory_transfer_manifest_item_id]" value="{{ $item->id }}">
 
                                 <div class="col-span-3 font-bold text-xs">
-                                    {{ $item->sku }} (مشحون: {{ $item->qty_shipped }})
+                                    {{ $item->sku }} (المشحون: {{ $item->qty_shipped }})
                                 </div>
                                 <div class="col-span-3">
                                     <input type="number" name="items[{{ $index }}][qty_good]" value="{{ $item->qty_shipped }}" min="0" placeholder="سليم (Good)" class="w-full px-2 py-1.5 rounded border border-emerald-300 bg-white dark:bg-gray-900 text-xs">
@@ -105,14 +105,14 @@
                                     <input type="number" name="items[{{ $index }}][qty_damaged]" value="0" min="0" placeholder="تالف (Damaged)" class="w-full px-2 py-1.5 rounded border border-rose-300 bg-white dark:bg-gray-900 text-xs">
                                 </div>
                                 <div class="col-span-3">
-                                    <input type="number" name="items[{{ $index }}][qty_missing]" value="0" min="0" placeholder="ناقص (Missing)" class="w-full px-2 py-1.5 rounded border border-amber-300 bg-white dark:bg-gray-900 text-xs">
+                                    <input type="number" name="items[{{ $index }}][qty_missing]" value="0" min="0" placeholder="ناقص / عجز" class="w-full px-2 py-1.5 rounded border border-amber-300 bg-white dark:bg-gray-900 text-xs">
                                 </div>
                             </div>
                         @endforeach
                     @else
                         <div class="grid grid-cols-12 gap-3 items-center">
                             <div class="col-span-3">
-                                <input type="number" name="items[0][product_id]" placeholder="Product ID" required class="w-full px-2 py-1.5 rounded border bg-white dark:bg-gray-900 text-xs">
+                                <input type="number" name="items[0][product_id]" placeholder="معرف المنتج Product ID" required class="w-full px-2 py-1.5 rounded border bg-white dark:bg-gray-900 text-xs">
                             </div>
                             <div class="col-span-3">
                                 <input type="text" name="items[0][sku]" placeholder="رمز SKU" required class="w-full px-2 py-1.5 rounded border bg-white dark:bg-gray-900 text-xs">
