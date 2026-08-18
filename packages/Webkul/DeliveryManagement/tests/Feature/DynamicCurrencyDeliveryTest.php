@@ -6,6 +6,8 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 use Webkul\Core\Models\Channel;
+use Webkul\Core\Models\Currency;
+use Webkul\Core\Models\Locale;
 use Webkul\DeliveryManagement\Models\DeliveryAssignment;
 use Webkul\DeliveryManagement\Models\DeliveryCashCollection;
 use Webkul\DeliveryManagement\Models\DeliverySettlement;
@@ -50,12 +52,15 @@ class DynamicCurrencyDeliveryTest extends TestCase
      */
     protected function createOrderWithCurrency(string $currencyCode, float $amount, string $paymentMethod = 'cashondelivery'): array
     {
+        $locale = Locale::firstOrCreate(['code' => 'en'], ['name' => 'English', 'direction' => 'ltr']);
+        $currency = Currency::firstOrCreate(['code' => 'USD'], ['name' => 'US Dollar', 'symbol' => '$', 'decimal' => 2]);
+
         $channel = Channel::first() ?: Channel::create([
             'code' => 'default',
             'name' => 'Default Channel',
             'hostname' => 'localhost',
-            'default_locale_id' => 1,
-            'base_currency_id' => 1,
+            'default_locale_id' => $locale->id,
+            'base_currency_id' => $currency->id,
         ]);
 
         $order = Order::create([
@@ -270,5 +275,35 @@ class DynamicCurrencyDeliveryTest extends TestCase
         $this->assertNull($row->base_currency);
         $this->assertNull($row->order_currency_code);
         $this->assertNull($row->collected_currency_code);
+    }
+
+    /**
+     * Test 8: Rollback verification - running down() removes added columns and leaves defaults as NULL without YER.
+     */
+    public function test_rollback_down_leaves_defaults_as_null_without_yer(): void
+    {
+        $migration = require dirname(__DIR__, 2).'/src/Database/Migrations/2026_08_18_000001_normalize_currency_fields_in_delivery_tables.php';
+
+        try {
+            // Execute rollback down()
+            $migration->down();
+
+            $collectionCols = collect(DB::select('SHOW FULL COLUMNS FROM delivery_cash_collections'))->keyBy('Field');
+            $settlementCols = collect(DB::select('SHOW FULL COLUMNS FROM delivery_settlements'))->keyBy('Field');
+
+            // 1. Normalized columns must be dropped
+            $this->assertFalse($collectionCols->has('order_currency_code'));
+            $this->assertFalse($collectionCols->has('order_amount'));
+            $this->assertFalse($collectionCols->has('collected_currency_code'));
+            $this->assertFalse($collectionCols->has('collected_amount'));
+
+            // 2. Defaults must remain NULL (no restoration of hardcoded 'YER')
+            $this->assertNull($collectionCols['currency']->Default, 'Rollback must keep currency default as NULL, not YER');
+            $this->assertNull($collectionCols['base_currency']->Default, 'Rollback must keep base_currency default as NULL, not YER');
+            $this->assertNull($settlementCols['currency']->Default, 'Rollback must keep settlement currency default as NULL, not YER');
+        } finally {
+            // Restore up() state for any subsequent test isolation
+            $migration->up();
+        }
     }
 }

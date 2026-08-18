@@ -51,12 +51,12 @@ return new class extends Migration
                 'collected_amount',
             ]);
 
-            $table->string('currency', 3)->default('YER')->change();
-            $table->string('base_currency', 3)->default('YER')->change();
+            $table->string('currency', 3)->nullable()->default(null)->change();
+            $table->string('base_currency', 3)->nullable()->default(null)->change();
         });
 
         Schema::table('delivery_settlements', function (Blueprint $table) {
-            $table->string('currency', 3)->default('YER')->change();
+            $table->string('currency', 3)->nullable()->default(null)->change();
         });
     }
 };
