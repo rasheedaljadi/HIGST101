@@ -2,7 +2,9 @@
 
 namespace Webkul\Admin\Http\Controllers;
 
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
+use Webkul\DeliveryManagement\Models\DeliveryAssignment;
 use Webkul\Notification\Repositories\NotificationRepository;
 use Webkul\Product\Models\ProductProxy;
 use Webkul\Wallet\Models\WalletTopUp;
@@ -34,6 +36,13 @@ class NotificationController extends Controller
      */
     public function getNotifications()
     {
+        $user = auth()->guard('admin')->user();
+
+        // 1. Isolated delivery tasks notifications for Couriers & Point Agents
+        if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
+            return $this->getCourierNotifications($user);
+        }
+
         $params = request()->except('page');
 
         $searchResults = count($params)
@@ -141,6 +150,68 @@ class NotificationController extends Controller
     }
 
     /**
+     * Get isolated notifications for Courier and Point Agent.
+     */
+    protected function getCourierNotifications($user): array
+    {
+        $assignments = collect();
+
+        if (class_exists(DeliveryAssignment::class)) {
+            $query = DeliveryAssignment::with('order');
+
+            if (isset($user->delivery_point_id) && $user->delivery_point_id) {
+                $query->forDeliveryPoint($user->delivery_point_id);
+            } else {
+                $query->forAgent($user->id);
+            }
+
+            $assignments = $query->whereIn('status', ['assigned', 'picked_up', 'out_for_delivery'])
+                ->orderBy('id', 'desc')
+                ->take(5)
+                ->get();
+        }
+
+        $notifications = [];
+        foreach ($assignments as $assignment) {
+            $statusText = match ($assignment->status) {
+                'assigned' => 'مهمة مسندة جديدة',
+                'picked_up' => 'مستلمة من المستودع',
+                'out_for_delivery' => 'في الطريق للعميل',
+                default => 'مهمة شحن'
+            };
+
+            $orderNo = $assignment->order?->increment_id ?? $assignment->order_id;
+
+            $notifications[] = (object) [
+                'id' => $assignment->id,
+                'order_id' => $assignment->id,
+                'type' => 'delivery_assignment',
+                'title' => "{$statusText}: طلب #{$orderNo}",
+                'read' => 0,
+                'created_at' => $assignment->created_at ? $assignment->created_at->diffForHumans() : 'الآن',
+                'order' => (object) [
+                    'id' => "{$statusText}: طلب #{$orderNo}",
+                    'status' => 'processing',
+                    'datetime' => $assignment->created_at ? $assignment->created_at->diffForHumans() : 'الآن',
+                ],
+            ];
+        }
+
+        $paginator = new LengthAwarePaginator(
+            $notifications,
+            count($notifications),
+            5,
+            1
+        );
+
+        return [
+            'search_results' => $paginator,
+            'status_count' => [],
+            'total_unread' => count($notifications),
+        ];
+    }
+
+    /**
      * Update the notification is read or not.
      *
      * @param  int  $id
@@ -148,6 +219,11 @@ class NotificationController extends Controller
      */
     public function viewedNotifications($id)
     {
+        $user = auth()->guard('admin')->user();
+        if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
+            return redirect()->route('admin.courier.show', $id);
+        }
+
         $notification = $this->notificationRepository->whereNull('customer_id')->where('id', $id)->first()
             ?? $this->notificationRepository->whereNull('customer_id')->where('order_id', $id)->first();
 
@@ -202,6 +278,15 @@ class NotificationController extends Controller
      */
     public function readAllNotifications()
     {
+        $user = auth()->guard('admin')->user();
+        if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
+            return [
+                'search_results' => new LengthAwarePaginator([], 0, 5, 1),
+                'total_unread' => 0,
+                'success_message' => trans('admin::app.notifications.marked-success'),
+            ];
+        }
+
         $this->notificationRepository->whereNull('customer_id')->where('read', 0)->update(['read' => 1]);
 
         $searchResults = $this->notificationRepository->getParamsData([
