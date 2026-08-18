@@ -55,11 +55,18 @@ return new class extends Migration
         // Step 1: Pre-flight Checks & Idempotency Inspection
         // ---------------------------------------------------------------------
         $canonicalAttr = DB::table('attributes')->where('id', $this->canonicalAttrId)->first();
+        $sourceAttr = DB::table('attributes')->where('id', $this->sourceAttrId)->first();
+
+        // Fresh install / unseeded database: nothing to merge
+        if (! $canonicalAttr && ! $sourceAttr) {
+            Log::info('Migration [2026_08_16_020000_merge_ae_color_name_into_ae_color]: Neither canonical nor source attributes exist (fresh install). Skipping.');
+
+            return;
+        }
+
         if (! $canonicalAttr || $canonicalAttr->code !== 'ae_color') {
             throw new RuntimeException("Pre-flight check failed: Canonical attribute {$this->canonicalAttrId} (ae_color) is missing or has incorrect code.");
         }
-
-        $sourceAttr = DB::table('attributes')->where('id', $this->sourceAttrId)->first();
 
         // Case A: Source attribute 160 does not exist
         if (! $sourceAttr) {
