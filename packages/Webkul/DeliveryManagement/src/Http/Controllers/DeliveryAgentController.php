@@ -53,6 +53,17 @@ class DeliveryAgentController extends Controller
     }
 
     /**
+     * Display courier tasks filtered by status.
+     */
+    public function statusIndex(Request $request, string $status = '')
+    {
+        $status = $status ?: (string) $request->route('status', '');
+        $request->merge(['status' => $status]);
+
+        return $this->index($request);
+    }
+
+    /**
      * Show task details.
      */
     public function show(int $id, Request $request)

@@ -5,6 +5,13 @@ return [
         'menu' => [
             'delivery-management' => 'إدارة التسليم',
             'courier-tasks' => 'مهام التوصيل',
+            'all-tasks' => 'جميع المهام',
+            'assigned-tasks' => 'مسندة للمندوب',
+            'picked-up-tasks' => 'مستلمة من المستودع',
+            'out-for-delivery-tasks' => 'في الطريق للعميل',
+            'arrived-point-tasks' => 'وصلت لنقطة الاستلام',
+            'delivered-tasks' => 'المكتملة والمسلمة',
+            'failed-tasks' => 'تعذر التسليم',
             'dashboard' => 'لوحة المتابعة',
             'assignments' => 'طلبات التسليم',
             'couriers' => 'موظفو التوصيل',

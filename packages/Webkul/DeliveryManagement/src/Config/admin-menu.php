@@ -11,6 +11,48 @@ return [
         'sort' => 2,
         'icon' => 'icon-ship',
     ],
+    [
+        'key' => 'delivery_agent.all',
+        'name' => 'delivery::app.admin.menu.all-tasks',
+        'route' => 'admin.courier.index',
+        'sort' => 1,
+    ],
+    [
+        'key' => 'delivery_agent.assigned',
+        'name' => 'delivery::app.admin.menu.assigned-tasks',
+        'route' => 'admin.courier.assigned',
+        'sort' => 2,
+    ],
+    [
+        'key' => 'delivery_agent.picked_up',
+        'name' => 'delivery::app.admin.menu.picked-up-tasks',
+        'route' => 'admin.courier.picked_up',
+        'sort' => 3,
+    ],
+    [
+        'key' => 'delivery_agent.out_for_delivery',
+        'name' => 'delivery::app.admin.menu.out-for-delivery-tasks',
+        'route' => 'admin.courier.out_for_delivery',
+        'sort' => 4,
+    ],
+    [
+        'key' => 'delivery_agent.arrived_at_point',
+        'name' => 'delivery::app.admin.menu.arrived-point-tasks',
+        'route' => 'admin.courier.arrived_at_point',
+        'sort' => 5,
+    ],
+    [
+        'key' => 'delivery_agent.delivered',
+        'name' => 'delivery::app.admin.menu.delivered-tasks',
+        'route' => 'admin.courier.delivered_tasks',
+        'sort' => 6,
+    ],
+    [
+        'key' => 'delivery_agent.delivery_failed',
+        'name' => 'delivery::app.admin.menu.failed-tasks',
+        'route' => 'admin.courier.failed_tasks',
+        'sort' => 7,
+    ],
 
     /**
      * Top-level Menu Item: إدارة التسليم

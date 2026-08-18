@@ -4,7 +4,14 @@ return [
     'admin' => [
         'menu' => [
             'delivery-management' => 'Delivery Management',
-            'courier-tasks' => 'Courier Tasks',
+            'courier-tasks' => 'Delivery Tasks',
+            'all-tasks' => 'All Tasks',
+            'assigned-tasks' => 'Assigned',
+            'picked-up-tasks' => 'Picked Up',
+            'out-for-delivery-tasks' => 'Out for Delivery',
+            'arrived-point-tasks' => 'Arrived at Point',
+            'delivered-tasks' => 'Delivered',
+            'failed-tasks' => 'Failed Deliveries',
             'dashboard' => 'Dashboard',
             'assignments' => 'Delivery Assignments',
             'couriers' => 'Couriers',

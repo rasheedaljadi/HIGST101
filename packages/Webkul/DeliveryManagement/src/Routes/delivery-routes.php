@@ -34,6 +34,13 @@ Route::group(['middleware' => ['web', 'admin']], function () {
 
     Route::prefix(config('app.admin_url').'/courier')->as('admin.courier.')->group(function () {
         Route::get('/', [DeliveryAgentController::class, 'index'])->name('index');
+        Route::get('assigned', [DeliveryAgentController::class, 'statusIndex'])->defaults('status', 'assigned')->name('assigned');
+        Route::get('picked-up', [DeliveryAgentController::class, 'statusIndex'])->defaults('status', 'picked_up')->name('picked_up');
+        Route::get('out-for-delivery', [DeliveryAgentController::class, 'statusIndex'])->defaults('status', 'out_for_delivery')->name('out_for_delivery');
+        Route::get('arrived-point', [DeliveryAgentController::class, 'statusIndex'])->defaults('status', 'arrived_at_point')->name('arrived_at_point');
+        Route::get('delivered', [DeliveryAgentController::class, 'statusIndex'])->defaults('status', 'delivered')->name('delivered_tasks');
+        Route::get('failed', [DeliveryAgentController::class, 'statusIndex'])->defaults('status', 'delivery_failed')->name('failed_tasks');
+
         Route::get('/assignments/{id}', [DeliveryAgentController::class, 'show'])->name('show');
         Route::post('/assignments/{id}/start', [DeliveryAgentController::class, 'startDelivery'])->name('start');
         Route::post('/assignments/{id}/arrived-point', [DeliveryAgentController::class, 'confirmArrivalAtPoint'])->name('arrived_point');
