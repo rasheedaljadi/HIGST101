@@ -340,10 +340,12 @@ class DeliveryLifecycleService
                 throw new Exception("Order #{$assignment->order_id} not found.");
             }
 
-            $hayestSource = $this->inventoryMovementService->getSourceByCode('hayest_central');
+            $hayestSource = $this->inventoryMovementService->getSourceByCode('hayest_quarantine_ye')
+                ?: $this->inventoryMovementService->getSourceByCode('hayest_internal_ye')
+                ?: $this->inventoryMovementService->getSourceByCode('hayest_central');
 
             if (! $hayestSource) {
-                throw new Exception("Central warehouse source 'hayest_central' not found.");
+                throw new Exception('No valid warehouse source found for processing delivery return.');
             }
 
             // 2. Restore physical stock back to hayest_central once
