@@ -24,6 +24,7 @@ return [
             'failures' => 'الفشل والإرجاع',
             'settlements' => 'التحصيل والتسويات',
             'audit-logs' => 'التقارير وسجل التدقيق',
+            'delivery-agent' => 'بوابة المندوب ونقاط الاستلام',
         ],
 
         'dashboard' => [

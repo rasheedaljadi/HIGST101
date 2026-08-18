@@ -18,6 +18,10 @@ class SessionController extends Controller
     public function create()
     {
         if (auth()->guard('admin')->check()) {
+            if (in_array(auth()->guard('admin')->user()->role?->name, ['Courier', 'PointAgent'])) {
+                return redirect()->route('delivery.index');
+            }
+
             return redirect()->route('admin.dashboard.index');
         }
 
@@ -89,8 +93,18 @@ class SessionController extends Controller
      */
     private function redirectToFirstAccessibleRoute()
     {
+        $user = auth()->guard('admin')->user();
+
+        if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
+            return redirect()->route('delivery.index');
+        }
+
         $allPermissions = collect(config('acl'));
-        $userPermissions = auth()->guard('admin')->user()->role->permissions;
+        $userPermissions = $user->role->permissions;
+
+        if (is_string($userPermissions)) {
+            $userPermissions = json_decode($userPermissions, true) ?: [];
+        }
 
         foreach ($userPermissions as $permission) {
             if (! bouncer()->hasPermission($permission)) {
@@ -99,15 +113,19 @@ class SessionController extends Controller
 
             $permissionDetails = $allPermissions->firstWhere('key', $permission);
 
-            if (str_contains($permission, '.')) {
+            if ($permissionDetails && ! empty($permissionDetails['route'])) {
                 return redirect()->route($permissionDetails['route']);
             }
 
             $childPermission = $this->findFirstAccessibleChildPermission($allPermissions, $permission);
 
-            if ($childPermission) {
+            if ($childPermission && ! empty($childPermission['route'])) {
                 return redirect()->route($childPermission['route']);
             }
+        }
+
+        if ($user && ($user->hasPermission('delivery') || $user->hasPermission('delivery.agent'))) {
+            return redirect()->route('delivery.index');
         }
 
         return redirect()->intended(route('admin.dashboard.index'));

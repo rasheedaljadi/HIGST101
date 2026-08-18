@@ -24,6 +24,7 @@ return [
             'failures' => 'Failures & Returns',
             'settlements' => 'Collections & Settlements',
             'audit-logs' => 'Reports & Audit Logs',
+            'delivery-agent' => 'Courier & Point Agent Portal',
         ],
 
         'dashboard' => [

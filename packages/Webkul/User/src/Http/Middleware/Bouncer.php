@@ -96,9 +96,32 @@ class Bouncer
     public function checkIfAuthorized()
     {
         $roles = acl()->getRoles();
+        $currentRouteName = Route::currentRouteName();
 
-        if (isset($roles[Route::currentRouteName()])) {
-            bouncer()->allow($roles[Route::currentRouteName()]);
+        if ($currentRouteName && str_starts_with($currentRouteName, 'delivery.')) {
+            $user = auth()->guard('admin')->user();
+            if (
+                $user && (
+                    $user->role?->permission_type === 'all'
+                    || in_array($user->role?->name, ['Courier', 'PointAgent'])
+                    || $user->hasPermission('delivery')
+                    || $user->hasPermission('delivery.agent')
+                )
+            ) {
+                return;
+            }
+        }
+
+        if ($currentRouteName === 'admin.dashboard.index') {
+            $user = auth()->guard('admin')->user();
+            if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
+                header('Location: '.route('delivery.index'));
+                exit;
+            }
+        }
+
+        if (isset($roles[$currentRouteName])) {
+            bouncer()->allow($roles[$currentRouteName]);
         }
     }
 

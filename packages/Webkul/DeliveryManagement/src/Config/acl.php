@@ -55,4 +55,16 @@ return [
         'route' => 'admin.delivery.audit_logs.index',
         'sort' => 8,
     ],
+    [
+        'key' => 'delivery',
+        'name' => 'delivery::app.admin.acl.delivery-agent',
+        'route' => 'delivery.index',
+        'sort' => 9,
+    ],
+    [
+        'key' => 'delivery.agent',
+        'name' => 'delivery::app.admin.acl.delivery-agent',
+        'route' => 'delivery.index',
+        'sort' => 10,
+    ],
 ];
