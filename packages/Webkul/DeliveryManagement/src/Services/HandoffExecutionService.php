@@ -196,6 +196,23 @@ class HandoffExecutionService
         }
 
         if (! $source) {
+            $orderItem = DB::table('order_items')->where('order_id', $orderId)->first();
+            if ($orderItem) {
+                $stockSourceId = DB::table('product_inventories')
+                    ->where('product_id', $orderItem->product_id)
+                    ->where('qty', '>', 0)
+                    ->value('inventory_source_id');
+
+                if ($stockSourceId) {
+                    $candidateSource = InventorySource::find($stockSourceId);
+                    if ($candidateSource && ! in_array($candidateSource->code, ['aliexpress_source', 'hayest_dropship_sa']) && ! str_contains($candidateSource->code, 'quarantine')) {
+                        $source = $candidateSource;
+                    }
+                }
+            }
+        }
+
+        if (! $source) {
             $source = InventorySource::where('code', 'hayest_dropship_ye')->first()
                 ?: InventorySource::where('code', 'hayest_internal_ye')->first()
                 ?: InventorySource::where('code', 'hayest_central')->first();

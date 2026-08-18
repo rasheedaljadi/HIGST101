@@ -147,7 +147,7 @@ class InboundReceiptService
                         actorType: 'admin',
                         referenceEvent: 'InboundStockReceived',
                         jobClass: self::class,
-                        notes: $data['notes'] ?: "Inbound stock received into {$destinationSource->code} under Receipt #{$receipt->receipt_number}"
+                        notes: (! empty($data['notes'])) ? $data['notes'] : "Inbound stock received into {$destinationSource->code} under Receipt #{$receipt->receipt_number}"
                     );
 
                     // Rebind order_allocations to destination source

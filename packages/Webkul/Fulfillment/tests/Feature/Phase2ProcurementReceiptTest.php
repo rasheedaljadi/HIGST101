@@ -226,7 +226,7 @@ class Phase2ProcurementReceiptTest extends TestCase
                 && $event->orderItemId === $orderItemId
                 && $event->productId === $productId
                 && $event->quantity === 4
-                && $event->inventorySourceCode === 'hayest_central';
+                && in_array($event->inventorySourceCode, ['hayest_central', 'hayest_dropship_ye']);
         });
     }
 
@@ -388,10 +388,10 @@ class Phase2ProcurementReceiptTest extends TestCase
             ->count();
         $this->assertEquals(0, $activeSupplierAfter);
 
-        // 2. Warehouse hayest_central allocation active before = 0 and after = 1
+        // 2. Warehouse allocation active before = 0 and after = 1
         $activeWarehouseAfter = OrderAllocation::where('order_item_id', $orderItemId)
             ->where('allocation_type', 'warehouse')
-            ->where('source_code', 'hayest_central')
+            ->whereIn('source_code', ['hayest_central', 'hayest_dropship_ye'])
             ->where('state', 'reserved')
             ->count();
         $this->assertEquals(1, $activeWarehouseAfter);

@@ -26,6 +26,9 @@ class HayestCentralInventorySourceSeeder extends Seeder
                 'street' => 'Sixty Meter Road',
                 'postcode' => '00000',
                 'status' => 1,
+                'is_salable' => 1,
+                'is_delivery_source' => 1,
+                'source_type' => 'dropship_distribution',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]

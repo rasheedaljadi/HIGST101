@@ -2,6 +2,7 @@
 
 namespace Webkul\Inventory\Services;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Webkul\Inventory\Models\InventoryMovement;
 use Webkul\Inventory\Models\InventorySource;
@@ -13,7 +14,18 @@ class InventoryMovementService
      */
     public function getSourceByCode(string $code): InventorySource
     {
-        return InventorySource::where('code', $code)->firstOrFail();
+        $source = InventorySource::where('code', $code)->first();
+
+        if (! $source && $code === 'hayest_central') {
+            $source = InventorySource::where('code', 'hayest_dropship_ye')->first()
+                ?: InventorySource::where('code', 'hayest_internal_ye')->first();
+        }
+
+        if (! $source) {
+            throw new ModelNotFoundException("Inventory source '{$code}' not found.");
+        }
+
+        return $source;
     }
 
     /**
@@ -204,6 +216,90 @@ class InventoryMovementService
                 'actor_type' => 'admin',
                 'idempotency_key' => $idempotencyKey,
                 'notes' => $notes ?? 'Restocked to Hayest local inventory after delivery failure approval',
+            ]);
+        });
+    }
+
+    /**
+     * Release item from quarantine to a salable physical inventory source with audit trail.
+     */
+    public function releaseFromQuarantine(
+        int $productId,
+        string $sku,
+        int $quantity,
+        int $quarantineSourceId,
+        int $targetSalableSourceId,
+        int $actorId,
+        string $idempotencyKey,
+        ?string $reason = null
+    ): InventoryMovement {
+        return DB::transaction(function () use (
+            $productId,
+            $sku,
+            $quantity,
+            $quarantineSourceId,
+            $targetSalableSourceId,
+            $actorId,
+            $idempotencyKey,
+            $reason
+        ) {
+            $existing = InventoryMovement::where('idempotency_key', $idempotencyKey)->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            // 1. Deduct from quarantine source
+            $quarantineStock = DB::table('product_inventories')
+                ->where('product_id', $productId)
+                ->where('inventory_source_id', $quarantineSourceId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $quarantineStock || $quarantineStock->qty < $quantity) {
+                throw new \Exception("Insufficient quantity in quarantine source to release SKU {$sku}.");
+            }
+
+            DB::table('product_inventories')
+                ->where('id', $quarantineStock->id)
+                ->update([
+                    'qty' => $quarantineStock->qty - $quantity,
+                ]);
+
+            // 2. Increase target salable source
+            $salableStock = DB::table('product_inventories')
+                ->where('product_id', $productId)
+                ->where('inventory_source_id', $targetSalableSourceId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($salableStock) {
+                DB::table('product_inventories')
+                    ->where('id', $salableStock->id)
+                    ->update([
+                        'qty' => $salableStock->qty + $quantity,
+                    ]);
+            } else {
+                DB::table('product_inventories')->insert([
+                    'product_id' => $productId,
+                    'inventory_source_id' => $targetSalableSourceId,
+                    'qty' => $quantity,
+                ]);
+            }
+
+            // 3. Create movement record
+            return InventoryMovement::create([
+                'movement_type' => 'quarantine_release',
+                'product_id' => $productId,
+                'sku' => $sku,
+                'quantity' => $quantity,
+                'source_inventory_source_id' => $quarantineSourceId,
+                'target_inventory_source_id' => $targetSalableSourceId,
+                'actor_id' => $actorId,
+                'actor_type' => 'admin',
+                'reference_event' => 'QuarantineReleased',
+                'job_class' => self::class,
+                'idempotency_key' => $idempotencyKey,
+                'notes' => $reason ?: "Released {$quantity} of SKU {$sku} from quarantine to salable stock",
             ]);
         });
     }
