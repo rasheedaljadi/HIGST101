@@ -93,8 +93,8 @@ it('allows switching to advanced dashboard view and persists user preference in 
     // Fetch dashboard index and verify Advanced View content
     $indexResponse = $this->get(route('admin.dashboard.index'));
     $indexResponse->assertStatus(200)
-        ->assertSeeText('العرض المتقدم الشامل (Read-Only Layer)')
-        ->assertSeeText('مسار الطلبات والتوريد (Order Lifecycle Pipeline)')
+        ->assertSeeText('لوحة هايست المتقدمة الشاملة')
+        ->assertSeeText('مسار دورة حياة الطلبات والتوريد (Order Lifecycle Pipeline)')
         ->assertSeeText('(Legacy / External)')
         ->assertSeeText('(Virtual Projection)');
 });
