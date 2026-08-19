@@ -1,77 +1,77 @@
 <div class="flex flex-col gap-6 w-full font-sans text-right" dir="rtl">
 
-    <!-- 0. Persistent Top Filters Toolbar (الشريط العلوي الثابت مع الهوية البصرية) -->
-    <div class="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 rounded-2xl shadow-lg border border-indigo-800/40 text-white">
+    <!-- 0. Persistent Top Filters Toolbar (الشريط العلوي الثابت بتباين عالي جداً) -->
+    <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm text-slate-900 dark:text-white">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-md">
-                    <span class="icon-dashboard text-2xl text-white"></span>
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
+                    <span class="icon-dashboard text-xl text-white"></span>
                 </div>
                 <div>
-                    <h2 class="text-lg font-extrabold tracking-wide text-white">لوحة هايست المتقدمة الشاملة</h2>
-                    <p class="text-xs text-blue-200/80 mt-0.5">مركز القيادة الموحد للمبيعات، المخزون المملوك، والتوفر الخارجي</p>
+                    <h2 class="text-base font-black text-slate-900 dark:text-white">لوحة هايست المتقدمة الشاملة</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">مركز القيادة الموحد للمبيعات، المخزون المملوك، والتوفر الخارجي</p>
                 </div>
             </div>
 
-            <!-- Integrated Filter Controls -->
-            <div class="flex flex-wrap items-center gap-2 text-xs">
+            <!-- Integrated Filter Controls (عناصر فلترة متباينة وواضحة جداً) -->
+            <div class="flex flex-wrap items-center gap-2.5 text-xs">
                 <!-- Date Range Filter -->
-                <div class="flex items-center bg-slate-800/80 border border-slate-700/70 rounded-lg px-3 py-1.5">
-                    <span class="text-slate-400 ml-2 font-medium">الفترة:</span>
-                    <select class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer">
-                        <option value="today" class="bg-slate-900">اليوم</option>
-                        <option value="7days" class="bg-slate-900">آخر 7 أيام</option>
-                        <option value="month" selected class="bg-slate-900">هذا الشهر</option>
-                        <option value="quarter" class="bg-slate-900">ربع سنوي</option>
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 shadow-inner">
+                    <span class="text-slate-700 dark:text-slate-300 ml-2 font-bold">الفترة:</span>
+                    <select class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:outline-none cursor-pointer border-none text-xs">
+                        <option value="today" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">اليوم</option>
+                        <option value="7days" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">آخر 7 أيام</option>
+                        <option value="month" selected class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">هذا الشهر</option>
+                        <option value="quarter" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">ربع سنوي</option>
                     </select>
                 </div>
 
                 <!-- Channel Filter -->
-                <div class="flex items-center bg-slate-800/80 border border-slate-700/70 rounded-lg px-3 py-1.5">
-                    <span class="text-slate-400 ml-2 font-medium">القناة:</span>
-                    <select class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer">
-                        <option value="all" selected class="bg-slate-900">جميع القنوات</option>
-                        <option value="default" class="bg-slate-900">متجر هايست الرئيسي</option>
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 shadow-inner">
+                    <span class="text-slate-700 dark:text-slate-300 ml-2 font-bold">القناة:</span>
+                    <select class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:outline-none cursor-pointer border-none text-xs">
+                        <option value="all" selected class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">جميع القنوات</option>
+                        <option value="default" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">متجر هايست الرئيسي</option>
                     </select>
                 </div>
 
                 <!-- Governorate Filter -->
-                <div class="flex items-center bg-slate-800/80 border border-slate-700/70 rounded-lg px-3 py-1.5">
-                    <span class="text-slate-400 ml-2 font-medium">المحافظة:</span>
-                    <select class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer">
-                        <option value="all" selected class="bg-slate-900">جميع المحافظات</option>
-                        <option value="sanaa" class="bg-slate-900">أمانة العاصمة / صنعاء</option>
-                        <option value="aden" class="bg-slate-900">عدن</option>
-                        <option value="taiz" class="bg-slate-900">تعز</option>
-                        <option value="hadramout" class="bg-slate-900">حضرموت</option>
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 shadow-inner">
+                    <span class="text-slate-700 dark:text-slate-300 ml-2 font-bold">المحافظة:</span>
+                    <select class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:outline-none cursor-pointer border-none text-xs">
+                        <option value="all" selected class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">جميع المحافظات</option>
+                        <option value="sanaa" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">أمانة العاصمة / صنعاء</option>
+                        <option value="aden" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">عدن</option>
+                        <option value="taiz" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">تعز</option>
+                        <option value="hadramout" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">حضرموت</option>
                     </select>
                 </div>
 
                 <!-- Product Type Filter -->
-                <div class="flex items-center bg-slate-800/80 border border-slate-700/70 rounded-lg px-3 py-1.5">
-                    <span class="text-slate-400 ml-2 font-medium">نوع المنتج:</span>
-                    <select class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer">
-                        <option value="all" selected class="bg-slate-900">الكل</option>
-                        <option value="internal" class="bg-slate-900">داخلي فقط</option>
-                        <option value="imported" class="bg-slate-900">مستورد علي إكسبرس</option>
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 shadow-inner">
+                    <span class="text-slate-700 dark:text-slate-300 ml-2 font-bold">نوع المنتج:</span>
+                    <select class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:outline-none cursor-pointer border-none text-xs">
+                        <option value="all" selected class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">الكل</option>
+                        <option value="internal" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">داخلي فقط</option>
+                        <option value="imported" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">مستورد علي إكسبرس</option>
                     </select>
                 </div>
 
                 <!-- Manual Refresh Button -->
-                <button onclick="window.location.reload();" class="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all shadow-md active:scale-95 flex items-center gap-1">
+                <button onclick="window.location.reload();" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
                     <span class="icon-refresh text-sm"></span>
-                    <span class="font-bold">تحديث</span>
+                    <span>تحديث</span>
                 </button>
             </div>
         </div>
 
         <!-- Data Freshness Indicator -->
-        <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-300">
+        <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
             <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>حالة البيانات: <strong class="text-emerald-300">{{ $advancedData['filters']['freshness_status'] ?? 'مكتمل (بيانات حية)' }}</strong></span>
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>حالة البيانات: <strong class="text-emerald-700 dark:text-emerald-400 font-bold">{{ $advancedData['filters']['freshness_status'] ?? 'مكتمل (بيانات حية)' }}</strong></span>
             </div>
-            <span class="text-slate-400">آخر تحديث للوحة: {{ $advancedData['filters']['updated_at'] ?? date('Y-m-d H:i:s') }}</span>
+            <span class="text-slate-500 dark:text-slate-400">آخر تحديث للوحة: {{ $advancedData['filters']['updated_at'] ?? date('Y-m-d H:i:s') }}</span>
         </div>
     </div>
 
