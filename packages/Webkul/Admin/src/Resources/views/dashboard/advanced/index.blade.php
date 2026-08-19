@@ -75,8 +75,16 @@
         </div>
     </div>
 
-    <!-- 1. Executive Summary Cards (الملخص التنفيذي - 4 بطاقات بإطارات مخصصة وألوان هوية صريحة وثابتة) -->
+    <!-- 1. Executive Summary Cards (قسم الملخص الرئيسي) -->
     @if (bouncer()->hasPermission('dashboard'))
+        <div class="flex items-center justify-between gap-3 pt-2 pb-1">
+            <div class="flex items-center gap-2.5">
+                <span class="w-3 h-7 bg-blue-600 rounded-full shadow-sm"></span>
+                <h3 class="text-lg font-black text-slate-900 dark:text-white">الملخص</h3>
+            </div>
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">مؤشرات الأداء الرئيسية الشاملة لشركة هايست</span>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
             <!-- 1.1 صافي المبيعات (Net Sales - كحلي نيلي) -->
             <div style="border: 2px solid #1e3a8a;" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden border-2 border-blue-900">
