@@ -27,8 +27,11 @@
                     <!-- Dropdown Options Container -->
                     <template v-if="! attribute.swatch_type || attribute.swatch_type == '' || attribute.swatch_type == 'dropdown'">
                         <!-- Dropdown Label -->
-                        <h2 class="mb-4 text-xl max-sm:mb-1.5 max-sm:text-base max-sm:font-medium">
-                            @{{ attribute.label }}
+                        <h2 class="mb-3 text-lg font-medium text-gray-800 max-sm:mb-1.5 max-sm:text-base flex items-center gap-2">
+                            <span>@{{ attribute.label }}:</span>
+                            <span class="font-bold text-navyBlue text-base" v-if="getSelectedOptionLabel(attribute)">
+                                @{{ getSelectedOptionLabel(attribute) }}
+                            </span>
                         </h2>
                         
                         <!-- Dropdown Options -->
@@ -57,8 +60,11 @@
                     <!-- Swatch Options Container -->
                     <template v-else>
                         <!-- Option Label -->
-                        <h2 class="mb-4 text-xl max-sm:mb-2 max-sm:text-base">
-                            @{{ attribute.label }}
+                        <h2 class="mb-3 text-lg font-medium text-gray-800 max-sm:mb-2 max-sm:text-base flex items-center gap-2">
+                            <span>@{{ attribute.label }}:</span>
+                            <span class="font-bold text-navyBlue text-base" v-if="getSelectedOptionLabel(attribute)">
+                                @{{ getSelectedOptionLabel(attribute) }}
+                            </span>
                         </h2>
 
                         <!-- Swatch Options -->
@@ -284,10 +290,21 @@
                         this.childAttributes.unshift(attribute);
                     }
 
-                    // Keep gallery initial state limited to official base images
+                    this.$nextTick(() => {
+                        this.autoSelectFirstOptions();
+                    });
                 },
 
                 methods: {
+                    getSelectedOptionLabel(attribute) {
+                        if (! attribute || ! attribute.selectedValue) {
+                            return '';
+                        }
+
+                        let selectedOption = attribute.options?.find(option => option.id == attribute.selectedValue);
+                        return selectedOption ? selectedOption.label : '';
+                    },
+
                     getOptionImage(option) {
                         if (! option) {
                             return null;
@@ -505,10 +522,10 @@
                             return;
                         }
 
-                        if (this.possibleOptionVariant && this.config.variant_images[this.possibleOptionVariant]) {
+                        if (this.possibleOptionVariant && this.config.variant_images?.[this.possibleOptionVariant]) {
                             let variantImages = this.config.variant_images[this.possibleOptionVariant];
 
-                            if (variantImages.length > 0) {
+                            if (variantImages && variantImages.length > 0) {
                                 let selectedVariantImage = variantImages[0];
                                 let selectedKey = this.getNormalizedImageUrl(selectedVariantImage);
                                 let baseImages = gallery.media.images;
@@ -517,9 +534,10 @@
 
                                 if (targetIndex !== -1) {
                                     gallery.change(baseImages[targetIndex], targetIndex);
-                                } else if (selectedKey) {
-                                    baseImages.unshift(selectedVariantImage);
-                                    gallery.change(selectedVariantImage, 0);
+                                } else if (selectedVariantImage.large_image_url || selectedVariantImage.original_image_url) {
+                                    gallery.baseFile.type = 'image';
+                                    gallery.baseFile.path = selectedVariantImage.large_image_url || selectedVariantImage.original_image_url;
+                                    gallery.onMediaLoad();
                                 }
                             }
                         }

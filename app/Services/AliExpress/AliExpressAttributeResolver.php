@@ -90,8 +90,7 @@ class AliExpressAttributeResolver
      */
     protected function resolveAttribute(NormalizedVariantAxis $axis): AttributeContract
     {
-        $normalizedCode = AliExpressAxisNormalizer::normalizeAxisCode($axis->name);
-        $code = $normalizedCode ?? $axis->code;
+        $code = ! empty($axis->code) ? $axis->code : (AliExpressAxisNormalizer::normalizeAxisCode($axis->name) ?? 'ae_custom');
 
         $attribute = $this->findAttributeByCode($code);
 
@@ -313,9 +312,8 @@ class AliExpressAttributeResolver
         $arabic = AliExpressAttributeDictionary::translate($label, $axisCode);
 
         foreach ($this->localeCodes() as $localeCode) {
-            $isArabic = strtolower($localeCode) === 'ar';
-
-            $payload[$localeCode] = ['label' => $isArabic ? $arabic : $label];
+            // Keep the exact source label across all locales for 100% SKU fidelity
+            $payload[$localeCode] = ['label' => $label];
         }
 
         return $payload;
@@ -323,7 +321,7 @@ class AliExpressAttributeResolver
 
     /**
      * Build a normalized-label => option-id index for an attribute's existing
-     * options, indexing by both the admin name and every translated label.
+     * options, indexing strictly by the admin name (source label).
      *
      * @return array<string, int>
      */
@@ -348,7 +346,7 @@ class AliExpressAttributeResolver
     }
 
     /**
-     * Collect all candidate labels for an option (admin name + translations).
+     * Collect all candidate labels for an option (strictly admin name).
      *
      * @return string[]
      */
@@ -358,12 +356,6 @@ class AliExpressAttributeResolver
 
         if (is_string($option->admin_name) && $option->admin_name !== '') {
             $labels[] = $option->admin_name;
-        }
-
-        foreach ($option->translations as $translation) {
-            if (is_string($translation->label) && $translation->label !== '') {
-                $labels[] = $translation->label;
-            }
         }
 
         return $labels;

@@ -48,11 +48,12 @@ class InventoryReportingService
     }
 
     /**
-     * 2. Balances by Source Report.
+     * 2. Balances by Source Report (Owned Inventory Sources).
+     * Excludes external / legacy sources (default, aliexpress_source).
      */
     public function getSourcesBalanceReport(array $filters = []): Collection
     {
-        return DB::table('inventory_sources')
+        $query = DB::table('inventory_sources')
             ->leftJoin('product_inventories', 'inventory_sources.id', '=', 'product_inventories.inventory_source_id')
             ->select(
                 'inventory_sources.id',
@@ -64,17 +65,21 @@ class InventoryReportingService
                 'inventory_sources.is_delivery_source',
                 DB::raw('COUNT(DISTINCT product_inventories.product_id) as total_skus'),
                 DB::raw('COALESCE(SUM(product_inventories.qty), 0) as total_quantity')
-            )
-            ->groupBy(
-                'inventory_sources.id',
-                'inventory_sources.code',
-                'inventory_sources.name',
-                'inventory_sources.country',
-                'inventory_sources.source_type',
-                'inventory_sources.is_salable',
-                'inventory_sources.is_delivery_source'
-            )
-            ->get();
+            );
+
+        if (empty($filters['include_external'])) {
+            $query->whereNotIn('inventory_sources.code', ['default', 'aliexpress_source']);
+        }
+
+        return $query->groupBy(
+            'inventory_sources.id',
+            'inventory_sources.code',
+            'inventory_sources.name',
+            'inventory_sources.country',
+            'inventory_sources.source_type',
+            'inventory_sources.is_salable',
+            'inventory_sources.is_delivery_source'
+        )->get();
     }
 
     /**
@@ -158,12 +163,15 @@ class InventoryReportingService
     }
 
     /**
-     * 6. Audit Reconciliation Report (Computed Balance vs Movement Ledger).
+     * 6. Audit Reconciliation Report (Owned Inventory Balance vs Movement Ledger).
+     * Excludes external / legacy sources (default, aliexpress_source).
      */
     public function getReconciliationReport(array $filters = []): Collection
     {
         $products = DB::table('products')->limit(50)->get();
-        $sources = DB::table('inventory_sources')->where('code', '!=', 'aliexpress_source')->get();
+        $sources = DB::table('inventory_sources')
+            ->whereNotIn('code', ['default', 'aliexpress_source'])
+            ->get();
 
         $rows = [];
 
@@ -186,7 +194,7 @@ class InventoryReportingService
                     ->where('source_inventory_source_id', $source->id)
                     ->sum('quantity');
 
-                $ledgerCalculated = $inflow + $outflow; // Note: deductions are already negative or outflow
+                $ledgerCalculated = $inflow + $outflow;
 
                 if ($actualStock > 0 || $ledgerCalculated > 0) {
                     $rows[] = (object) [
@@ -223,6 +231,34 @@ class InventoryReportingService
             ->groupBy('products.id', 'products.sku', 'products.type', 'products.created_at')
             ->having('origin_type', '=', 'unclassified')
             ->limit(100)
+            ->get();
+    }
+
+    /**
+     * 8. Independent Legacy / External Exception Report.
+     * Audits records associated with 'default' without polluting financial inventory metrics.
+     */
+    public function getLegacyExceptionReport(array $filters = []): Collection
+    {
+        $defaultSource = DB::table('inventory_sources')->where('code', 'default')->first();
+
+        if (! $defaultSource) {
+            return collect();
+        }
+
+        return DB::table('product_inventories')
+            ->join('products', 'product_inventories.product_id', '=', 'products.id')
+            ->select(
+                'products.id as product_id',
+                'products.sku',
+                'products.type',
+                'product_inventories.qty as legacy_quantity',
+                'products.created_at',
+                'products.updated_at',
+                DB::raw("'default' as source_code"),
+                DB::raw("COALESCE((SELECT pav.text_value FROM product_attribute_values pav JOIN attributes a ON pav.attribute_id = a.id WHERE pav.product_id = products.id AND a.code = 'origin_type' LIMIT 1), 'legacy') as origin_type")
+            )
+            ->where('product_inventories.inventory_source_id', $defaultSource->id)
             ->get();
     }
 }

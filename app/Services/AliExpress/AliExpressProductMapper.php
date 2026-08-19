@@ -6,6 +6,7 @@ use App\Exceptions\AliExpress\AliExpressImportException;
 use App\Services\AliExpress\DTO\NormalizedProduct;
 use App\Services\AliExpress\DTO\NormalizedVariant;
 use App\Services\AliExpress\DTO\NormalizedVariantAxis;
+use App\Services\AliExpress\Semantic\SemanticAttributeEngine;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -87,7 +88,7 @@ class AliExpressProductMapper
 
         $videoUrls = $this->extractVideos($body);
 
-        [$axes, $variants] = $this->extractAxesAndVariants($body, $base, $id);
+        [$axes, $variants] = $this->extractAxesAndVariants($body, $base, $id, $title);
 
         $isConfigurable = count($variants) > 1 && $axes !== [];
 
@@ -326,7 +327,7 @@ class AliExpressProductMapper
      * @param  array<string, mixed>  $base
      * @return array{0: NormalizedVariantAxis[], 1: NormalizedVariant[]}
      */
-    protected function extractAxesAndVariants(array $body, array $base, string $id): array
+    protected function extractAxesAndVariants(array $body, array $base, string $id, string $title = ''): array
     {
         $prefix = (string) config('aliexpress.import.attribute_code_prefix', 'ae_');
 
@@ -374,8 +375,8 @@ class AliExpressProductMapper
 
                 $name = $this->nullableString($this->firstOf($property, ['sku_property_name', 'property_name']));
                 $value = $this->nullableString($this->firstOf($property, [
-                    'sku_property_value',
                     'property_value_definition_name',
+                    'sku_property_value',
                     'property_value',
                 ]));
 
@@ -392,6 +393,7 @@ class AliExpressProductMapper
                 $axisKey = $displayName ?? $name;
 
                 $optionsByAxis[$axisKey] = $value;
+                $optionsByAxis[$canonicalCode] = $value;
 
                 if (! isset($axesByCode[$canonicalCode])) {
                     $axesByCode[$canonicalCode] = [
@@ -433,10 +435,20 @@ class AliExpressProductMapper
             );
         }
 
-        $axes = [];
+        // Build raw NormalizedVariantAxis objects from the collected axes
+        $rawAxes = [];
         foreach ($axesByCode as $code => $data) {
-            $axes[] = new NormalizedVariantAxis($data['name'], $data['code'], $data['values']);
+            $rawAxes[] = new NormalizedVariantAxis($data['name'], $data['code'], $data['values']);
         }
+
+        // Run the Semantic Attribute Engine (SAE) to classify and filter axes.
+        // The SAE pipeline (pattern → visual → contextual → memory) determines
+        // which axes are real purchase choices vs. specs vs. noise, replacing
+        // the old manual Ships From / single-option filtering.
+        $semanticEngine = app(SemanticAttributeEngine::class);
+        $classification = $semanticEngine->classify($rawAxes, $variants, $title ?? '', null);
+
+        $axes = $classification->getPurchaseVariantAxes();
 
         return [$axes, $variants];
     }

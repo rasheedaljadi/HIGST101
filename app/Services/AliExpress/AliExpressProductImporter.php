@@ -1729,29 +1729,27 @@ class AliExpressProductImporter
         array $axisNameToCode,
         ResolvedAxes $resolved,
     ): ?string {
-        $optionIds = [];
+        $optionIdsByCode = [];
 
         foreach ($variant->optionsByAxis as $axisName => $label) {
             $code = $axisNameToCode[$axisName] ?? null;
 
             if ($code === null) {
-                return null;
+                continue;
             }
 
             $optionId = $this->resolveOptionId($resolved->optionIdLookup[$code] ?? [], $label);
 
-            if ($optionId === null) {
-                return null;
+            if ($optionId !== null) {
+                $optionIdsByCode[$code] = $optionId;
             }
-
-            $optionIds[] = $optionId;
         }
 
-        if (count($optionIds) !== count($resolved->attributesByCode)) {
+        if (count($optionIdsByCode) !== count($resolved->attributesByCode)) {
             return null;
         }
 
-        return $this->signature($optionIds);
+        return $this->signature(array_values($optionIdsByCode));
     }
 
     /**
@@ -1808,7 +1806,25 @@ class AliExpressProductImporter
 
         foreach (array_values($dto->axes) as $index => $axis) {
             if (isset($resolvedCodes[$index])) {
-                $map[$axis->name] = $resolvedCodes[$index];
+                $code = $resolvedCodes[$index];
+                $map[$axis->name] = $code;
+                $map[$axis->code] = $code;
+
+                // Also map standard raw axis names
+                if ($code === 'ae_color' || str_starts_with($code, 'ae_color')) {
+                    $map['Color'] = $code;
+                    $map['color'] = $code;
+                    $map['Color / Model'] = $code;
+                } elseif ($code === 'ae_size' || str_starts_with($code, 'ae_size')) {
+                    $map['Size'] = $code;
+                    $map['size'] = $code;
+                    $map['RAM + Storage'] = $code;
+                    $map['Shoe Size'] = $code;
+                    $map['Storage Capacity'] = $code;
+                } elseif ($code === 'ae_ships_from' || str_starts_with($code, 'ae_ships_from')) {
+                    $map['Ships From'] = $code;
+                    $map['ships_from'] = $code;
+                }
             }
         }
 

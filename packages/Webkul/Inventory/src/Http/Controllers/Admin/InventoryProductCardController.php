@@ -50,7 +50,8 @@ class InventoryProductCardController extends Controller
             ->get();
 
         $virtualProjection = $sources->firstWhere('code', 'aliexpress_source');
-        $localSources = $sources->where('code', '!=', 'aliexpress_source');
+        $legacySources = $sources->where('code', 'default');
+        $localSources = $sources->whereNotIn('code', ['aliexpress_source', 'default']);
 
         $totalSalableLocal = $sources->where('is_salable', 1)->sum('current_qty');
 

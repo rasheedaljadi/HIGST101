@@ -147,6 +147,10 @@ class InventorySourceBalanceDataGrid extends DataGrid
             'filterable' => false,
             'sortable' => true,
             'closure' => function ($row) {
+                if ($row->code === 'default') {
+                    return '<span class="text-slate-500 font-semibold">'.number_format($row->available_qty).' <small class="text-xs text-slate-400">(Legacy / External)</small></span>';
+                }
+
                 if ($row->code === 'aliexpress_source') {
                     return '<span class="text-amber-600 font-bold">'.number_format($row->available_qty).' ('.trans('inventory::app.admin.datagrid.virtual_projection').')</span>';
                 }
