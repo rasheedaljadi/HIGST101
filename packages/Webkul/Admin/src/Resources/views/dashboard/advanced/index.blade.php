@@ -75,11 +75,11 @@
         </div>
     </div>
 
-    <!-- 1. Executive Summary Cards (الملخص التنفيذي - 4 بطاقات بإطارات ملونة كاملة متباينة وأيقونات مؤكدة) -->
+    <!-- 1. Executive Summary Cards (الملخص التنفيذي - 4 بطاقات بإطارات مخصصة وألوان هوية صريحة وثابتة) -->
     @if (bouncer()->hasPermission('dashboard'))
         <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-            <!-- 1.1 صافي المبيعات (Net Sales - إطار كحلي نيلي) -->
-            <div class="bg-white dark:bg-slate-900 border-2 border-blue-900/90 dark:border-blue-700 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
+            <!-- 1.1 صافي المبيعات (Net Sales - كحلي نيلي) -->
+            <div style="border: 2px solid #1e3a8a;" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden border-2 border-blue-900">
                 <div class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -106,15 +106,15 @@
                     </div>
                 </div>
 
-                <!-- Footer Strip -->
-                <div class="px-5 py-3 bg-blue-900 text-white flex items-center justify-between text-xs font-bold">
-                    <span>صافي المبيعات للفترة</span>
-                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-black">$</span>
+                <!-- Footer Strip with explicit inline styles -->
+                <div style="background-color: #1e3a8a; color: #ffffff;" class="px-5 py-3 flex items-center justify-between text-xs font-bold">
+                    <span style="color: #ffffff !important;" class="font-extrabold text-white">صافي المبيعات للفترة</span>
+                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-black text-white">$</span>
                 </div>
             </div>
 
-            <!-- 1.2 إجمالي الطلبات (Total Orders - إطار أزرق ملكي) -->
-            <div class="bg-white dark:bg-slate-900 border-2 border-blue-600 dark:border-blue-500 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
+            <!-- 1.2 إجمالي الطلبات (Total Orders - أزرق ملكي) -->
+            <div style="border: 2px solid #2563eb;" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden border-2 border-blue-600">
                 <div class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -142,15 +142,15 @@
                     </div>
                 </div>
 
-                <!-- Footer Strip -->
-                <div class="px-5 py-3 bg-blue-600 text-white flex items-center justify-between text-xs font-bold">
-                    <span>طلب مؤهل في المتجر</span>
-                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">🛍</span>
+                <!-- Footer Strip with explicit inline styles -->
+                <div style="background-color: #2563eb; color: #ffffff;" class="px-5 py-3 flex items-center justify-between text-xs font-bold">
+                    <span style="color: #ffffff !important;" class="font-extrabold text-white">طلب مؤهل في المتجر</span>
+                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white">🛍</span>
                 </div>
             </div>
 
-            <!-- 1.3 إجمالي العملاء والنشاط (Total Customers - إطار كهرماني ذهبي) -->
-            <div class="bg-white dark:bg-slate-900 border-2 border-amber-500 dark:border-amber-400 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
+            <!-- 1.3 إجمالي العملاء والنشاط (Total Customers - كهرماني ذهبي) -->
+            <div style="border: 2px solid #d97706;" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden border-2 border-amber-500">
                 <div class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -178,15 +178,15 @@
                     </div>
                 </div>
 
-                <!-- Footer Strip -->
-                <div class="px-5 py-3 bg-amber-500 text-white flex items-center justify-between text-xs font-bold">
-                    <span>قاعدة البيانات</span>
-                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">🪙</span>
+                <!-- Footer Strip with explicit inline styles -->
+                <div style="background-color: #d97706; color: #ffffff;" class="px-5 py-3 flex items-center justify-between text-xs font-bold">
+                    <span style="color: #ffffff !important;" class="font-extrabold text-white">قاعدة البيانات</span>
+                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white">🪙</span>
                 </div>
             </div>
 
-            <!-- 1.4 المخزون المملوك للتسليم (Owned Stock - إطار زمردي أخضر) -->
-            <div class="bg-white dark:bg-slate-900 border-2 border-emerald-600 dark:border-emerald-500 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
+            <!-- 1.4 المخزون المملوك للتسليم (Owned Stock - زمردي أخضر) -->
+            <div style="border: 2px solid #059669;" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden border-2 border-emerald-600">
                 <div class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -214,10 +214,10 @@
                     </div>
                 </div>
 
-                <!-- Footer Strip -->
-                <div class="px-5 py-3 bg-emerald-600 text-white flex items-center justify-between text-xs font-bold">
-                    <span>مستودع اليمن والسعودية</span>
-                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">📍</span>
+                <!-- Footer Strip with explicit inline styles -->
+                <div style="background-color: #059669; color: #ffffff;" class="px-5 py-3 flex items-center justify-between text-xs font-bold">
+                    <span style="color: #ffffff !important;" class="font-extrabold text-white">مستودع اليمن والسعودية</span>
+                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white">📍</span>
                 </div>
             </div>
         </div>
