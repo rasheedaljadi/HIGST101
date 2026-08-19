@@ -75,141 +75,149 @@
         </div>
     </div>
 
-    <!-- 1. Executive Summary Cards (الملخص التنفيذي - 4 بطاقات في صف واحد مطابقة للنموذج) -->
+    <!-- 1. Executive Summary Cards (الملخص التنفيذي - 4 بطاقات بإطارات ملونة كاملة متباينة وأيقونات مؤكدة) -->
     @if (bouncer()->hasPermission('dashboard'))
         <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-            <!-- 1.1 صافي المبيعات (Net Sales - Far Right in RTL) -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden border-b-4 border-blue-900">
+            <!-- 1.1 صافي المبيعات (Net Sales - إطار كحلي نيلي) -->
+            <div class="bg-white dark:bg-slate-900 border-2 border-blue-900/90 dark:border-blue-700 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
                 <div class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">صافي المبيعات</h4>
+                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">صافي المبيعات</h4>
                             <div class="mt-2 flex items-baseline gap-1.5">
-                                <span class="text-3xl font-black text-blue-950 dark:text-white font-mono">
+                                <span class="text-3xl font-black text-blue-950 dark:text-white font-mono tracking-tight">
                                     {{ core()->formatBasePrice($advancedData['executive']['total_sales'] ?? 0) }}
                                 </span>
                             </div>
                         </div>
-                        <div class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 shadow-inner">
-                            <span class="icon-sales text-2xl font-bold"></span>
+                        <div class="w-12 h-12 rounded-full bg-blue-100/80 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-900 dark:text-blue-300 shrink-0 shadow-inner">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
                         </div>
                     </div>
 
                     <!-- Trend Badge & Comparison Text -->
                     <div class="mt-4 flex items-center gap-2">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                             = 0%
                         </span>
-                        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">مقارنة بالفترة السابقة</span>
+                        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">مقارنة بالفترة السابقة</span>
                     </div>
                 </div>
 
                 <!-- Footer Strip -->
-                <div class="px-5 py-3 bg-slate-50/80 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-blue-900 dark:text-blue-300">
+                <div class="px-5 py-3 bg-blue-900 text-white flex items-center justify-between text-xs font-bold">
                     <span>صافي المبيعات للفترة</span>
-                    <span class="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold">$</span>
+                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-black">$</span>
                 </div>
             </div>
 
-            <!-- 1.2 إجمالي الطلبات (Total Orders) -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden border-b-4 border-blue-600">
+            <!-- 1.2 إجمالي الطلبات (Total Orders - إطار أزرق ملكي) -->
+            <div class="bg-white dark:bg-slate-900 border-2 border-blue-600 dark:border-blue-500 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
                 <div class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">إجمالي الطلبات</h4>
+                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">إجمالي الطلبات</h4>
                             <div class="mt-2 flex items-baseline gap-1.5">
-                                <span class="text-3xl font-black text-blue-600 dark:text-blue-400 font-mono">
+                                <span class="text-3xl font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">
                                     {{ number_format($advancedData['executive']['total_orders'] ?? 0) }}
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">طلب مؤهل في المتجر</p>
+                            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">طلب مؤهل في المتجر</p>
                         </div>
-                        <div class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 shadow-inner">
-                            <span class="icon-orders text-2xl"></span>
+                        <div class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 shadow-inner">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"></path>
+                            </svg>
                         </div>
                     </div>
 
                     <!-- Trend Badge & Comparison Text -->
                     <div class="mt-4 flex items-center gap-2">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
                             ↑ 25%
                         </span>
-                        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">مقارنة بالفترة السابقة</span>
+                        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">مقارنة بالفترة السابقة</span>
                     </div>
                 </div>
 
                 <!-- Footer Strip -->
-                <div class="px-5 py-3 bg-slate-50/80 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-blue-700 dark:text-blue-400">
+                <div class="px-5 py-3 bg-blue-600 text-white flex items-center justify-between text-xs font-bold">
                     <span>طلب مؤهل في المتجر</span>
-                    <span class="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center text-blue-700 dark:text-blue-300">🛍</span>
+                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">🛍</span>
                 </div>
             </div>
 
-            <!-- 1.3 إجمالي العملاء والنشاط (Total Customers) -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden border-b-4 border-amber-500">
+            <!-- 1.3 إجمالي العملاء والنشاط (Total Customers - إطار كهرماني ذهبي) -->
+            <div class="bg-white dark:bg-slate-900 border-2 border-amber-500 dark:border-amber-400 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
                 <div class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">إجمالي العملاء والنشاط</h4>
+                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">إجمالي العملاء والنشاط</h4>
                             <div class="mt-2 flex items-baseline gap-1.5">
-                                <span class="text-3xl font-black text-amber-600 dark:text-amber-400 font-mono">
+                                <span class="text-3xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
                                     {{ number_format($advancedData['executive']['total_customers'] ?? 0) }}
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">عميل مسجل ونشط</p>
+                            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">عميل مسجل ونشط</p>
                         </div>
-                        <div class="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-inner">
-                            <span class="icon-customer text-2xl"></span>
+                        <div class="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-inner">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
                         </div>
                     </div>
 
                     <!-- Trend Badge & Comparison Text -->
                     <div class="mt-4 flex items-center gap-2">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                             ↑ 12%
                         </span>
-                        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">مقارنة بالفترة السابقة</span>
+                        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">مقارنة بالفترة السابقة</span>
                     </div>
                 </div>
 
                 <!-- Footer Strip -->
-                <div class="px-5 py-3 bg-slate-50/80 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400">
+                <div class="px-5 py-3 bg-amber-500 text-white flex items-center justify-between text-xs font-bold">
                     <span>قاعدة البيانات</span>
-                    <span class="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/60 flex items-center justify-center text-amber-700 dark:text-amber-300">🪙</span>
+                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">🪙</span>
                 </div>
             </div>
 
-            <!-- 1.4 المخزون المملوك للتسليم (Owned Stock for Delivery - Far Left in RTL) -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden border-b-4 border-emerald-600">
+            <!-- 1.4 المخزون المملوك للتسليم (Owned Stock - إطار زمردي أخضر) -->
+            <div class="bg-white dark:bg-slate-900 border-2 border-emerald-600 dark:border-emerald-500 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
                 <div class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">المخزون المملوك للتسليم</h4>
+                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">المخزون المملوك للتسليم</h4>
                             <div class="mt-2 flex items-baseline gap-1.5">
-                                <span class="text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                <span class="text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
                                     {{ number_format($advancedData['executive']['owned_stock_qty'] ?? 0) }}
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">وحدة</p>
+                            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">وحدة</p>
                         </div>
-                        <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-inner">
-                            <span class="icon-product text-2xl"></span>
+                        <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-inner">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
                         </div>
                     </div>
 
                     <!-- Trend Badge & Comparison Text -->
                     <div class="mt-4 flex items-center gap-2">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                             ✓ 0%
                         </span>
-                        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">مقارنة بالفترة السابقة</span>
+                        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">مقارنة بالفترة السابقة</span>
                     </div>
                 </div>
 
                 <!-- Footer Strip -->
-                <div class="px-5 py-3 bg-slate-50/80 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                <div class="px-5 py-3 bg-emerald-600 text-white flex items-center justify-between text-xs font-bold">
                     <span>مستودع اليمن والسعودية</span>
-                    <span class="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center text-emerald-700 dark:text-emerald-300">📍</span>
+                    <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">📍</span>
                 </div>
             </div>
         </div>
