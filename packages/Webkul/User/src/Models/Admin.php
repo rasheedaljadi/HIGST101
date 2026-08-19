@@ -30,6 +30,7 @@ class Admin extends Authenticatable implements AdminContract
         'api_token',
         'role_id',
         'status',
+        'dashboard_view',
         'two_factor_secret',
         'two_factor_enabled',
         'two_factor_backup_codes',

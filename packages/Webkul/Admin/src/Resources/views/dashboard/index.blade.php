@@ -3,19 +3,48 @@
         @lang('admin::app.dashboard.index.title')
     </x-slot>
 
-    <!-- User Details Section -->
+    <!-- User Details & View Switcher Header -->
     <div class="flex items-center justify-between gap-4 mb-5 max-sm:flex-wrap">
         <div class="grid gap-1.5">
-            <p class="text-xl font-bold !leading-normal text-gray-800 dark:text-white" v-pre>
-                @lang('admin::app.dashboard.index.user-name', ['user_name' => auth()->guard('admin')->user()->name])
-            </p>
+            <div class="flex items-center gap-3">
+                <p class="text-xl font-bold !leading-normal text-gray-800 dark:text-white" v-pre>
+                    @lang('admin::app.dashboard.index.user-name', ['user_name' => auth()->guard('admin')->user()->name])
+                </p>
+
+                <!-- Interactive View Mode Toggle Switch [بسيط] [متقدم] -->
+                <div class="inline-flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-inner">
+                    <a 
+                        href="{{ route('admin.dashboard.index', ['view' => 'simple']) }}"
+                        class="px-3 py-1 text-xs font-bold rounded-md transition-all {{ ($viewMode ?? 'simple') === 'simple' ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400' }}"
+                        onclick="event.preventDefault(); window.toggleDashboardView('simple')"
+                    >
+                        بسيط (Simple)
+                    </a>
+                    <a 
+                        href="{{ route('admin.dashboard.index', ['view' => 'advanced']) }}"
+                        class="px-3 py-1 text-xs font-bold rounded-md transition-all {{ ($viewMode ?? 'simple') === 'advanced' ? 'bg-blue-600 text-white shadow-sm font-extrabold' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400' }}"
+                        onclick="event.preventDefault(); window.toggleDashboardView('advanced')"
+                    >
+                        متقدم (Advanced)
+                    </a>
+                </div>
+            </div>
 
             <p class="!leading-normal text-gray-600 dark:text-gray-300">
                 @lang('admin::app.dashboard.index.user-info')
+                @if (($viewMode ?? 'simple') === 'advanced')
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 mr-2">
+                        العرض المتقدم الشامل (Read-Only Layer)
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 mr-2">
+                        العرض البسيط القياسي (Default)
+                    </span>
+                @endif
             </p>
         </div>
 
-        <!-- Actions -->
+        <!-- Actions & Date Filters -->
         <v-dashboard-filters>
             <!-- Shimmer -->
             <div class="flex gap-1.5">
@@ -26,79 +55,108 @@
         </v-dashboard-filters>
     </div>
 
-    <!-- Body Component -->
-    <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
-        <!-- Left Section -->
-        <div class="flex flex-col flex-1 gap-8 max-xl:flex-auto">
-            {!! view_render_event('bagisto.admin.dashboard.overall_details.before') !!}
-
-            <!-- Overall Details -->
-            <div class="flex flex-col gap-2">
-                <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
-                    @lang('admin::app.dashboard.index.overall-details')
-                </p>
-
-                <!-- Over All Details Section -->
-                @include('admin::dashboard.over-all-details')
-            </div>
-
-            {!! view_render_event('bagisto.admin.dashboard.overall_details.after') !!}
-
-            {!! view_render_event('bagisto.admin.dashboard.todays_details.before') !!}
-
-            <!-- Todays Details -->
-            <div class="flex flex-col gap-2">
-                <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
-                    @lang('admin::app.dashboard.index.today-details')
-                </p>
-
-                <!-- Todays Details Section -->
-                @include('admin::dashboard.todays-details')
-            </div>
-
-            {!! view_render_event('bagisto.admin.dashboard.todays_details.after') !!}
-
-            {!! view_render_event('bagisto.admin.dashboard.stock_threshold.before') !!}
-
-            <!-- Stock Threshold -->
-            <div class="flex flex-col gap-2">
-                <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
-                    @lang('admin::app.dashboard.index.stock-threshold')
-                </p>
-
-                <!-- Products List -->  
-                @include('admin::dashboard.stock-threshold-products')
-            </div>
-            
-            {!! view_render_event('bagisto.admin.dashboard.stock_threshold.after') !!}
+    <!-- Conditional Body Rendering -->
+    @if (($viewMode ?? 'simple') === 'advanced')
+        <!-- ADVANCED DASHBOARD VIEW LAYER -->
+        <div class="mt-3.5 w-full">
+            @include('admin::dashboard.advanced.index')
         </div>
+    @else
+        <!-- ORIGINAL SIMPLE DASHBOARD VIEW (100% PRESERVED) -->
+        <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
+            <!-- Left Section -->
+            <div class="flex flex-col flex-1 gap-8 max-xl:flex-auto">
+                {!! view_render_event('bagisto.admin.dashboard.overall_details.before') !!}
 
-        <!-- Right Section -->
-        <div class="flex w-[360px] max-w-full flex-col gap-2 max-sm:w-full">
-            <!-- First Component -->
-            <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
-                @lang('admin::app.dashboard.index.store-stats')
-            </p>
+                <!-- Overall Details -->
+                <div class="flex flex-col gap-2">
+                    <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
+                        @lang('admin::app.dashboard.index.overall-details')
+                    </p>
 
-            {!! view_render_event('bagisto.admin.dashboard.store_stats.before') !!}
+                    <!-- Over All Details Section -->
+                    @include('admin::dashboard.over-all-details')
+                </div>
 
-            <!-- Store Stats -->
-            <div class="bg-white rounded box-shadow dark:bg-gray-900">
-                <!-- Total Sales Details -->
-                @include('admin::dashboard.total-sales')
+                {!! view_render_event('bagisto.admin.dashboard.overall_details.after') !!}
 
-                <!-- Top Selling Products -->
-                @include('admin::dashboard.top-selling-products')
+                {!! view_render_event('bagisto.admin.dashboard.todays_details.before') !!}
 
-                <!-- Top Customers -->
-                @include('admin::dashboard.top-customers')
+                <!-- Todays Details -->
+                <div class="flex flex-col gap-2">
+                    <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
+                        @lang('admin::app.dashboard.index.today-details')
+                    </p>
+
+                    <!-- Todays Details Section -->
+                    @include('admin::dashboard.todays-details')
+                </div>
+
+                {!! view_render_event('bagisto.admin.dashboard.todays_details.after') !!}
+
+                {!! view_render_event('bagisto.admin.dashboard.stock_threshold.before') !!}
+
+                <!-- Stock Threshold -->
+                <div class="flex flex-col gap-2">
+                    <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
+                        @lang('admin::app.dashboard.index.stock-threshold')
+                    </p>
+
+                    <!-- Products List -->  
+                    @include('admin::dashboard.stock-threshold-products')
+                </div>
+                
+                {!! view_render_event('bagisto.admin.dashboard.stock_threshold.after') !!}
             </div>
 
-            {!! view_render_event('bagisto.admin.dashboard.store_stats.after') !!}
+            <!-- Right Section -->
+            <div class="flex w-[360px] max-w-full flex-col gap-2 max-sm:w-full">
+                <!-- First Component -->
+                <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
+                    @lang('admin::app.dashboard.index.store-stats')
+                </p>
+
+                {!! view_render_event('bagisto.admin.dashboard.store_stats.before') !!}
+
+                <!-- Store Stats -->
+                <div class="bg-white rounded box-shadow dark:bg-gray-900">
+                    <!-- Total Sales Details -->
+                    @include('admin::dashboard.total-sales')
+
+                    <!-- Top Selling Products -->
+                    @include('admin::dashboard.top-selling-products')
+
+                    <!-- Top Customers -->
+                    @include('admin::dashboard.top-customers')
+                </div>
+
+                {!! view_render_event('bagisto.admin.dashboard.store_stats.after') !!}
+            </div>
         </div>
-    </div>
+    @endif
     
     @pushOnce('scripts')
+        <script>
+            window.toggleDashboardView = function(mode) {
+                fetch("{{ route('admin.dashboard.toggle_view') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({ view: mode })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    window.location.href = "{{ route('admin.dashboard.index') }}?view=" + mode;
+                })
+                .catch(err => {
+                    window.location.href = "{{ route('admin.dashboard.index') }}?view=" + mode;
+                });
+            };
+        </script>
+
         <script
             type="module"
             src="{{ bagisto_asset('js/chart.js') }}"

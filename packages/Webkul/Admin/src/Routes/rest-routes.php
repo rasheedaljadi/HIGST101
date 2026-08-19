@@ -17,6 +17,8 @@ Route::controller(DashboardController::class)->prefix('dashboard')->group(functi
     Route::get('', 'index')->name('admin.dashboard.index');
 
     Route::get('stats', 'stats')->name('admin.dashboard.stats');
+
+    Route::post('toggle-view', 'toggleView')->name('admin.dashboard.toggle_view');
 });
 
 /**
