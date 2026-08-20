@@ -129,7 +129,7 @@ class HayestDashboardAggregationService
 
         $actionOrders = DB::table('orders')
             ->whereIn('status', ['pending', 'pending_payment', 'processing'])
-            ->select('id', 'increment_id', 'customer_first_name', 'customer_last_name', 'grand_total', 'status', 'created_at')
+            ->select('id', DB::raw(Schema::hasColumn('orders', 'increment_id') ? 'increment_id' : 'id as increment_id'), 'customer_first_name', 'customer_last_name', 'grand_total', 'status', 'created_at')
             ->orderBy('created_at', 'asc')
             ->limit(5)
             ->get();

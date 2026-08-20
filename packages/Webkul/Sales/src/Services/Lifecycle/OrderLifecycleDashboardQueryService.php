@@ -260,7 +260,7 @@ class OrderLifecycleDashboardQueryService
             ->where('order_lifecycle_stage_views.bottleneck_stage_code', $stageCode)
             ->select(
                 'orders.id',
-                'orders.increment_id',
+                DB::raw(Schema::hasColumn('orders', 'increment_id') ? 'orders.increment_id' : 'orders.id as increment_id'),
                 'orders.customer_first_name',
                 'orders.customer_last_name',
                 'orders.grand_total',

@@ -339,7 +339,7 @@
                             </div>
                             <div class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                                 <span class="text-slate-500">القيمة الإجمالية:</span>
-                                <span class="font-mono font-black text-emerald-600 dark:text-emerald-400 mr-1" x-text="'$' + (currentStage.value || 0).toLocaleString()"></span>
+                                <span class="font-mono font-black text-emerald-600 dark:text-emerald-400 mr-1" x-text="'{{ core()->currencySymbol(core()->getBaseCurrencyCode()) }} ' + (currentStage.value || 0).toLocaleString()"></span>
                             </div>
                             <button
                                 type="button"
@@ -488,7 +488,7 @@
                             </div>
                             <div class="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40">
                                 <span class="text-emerald-700 dark:text-emerald-300 block mb-1">إجمالي القيمة:</span>
-                                <span class="font-mono font-black text-emerald-800 dark:text-emerald-200 text-base" x-text="'$' + (currentStage.value || 0).toLocaleString()"></span>
+                                <span class="font-mono font-black text-emerald-800 dark:text-emerald-200 text-base" x-text="'{{ core()->currencySymbol(core()->getBaseCurrencyCode()) }} ' + (currentStage.value || 0).toLocaleString()"></span>
                             </div>
                         </div>
 
