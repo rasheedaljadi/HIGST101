@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Webkul\Inventory\Services\InventoryReportingService;
+use Webkul\Sales\Services\Lifecycle\OrderLifecycleRebuildService;
 
 class HayestDashboardAggregationService
 {
@@ -151,32 +152,40 @@ class HayestDashboardAggregationService
     {
         $stages = [
             'new' => ['label' => 'جديد', 'count' => 0, 'value' => 0.0],
-            'payment' => ['label' => 'الدفع', 'count' => 0, 'value' => 0.0],
-            'confirmation' => ['label' => 'التأكيد', 'count' => 0, 'value' => 0.0],
-            'procurement' => ['label' => 'التوريد', 'count' => 0, 'value' => 0.0],
-            'purchase' => ['label' => 'الشراء', 'count' => 0, 'value' => 0.0],
-            'source_ship' => ['label' => 'شحن المصدر', 'count' => 0, 'value' => 0.0],
-            'sa_receipt' => ['label' => 'استلام السعودية', 'count' => 0, 'value' => 0.0],
-            'ye_transit' => ['label' => 'نقل لليمن', 'count' => 0, 'value' => 0.0],
-            'ye_receipt' => ['label' => 'استلام اليمن', 'count' => 0, 'value' => 0.0],
-            'handoff' => ['label' => 'التسليم للمندوب', 'count' => 0, 'value' => 0.0],
-            'delivery' => ['label' => 'التوصيل النهائي', 'count' => 0, 'value' => 0.0],
+            'payment_pending' => ['label' => 'الدفع', 'count' => 0, 'value' => 0.0],
+            'confirmed' => ['label' => 'التأكيد', 'count' => 0, 'value' => 0.0],
+            'sourcing_required' => ['label' => 'التوريد', 'count' => 0, 'value' => 0.0],
+            'po_created' => ['label' => 'الشراء', 'count' => 0, 'value' => 0.0],
+            'supplier_shipped' => ['label' => 'شحن المصدر', 'count' => 0, 'value' => 0.0],
+            'sa_received' => ['label' => 'استلام السعودية', 'count' => 0, 'value' => 0.0],
+            'ye_in_transit' => ['label' => 'نقل لليمن', 'count' => 0, 'value' => 0.0],
+            'ye_received' => ['label' => 'استلام اليمن', 'count' => 0, 'value' => 0.0],
+            'handed_off' => ['label' => 'التسليم للمندوب', 'count' => 0, 'value' => 0.0],
+            'delivered' => ['label' => 'التوصيل النهائي', 'count' => 0, 'value' => 0.0],
         ];
 
-        $orders = DB::table('orders')->whereBetween('created_at', [$startDate, $endDate])->get();
-        foreach ($orders as $order) {
-            if ($order->status === 'pending') {
-                $stages['new']['count']++;
-                $stages['new']['value'] += (float) $order->grand_total;
-            } elseif ($order->status === 'pending_payment') {
-                $stages['payment']['count']++;
-                $stages['payment']['value'] += (float) $order->grand_total;
-            } elseif ($order->status === 'processing') {
-                $stages['confirmation']['count']++;
-                $stages['confirmation']['value'] += (float) $order->grand_total;
-            } elseif ($order->status === 'completed') {
-                $stages['delivery']['count']++;
-                $stages['delivery']['value'] += (float) $order->grand_total;
+        if (Schema::hasTable('order_lifecycle_stage_views')) {
+            $views = DB::table('order_lifecycle_stage_views')
+                ->join('orders', 'order_lifecycle_stage_views.order_id', '=', 'orders.id')
+                ->whereBetween('orders.created_at', [$startDate, $endDate])
+                ->select('order_lifecycle_stage_views.bottleneck_stage_code', 'orders.grand_total')
+                ->get();
+
+            if ($views->isEmpty() && DB::table('orders')->exists()) {
+                app(OrderLifecycleRebuildService::class)->rebuild();
+                $views = DB::table('order_lifecycle_stage_views')
+                    ->join('orders', 'order_lifecycle_stage_views.order_id', '=', 'orders.id')
+                    ->whereBetween('orders.created_at', [$startDate, $endDate])
+                    ->select('order_lifecycle_stage_views.bottleneck_stage_code', 'orders.grand_total')
+                    ->get();
+            }
+
+            foreach ($views as $v) {
+                $code = $v->bottleneck_stage_code;
+                if (isset($stages[$code])) {
+                    $stages[$code]['count']++;
+                    $stages[$code]['value'] += (float) $v->grand_total;
+                }
             }
         }
 

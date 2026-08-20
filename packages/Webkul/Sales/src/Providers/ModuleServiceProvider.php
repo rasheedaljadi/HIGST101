@@ -10,6 +10,8 @@ use Webkul\Sales\Models\Order;
 use Webkul\Sales\Models\OrderAddress;
 use Webkul\Sales\Models\OrderComment;
 use Webkul\Sales\Models\OrderItem;
+use Webkul\Sales\Models\OrderItemLifecycleStageView;
+use Webkul\Sales\Models\OrderLifecycleStageView;
 use Webkul\Sales\Models\OrderPayment;
 use Webkul\Sales\Models\OrderTransaction;
 use Webkul\Sales\Models\Refund;
@@ -32,6 +34,8 @@ class ModuleServiceProvider extends CoreModuleServiceProvider
         OrderAddress::class,
         OrderComment::class,
         OrderItem::class,
+        OrderItemLifecycleStageView::class,
+        OrderLifecycleStageView::class,
         OrderPayment::class,
         OrderTransaction::class,
         Refund::class,
