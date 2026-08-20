@@ -246,47 +246,47 @@
             <div class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-11 gap-2 text-center">
                 <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
                     <span class="text-[10px] font-bold text-slate-500 block mb-1">1. جديد</span>
-                    <span class="text-base font-black text-slate-800 dark:text-white">{{ number_format($advancedData['pipeline']['pending_procurement'] ?? 0) }}</span>
+                    <span class="text-base font-black text-slate-800 dark:text-white">{{ number_format($advancedData['pipeline']['new']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-blue-50/70 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/50">
                     <span class="text-[10px] font-bold text-blue-700 dark:text-blue-300 block mb-1">2. الدفع</span>
-                    <span class="text-base font-black text-blue-800 dark:text-blue-200">0</span>
+                    <span class="text-base font-black text-blue-800 dark:text-blue-200">{{ number_format($advancedData['pipeline']['payment_pending']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-xl border border-indigo-100 dark:border-indigo-900/50">
                     <span class="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 block mb-1">3. التأكيد</span>
-                    <span class="text-base font-black text-indigo-800 dark:text-indigo-200">0</span>
+                    <span class="text-base font-black text-indigo-800 dark:text-indigo-200">{{ number_format($advancedData['pipeline']['confirmed']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-amber-50/70 dark:bg-amber-950/40 rounded-xl border border-amber-100 dark:border-amber-900/50">
                     <span class="text-[10px] font-bold text-amber-700 dark:text-amber-300 block mb-1">4. التوريد</span>
-                    <span class="text-base font-black text-amber-800 dark:text-amber-200">{{ number_format($advancedData['pipeline']['pending_procurement'] ?? 0) }}</span>
+                    <span class="text-base font-black text-amber-800 dark:text-amber-200">{{ number_format($advancedData['pipeline']['sourcing_required']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-amber-100/50 dark:bg-amber-900/30 rounded-xl border border-amber-200 dark:border-amber-800/50">
                     <span class="text-[10px] font-bold text-amber-800 dark:text-amber-300 block mb-1">5. الشراء (PO)</span>
-                    <span class="text-base font-black text-amber-900 dark:text-amber-200">{{ number_format($advancedData['pipeline']['purchase_orders'] ?? 0) }}</span>
+                    <span class="text-base font-black text-amber-900 dark:text-amber-200">{{ number_format($advancedData['pipeline']['po_created']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-purple-50/70 dark:bg-purple-950/40 rounded-xl border border-purple-100 dark:border-purple-900/50">
                     <span class="text-[10px] font-bold text-purple-700 dark:text-purple-300 block mb-1">6. شحن المصدر</span>
-                    <span class="text-base font-black text-purple-800 dark:text-purple-200">0</span>
+                    <span class="text-base font-black text-purple-800 dark:text-purple-200">{{ number_format($advancedData['pipeline']['supplier_shipped']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-sky-50/70 dark:bg-sky-950/40 rounded-xl border border-sky-100 dark:border-sky-900/50">
                     <span class="text-[10px] font-bold text-sky-700 dark:text-sky-300 block mb-1">7. استلام SA</span>
-                    <span class="text-base font-black text-sky-800 dark:text-sky-200">{{ number_format($advancedData['pipeline']['inbound_receipts'] ?? 0) }}</span>
+                    <span class="text-base font-black text-sky-800 dark:text-sky-200">{{ number_format($advancedData['pipeline']['sa_received']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-cyan-50/70 dark:bg-cyan-950/40 rounded-xl border border-cyan-100 dark:border-cyan-900/50">
                     <span class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 block mb-1">8. نقل YE</span>
-                    <span class="text-base font-black text-cyan-800 dark:text-cyan-200">{{ number_format($advancedData['pipeline']['transfers'] ?? 0) }}</span>
+                    <span class="text-base font-black text-cyan-800 dark:text-cyan-200">{{ number_format($advancedData['pipeline']['ye_in_transit']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-teal-50/70 dark:bg-teal-950/40 rounded-xl border border-teal-100 dark:border-teal-900/50">
                     <span class="text-[10px] font-bold text-teal-700 dark:text-teal-300 block mb-1">9. استلام YE</span>
-                    <span class="text-base font-black text-teal-800 dark:text-teal-200">0</span>
+                    <span class="text-base font-black text-teal-800 dark:text-teal-200">{{ number_format($advancedData['pipeline']['ye_received']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
                     <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 block mb-1">10. Handoff</span>
-                    <span class="text-base font-black text-emerald-800 dark:text-emerald-200">0</span>
+                    <span class="text-base font-black text-emerald-800 dark:text-emerald-200">{{ number_format($advancedData['pipeline']['handed_off']['count'] ?? 0) }}</span>
                 </div>
                 <div class="p-3 bg-emerald-100/70 dark:bg-emerald-900/50 rounded-xl border border-emerald-300 dark:border-emerald-700">
                     <span class="text-[10px] font-bold text-emerald-900 dark:text-emerald-200 block mb-1">11. تم التسليم</span>
-                    <span class="text-base font-black text-emerald-950 dark:text-white">{{ number_format($advancedData['pipeline']['delivered'] ?? 0) }}</span>
+                    <span class="text-base font-black text-emerald-950 dark:text-white">{{ number_format($advancedData['pipeline']['delivered']['count'] ?? 0) }}</span>
                 </div>
             </div>
         </div>
