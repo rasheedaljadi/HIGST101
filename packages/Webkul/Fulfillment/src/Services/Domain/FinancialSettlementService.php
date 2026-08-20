@@ -43,12 +43,22 @@ class FinancialSettlementService
     }
 
     /**
-     * Settle Cash-on-Delivery shipment courier receivables.
+     * Settle Cash-on-Delivery shipment courier receivables and unearned in-transit liability.
+     * Note: Does NOT recognize realized revenue (4010) at shipment.
      */
     public function settleOrderShipmentCOD(int $orderId, float $total): void
     {
         $reference = "Order shipped COD: {$orderId}";
-        $this->postDoubleEntry($orderId, '1210', '4010', $total, $reference);
+        $this->postDoubleEntry($orderId, '1210', '2210', $total, $reference);
+    }
+
+    /**
+     * Settle Cash-on-Delivery delivery collection into realized sales revenue upon documented delivery.
+     */
+    public function settleOrderCODCollection(int $orderId, float $total): void
+    {
+        $reference = "COD collected at delivery: {$orderId}";
+        $this->postDoubleEntry($orderId, '2210', '4010', $total, $reference);
     }
 
     /**
