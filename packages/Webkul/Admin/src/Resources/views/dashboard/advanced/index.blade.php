@@ -241,24 +241,7 @@
         @endphp
 
         <div
-            v-pre
-            x-data="{
-                activeStageIndex: 0,
-                stages: {{ json_encode($stagesList) }},
-                isModalOpen: false,
-                isQualityModalOpen: false,
-                get currentStage() {
-                    return this.stages[this.activeStageIndex] || this.stages[0] || { code: 'new', rank: 1, label: '', group_label: '', count: 0, value: 0, exception_count: 0 };
-                },
-                selectStage(index) {
-                    this.activeStageIndex = index;
-                },
-                openModal(index) {
-                    this.activeStageIndex = index;
-                    this.isModalOpen = true;
-                }
-            }"
-            @keydown.escape.window="isModalOpen = false; isQualityModalOpen = false"
+            id="order-lifecycle-rail-container"
             class="p-6 bg-[#F6F4EE] dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-3xl shadow-sm text-slate-900 dark:text-slate-100 font-sans space-y-6"
         >
             <!-- 2.1 Header Section -->
@@ -321,30 +304,34 @@
 
                 <!-- RIGHT CONNECTED RAIL AREA -->
                 <div class="flex-1 bg-white/90 dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+                    @php
+                        $firstStage = $stagesList[0] ?? ['rank' => 1, 'label' => 'طلب جديد', 'code' => 'new', 'count' => 0, 'value' => 0];
+                    @endphp
+
                     <!-- Current Active Stage Summary Banner -->
                     <div class="flex flex-wrap items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
                         <div class="flex items-center gap-3">
                             <span class="text-xs font-black font-mono px-2.5 py-1 rounded-lg bg-[#102A43] text-white">
-                                <span x-text="String(currentStage.rank || 1).padStart(2, '0')"></span> / 11
+                                <span id="railActiveRank">{{ sprintf('%02d', $firstStage['rank'] ?? 1) }}</span> / 11
                             </span>
                             <div>
-                                <h4 class="text-sm font-extrabold text-[#102A43] dark:text-white" x-text="currentStage.label"></h4>
-                                <span class="text-[11px] text-slate-500 font-mono" x-text="currentStage.code"></span>
+                                <h4 id="railActiveLabel" class="text-sm font-extrabold text-[#102A43] dark:text-white">{{ $firstStage['label'] ?? '' }}</h4>
+                                <span id="railActiveCode" class="text-[11px] text-slate-500 font-mono">{{ $firstStage['code'] ?? '' }}</span>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-4 text-xs font-bold">
                             <div class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                                 <span class="text-slate-500">عدد الطلبات:</span>
-                                <span class="font-mono font-black text-blue-600 dark:text-blue-400 mr-1" x-text="currentStage.count || 0"></span>
+                                <span id="railActiveCount" class="font-mono font-black text-blue-600 dark:text-blue-400 mr-1">{{ number_format($firstStage['count'] ?? 0) }}</span>
                             </div>
                             <div class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                                 <span class="text-slate-500">القيمة الإجمالية:</span>
-                                <span class="font-mono font-black text-emerald-600 dark:text-emerald-400 mr-1" x-text="'{{ core()->currencySymbol(core()->getBaseCurrencyCode()) }} ' + (currentStage.value || 0).toLocaleString()"></span>
+                                <span id="railActiveValue" class="font-mono font-black text-emerald-600 dark:text-emerald-400 mr-1">{{ core()->currencySymbol(core()->getBaseCurrencyCode()) }} {{ number_format($firstStage['value'] ?? 0) }}</span>
                             </div>
                             <button
                                 type="button"
-                                @click="isModalOpen = true"
+                                onclick="window.openLifecycleStageModal()"
                                 class="px-3 py-1.5 rounded-lg bg-[#253691] text-white hover:bg-blue-800 transition-colors font-bold text-xs shadow-2xs cursor-pointer"
                             >
                                 استعراض التفاصيل &rarr;
@@ -354,42 +341,39 @@
 
                     <!-- 11 Connected Stage Horizontal Rail -->
                     <div class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-11 gap-1.5 relative">
-                        <template x-for="(stg, idx) in stages" :key="stg.code">
+                        @foreach ($stagesList as $idx => $stg)
                             <button
                                 type="button"
-                                @click="selectStage(idx)"
-                                @dblclick="openModal(idx)"
-                                :class="{
-                                    'ring-2 ring-[#253691] shadow-md -translate-y-0.5 bg-white dark:bg-slate-800': activeStageIndex === idx,
-                                    'hover:bg-slate-50 dark:hover:bg-slate-800/80 bg-slate-50/60 dark:bg-slate-800/40': activeStageIndex !== idx
-                                }"
-                                class="p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-center transition-all duration-200 flex flex-col justify-between min-h-[110px] cursor-pointer group"
+                                id="rail-btn-{{ $idx }}"
+                                onclick="window.selectLifecycleStage({{ $idx }})"
+                                ondblclick="window.openLifecycleStageModal({{ $idx }})"
+                                class="rail-stage-card p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-center transition-all duration-200 flex flex-col justify-between min-h-[110px] cursor-pointer group {{ $idx === 0 ? 'ring-2 ring-[#253691] shadow-md -translate-y-0.5 bg-white dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/80 bg-slate-50/60 dark:bg-slate-800/40' }}"
                             >
                                 <!-- Stage Rank & Exception Badge -->
                                 <div class="flex items-center justify-between text-[10px] font-mono">
-                                    <span class="font-extrabold text-slate-400 group-hover:text-slate-600" x-text="String(stg.rank).padStart(2, '0')"></span>
-                                    <template x-if="stg.exception_count > 0">
+                                    <span class="font-extrabold text-slate-400 group-hover:text-slate-600">{{ sprintf('%02d', $stg['rank'] ?? ($idx + 1)) }}</span>
+                                    @if (($stg['exception_count'] ?? 0) > 0)
                                         <span class="px-1 py-0.2 rounded bg-rose-100 text-rose-800 font-bold" title="استثناء تشغيلي">!</span>
-                                    </template>
+                                    @endif
                                 </div>
 
                                 <!-- Icon Container -->
                                 <div class="my-1.5 flex items-center justify-center">
                                     <div
-                                        :style="'background-color: ' + stg.color + '15; color: ' + stg.color"
+                                        style="background-color: {{ $stg['color'] ?? '#253691' }}15; color: {{ $stg['color'] ?? '#253691' }};"
                                         class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shadow-2xs group-hover:scale-105 transition-transform"
                                     >
-                                        <span x-text="stg.rank"></span>
+                                        <span>{{ $stg['rank'] ?? ($idx + 1) }}</span>
                                     </div>
                                 </div>
 
                                 <!-- Label & Count -->
                                 <div>
-                                    <span class="text-[10px] font-bold text-slate-800 dark:text-slate-200 block truncate" x-text="stg.label"></span>
-                                    <span class="text-xs font-black font-mono text-[#102A43] dark:text-blue-300 block mt-0.5" x-text="stg.count || 0"></span>
+                                    <span class="text-[10px] font-bold text-slate-800 dark:text-slate-200 block truncate">{{ $stg['label'] ?? '' }}</span>
+                                    <span class="text-xs font-black font-mono text-[#102A43] dark:text-blue-300 block mt-0.5">{{ number_format($stg['count'] ?? 0) }}</span>
                                 </div>
                             </button>
-                        </template>
+                        @endforeach
                     </div>
 
                     <!-- Swimlane Footer Labels -->
@@ -433,7 +417,7 @@
 
                     <button
                         type="button"
-                        @click="isQualityModalOpen = true"
+                        onclick="window.openLifecycleQualityModal()"
                         class="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     >
                         استعراض التقرير المرجعي &rarr;
@@ -441,31 +425,29 @@
                 </div>
             </div>
 
-            <!-- 2.4 STAGE DRILLDOWN MODAL -->
+            <!-- 2.4 STAGE DRILLDOWN MODAL (Default display: none) -->
             <div
-                x-show="isModalOpen"
-                x-cloak
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                id="lifecycleStageModal"
+                style="display: none;"
+                class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                onclick="if(event.target === this) window.closeLifecycleStageModal()"
             >
-                <div
-                    @click.away="isModalOpen = false"
-                    class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-xl overflow-hidden font-sans space-y-0 text-right"
-                >
+                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-xl overflow-hidden font-sans space-y-0 text-right">
                     <!-- Modal Header -->
                     <div class="p-5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <span class="text-xs font-black font-mono px-2.5 py-1 rounded-lg bg-[#102A43] text-white">
-                                <span x-text="String(currentStage.rank || 1).padStart(2, '0')"></span> / 11
+                                <span id="modalStageRank">{{ sprintf('%02d', $firstStage['rank'] ?? 1) }}</span> / 11
                             </span>
                             <div>
-                                <h3 class="text-base font-black text-slate-900 dark:text-white" x-text="currentStage.label"></h3>
-                                <span class="text-xs font-mono text-slate-500" x-text="currentStage.group_label"></span>
+                                <h3 id="modalStageLabel" class="text-base font-black text-slate-900 dark:text-white">{{ $firstStage['label'] ?? '' }}</h3>
+                                <span id="modalStageGroup" class="text-xs font-mono text-slate-500">{{ $firstStage['group_label'] ?? '' }}</span>
                             </div>
                         </div>
 
                         <button
                             type="button"
-                            @click="isModalOpen = false"
+                            onclick="window.closeLifecycleStageModal()"
                             class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-sm transition-colors cursor-pointer"
                         >
                             ✕
@@ -477,19 +459,19 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700">
                                 <span class="text-slate-500 block mb-1">رمز المحطة الفني:</span>
-                                <code class="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm" x-text="currentStage.code"></code>
+                                <code id="modalStageCode" class="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm">{{ $firstStage['code'] ?? '' }}</code>
                             </div>
                             <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700">
                                 <span class="text-slate-500 block mb-1">المجمّع التشغيلي:</span>
-                                <span class="font-bold text-slate-800 dark:text-slate-200" x-text="currentStage.group_label"></span>
+                                <span id="modalStageGroupVal" class="font-bold text-slate-800 dark:text-slate-200">{{ $firstStage['group_label'] ?? '' }}</span>
                             </div>
                             <div class="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40">
                                 <span class="text-blue-700 dark:text-blue-300 block mb-1">عدد الطلبات الحية:</span>
-                                <span class="font-mono font-black text-blue-800 dark:text-blue-200 text-base" x-text="currentStage.count || 0"></span>
+                                <span id="modalStageCount" class="font-mono font-black text-blue-800 dark:text-blue-200 text-base">{{ number_format($firstStage['count'] ?? 0) }}</span>
                             </div>
                             <div class="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40">
                                 <span class="text-emerald-700 dark:text-emerald-300 block mb-1">إجمالي القيمة:</span>
-                                <span class="font-mono font-black text-emerald-800 dark:text-emerald-200 text-base" x-text="'{{ core()->currencySymbol(core()->getBaseCurrencyCode()) }} ' + (currentStage.value || 0).toLocaleString()"></span>
+                                <span id="modalStageValue" class="font-mono font-black text-emerald-800 dark:text-emerald-200 text-base">{{ core()->currencySymbol(core()->getBaseCurrencyCode()) }} {{ number_format($firstStage['value'] ?? 0) }}</span>
                             </div>
                         </div>
 
@@ -501,8 +483,8 @@
                         </div>
 
                         <div class="flex items-center justify-between text-slate-500 text-[11px] pt-2 border-t border-slate-100 dark:border-slate-800">
-                            <span>آخر ترحيل/حساب: <strong class="font-mono text-slate-700 dark:text-slate-300" x-text="currentStage.last_computed_at || 'غير متاح بعد'"></strong></span>
-                            <span>الاستثناءات الحالية: <strong class="font-mono text-rose-600" x-text="currentStage.exception_count || 0"></strong></span>
+                            <span>آخر ترحيل/حساب: <strong id="modalStageComputed" class="font-mono text-slate-700 dark:text-slate-300">{{ $firstStage['last_computed_at'] ?? 'غير متاح بعد' }}</strong></span>
+                            <span>الاستثناءات الحالية: <strong id="modalStageExceptions" class="font-mono text-rose-600">{{ $firstStage['exception_count'] ?? 0 }}</strong></span>
                         </div>
                     </div>
 
@@ -510,13 +492,14 @@
                     <div class="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-3">
                         <button
                             type="button"
-                            @click="isModalOpen = false"
+                            onclick="window.closeLifecycleStageModal()"
                             class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                         >
                             إغلاق النافذة
                         </button>
                         <a
-                            :href="'{{ route('admin.sales.orders.index') }}?stage=' + currentStage.code"
+                            id="modalStageOrdersBtn"
+                            href="{{ route('admin.sales.orders.index', ['stage' => $firstStage['code'] ?? 'new']) }}"
                             class="px-4 py-2 text-xs font-bold rounded-xl bg-[#253691] text-white hover:bg-blue-800 transition-colors cursor-pointer shadow-2xs"
                         >
                             عرض الطلبات المرتبطة &rarr;
@@ -525,16 +508,14 @@
                 </div>
             </div>
 
-            <!-- 2.5 DATA QUALITY REPORT MODAL -->
+            <!-- 2.5 DATA QUALITY REPORT MODAL (Default display: none) -->
             <div
-                x-show="isQualityModalOpen"
-                x-cloak
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                id="lifecycleQualityModal"
+                style="display: none;"
+                class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                onclick="if(event.target === this) window.closeLifecycleQualityModal()"
             >
-                <div
-                    @click.away="isQualityModalOpen = false"
-                    class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl overflow-hidden font-sans space-y-0 text-right"
-                >
+                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl overflow-hidden font-sans space-y-0 text-right">
                     <div class="p-5 bg-amber-50 dark:bg-amber-950/60 border-b border-amber-200 dark:border-amber-900/60 flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <span class="w-8 h-8 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center font-black">🛡️</span>
@@ -545,7 +526,7 @@
                         </div>
                         <button
                             type="button"
-                            @click="isQualityModalOpen = false"
+                            onclick="window.closeLifecycleQualityModal()"
                             class="w-8 h-8 rounded-full bg-amber-200 text-amber-900 hover:bg-amber-300 flex items-center justify-center font-bold text-sm transition-colors cursor-pointer"
                         >
                             ✕
@@ -590,7 +571,7 @@
                     <div class="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end">
                         <button
                             type="button"
-                            @click="isQualityModalOpen = false"
+                            onclick="window.closeLifecycleQualityModal()"
                             class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                         >
                             إغلاق
@@ -598,6 +579,96 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Interactivity Script -->
+            <script>
+                window.hayestStages = @json($stagesList);
+                window.hayestActiveStage = 0;
+                window.hayestCurrencySymbol = "{{ core()->currencySymbol(core()->getBaseCurrencyCode()) }} ";
+
+                window.selectLifecycleStage = function(index) {
+                    window.hayestActiveStage = index;
+                    const stage = window.hayestStages[index] || window.hayestStages[0];
+                    if (!stage) return;
+
+                    const rankEl = document.getElementById('railActiveRank');
+                    const labelEl = document.getElementById('railActiveLabel');
+                    const codeEl = document.getElementById('railActiveCode');
+                    const countEl = document.getElementById('railActiveCount');
+                    const valueEl = document.getElementById('railActiveValue');
+
+                    if (rankEl) rankEl.innerText = String(stage.rank || (index + 1)).padStart(2, '0');
+                    if (labelEl) labelEl.innerText = stage.label || '';
+                    if (codeEl) codeEl.innerText = stage.code || '';
+                    if (countEl) countEl.innerText = Number(stage.count || 0).toLocaleString();
+                    if (valueEl) valueEl.innerText = window.hayestCurrencySymbol + Number(stage.value || 0).toLocaleString();
+
+                    document.querySelectorAll('.rail-stage-card').forEach((el, idx) => {
+                        if (idx === index) {
+                            el.classList.add('ring-2', 'ring-[#253691]', 'shadow-md', '-translate-y-0.5', 'bg-white', 'dark:bg-slate-800');
+                            el.classList.remove('bg-slate-50/60', 'dark:bg-slate-800/40');
+                        } else {
+                            el.classList.remove('ring-2', 'ring-[#253691]', 'shadow-md', '-translate-y-0.5', 'bg-white', 'dark:bg-slate-800');
+                            el.classList.add('bg-slate-50/60', 'dark:bg-slate-800/40');
+                        }
+                    });
+                };
+
+                window.openLifecycleStageModal = function(index) {
+                    if (index !== undefined) {
+                        window.selectLifecycleStage(index);
+                    }
+                    const stage = window.hayestStages[window.hayestActiveStage] || window.hayestStages[0];
+                    if (!stage) return;
+
+                    const mRank = document.getElementById('modalStageRank');
+                    const mLabel = document.getElementById('modalStageLabel');
+                    const mGroup = document.getElementById('modalStageGroup');
+                    const mCode = document.getElementById('modalStageCode');
+                    const mGroupVal = document.getElementById('modalStageGroupVal');
+                    const mCount = document.getElementById('modalStageCount');
+                    const mValue = document.getElementById('modalStageValue');
+                    const mComputed = document.getElementById('modalStageComputed');
+                    const mExceptions = document.getElementById('modalStageExceptions');
+                    const mOrdersBtn = document.getElementById('modalStageOrdersBtn');
+
+                    if (mRank) mRank.innerText = String(stage.rank || 1).padStart(2, '0');
+                    if (mLabel) mLabel.innerText = stage.label || '';
+                    if (mGroup) mGroup.innerText = stage.group_label || '';
+                    if (mCode) mCode.innerText = stage.code || '';
+                    if (mGroupVal) mGroupVal.innerText = stage.group_label || '';
+                    if (mCount) mCount.innerText = Number(stage.count || 0).toLocaleString();
+                    if (mValue) mValue.innerText = window.hayestCurrencySymbol + Number(stage.value || 0).toLocaleString();
+                    if (mComputed) mComputed.innerText = stage.last_computed_at || 'غير متاح بعد';
+                    if (mExceptions) mExceptions.innerText = stage.exception_count || 0;
+                    if (mOrdersBtn) mOrdersBtn.href = "{{ route('admin.sales.orders.index') }}?stage=" + (stage.code || 'new');
+
+                    const modal = document.getElementById('lifecycleStageModal');
+                    if (modal) modal.style.display = 'flex';
+                };
+
+                window.closeLifecycleStageModal = function() {
+                    const modal = document.getElementById('lifecycleStageModal');
+                    if (modal) modal.style.display = 'none';
+                };
+
+                window.openLifecycleQualityModal = function() {
+                    const modal = document.getElementById('lifecycleQualityModal');
+                    if (modal) modal.style.display = 'flex';
+                };
+
+                window.closeLifecycleQualityModal = function() {
+                    const modal = document.getElementById('lifecycleQualityModal');
+                    if (modal) modal.style.display = 'none';
+                };
+
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        window.closeLifecycleStageModal();
+                        window.closeLifecycleQualityModal();
+                    }
+                });
+            </script>
         </div>
     @endif
 
