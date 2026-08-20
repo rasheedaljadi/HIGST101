@@ -231,62 +231,370 @@
         </div>
     @endif
 
-    <!-- 2. Order Lifecycle Pipeline (مسار دورة حياة الطلب الأفقية) -->
+    <!-- 2. Order Lifecycle Pipeline Rail (سكة دورة حياة الطلب الموحدة - Section 2) -->
     @if (bouncer()->hasPermission('sales.orders'))
-        <div class="p-6 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm">
-            <div class="flex items-center justify-between mb-4">
+        @php
+            $pipeline = $advancedData['pipeline'] ?? [];
+            $stagesList = $pipeline['stages'] ?? [];
+            $dataQuality = $pipeline['data_quality'] ?? ['unclassified_count' => 0, 'items' => []];
+            $formattedComputedAt = $pipeline['formatted_last_computed'] ?? 'غير متاح بعد';
+        @endphp
+
+        <div
+            x-data="{
+                activeStageIndex: 0,
+                stages: {{ json_encode($stagesList) }},
+                isModalOpen: false,
+                isQualityModalOpen: false,
+                get currentStage() {
+                    return this.stages[this.activeStageIndex] || this.stages[0] || {};
+                },
+                selectStage(index) {
+                    this.activeStageIndex = index;
+                },
+                openModal(index) {
+                    this.activeStageIndex = index;
+                    this.isModalOpen = true;
+                }
+            }"
+            @keydown.escape.window="isModalOpen = false; isQualityModalOpen = false"
+            class="p-6 bg-[#F6F4EE] dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-3xl shadow-sm text-slate-900 dark:text-slate-100 font-sans space-y-6"
+        >
+            <!-- 2.1 Header Section -->
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
                 <div>
-                    <h3 class="text-base font-bold text-slate-900 dark:text-white">مسار دورة حياة الطلبات والتوريد (Order Lifecycle Pipeline)</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">تتبع مراحل الطلبات من الإنشاء والتأكيد حتى الاستلام والتوصيل النهائي</p>
+                    <span class="text-[11px] font-mono tracking-widest uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                        ORDER LIFECYCLE PIPELINE
+                    </span>
+                    <h3 class="text-xl font-black text-[#102A43] dark:text-white flex items-center gap-2">
+                        المسار التشغيلي الموحد لدورة حياة الطلبات
+                        <span class="text-xs font-normal font-mono px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                            11 محطة تشغيلية
+                        </span>
+                    </h3>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                        مصدر القراءة التراكمي المشتق المباشر دقيق وغير مصنع (SSOT Read Model View)
+                    </p>
                 </div>
-                <span class="text-xs font-mono px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-600 dark:text-slate-300 font-bold">11 مرحلة</span>
+
+                <!-- Last Computed Timestamp Badge -->
+                <div class="flex items-center gap-3">
+                    <div class="text-left font-mono text-xs text-slate-600 dark:text-slate-400 bg-white/80 dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                        <span class="text-[10px] text-slate-400 block font-sans">آخر حساب دقيق (Computed At):</span>
+                        <span class="font-extrabold text-[#102A43] dark:text-blue-300">{{ $formattedComputedAt }}</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Horizontal Pipeline Bar -->
-            <div class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-11 gap-2 text-center">
-                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
-                    <span class="text-[10px] font-bold text-slate-500 block mb-1">1. جديد</span>
-                    <span class="text-base font-black text-slate-800 dark:text-white">{{ number_format($advancedData['pipeline']['new']['count'] ?? 0) }}</span>
+            <!-- 2.2 Main Rail Layout (2 Columns: Left Guide 142px + Right Connected Rail) -->
+            <div class="flex flex-col lg:flex-row gap-5 items-stretch">
+                <!-- LEFT NARROW GUIDE (142px) -->
+                <div class="w-full lg:w-[142px] shrink-0 bg-white/90 dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 flex flex-col justify-between text-xs space-y-4 shadow-2xs">
+                    <div>
+                        <span class="text-[11px] font-extrabold uppercase text-[#102A43] dark:text-slate-300 block pb-2 border-b border-slate-100 dark:border-slate-800">
+                            دليل السكة
+                        </span>
+
+                        <div class="mt-3 space-y-2 text-[11px]">
+                            <div class="p-2 rounded-lg bg-blue-50/80 dark:bg-blue-950/50 text-blue-900 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40">
+                                <span class="font-black font-mono block">1–3</span>
+                                <span class="font-bold">رحلة العميل</span>
+                            </div>
+                            <div class="p-2 rounded-lg bg-amber-50/80 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border border-amber-100 dark:border-amber-900/40">
+                                <span class="font-black font-mono block">4–8</span>
+                                <span class="font-bold">سلسلة التوريد</span>
+                            </div>
+                            <div class="p-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/40">
+                                <span class="font-black font-mono block">9–11</span>
+                                <span class="font-bold">التنفيذ المحلي</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Local Storage Notice -->
+                    <div class="p-2.5 bg-slate-100/90 dark:bg-slate-800/80 rounded-xl text-[10px] text-slate-600 dark:text-slate-400 font-semibold border border-slate-200/80 dark:border-slate-700/80 leading-relaxed">
+                        <span class="font-bold text-slate-800 dark:text-slate-200 block mb-0.5">⚠️ تنبيه التوثيق:</span>
+                        رصيد محلي موثق فقط بعد الاستلام في صنعاء (<code class="font-mono bg-white dark:bg-slate-900 px-1 py-0.5 rounded text-[9px]">hayest_dropship_ye</code>).
+                    </div>
                 </div>
-                <div class="p-3 bg-blue-50/70 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/50">
-                    <span class="text-[10px] font-bold text-blue-700 dark:text-blue-300 block mb-1">2. الدفع</span>
-                    <span class="text-base font-black text-blue-800 dark:text-blue-200">{{ number_format($advancedData['pipeline']['payment_pending']['count'] ?? 0) }}</span>
+
+                <!-- RIGHT CONNECTED RAIL AREA -->
+                <div class="flex-1 bg-white/90 dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+                    <!-- Current Active Stage Summary Banner -->
+                    <div class="flex flex-wrap items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-black font-mono px-2.5 py-1 rounded-lg bg-[#102A43] text-white">
+                                <span x-text="String(currentStage.rank || 1).padStart(2, '0')"></span> / 11
+                            </span>
+                            <div>
+                                <h4 class="text-sm font-extrabold text-[#102A43] dark:text-white" x-text="currentStage.label"></h4>
+                                <span class="text-[11px] text-slate-500 font-mono" x-text="currentStage.code"></span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4 text-xs font-bold">
+                            <div class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-500">عدد الطلبات:</span>
+                                <span class="font-mono font-black text-blue-600 dark:text-blue-400 mr-1" x-text="currentStage.count || 0"></span>
+                            </div>
+                            <div class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-500">القيمة الإجمالية:</span>
+                                <span class="font-mono font-black text-emerald-600 dark:text-emerald-400 mr-1" x-text="'$' + (currentStage.value || 0).toLocaleString()"></span>
+                            </div>
+                            <button
+                                type="button"
+                                @click="isModalOpen = true"
+                                class="px-3 py-1.5 rounded-lg bg-[#253691] text-white hover:bg-blue-800 transition-colors font-bold text-xs shadow-2xs cursor-pointer"
+                            >
+                                استعراض التفاصيل &rarr;
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 11 Connected Stage Horizontal Rail -->
+                    <div class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-11 gap-1.5 relative">
+                        <template x-for="(stg, idx) in stages" :key="stg.code">
+                            <button
+                                type="button"
+                                @click="selectStage(idx)"
+                                @dblclick="openModal(idx)"
+                                :class="{
+                                    'ring-2 ring-[#253691] shadow-md -translate-y-0.5 bg-white dark:bg-slate-800': activeStageIndex === idx,
+                                    'hover:bg-slate-50 dark:hover:bg-slate-800/80 bg-slate-50/60 dark:bg-slate-800/40': activeStageIndex !== idx
+                                }"
+                                class="p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-center transition-all duration-200 flex flex-col justify-between min-h-[110px] cursor-pointer group"
+                            >
+                                <!-- Stage Rank & Exception Badge -->
+                                <div class="flex items-center justify-between text-[10px] font-mono">
+                                    <span class="font-extrabold text-slate-400 group-hover:text-slate-600" x-text="String(stg.rank).padStart(2, '0')"></span>
+                                    <template x-if="stg.exception_count > 0">
+                                        <span class="px-1 py-0.2 rounded bg-rose-100 text-rose-800 font-bold" title="استثناء تشغيلي">!</span>
+                                    </template>
+                                </div>
+
+                                <!-- Icon Container -->
+                                <div class="my-1.5 flex items-center justify-center">
+                                    <div
+                                        :style="'background-color: ' + stg.color + '15; color: ' + stg.color"
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shadow-2xs group-hover:scale-105 transition-transform"
+                                    >
+                                        <span x-text="stg.rank"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Label & Count -->
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-800 dark:text-slate-200 block truncate" x-text="stg.label"></span>
+                                    <span class="text-xs font-black font-mono text-[#102A43] dark:text-blue-300 block mt-0.5" x-text="stg.count || 0"></span>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- Swimlane Footer Labels -->
+                    <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <div class="bg-blue-50/50 dark:bg-blue-950/30 py-1 rounded-md border border-blue-100/60">
+                            رحلة العميل (1–3)
+                        </div>
+                        <div class="bg-amber-50/50 dark:bg-amber-950/30 py-1 rounded-md border border-amber-100/60">
+                            سلسلة التوريد والمخازن (4–8)
+                        </div>
+                        <div class="bg-emerald-50/50 dark:bg-emerald-950/30 py-1 rounded-md border border-emerald-100/60">
+                            التنفيذ والتسليم المحلي (9–11)
+                        </div>
+                    </div>
                 </div>
-                <div class="p-3 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-xl border border-indigo-100 dark:border-indigo-900/50">
-                    <span class="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 block mb-1">3. التأكيد</span>
-                    <span class="text-base font-black text-indigo-800 dark:text-indigo-200">{{ number_format($advancedData['pipeline']['confirmed']['count'] ?? 0) }}</span>
+            </div>
+
+            <!-- 2.3 Data Quality Exceptions Card (استثناءات جودة البيانات) -->
+            <div class="flex flex-wrap items-center justify-between p-4 bg-white/90 dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 flex items-center justify-center font-bold text-sm">
+                        🛡️
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-extrabold text-slate-900 dark:text-white">
+                            استثناءات جودة البيانات (Unclassified Data Quality Items)
+                        </h4>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            بنود مبيعات تاريخية أو غير مكتملة المصدر استُبعدت صراحة لحماية دقة العدادات الـ11
+                        </p>
+                    </div>
                 </div>
-                <div class="p-3 bg-amber-50/70 dark:bg-amber-950/40 rounded-xl border border-amber-100 dark:border-amber-900/50">
-                    <span class="text-[10px] font-bold text-amber-700 dark:text-amber-300 block mb-1">4. التوريد</span>
-                    <span class="text-base font-black text-amber-800 dark:text-amber-200">{{ number_format($advancedData['pipeline']['sourcing_required']['count'] ?? 0) }}</span>
+
+                <div class="flex items-center gap-4">
+                    <div class="text-left font-mono text-xs">
+                        <span class="text-slate-400 text-[10px] block">البنود المستبعدة:</span>
+                        <span class="font-black text-amber-700 dark:text-amber-400 text-sm">
+                            {{ $dataQuality['unclassified_count'] ?? 0 }} بنداً
+                        </span>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="isQualityModalOpen = true"
+                        class="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                        استعراض التقرير المرجعي &rarr;
+                    </button>
                 </div>
-                <div class="p-3 bg-amber-100/50 dark:bg-amber-900/30 rounded-xl border border-amber-200 dark:border-amber-800/50">
-                    <span class="text-[10px] font-bold text-amber-800 dark:text-amber-300 block mb-1">5. الشراء (PO)</span>
-                    <span class="text-base font-black text-amber-900 dark:text-amber-200">{{ number_format($advancedData['pipeline']['po_created']['count'] ?? 0) }}</span>
+            </div>
+
+            <!-- 2.4 STAGE DRILLDOWN MODAL -->
+            <div
+                x-show="isModalOpen"
+                x-cloak
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            >
+                <div
+                    @click.away="isModalOpen = false"
+                    class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-xl overflow-hidden font-sans space-y-0 text-right"
+                >
+                    <!-- Modal Header -->
+                    <div class="p-5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-black font-mono px-2.5 py-1 rounded-lg bg-[#102A43] text-white">
+                                <span x-text="String(currentStage.rank || 1).padStart(2, '0')"></span> / 11
+                            </span>
+                            <div>
+                                <h3 class="text-base font-black text-slate-900 dark:text-white" x-text="currentStage.label"></h3>
+                                <span class="text-xs font-mono text-slate-500" x-text="currentStage.group_label"></span>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            @click="isModalOpen = false"
+                            class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-sm transition-colors cursor-pointer"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6 space-y-4 text-xs">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700">
+                                <span class="text-slate-500 block mb-1">رمز المحطة الفني:</span>
+                                <code class="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm" x-text="currentStage.code"></code>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700">
+                                <span class="text-slate-500 block mb-1">المجمّع التشغيلي:</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200" x-text="currentStage.group_label"></span>
+                            </div>
+                            <div class="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40">
+                                <span class="text-blue-700 dark:text-blue-300 block mb-1">عدد الطلبات الحية:</span>
+                                <span class="font-mono font-black text-blue-800 dark:text-blue-200 text-base" x-text="currentStage.count || 0"></span>
+                            </div>
+                            <div class="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40">
+                                <span class="text-emerald-700 dark:text-emerald-300 block mb-1">إجمالي القيمة:</span>
+                                <span class="font-mono font-black text-emerald-800 dark:text-emerald-200 text-base" x-text="'$' + (currentStage.value || 0).toLocaleString()"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 space-y-1">
+                            <span class="text-slate-500 font-bold block">الوصف والنطاق التشغيلي:</span>
+                            <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+                                تُمثل هذه المحطة المرحلة التشغيلية الحقيقية المحددة في Read Model View بناءً على أعلى جاهزية محسبة للطلبات.
+                            </p>
+                        </div>
+
+                        <div class="flex items-center justify-between text-slate-500 text-[11px] pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <span>آخر ترحيل/حساب: <strong class="font-mono text-slate-700 dark:text-slate-300" x-text="currentStage.last_computed_at || 'غير متاح بعد'"></strong></span>
+                            <span>الاستثناءات الحالية: <strong class="font-mono text-rose-600" x-text="currentStage.exception_count || 0"></strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            @click="isModalOpen = false"
+                            class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                        >
+                            إغلاق النافذة
+                        </button>
+                        <a
+                            :href="'{{ route('admin.sales.orders.index') }}?stage=' + currentStage.code"
+                            class="px-4 py-2 text-xs font-bold rounded-xl bg-[#253691] text-white hover:bg-blue-800 transition-colors cursor-pointer shadow-2xs"
+                        >
+                            عرض الطلبات المرتبطة &rarr;
+                        </a>
+                    </div>
                 </div>
-                <div class="p-3 bg-purple-50/70 dark:bg-purple-950/40 rounded-xl border border-purple-100 dark:border-purple-900/50">
-                    <span class="text-[10px] font-bold text-purple-700 dark:text-purple-300 block mb-1">6. شحن المصدر</span>
-                    <span class="text-base font-black text-purple-800 dark:text-purple-200">{{ number_format($advancedData['pipeline']['supplier_shipped']['count'] ?? 0) }}</span>
-                </div>
-                <div class="p-3 bg-sky-50/70 dark:bg-sky-950/40 rounded-xl border border-sky-100 dark:border-sky-900/50">
-                    <span class="text-[10px] font-bold text-sky-700 dark:text-sky-300 block mb-1">7. استلام SA</span>
-                    <span class="text-base font-black text-sky-800 dark:text-sky-200">{{ number_format($advancedData['pipeline']['sa_received']['count'] ?? 0) }}</span>
-                </div>
-                <div class="p-3 bg-cyan-50/70 dark:bg-cyan-950/40 rounded-xl border border-cyan-100 dark:border-cyan-900/50">
-                    <span class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 block mb-1">8. نقل YE</span>
-                    <span class="text-base font-black text-cyan-800 dark:text-cyan-200">{{ number_format($advancedData['pipeline']['ye_in_transit']['count'] ?? 0) }}</span>
-                </div>
-                <div class="p-3 bg-teal-50/70 dark:bg-teal-950/40 rounded-xl border border-teal-100 dark:border-teal-900/50">
-                    <span class="text-[10px] font-bold text-teal-700 dark:text-teal-300 block mb-1">9. استلام YE</span>
-                    <span class="text-base font-black text-teal-800 dark:text-teal-200">{{ number_format($advancedData['pipeline']['ye_received']['count'] ?? 0) }}</span>
-                </div>
-                <div class="p-3 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
-                    <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 block mb-1">10. Handoff</span>
-                    <span class="text-base font-black text-emerald-800 dark:text-emerald-200">{{ number_format($advancedData['pipeline']['handed_off']['count'] ?? 0) }}</span>
-                </div>
-                <div class="p-3 bg-emerald-100/70 dark:bg-emerald-900/50 rounded-xl border border-emerald-300 dark:border-emerald-700">
-                    <span class="text-[10px] font-bold text-emerald-900 dark:text-emerald-200 block mb-1">11. تم التسليم</span>
-                    <span class="text-base font-black text-emerald-950 dark:text-white">{{ number_format($advancedData['pipeline']['delivered']['count'] ?? 0) }}</span>
+            </div>
+
+            <!-- 2.5 DATA QUALITY REPORT MODAL -->
+            <div
+                x-show="isQualityModalOpen"
+                x-cloak
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            >
+                <div
+                    @click.away="isQualityModalOpen = false"
+                    class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl overflow-hidden font-sans space-y-0 text-right"
+                >
+                    <div class="p-5 bg-amber-50 dark:bg-amber-950/60 border-b border-amber-200 dark:border-amber-900/60 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center font-black">🛡️</span>
+                            <div>
+                                <h3 class="text-base font-black text-amber-950 dark:text-amber-200">تقرير استثناءات جودة البيانات</h3>
+                                <span class="text-xs text-amber-800 dark:text-amber-300 font-semibold">البنود غير المصنفة المستبعدة من العدادات الرسمية</span>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            @click="isQualityModalOpen = false"
+                            class="w-8 h-8 rounded-full bg-amber-200 text-amber-900 hover:bg-amber-300 flex items-center justify-center font-bold text-sm transition-colors cursor-pointer"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div class="p-6 space-y-4 text-xs">
+                        <div class="p-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 leading-relaxed">
+                            تضمن هذه الآلية عزل أي بنود قديمة أو ناقصة التوصيف دون إسقاطها افتراضياً في المحطات الـ11. يبلغ إجمالي البنود غير المصنفة حالياً <strong>{{ $dataQuality['unclassified_count'] ?? 0 }}</strong> بنداً.
+                        </div>
+
+                        @if (! empty($dataQuality['items']))
+                            <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+                                <table class="w-full text-right text-xs">
+                                    <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold">
+                                        <tr>
+                                            <th class="py-2.5 px-3">معرف البند</th>
+                                            <th class="py-2.5 px-3">رقم الطلب</th>
+                                            <th class="py-2.5 px-3">SKU</th>
+                                            <th class="py-2.5 px-3">اسم المنتج</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                        @foreach ($dataQuality['items'] as $item)
+                                            <tr>
+                                                <td class="py-2 px-3 font-mono font-bold">{{ $item->item_id }}</td>
+                                                <td class="py-2 px-3 font-mono text-blue-600">#{{ $item->order_id }}</td>
+                                                <td class="py-2 px-3 font-mono">{{ $item->sku }}</td>
+                                                <td class="py-2 px-3 text-slate-700 dark:text-slate-300">{{ $item->name }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="p-4 text-center text-slate-500 font-bold bg-slate-50 rounded-xl">
+                                لا توجد بنود غير مصنفة حالياً، جميع البنود مسقطة بنجاح في نموذج القراءة.
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end">
+                        <button
+                            type="button"
+                            @click="isQualityModalOpen = false"
+                            class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                        >
+                            إغلاق
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

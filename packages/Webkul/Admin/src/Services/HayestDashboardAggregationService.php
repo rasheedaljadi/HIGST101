@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Webkul\Inventory\Services\InventoryReportingService;
-use Webkul\Sales\Services\Lifecycle\OrderLifecycleRebuildService;
+use Webkul\Sales\Services\Lifecycle\OrderLifecycleDashboardQueryService;
 
 class HayestDashboardAggregationService
 {
@@ -150,46 +150,7 @@ class HayestDashboardAggregationService
      */
     protected function getOrderLifecyclePipeline(Carbon $startDate, Carbon $endDate): array
     {
-        $stages = [
-            'new' => ['label' => 'جديد', 'count' => 0, 'value' => 0.0],
-            'payment_pending' => ['label' => 'الدفع', 'count' => 0, 'value' => 0.0],
-            'confirmed' => ['label' => 'التأكيد', 'count' => 0, 'value' => 0.0],
-            'sourcing_required' => ['label' => 'التوريد', 'count' => 0, 'value' => 0.0],
-            'po_created' => ['label' => 'الشراء', 'count' => 0, 'value' => 0.0],
-            'supplier_shipped' => ['label' => 'شحن المصدر', 'count' => 0, 'value' => 0.0],
-            'sa_received' => ['label' => 'استلام السعودية', 'count' => 0, 'value' => 0.0],
-            'ye_in_transit' => ['label' => 'نقل لليمن', 'count' => 0, 'value' => 0.0],
-            'ye_received' => ['label' => 'استلام اليمن', 'count' => 0, 'value' => 0.0],
-            'handed_off' => ['label' => 'التسليم للمندوب', 'count' => 0, 'value' => 0.0],
-            'delivered' => ['label' => 'التوصيل النهائي', 'count' => 0, 'value' => 0.0],
-        ];
-
-        if (Schema::hasTable('order_lifecycle_stage_views')) {
-            $views = DB::table('order_lifecycle_stage_views')
-                ->join('orders', 'order_lifecycle_stage_views.order_id', '=', 'orders.id')
-                ->whereBetween('orders.created_at', [$startDate, $endDate])
-                ->select('order_lifecycle_stage_views.bottleneck_stage_code', 'orders.grand_total')
-                ->get();
-
-            if ($views->isEmpty() && DB::table('orders')->exists()) {
-                app(OrderLifecycleRebuildService::class)->rebuild();
-                $views = DB::table('order_lifecycle_stage_views')
-                    ->join('orders', 'order_lifecycle_stage_views.order_id', '=', 'orders.id')
-                    ->whereBetween('orders.created_at', [$startDate, $endDate])
-                    ->select('order_lifecycle_stage_views.bottleneck_stage_code', 'orders.grand_total')
-                    ->get();
-            }
-
-            foreach ($views as $v) {
-                $code = $v->bottleneck_stage_code;
-                if (isset($stages[$code])) {
-                    $stages[$code]['count']++;
-                    $stages[$code]['value'] += (float) $v->grand_total;
-                }
-            }
-        }
-
-        return $stages;
+        return app(OrderLifecycleDashboardQueryService::class)->getPipelineSummary($startDate, $endDate);
     }
 
     /**
