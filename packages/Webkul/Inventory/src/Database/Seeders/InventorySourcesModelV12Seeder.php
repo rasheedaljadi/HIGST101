@@ -35,7 +35,7 @@ class InventorySourcesModelV12Seeder extends Seeder
                 'street' => 'بوابة AliExpress API',
                 'postcode' => '00000',
                 'status' => 1,
-                'is_salable' => 0,
+                'is_salable' => 1,
                 'is_delivery_source' => 0,
                 'source_type' => SourceType::VIRTUAL_PROJECTION->value,
             ],

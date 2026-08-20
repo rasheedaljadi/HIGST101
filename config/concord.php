@@ -54,5 +54,6 @@ return [
         Webkul\User\Providers\ModuleServiceProvider::class,
         Webkul\Wallet\Providers\ModuleServiceProvider::class,
         Webkul\DeliveryManagement\Providers\ModuleServiceProvider::class,
+        Webkul\Procurement\Providers\ModuleServiceProvider::class,
     ],
 ];
