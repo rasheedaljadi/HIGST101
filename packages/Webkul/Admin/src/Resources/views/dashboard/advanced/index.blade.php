@@ -241,6 +241,7 @@
         @endphp
 
         <div
+            v-pre
             x-data="{
                 activeStageIndex: 0,
                 stages: {{ json_encode($stagesList) }},
