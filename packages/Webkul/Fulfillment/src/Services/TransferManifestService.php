@@ -137,6 +137,8 @@ class TransferManifestService
             }
             $manifest->save();
 
+            Event::dispatch('inventory.transfer_manifest.in_transit', $manifest);
+
             Log::channel('fulfillment')->info("Dispatched Transfer Manifest #{$manifest->manifest_number} by Admin #{$actorId}.");
 
             return $manifest;

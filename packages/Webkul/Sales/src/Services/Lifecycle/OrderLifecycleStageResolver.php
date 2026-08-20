@@ -182,8 +182,8 @@ class OrderLifecycleStageResolver
             ];
         }
 
-        // Stage 10: Handed Off (Executing assignment after local Yemen receipt)
-        if (in_array($assignment->status, ['assigned', 'picked_up', 'out_for_delivery'])) {
+        // Stage 10: Handed Off (Executing assignment after local Yemen receipt & actual pickup/dispatch)
+        if (in_array($assignment->status, ['picked_up', 'out_for_delivery', 'arrived_at_point'])) {
             // For imported items, confirm Yemen reception before handoff
             if ($isImported) {
                 $isYemenReceived = $this->isImportedYemenReceived($item);
@@ -197,6 +197,10 @@ class OrderLifecycleStageResolver
                 'source_type' => $isImported ? 'hayest_dropship_ye' : 'hayest_internal_ye',
                 'rank' => self::STAGE_RANKS['handed_off'],
             ];
+        }
+
+        if ($assignment->status === 'assigned') {
+            return null; // Remains in confirmed / ye_received until actual pickup or dispatch
         }
 
         return null;

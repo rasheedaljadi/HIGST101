@@ -265,3 +265,99 @@ test('Integration 8: RebuildService and duplicate events are 100% idempotent', f
     expect($viewCount)->toBe(1)
         ->and($itemViewCount)->toBe(1);
 });
+
+test('Integration 9 (Gap 1): Assignment status assigned DOES NOT trigger handed_off; only picked_up/out_for_delivery triggers handed_off', function () {
+    $order = Order::factory()->create(['status' => 'processing']);
+    $item = OrderItem::factory()->create(['order_id' => $order->id, 'additional' => []]);
+
+    if (Schema::hasTable('delivery_assignments')) {
+        $assignmentId = DB::table('delivery_assignments')->insertGetId([
+            'order_id' => $order->id,
+            'delivery_type' => 'home_delivery',
+            'idempotency_key' => 'DEL-KEY-'.uniqid(),
+            'status' => 'assigned',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    app(OrderLifecycleProjector::class)->project($order);
+
+    $viewAssigned = DB::table('order_lifecycle_stage_views')->where('order_id', $order->id)->first();
+    expect($viewAssigned->current_stage_code)->not->toBe('handed_off')
+        ->and($viewAssigned->current_stage_code)->toBe('confirmed');
+
+    // Update assignment status to picked_up
+    DB::table('delivery_assignments')->where('order_id', $order->id)->update(['status' => 'picked_up']);
+    app(OrderLifecycleProjector::class)->project($order);
+
+    $viewPickedUp = DB::table('order_lifecycle_stage_views')->where('order_id', $order->id)->first();
+    expect($viewPickedUp->current_stage_code)->toBe('handed_off');
+});
+
+test('Integration 10 (Gap 2): Yemen transfer progression sequence sa_received -> ye_in_transit -> ye_received', function () {
+    $order = Order::factory()->create(['status' => 'processing']);
+    $item = OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => 1, 'additional' => ['aliexpress' => true]]);
+
+    $saSource = DB::table('inventory_sources')->where('code', 'hayest_dropship_sa')->first();
+    $yeSource = DB::table('inventory_sources')->where('code', 'hayest_dropship_ye')->first();
+
+    // 1. SA Received
+    $receiptId = DB::table('inbound_receipt_manifests')->insertGetId([
+        'receipt_number' => 'REC-TEST-'.uniqid(),
+        'idempotency_key' => 'REC-KEY-'.uniqid(),
+        'destination_inventory_source_id' => $saSource->id,
+        'status' => 'completed',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('inbound_receipt_manifest_items')->insert([
+        'inbound_receipt_manifest_id' => $receiptId,
+        'order_id' => $order->id,
+        'order_item_id' => $item->id,
+        'product_id' => 1,
+        'sku' => 'TEST-SKU',
+        'qty_good' => 1,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    app(OrderLifecycleProjector::class)->project($order);
+    $viewSa = DB::table('order_lifecycle_stage_views')->where('order_id', $order->id)->first();
+    expect($viewSa->current_stage_code)->toBe('sa_received');
+
+    // 2. Dispatch Transfer (in_transit)
+    $manifestId = DB::table('inventory_transfer_manifests')->insertGetId([
+        'manifest_number' => 'TRF-TEST-'.uniqid(),
+        'idempotency_key' => 'TRF-KEY-'.uniqid(),
+        'source_inventory_source_id' => $saSource->id,
+        'destination_inventory_source_id' => $yeSource->id,
+        'status' => 'in_transit',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('inventory_transfer_manifest_items')->insert([
+        'inventory_transfer_manifest_id' => $manifestId,
+        'order_id' => $order->id,
+        'order_item_id' => $item->id,
+        'product_id' => 1,
+        'sku' => 'TEST-SKU',
+        'qty_shipped' => 1,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    Event::dispatch('inventory.transfer_manifest.in_transit', (object) ['order_id' => $order->id]);
+    $viewTransit = DB::table('order_lifecycle_stage_views')->where('order_id', $order->id)->first();
+    expect($viewTransit->current_stage_code)->toBe('ye_in_transit');
+
+    // 3. Complete Transfer (ye_received in hayest_dropship_ye)
+    DB::table('inventory_transfer_manifests')->where('id', $manifestId)->update(['status' => 'completed']);
+    Event::dispatch('inventory.transfer_manifest.completed', (object) ['order_id' => $order->id]);
+
+    $viewReceived = DB::table('order_lifecycle_stage_views')->where('order_id', $order->id)->first();
+    $itemView = DB::table('order_item_lifecycle_stage_views')->where('order_item_id', $item->id)->first();
+
+    expect($viewReceived->current_stage_code)->toBe('ye_received')
+        ->and($itemView->source_type)->toBe('hayest_dropship_ye');
+});
