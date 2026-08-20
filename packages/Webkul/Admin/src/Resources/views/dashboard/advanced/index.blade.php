@@ -247,7 +247,7 @@
                 isModalOpen: false,
                 isQualityModalOpen: false,
                 get currentStage() {
-                    return this.stages[this.activeStageIndex] || this.stages[0] || {};
+                    return this.stages[this.activeStageIndex] || this.stages[0] || { code: 'new', rank: 1, label: '', group_label: '', count: 0, value: 0, exception_count: 0 };
                 },
                 selectStage(index) {
                     this.activeStageIndex = index;

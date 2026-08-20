@@ -13,14 +13,14 @@
 
                 <!-- Interactive View Mode Toggle Switch [بسيط] [متقدم] -->
                 <div class="inline-flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-inner">
-                    <a 
+                    <a
                         href="{{ route('admin.dashboard.index', ['view' => 'simple']) }}"
                         class="px-3 py-1 text-xs font-bold rounded-md transition-all {{ ($viewMode ?? 'simple') === 'simple' ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400' }}"
                         onclick="event.preventDefault(); window.toggleDashboardView('simple')"
                     >
                         بسيط (Simple)
                     </a>
-                    <a 
+                    <a
                         href="{{ route('admin.dashboard.index', ['view' => 'advanced']) }}"
                         class="px-3 py-1 text-xs font-bold rounded-md transition-all {{ ($viewMode ?? 'simple') === 'advanced' ? 'bg-blue-600 text-white shadow-sm font-extrabold' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400' }}"
                         onclick="event.preventDefault(); window.toggleDashboardView('advanced')"
@@ -102,10 +102,10 @@
                         @lang('admin::app.dashboard.index.stock-threshold')
                     </p>
 
-                    <!-- Products List -->  
+                    <!-- Products List -->
                     @include('admin::dashboard.stock-threshold-products')
                 </div>
-                
+
                 {!! view_render_event('bagisto.admin.dashboard.stock_threshold.after') !!}
             </div>
 
@@ -134,7 +134,7 @@
             </div>
         </div>
     @endif
-    
+
     @pushOnce('scripts')
         <script>
             window.toggleDashboardView = function(mode) {
@@ -175,8 +175,8 @@
                                 type="button"
                                 class="inline-flex w-full cursor-pointer appearance-none items-center justify-between gap-x-2 rounded-md border bg-white px-2.5 py-1.5 text-center text-sm leading-6 text-gray-600 transition-all marker:shadow hover:border-gray-400 focus:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400 dark:focus:border-gray-400"
                             >
-                                @{{ channels.find(channel => channel.code == filters.channel).name }}
-                                
+                                @{{ channels.find(channel => channel && channel.code == filters.channel)?.name || '' }}
+
                                 <span class="text-2xl icon-sort-down"></span>
                             </button>
                         </x-slot>
@@ -184,8 +184,8 @@
                         <x-slot:menu class="!p-0 shadow-[0_5px_20px_rgba(0,0,0,0.15)] dark:border-gray-800">
                             <x-admin::dropdown.menu.item
                                 v-for="channel in channels"
-                                ::class="{'bg-gray-100 dark:bg-gray-950': channel.code == filters.channel}"
-                                @click="filters.channel = channel.code"
+                                ::class="{'bg-gray-100 dark:bg-gray-950': channel && channel.code == filters.channel}"
+                                @click="filters.channel = channel ? channel.code : ''"
                             >
                                 @{{ channel.name }}
                             </x-admin::dropdown.menu.item>
@@ -224,12 +224,12 @@
                             },
                             ...@json(core()->getAllChannels()),
                         ],
-                        
+
                         filters: {
                             channel: '',
 
                             start: "{{ $startDate->format('Y-m-d') }}",
-                            
+
                             end: "{{ $endDate->format('Y-m-d') }}",
                         }
                     }
