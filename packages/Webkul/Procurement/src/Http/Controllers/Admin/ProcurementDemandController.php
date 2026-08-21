@@ -5,12 +5,18 @@ namespace Webkul\Procurement\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Webkul\Procurement\DataGrids\ProcurementDemandDataGrid;
+use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
 use Webkul\Procurement\Models\ProcurementDemand;
+use Webkul\Procurement\Security\ProcurementAcl;
 
 class ProcurementDemandController extends Controller
 {
+    use AuthorizesProcurementActions;
+
     public function index(Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_VIEW);
+
         if ($request->ajax()) {
             return datagrid(ProcurementDemandDataGrid::class)->process();
         }

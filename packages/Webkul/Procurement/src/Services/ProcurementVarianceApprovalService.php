@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Webkul\Procurement\Models\ProcurementAuditLog;
 use Webkul\Procurement\Models\ProcurementBatch;
 use Webkul\Procurement\Models\SupplierPurchaseOrder;
+use Webkul\Procurement\Security\ProcurementAcl;
 
 class ProcurementVarianceApprovalService
 {
@@ -17,6 +18,8 @@ class ProcurementVarianceApprovalService
      */
     public function approveVariance(int $spoId, int $actorId, ?string $notes = null): SupplierPurchaseOrder
     {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_VARIANCE_APPROVE);
+
         return DB::transaction(function () use ($spoId, $actorId, $notes) {
             /** @var SupplierPurchaseOrder $spo */
             $spo = SupplierPurchaseOrder::where('id', $spoId)->lockForUpdate()->firstOrFail();
@@ -70,6 +73,8 @@ class ProcurementVarianceApprovalService
      */
     public function rejectVariance(int $spoId, int $actorId, string $reason): SupplierPurchaseOrder
     {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_VARIANCE_APPROVE);
+
         return DB::transaction(function () use ($spoId, $actorId, $reason) {
             /** @var SupplierPurchaseOrder $spo */
             $spo = SupplierPurchaseOrder::where('id', $spoId)->lockForUpdate()->firstOrFail();

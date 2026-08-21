@@ -10,6 +10,7 @@ use Webkul\Procurement\Models\ProcurementAuditLog;
 use Webkul\Procurement\Models\ProcurementBatch;
 use Webkul\Procurement\Models\ProcurementCostSnapshot;
 use Webkul\Procurement\Models\SupplierPurchaseOrder;
+use Webkul\Procurement\Security\ProcurementAcl;
 
 class ProcurementSubmitService
 {
@@ -20,6 +21,8 @@ class ProcurementSubmitService
      */
     public function submitBatch(int $batchId, int $actorId): ProcurementBatch
     {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_SUBMIT);
+
         return DB::transaction(function () use ($batchId, $actorId) {
             /** @var ProcurementBatch $batch */
             $batch = ProcurementBatch::where('id', $batchId)->lockForUpdate()->firstOrFail();
@@ -65,6 +68,8 @@ class ProcurementSubmitService
      */
     public function submitSupplierPurchaseOrder(int $spoId, int $actorId): SupplierPurchaseOrder
     {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_SUBMIT);
+
         /** @var SupplierPurchaseOrder $spo */
         $spo = SupplierPurchaseOrder::where('id', $spoId)->lockForUpdate()->firstOrFail();
 

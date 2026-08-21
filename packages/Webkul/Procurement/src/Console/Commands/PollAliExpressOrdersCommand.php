@@ -27,6 +27,18 @@ class PollAliExpressOrdersCommand extends Command
      */
     public function handle(AliExpressPollingService $pollingService): int
     {
+        if (! config('procurement.v2_enabled', false)) {
+            $this->warn('Procurement V2 is currently disabled (procurement.v2_enabled = false). Polling cycle aborted.');
+
+            return self::SUCCESS;
+        }
+
+        if (! config('procurement.polling.enabled', true)) {
+            $this->warn('Procurement polling is currently disabled (procurement.polling.enabled = false). Polling cycle aborted.');
+
+            return self::SUCCESS;
+        }
+
         $this->info('Starting AliExpress idempotent polling cycle...');
 
         $activeOrders = ExternalPlatformOrder::whereNotIn('normalized_status', [

@@ -8,6 +8,7 @@ use Webkul\Procurement\Models\ProcurementAuditLog;
 use Webkul\Procurement\Models\ProcurementBatch;
 use Webkul\Procurement\Models\ProcurementManualPaymentConfirmation;
 use Webkul\Procurement\Models\SupplierPurchaseOrder;
+use Webkul\Procurement\Security\ProcurementAcl;
 
 class ProcurementManualPaymentService
 {
@@ -25,6 +26,8 @@ class ProcurementManualPaymentService
         ?string $evidenceReference = null,
         ?string $notes = null
     ): ProcurementManualPaymentConfirmation {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_PAYMENT_CONFIRM);
+
         if ($declaredTotal <= 0) {
             throw new DomainException('Declared payment total must be greater than zero.');
         }

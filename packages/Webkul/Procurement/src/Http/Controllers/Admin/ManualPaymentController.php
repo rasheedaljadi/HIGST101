@@ -7,25 +7,35 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Webkul\Procurement\DataGrids\ProcurementManualPaymentDataGrid;
+use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
+use Webkul\Procurement\Security\ProcurementAcl;
 use Webkul\Procurement\Services\ProcurementManualPaymentService;
 
 class ManualPaymentController extends Controller
 {
+    use AuthorizesProcurementActions;
+
     public function __construct(
         protected ProcurementManualPaymentService $paymentService
     ) {}
 
     public function index(Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_VIEW);
+
         if ($request->ajax()) {
             return datagrid(ProcurementManualPaymentDataGrid::class)->process();
         }
 
-        return view('procurement::admin.manual_payments.index');
+        $canViewCost = ProcurementAcl::canViewCost();
+
+        return view('procurement::admin.manual_payments.index', compact('canViewCost'));
     }
 
     public function store(Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_PAYMENT_CONFIRM);
+
         $request->validate([
             'supplier_purchase_order_id' => 'required|integer|exists:supplier_purchase_orders,id',
             'external_reference' => 'required|string|min:3',

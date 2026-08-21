@@ -10,6 +10,7 @@ use Webkul\Procurement\Models\ProcurementDemand;
 use Webkul\Procurement\Models\ProcurementDemandAllocation;
 use Webkul\Procurement\Models\SupplierPurchaseOrder;
 use Webkul\Procurement\Models\SupplierPurchaseOrderItem;
+use Webkul\Procurement\Security\ProcurementAcl;
 use Webkul\Product\Models\ProductInventory;
 
 class ProcurementInboundReceiptService
@@ -56,6 +57,8 @@ class ProcurementInboundReceiptService
         int $actorId,
         string $targetSourceCode = 'hayest_dropship_sa'
     ): SupplierPurchaseOrder {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_EXCEPTION_HANDLE);
+
         return DB::transaction(function () use ($supplierPurchaseOrderId, $receivedLines, $actorId, $targetSourceCode) {
             if (in_array($targetSourceCode, self::FORBIDDEN_RECEIVING_SOURCES, true)) {
                 throw new DomainException("Security Violation: Cannot receive imported goods into forbidden/legacy source '{$targetSourceCode}'. Must use 'hayest_dropship_sa'.");
@@ -192,6 +195,8 @@ class ProcurementInboundReceiptService
         int $actorId,
         string $manifestReference = 'SA-YE-TRF'
     ): void {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_EXCEPTION_HANDLE);
+
         DB::transaction(function () use ($supplierPurchaseOrderId, $itemQuantities, $actorId, $manifestReference) {
             $saSource = InventorySource::where('code', 'hayest_dropship_sa')->firstOrFail();
 
@@ -252,6 +257,8 @@ class ProcurementInboundReceiptService
         int $actorId,
         string $targetSourceCode = 'hayest_dropship_ye'
     ): void {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_EXCEPTION_HANDLE);
+
         DB::transaction(function () use ($supplierPurchaseOrderId, $receivedLines, $actorId, $targetSourceCode) {
             if (in_array($targetSourceCode, ['hayest_central', 'hayest_internal_ye', 'default', 'aliexpress_source'], true)) {
                 throw new DomainException("Security Violation: Cannot receive imported goods into '{$targetSourceCode}'. Imported products in Yemen must be received into 'hayest_dropship_ye'.");

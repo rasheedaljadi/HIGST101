@@ -6,6 +6,7 @@ use App\Models\AliExpressProductImport;
 use App\Models\HigestSourceOffer;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 use Webkul\Fulfillment\Services\Domain\FinancialSettlementService;
 use Webkul\Inventory\Models\InventorySource;
@@ -101,7 +102,7 @@ class ProcurementV2RebuildFullWorkflowTest extends TestCase
     protected function createTestOrder(string $status = 'processing', string $paymentMethod = 'cashondelivery', float $total = 100.0): Order
     {
         $order = Order::create([
-            'increment_id' => 'ORD-'.rand(100000, 999999),
+            'increment_id' => 'ORD-'.uniqid().'-'.Str::random(6),
             'status' => $status,
             'channel_name' => 'Default',
             'is_guest' => 0,

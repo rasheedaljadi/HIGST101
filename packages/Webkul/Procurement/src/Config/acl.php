@@ -22,19 +22,19 @@ return [
     [
         'key' => 'dropshipping.procurement_v2.batch_approve',
         'name' => 'procurement::app.acl.batch-approve',
-        'route' => 'admin.procurement.batches.approve',
+        'route' => 'admin.procurement.batches.index',
         'sort' => 3,
     ],
     [
         'key' => 'dropshipping.procurement_v2.submit',
         'name' => 'procurement::app.acl.submit',
-        'route' => 'admin.procurement.batches.submit',
+        'route' => 'admin.procurement.batches.index',
         'sort' => 4,
     ],
     [
         'key' => 'dropshipping.procurement_v2.payment_confirm',
         'name' => 'procurement::app.acl.payment-confirm',
-        'route' => 'admin.procurement.manual_payments.store',
+        'route' => 'admin.procurement.manual_payments.index',
         'sort' => 5,
     ],
     [
@@ -46,7 +46,7 @@ return [
     [
         'key' => 'dropshipping.procurement_v2.variance_approve',
         'name' => 'procurement::app.acl.variance-approve',
-        'route' => 'admin.procurement.cost_variances.approve',
+        'route' => 'admin.procurement.cost_variances.index',
         'sort' => 7,
     ],
     [

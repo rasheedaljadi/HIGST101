@@ -15,6 +15,7 @@ use Webkul\Procurement\Models\ProcurementDemand;
 use Webkul\Procurement\Models\ProcurementDemandAllocation;
 use Webkul\Procurement\Models\SupplierPurchaseOrder;
 use Webkul\Procurement\Models\SupplierPurchaseOrderItem;
+use Webkul\Procurement\Security\ProcurementAcl;
 
 class ProcurementBatchService
 {
@@ -27,6 +28,8 @@ class ProcurementBatchService
             ->where('state', ProcurementDemand::STATE_OPEN_FOR_BATCHING)
             ->where('provider', $provider ?? 'aliexpress')
             ->where('supplier_currency_code', $currency ?? 'USD')
+            ->whereNotNull('supplier_store_id')
+            ->where('supplier_store_id', '!=', '')
             ->whereRaw('(qty_required_external - qty_batched - qty_cancelled) > 0');
     }
 
@@ -49,7 +52,11 @@ class ProcurementBatchService
                 continue;
             }
 
-            $storeId = $demand->supplier_store_id ?: 'default_store';
+            $storeId = $demand->supplier_store_id;
+            if (empty($storeId)) {
+                throw new DomainException("Demand #{$demand->id} has no valid supplier store ID.");
+            }
+
             $unitCost = (float) ($demand->source_snapshot['unit_cost'] ?? 10.0);
             $lineCost = $unbatchedQty * $unitCost;
 
@@ -102,6 +109,8 @@ class ProcurementBatchService
             throw new DomainException('Cannot create procurement batch with empty demands list.');
         }
 
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_BATCH_CREATE, allowSystem: true);
+
         return DB::transaction(function () use ($demandIds, $actorId) {
             // Lock demands with SELECT ... FOR UPDATE to prevent concurrency race conditions
             /** @var Collection<int, ProcurementDemand> $demands */
@@ -113,10 +122,14 @@ class ProcurementBatchService
                 throw new DomainException('No matching procurement demands found.');
             }
 
-            // Verify each demand is open and has available unbatched quantity
+            // Verify each demand is open and has available unbatched quantity and valid store ID
             foreach ($demands as $demand) {
                 if ($demand->state !== ProcurementDemand::STATE_OPEN_FOR_BATCHING) {
                     throw new DomainException("Demand #{$demand->id} is in state '{$demand->state}' and cannot be batched.");
+                }
+
+                if (empty($demand->supplier_store_id)) {
+                    throw new DomainException("Demand #{$demand->id} does not have a valid supplier_store_id and cannot be batched.");
                 }
 
                 $available = $demand->qty_required_external - $demand->qty_batched - $demand->qty_cancelled;
@@ -148,7 +161,7 @@ class ProcurementBatchService
                 'lock_version' => 1,
             ]);
 
-            // Group Demands by Store
+            // Group Demands strictly by Store ID
             $storeGroups = [];
             foreach ($demands as $demand) {
                 $qtyToBatch = $demand->remaining_unbatched_qty;
@@ -171,7 +184,7 @@ class ProcurementBatchService
                     'state' => $isFullyBatched ? ProcurementDemand::STATE_BATCHED : ProcurementDemand::STATE_OPEN_FOR_BATCHING,
                 ]);
 
-                $storeId = $demand->supplier_store_id ?: 'default_store';
+                $storeId = (string) $demand->supplier_store_id;
                 $storeGroups[$storeId][] = [
                     'demand' => $demand,
                     'qty' => $qtyToBatch,
@@ -371,6 +384,8 @@ class ProcurementBatchService
      */
     public function approveBatch(int $batchId, int $actorId, ?string $notes = null): ProcurementBatch
     {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_BATCH_APPROVE);
+
         return DB::transaction(function () use ($batchId, $actorId, $notes) {
             /** @var ProcurementBatch $batch */
             $batch = ProcurementBatch::where('id', $batchId)->lockForUpdate()->firstOrFail();
@@ -412,6 +427,8 @@ class ProcurementBatchService
      */
     public function rejectBatch(int $batchId, int $actorId, string $reason): ProcurementBatch
     {
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_BATCH_APPROVE);
+
         return DB::transaction(function () use ($batchId, $actorId, $reason) {
             /** @var ProcurementBatch $batch */
             $batch = ProcurementBatch::where('id', $batchId)->lockForUpdate()->firstOrFail();

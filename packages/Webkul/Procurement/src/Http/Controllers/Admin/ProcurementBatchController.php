@@ -8,12 +8,16 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Webkul\Procurement\DataGrids\ProcurementBatchDataGrid;
+use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
 use Webkul\Procurement\Models\ProcurementBatch;
+use Webkul\Procurement\Security\ProcurementAcl;
 use Webkul\Procurement\Services\ProcurementBatchService;
 use Webkul\Procurement\Services\ProcurementSubmitService;
 
 class ProcurementBatchController extends Controller
 {
+    use AuthorizesProcurementActions;
+
     public function __construct(
         protected ProcurementBatchService $batchService,
         protected ProcurementSubmitService $submitService
@@ -21,6 +25,8 @@ class ProcurementBatchController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_VIEW);
+
         if ($request->ajax()) {
             return datagrid(ProcurementBatchDataGrid::class)->process();
         }
@@ -39,6 +45,8 @@ class ProcurementBatchController extends Controller
 
     public function create()
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_BATCH_CREATE);
+
         $openDemands = $this->batchService->getOpenDemandsQuery()->with(['order', 'orderItem'])->get();
 
         return view('procurement::admin.batches.create', compact('openDemands'));
@@ -46,6 +54,8 @@ class ProcurementBatchController extends Controller
 
     public function preview(Request $request): JsonResponse
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_BATCH_CREATE);
+
         $demandIds = $request->input('demand_ids', []);
         $preview = $this->batchService->previewBatch($demandIds);
 
@@ -54,13 +64,15 @@ class ProcurementBatchController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_BATCH_CREATE);
+
         $request->validate([
             'demand_ids' => 'required|array|min:1',
             'demand_ids.*' => 'integer|exists:procurement_demands,id',
         ]);
 
         try {
-            $batch = $this->batchService->createBatch($request->input('demand_ids'), Auth::id());
+            $batch = $this->batchService->createBatch($request->input('demand_ids'), (int) Auth::id());
 
             session()->flash('success', trans('procurement::app.messages.batch-created-success', ['number' => $batch->batch_number]));
 
@@ -74,6 +86,8 @@ class ProcurementBatchController extends Controller
 
     public function view(int $id)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_VIEW);
+
         $batch = ProcurementBatch::with([
             'demands.order',
             'supplierOrders.items.allocations.demand.order',
@@ -89,6 +103,8 @@ class ProcurementBatchController extends Controller
 
     public function approve(int $id, Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_BATCH_APPROVE);
+
         try {
             $batch = $this->batchService->approveBatch($id, (int) Auth::id(), $request->input('notes'));
 
@@ -104,6 +120,8 @@ class ProcurementBatchController extends Controller
 
     public function reject(int $id, Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_BATCH_APPROVE);
+
         $request->validate([
             'reason' => 'required|string|min:3',
         ]);
@@ -123,6 +141,8 @@ class ProcurementBatchController extends Controller
 
     public function submit(int $id)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_SUBMIT);
+
         try {
             $batch = $this->submitService->submitBatch($id, (int) Auth::id());
 

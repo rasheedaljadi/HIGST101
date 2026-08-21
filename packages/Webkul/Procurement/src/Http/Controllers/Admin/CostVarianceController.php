@@ -7,16 +7,22 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Webkul\Procurement\DataGrids\CostVarianceDataGrid;
+use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
+use Webkul\Procurement\Security\ProcurementAcl;
 use Webkul\Procurement\Services\ProcurementVarianceApprovalService;
 
 class CostVarianceController extends Controller
 {
+    use AuthorizesProcurementActions;
+
     public function __construct(
         protected ProcurementVarianceApprovalService $varianceService
     ) {}
 
     public function index(Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_COST_VIEW);
+
         if ($request->ajax()) {
             return datagrid(CostVarianceDataGrid::class)->process();
         }
@@ -26,6 +32,8 @@ class CostVarianceController extends Controller
 
     public function approve(int $id, Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_VARIANCE_APPROVE);
+
         try {
             $this->varianceService->approveVariance($id, (int) Auth::id(), $request->input('notes'));
 
@@ -41,6 +49,8 @@ class CostVarianceController extends Controller
 
     public function reject(int $id, Request $request)
     {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_VARIANCE_APPROVE);
+
         $request->validate([
             'reason' => 'required|string|min:3',
         ]);

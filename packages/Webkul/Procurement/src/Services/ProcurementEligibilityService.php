@@ -49,6 +49,8 @@ class ProcurementEligibilityService
      *     supplier_sku_id: string,
      *     unit_cost: float,
      *     currency: string,
+     *     metadata_status: string,
+     *     exception_reason: string|null,
      *     source_snapshot: array
      * }
      */
@@ -87,6 +89,8 @@ class ProcurementEligibilityService
                 'supplier_sku_id' => '',
                 'unit_cost' => (float) ($product?->cost ?? 0.0),
                 'currency' => 'USD',
+                'metadata_status' => 'valid',
+                'exception_reason' => null,
                 'source_snapshot' => [
                     'source_type' => 'internal_catalog',
                     'sku' => $item->sku,
@@ -99,8 +103,40 @@ class ProcurementEligibilityService
         $supplierSkuId = (string) ($offer?->source_sku_id ?? $item->additional['supplier_sku_id'] ?? $item->sku ?? 'ae_sku_'.$productId);
 
         $payload = $import?->payload_snapshot ?? [];
-        $supplierStoreId = (string) ($payload['store_info']['store_id'] ?? $payload['store_id'] ?? $item->additional['supplier_store_id'] ?? 'ae_store_default');
-        $supplierStoreName = (string) ($payload['store_info']['store_name'] ?? $payload['store_name'] ?? $item->additional['supplier_store_name'] ?? 'AliExpress Store');
+        $payloadStoreId = ! empty($payload['store_info']['store_id']) ? (string) $payload['store_info']['store_id'] : (! empty($payload['store_id']) ? (string) $payload['store_id'] : null);
+        $payloadStoreName = ! empty($payload['store_info']['store_name']) ? (string) $payload['store_info']['store_name'] : (! empty($payload['store_name']) ? (string) $payload['store_name'] : null);
+
+        $additionalStoreId = ! empty($item->additional['supplier_store_id']) ? (string) $item->additional['supplier_store_id'] : null;
+        $additionalStoreName = ! empty($item->additional['supplier_store_name']) ? (string) $item->additional['supplier_store_name'] : null;
+
+        // Resolve store provenance and detect conflict or missing metadata
+        $supplierStoreId = null;
+        $supplierStoreName = null;
+        $provenanceSource = null;
+        $metadataStatus = 'valid';
+        $exceptionReason = null;
+
+        if ($payloadStoreId !== null && $additionalStoreId !== null && $payloadStoreId !== $additionalStoreId) {
+            $metadataStatus = 'conflicting_metadata';
+            $exceptionReason = 'CONFLICTING_SUPPLIER_METADATA';
+            $supplierStoreId = null;
+            $supplierStoreName = null;
+            $provenanceSource = 'conflicting';
+        } elseif ($payloadStoreId !== null) {
+            $supplierStoreId = $payloadStoreId;
+            $supplierStoreName = $payloadStoreName ?: 'Store #'.$payloadStoreId;
+            $provenanceSource = 'import_payload_snapshot';
+        } elseif ($additionalStoreId !== null) {
+            $supplierStoreId = $additionalStoreId;
+            $supplierStoreName = $additionalStoreName ?: 'Store #'.$additionalStoreId;
+            $provenanceSource = 'order_item_additional';
+        } else {
+            $metadataStatus = 'missing_store';
+            $exceptionReason = 'MISSING_SUPPLIER_STORE_METADATA';
+            $supplierStoreId = null;
+            $supplierStoreName = null;
+            $provenanceSource = 'missing';
+        }
 
         $unitCost = (float) ($offer?->acquisition_cost ?? $item->additional['supplier_unit_cost'] ?? $product?->cost ?? 10.0);
         $currency = strtoupper((string) ($offer?->source_currency ?? $import?->shipping_currency ?? 'USD'));
@@ -115,6 +151,8 @@ class ProcurementEligibilityService
             'supplier_sku_id' => $supplierSkuId,
             'unit_cost' => $unitCost,
             'currency' => $currency,
+            'metadata_status' => $metadataStatus,
+            'exception_reason' => $exceptionReason,
             'source_snapshot' => [
                 'import_id' => $import?->id,
                 'offer_id' => $offer?->id,
@@ -122,6 +160,14 @@ class ProcurementEligibilityService
                 'supplier_sku_id' => $supplierSkuId,
                 'supplier_store_id' => $supplierStoreId,
                 'supplier_store_name' => $supplierStoreName,
+                'store_provenance' => [
+                    'source' => $provenanceSource,
+                    'payload_store_id' => $payloadStoreId,
+                    'additional_store_id' => $additionalStoreId,
+                    'resolved_store_id' => $supplierStoreId,
+                ],
+                'metadata_status' => $metadataStatus,
+                'exception_reason' => $exceptionReason,
                 'unit_cost' => $unitCost,
                 'currency' => $currency,
                 'imported_at' => $import?->created_at?->toIso8601String(),
