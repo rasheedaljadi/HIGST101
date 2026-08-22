@@ -18,14 +18,10 @@ return new class extends Migration
             $table->string('provider')->default('aliexpress');
             $table->unsignedBigInteger('provider_account_id')->nullable();
             $table->string('supplier_store_id')->nullable();
-            $table->string('external_order_id')->nullable();
-            $table->string('correlation_key')->nullable()->index();
-            $table->string('provider_request_id')->nullable();
+            $table->string('external_order_id');
 
             $table->string('raw_status')->nullable();
             $table->string('normalized_status')->default('draft')->index();
-            $table->string('failure_code')->nullable();
-            $table->text('failure_message')->nullable();
             $table->string('currency_code', 3)->default('USD');
 
             $table->string('tracking_number')->nullable()->index();
