@@ -60,56 +60,90 @@ class AliExpressApiClient
             }
         }
 
-        // The TOP business gateway signs WITHOUT a path prefix (empty base).
-        $request['sign'] = $this->sign('', $request);
-
         $endpoint = config('aliexpress.business_url');
+        $maxRetries = 3;
+        $attempt = 0;
 
-        Log::channel('aliexpress')->info('AliExpress API call', [
-            'method' => $method,
-            'endpoint' => $endpoint,
-        ]);
+        while ($attempt < $maxRetries) {
+            $attempt++;
 
-        try {
-            $response = Http::asForm()
-                ->connectTimeout((int) config('aliexpress.connect_timeout', 30))
-                ->timeout((int) config('aliexpress.timeout', 60))
-                ->retry(2, 1000, throw: false)
-                ->post($endpoint, $request);
-        } catch (ConnectionException $e) {
-            Log::channel('aliexpress')->error('AliExpress API transport error', [
+            // Refresh timestamp and signature for each attempt
+            $request['timestamp'] = (string) (int) (microtime(true) * 1000);
+            $request['sign'] = $this->sign('', $request);
+
+            Log::channel('aliexpress')->info('AliExpress API call', [
                 'method' => $method,
-                'message' => $e->getMessage(),
+                'endpoint' => $endpoint,
+                'attempt' => $attempt,
             ]);
 
-            throw new RuntimeException('Unable to reach AliExpress API: '.$e->getMessage(), 0, $e);
+            try {
+                $response = Http::asForm()
+                    ->connectTimeout((int) config('aliexpress.connect_timeout', 30))
+                    ->timeout((int) config('aliexpress.timeout', 60))
+                    ->post($endpoint, $request);
+            } catch (ConnectionException $e) {
+                if ($attempt < $maxRetries) {
+                    usleep(1500000); // 1.5s
+
+                    continue;
+                }
+
+                Log::channel('aliexpress')->error('AliExpress API transport error', [
+                    'method' => $method,
+                    'message' => $e->getMessage(),
+                ]);
+
+                throw new RuntimeException('Unable to reach AliExpress API: '.$e->getMessage(), 0, $e);
+            }
+
+            $body = $response->json() ?? [];
+
+            // Error envelope: top-level "code" (!= 0) or "error_response".
+            $code = $body['code']
+                ?? ($body['error_response']['code'] ?? null);
+
+            $message = $body['message']
+                ?? ($body['error_response']['msg'] ?? null);
+
+            // If rate limited by AliExpress (ApiCallLimit or frequency exceeds limit), backoff and retry
+            if ($code === 'ApiCallLimit' || str_contains(strtolower((string) $message), 'frequency exceeds the limit') || str_contains(strtolower((string) $message), 'calllimit')) {
+                if ($attempt < $maxRetries) {
+                    Log::channel('aliexpress')->warning('AliExpress API rate limited, backing off 1.5s...', [
+                        'method' => $method,
+                        'attempt' => $attempt,
+                    ]);
+                    usleep(1500000);
+
+                    continue;
+                }
+            }
+
+            $ok = $response->successful() && ($code === null || (string) $code === '0');
+
+            Log::channel('aliexpress')->info('AliExpress API result', [
+                'method' => $method,
+                'status' => $response->status(),
+                'ok' => $ok,
+                'code' => $code,
+                'message' => $message,
+            ]);
+
+            return [
+                'ok' => $ok,
+                'status' => $response->status(),
+                'code' => $code !== null ? (string) $code : null,
+                'message' => $message,
+                'body' => $body,
+            ];
         }
 
-        $body = $response->json() ?? [];
-
-        // Error envelope: top-level "code" (!= 0) or "error_response".
-        $code = $body['code']
-            ?? ($body['error_response']['code'] ?? null);
-
-        $message = $body['message']
-            ?? ($body['error_response']['msg'] ?? null);
-
-        $ok = $response->successful() && ($code === null || (string) $code === '0');
-
-        Log::channel('aliexpress')->info('AliExpress API result', [
-            'method' => $method,
-            'status' => $response->status(),
-            'ok' => $ok,
-            'code' => $code,
-            'message' => $message,
-        ]);
-
         return [
-            'ok' => $ok,
-            'status' => $response->status(),
-            'code' => $code !== null ? (string) $code : null,
-            'message' => $message,
-            'body' => $body,
+            'ok' => false,
+            'status' => 429,
+            'code' => 'ApiCallLimit',
+            'message' => 'AliExpress API access frequency exceeds limit after retries.',
+            'body' => [],
         ];
     }
 

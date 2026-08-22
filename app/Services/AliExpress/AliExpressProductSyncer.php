@@ -61,9 +61,14 @@ class AliExpressProductSyncer
                 $result = $this->fetchPayload($id, $token);
                 $dto = $this->mapper->map($result['body'], $id);
             } catch (Throwable $e) {
-                if (str_contains(strtolower($e->getMessage()), 'not found') ||
-                    str_contains(strtolower($e->getMessage()), 'prohibited') ||
-                    str_contains(strtolower($e->getMessage()), 'deleted')) {
+                $err = strtolower($e->getMessage());
+                if (str_contains($err, 'not found') ||
+                    str_contains($err, 'prohibited') ||
+                    str_contains($err, 'deleted') ||
+                    str_contains($err, 'unsaleable') ||
+                    str_contains($err, '604') ||
+                    str_contains($err, '605') ||
+                    str_contains($err, 'item_id_not_found')) {
                     $this->disableLocalProduct($import);
 
                     return;
@@ -483,9 +488,13 @@ class AliExpressProductSyncer
         if (str_contains($lowerMessage, 'not found') ||
             str_contains($lowerMessage, 'deleted') ||
             str_contains($lowerMessage, '404') ||
-            str_contains($lowerMessage, 'product not found')
+            str_contains($lowerMessage, 'product not found') ||
+            str_contains($lowerMessage, 'unsaleable') ||
+            str_contains($lowerMessage, '604') ||
+            str_contains($lowerMessage, '605') ||
+            str_contains($lowerMessage, 'item_id_not_found')
         ) {
-            return 'المنتج غير متوفر: يبدو أن المنتج قد تم حذفه من AliExpress أو أن المورد قام بإزالته.';
+            return 'المنتج غير متوفر: تم إيقاف أو حذف هذا المنتج أو نفاد جميع متغيراته من AliExpress.';
         }
 
         if (str_contains($lowerMessage, 'prohibited') ||

@@ -29,6 +29,7 @@ use Webkul\Attribute\Repositories\AttributeFamilyRepository;
 use Webkul\Category\Models\Category;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Models\Locale;
+use Webkul\Inventory\Models\InventorySource;
 use Webkul\Product\Helpers\Indexers\Flat;
 use Webkul\Product\Helpers\Indexers\Inventory as InventoryIndexer;
 use Webkul\Product\Helpers\Indexers\Price as PriceIndexer;
@@ -1870,11 +1871,16 @@ class AliExpressProductImporter
 
     /**
      * Resolve the inventory source quantities should be written against,
-     * preferring the default channel's first active source and falling back to
-     * source #1 (the seeded default warehouse).
+     * preferring the AliExpress virtual projection source (aliexpress_source),
+     * and falling back to the default channel's first active source.
      */
     protected function defaultInventorySourceId(): int
     {
+        $aeSource = InventorySource::where('code', 'aliexpress_source')->first();
+        if ($aeSource) {
+            return (int) $aeSource->id;
+        }
+
         $source = core()->getDefaultChannel()
             ->inventory_sources
             ->where('status', 1)

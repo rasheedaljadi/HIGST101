@@ -154,6 +154,7 @@ class AliExpressSyncProducts extends Command
                         $this->error('  ✖ Failed: '.$e->getMessage());
                         $failed++;
                     }
+                    usleep(100000); // 100ms throttle delay
                 }
             }
         } catch (Throwable $fatal) {
