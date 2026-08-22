@@ -171,14 +171,19 @@ class AppServiceProvider extends ServiceProvider
 
         $menu = config('menu.admin', []);
 
-        // Remove any pre-existing Drop Shipping menu entries (e.g. the package's
-        // "coming soon" imports/fulfillment/api-keys placeholders) so only this
-        // app's working pages remain — avoiding duplicate sidebar items without
-        // editing any packages/Webkul file. Reversible: delete this filter.
+        // Remove only legacy placeholder menu keys that were replaced,
+        // while preserving Procurement V2 and other active module items.
         $menu = array_values(array_filter($menu, function ($item) {
             $key = $item['key'] ?? '';
 
-            return $key !== 'dropshipping' && ! str_starts_with($key, 'dropshipping.');
+            return ! in_array($key, [
+                'dropshipping',
+                'dropshipping.imports',
+                'dropshipping.fulfillment',
+                'dropshipping.api-keys',
+                'dropshipping.sync',
+                'dropshipping.finance',
+            ]);
         }));
 
         $menu[] = [

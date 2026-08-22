@@ -2,21 +2,21 @@
 
 return [
     /**
-     * Dropshipping Top-level submenu: أوامر الشراء V2
+     * Top-level Independent Module: إدارة الشراء (Purchase Management)
      */
     [
-        'key' => 'dropshipping.procurement_v2',
+        'key' => 'procurement_v2',
         'name' => 'procurement::app.admin.menu.procurement-v2',
         'route' => 'admin.procurement.demands.index',
-        'sort' => 2,
-        'icon' => 'icon-sales',
+        'sort' => 3,
+        'icon' => 'icon-cart',
     ],
 
     /**
-     * 1. طلبات التوريد المؤهلة
+     * 1. احتياجات الشراء
      */
     [
-        'key' => 'dropshipping.procurement_v2.demands',
+        'key' => 'procurement_v2.demands',
         'name' => 'procurement::app.admin.menu.demands',
         'route' => 'admin.procurement.demands.index',
         'sort' => 1,
@@ -24,10 +24,10 @@ return [
     ],
 
     /**
-     * 2. دفعات التجميع
+     * 2. دفعات الشراء
      */
     [
-        'key' => 'dropshipping.procurement_v2.batches',
+        'key' => 'procurement_v2.batches',
         'name' => 'procurement::app.admin.menu.batches',
         'route' => 'admin.procurement.batches.index',
         'sort' => 2,
@@ -38,7 +38,7 @@ return [
      * 3. أوامر المورد
      */
     [
-        'key' => 'dropshipping.procurement_v2.supplier_orders',
+        'key' => 'procurement_v2.supplier_orders',
         'name' => 'procurement::app.admin.menu.supplier-orders',
         'route' => 'admin.procurement.supplier_orders.index',
         'sort' => 3,
@@ -46,10 +46,10 @@ return [
     ],
 
     /**
-     * 4. أوامر علي إكسبرس
+     * 4. طلبات المنصة
      */
     [
-        'key' => 'dropshipping.procurement_v2.platform_orders',
+        'key' => 'procurement_v2.platform_orders',
         'name' => 'procurement::app.admin.menu.platform-orders',
         'route' => 'admin.procurement.platform_orders.index',
         'sort' => 4,
@@ -57,10 +57,10 @@ return [
     ],
 
     /**
-     * 5. إقرارات الدفع اليدوي
+     * 5. تأكيدات الدفع اليدوي
      */
     [
-        'key' => 'dropshipping.procurement_v2.manual_payments',
+        'key' => 'procurement_v2.manual_payments',
         'name' => 'procurement::app.admin.menu.manual-payments',
         'route' => 'admin.procurement.manual_payments.index',
         'sort' => 5,
@@ -68,10 +68,10 @@ return [
     ],
 
     /**
-     * 6. فروق التكلفة والموافقات
+     * 6. فروقات التكلفة
      */
     [
-        'key' => 'dropshipping.procurement_v2.cost_variances',
+        'key' => 'procurement_v2.cost_variances',
         'name' => 'procurement::app.admin.menu.cost-variances',
         'route' => 'admin.procurement.cost_variances.index',
         'sort' => 6,
@@ -79,10 +79,10 @@ return [
     ],
 
     /**
-     * 7. المصالحات والاستثناءات
+     * 7. الاستثناءات
      */
     [
-        'key' => 'dropshipping.procurement_v2.exceptions',
+        'key' => 'procurement_v2.exceptions',
         'name' => 'procurement::app.admin.menu.exceptions',
         'route' => 'admin.procurement.exceptions.index',
         'sort' => 7,
@@ -93,7 +93,7 @@ return [
      * 8. التقارير
      */
     [
-        'key' => 'dropshipping.procurement_v2.reports',
+        'key' => 'procurement_v2.reports',
         'name' => 'procurement::app.admin.menu.reports',
         'route' => 'admin.procurement.reports.index',
         'sort' => 8,

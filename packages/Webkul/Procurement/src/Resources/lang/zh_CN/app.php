@@ -3,6 +3,7 @@
 return [
     'admin' => [
         'menu' => [
+            'overview' => '采购概览',
             'procurement-v2' => 'Purchase Orders V2',
             'demands' => 'Eligible Demands',
             'batches' => 'Procurement Batches',

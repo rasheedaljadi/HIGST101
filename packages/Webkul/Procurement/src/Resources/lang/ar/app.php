@@ -3,14 +3,15 @@
 return [
     'admin' => [
         'menu' => [
-            'procurement-v2' => 'أوامر الشراء V2',
-            'demands' => 'طلبات التوريد المؤهلة',
-            'batches' => 'دفعات التجميع',
+            'procurement-v2' => 'إدارة الشراء',
+            'overview' => 'لوحة إدارة الشراء',
+            'demands' => 'احتياجات الشراء',
+            'batches' => 'دفعات الشراء',
             'supplier-orders' => 'أوامر المورد',
-            'platform-orders' => 'أوامر علي إكسبرس',
-            'manual-payments' => 'إقرارات الدفع اليدوي',
-            'cost-variances' => 'فروق التكلفة والموافقات',
-            'exceptions' => 'المصالحات والاستثناءات',
+            'platform-orders' => 'طلبات المنصة',
+            'manual-payments' => 'تأكيدات الدفع اليدوي',
+            'cost-variances' => 'فروقات التكلفة',
+            'exceptions' => 'الاستثناءات',
             'reports' => 'التقارير',
         ],
     ],

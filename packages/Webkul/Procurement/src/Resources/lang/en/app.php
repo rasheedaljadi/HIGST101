@@ -3,15 +3,16 @@
 return [
     'admin' => [
         'menu' => [
-            'procurement-v2' => 'Purchase Orders V2',
-            'demands' => 'Eligible Demands',
-            'batches' => 'Procurement Batches',
+            'procurement-v2' => 'Purchase Management',
+            'overview' => 'Purchase Overview',
+            'demands' => 'Purchase Demands',
+            'batches' => 'Purchase Batches',
             'supplier-orders' => 'Supplier Orders',
-            'platform-orders' => 'AliExpress Orders',
-            'manual-payments' => 'Manual Payments',
+            'platform-orders' => 'Platform Orders',
+            'manual-payments' => 'Manual Payment Confirmations',
             'cost-variances' => 'Cost Variances',
-            'exceptions' => 'Exceptions & Reconciliations',
-            'reports' => 'Reports & Profitability',
+            'exceptions' => 'Exceptions',
+            'reports' => 'Reports',
         ],
     ],
 

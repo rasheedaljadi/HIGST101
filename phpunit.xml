@@ -58,6 +58,11 @@
             <directory suffix="Test.php">packages/Webkul/Razorpay/tests/Feature</directory>
         </testsuite>
 
+        <!-- Procurement package testsuites. -->
+        <testsuite name="Procurement Feature Test">
+            <directory suffix="Test.php">packages/Webkul/Procurement/tests/Feature</directory>
+        </testsuite>
+
         <!-- Shop package testsuites. -->
         <testsuite name="Shop Feature Test">
             <directory suffix="Test.php">packages/Webkul/Shop/tests/Feature</directory>
@@ -91,6 +96,7 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
-        <env name="DB_DATABASE" value="higest_inventory_clean_test"/>
+        <env name="DB_DATABASE" value="higest_procurement_v2_integrity_test"/>
+        <env name="PROCUREMENT_V2_ENABLED" value="false"/>
     </php>
 </phpunit>
