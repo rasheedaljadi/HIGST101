@@ -113,7 +113,7 @@
 
             body {
                 font-size: 10px;
-                color: #091341;
+                color: #1E293B;
                 font-family: "{{ $fontFamily['regular'] }}";
             }
 
@@ -126,29 +126,33 @@
             }
 
             .page-header {
-                border-bottom: 1px solid #E9EFFC;
+                border-bottom: 2px solid #1E3A8A;
                 text-align: center;
-                font-size: 24px;
+                font-size: 22px;
                 text-transform: uppercase;
-                color: #000DBB;
-                padding: 24px 0;
+                color: #1E3A8A;
+                padding: 18px 0;
                 margin: 0;
             }
 
             .logo-container {
                 position: absolute;
-                top: 20px;
+                top: 14px;
                 left: 20px;
+                width: 110px;
+                height: 42px;
+                text-align: left;
             }
 
             .logo-container.rtl {
-                left: auto;
-                right: 20px;
+                left: 20px;
+                right: auto;
             }
 
             .logo-container img {
-                max-width: 100%;
-                height: auto;
+                width: 110px;
+                height: 42px;
+                display: block;
             }
 
             .page-header b {
@@ -168,10 +172,11 @@
             }
 
             table thead th {
-                background-color: #E9EFFC;
-                color: #000DBB;
-                padding: 6px 18px;
+                background-color: #EEF2FF;
+                color: #1E3A8A;
+                padding: 7px 14px;
                 text-align: left;
+                border-bottom: 1.5px solid #CBD5E1;
             }
 
             table.rtl thead tr th {
@@ -179,10 +184,11 @@
             }
 
             table tbody td {
-                padding: 9px 18px;
-                border-bottom: 1px solid #E9EFFC;
+                padding: 8px 14px;
+                border-bottom: 1px solid #E2E8F0;
                 text-align: left;
                 vertical-align: top;
+                color: #1E293B;
             }
 
             table.rtl tbody tr td {
@@ -196,23 +202,22 @@
 
             .summary table {
                 float: right;
-                width: 250px;
-                padding-top: 5px;
-                padding-bottom: 5px;
-                background-color: #E9EFFC;
+                width: 260px;
+                padding-top: 4px;
+                padding-bottom: 4px;
+                background-color: #F8FAFC;
+                border: 1px solid #E2E8F0;
                 white-space: nowrap;
             }
 
             .summary table.rtl {
-                width: 280px;
-            }
-
-            .summary table.rtl {
-                margin-right: 480px;
+                width: 290px;
+                margin-right: 470px;
             }
 
             .summary table td {
-                padding: 5px 10px;
+                padding: 4px 10px;
+                border-bottom: 1px solid #F1F5F9;
             }
 
             .summary table td:nth-child(2) {
@@ -225,12 +230,53 @@
         </style>
     </head>
 
+    @php
+        $logoBase64 = null;
+        $customLogo = core()->getConfigData('sales.invoice_settings.pdf_print_outs.logo');
+
+        if ($customLogo) {
+            try {
+                if (Storage::disk('public')->exists($customLogo)) {
+                    $logoBase64 = base64_encode(Storage::disk('public')->get($customLogo));
+                } elseif (Storage::exists($customLogo)) {
+                    $logoBase64 = base64_encode(Storage::get($customLogo));
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        if (! $logoBase64) {
+            $channelLogo = core()->getCurrentChannel()?->logo_path;
+            if ($channelLogo) {
+                try {
+                    if (Storage::disk('public')->exists($channelLogo)) {
+                        $logoBase64 = base64_encode(Storage::disk('public')->get($channelLogo));
+                    } elseif (Storage::exists($channelLogo)) {
+                        $logoBase64 = base64_encode(Storage::get($channelLogo));
+                    }
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        if (! $logoBase64) {
+            $higestLogoPaths = [
+                base_path('packages/Webkul/Shop/src/Resources/assets/images/logo.png'),
+                public_path('themes/shop/default/build/assets/logo.png'),
+                base_path('packages/Webkul/Admin/src/Resources/assets/images/logo.png'),
+                public_path('images/logo.png'),
+            ];
+            foreach ($higestLogoPaths as $path) {
+                if (file_exists($path)) {
+                    $logoBase64 = base64_encode(file_get_contents($path));
+                    break;
+                }
+            }
+        }
+    @endphp
+
     <body dir="{{ core()->getCurrentLocale()->direction }}">
-        <div class="logo-container {{ core()->getCurrentLocale()->direction }}">
-            @if (core()->getConfigData('sales.invoice_settings.pdf_print_outs.logo'))
-                <img src="data:image/png;base64,{{ base64_encode(file_get_contents(Storage::url(core()->getConfigData('sales.invoice_settings.pdf_print_outs.logo')))) }}"/>
-            @else
-                <img src="data:image/png;base64,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"/>
+        <div class="logo-container">
+            @if ($logoBase64)
+                <img src="data:image/png;base64,{{ $logoBase64 }}" width="110" height="42" style="width: 110px; height: 42px;" alt="{{ config('app.name', 'HIGEST') }}"/>
             @endif
         </div>
 
@@ -624,11 +670,11 @@
                             </tr>
 
                             <tr>
-                                <td style="border-top: 1px solid #FFFFFF;">
+                                <td style="border-top: 2px solid #1E3A8A; background-color: #EEF2FF; color: #1E3A8A; font-weight: bold;">
                                     <b>@lang('shop::app.customers.account.orders.invoice-pdf.grand-total')</b>
                                 </td>
-                                <td style="border-top: 1px solid #FFFFFF;">-</td>
-                                <td style="border-top: 1px solid #FFFFFF;">
+                                <td style="border-top: 2px solid #1E3A8A; background-color: #EEF2FF; color: #1E3A8A; font-weight: bold;">-</td>
+                                <td style="border-top: 2px solid #1E3A8A; background-color: #EEF2FF; color: #1E3A8A; font-weight: bold;">
                                     <b>{!! core()->formatPrice($invoice->grand_total, $orderCurrencyCode) !!}</b>
                                 </td>
                             </tr>
