@@ -7,6 +7,8 @@ use Illuminate\Support\ServiceProvider;
 use Webkul\Procurement\Console\Commands\PollAliExpressOrdersCommand;
 use Webkul\Procurement\Console\Commands\ProcessProcurementAutoBatchCommand;
 use Webkul\Procurement\Console\Commands\ProcurementRemediateFailedSubmissionCommand;
+use Webkul\Procurement\Contracts\AliExpressOrderGateway;
+use Webkul\Procurement\Gateways\AliExpressOrderSubmissionGateway;
 
 class ProcurementServiceProvider extends ServiceProvider
 {
@@ -16,6 +18,11 @@ class ProcurementServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->registerConfig();
+
+        $this->app->singleton(
+            AliExpressOrderGateway::class,
+            AliExpressOrderSubmissionGateway::class
+        );
 
         $this->app->register(EventServiceProvider::class);
     }

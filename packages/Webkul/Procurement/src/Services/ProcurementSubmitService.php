@@ -2,10 +2,11 @@
 
 namespace Webkul\Procurement\Services;
 
-use App\Models\AliExpressToken;
-use App\Services\AliExpress\AliExpressApiClient;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Webkul\Procurement\Contracts\AliExpressOrderGateway;
+use Webkul\Procurement\DTO\AliExpressOrderPreflight;
+use Webkul\Procurement\DTO\ExternalOrderDraft;
 use Webkul\Procurement\DTO\ExternalOrderSubmissionFailed;
 use Webkul\Procurement\DTO\VerifiedExternalOrderCreated;
 use Webkul\Procurement\Exceptions\ExternalOrderSubmissionException;
@@ -19,6 +20,12 @@ use Webkul\Procurement\Security\ProcurementAcl;
 
 class ProcurementSubmitService
 {
+    public function __construct(
+        protected ?AliExpressOrderGateway $orderGateway = null
+    ) {
+        $this->orderGateway ??= app(AliExpressOrderGateway::class);
+    }
+
     /**
      * Submit an approved batch and its supplier purchase orders to AliExpress.
      *
@@ -69,6 +76,18 @@ class ProcurementSubmitService
     }
 
     /**
+     * Execute a preflight check for a Supplier Purchase Order without modifying DB or creating order.
+     */
+    public function preflightSupplierPurchaseOrder(int $spoId): AliExpressOrderPreflight
+    {
+        /** @var SupplierPurchaseOrder $spo */
+        $spo = SupplierPurchaseOrder::with('items')->findOrFail($spoId);
+        $draft = $this->buildOrderDraft($spo, $spo->purchase_order_number);
+
+        return $this->orderGateway->preflight($draft);
+    }
+
+    /**
      * Submit a single Supplier Purchase Order to AliExpress.
      *
      * @throws ExternalOrderSubmissionException|DomainException
@@ -96,7 +115,7 @@ class ProcurementSubmitService
 
             $correlationKey = $spo->purchase_order_number;
 
-            // 2. Resolve submission result (provided or dispatched)
+            // 2. Resolve submission result (provided or dispatched via unified gateway)
             $result = $providedResult ?? $this->dispatchToProvider($spo, $correlationKey);
 
             // 3. Handle Failure: Strictly reject unverified responses and record failure state
@@ -256,7 +275,7 @@ class ProcurementSubmitService
     }
 
     /**
-     * Dispatch call to external provider or return classified failure if live creation is not granted.
+     * Dispatch call to external provider via the unified gateway or return classified failure if live creation is disabled.
      */
     protected function dispatchToProvider(SupplierPurchaseOrder $spo, string $correlationKey): VerifiedExternalOrderCreated|ExternalOrderSubmissionFailed
     {
@@ -270,7 +289,7 @@ class ProcurementSubmitService
             );
         }
 
-        // In Production/Staging: STRICTLY require verified live API grant and live verified response
+        // In Production/Staging: STRICTLY require verified live API grant
         if (! config('procurement.v2_live_order_creation_enabled', false)) {
             return new ExternalOrderSubmissionFailed(
                 errorCode: 'ORDER_CREATE_API_NOT_GRANTED',
@@ -280,109 +299,32 @@ class ProcurementSubmitService
             );
         }
 
-        // Live AliExpress API invocation with strict validation
-        if (class_exists(AliExpressApiClient::class) && class_exists(AliExpressToken::class)) {
-            $tokenRow = AliExpressToken::orderBy('id', 'desc')->first();
-            if (! $tokenRow || empty($tokenRow->access_token)) {
-                return new ExternalOrderSubmissionFailed(
-                    errorCode: 'IllegalAccessToken',
-                    errorMessageMasked: 'No valid AliExpress OAuth access token configured on server.',
-                    providerRequestId: null,
-                    retryClassification: 'non_retryable'
-                );
-            }
+        $draft = $this->buildOrderDraft($spo, $correlationKey);
 
-            try {
-                /** @var AliExpressApiClient $client */
-                $client = app(AliExpressApiClient::class);
-                $firstItem = $spo->items()->first();
+        return $this->orderGateway->submitUnpaid($draft);
+    }
 
-                $params = [
-                    'param_place_order_request4_open_api_d_t_o' => [
-                        'product_items' => [
-                            [
-                                'product_id' => (int) ($firstItem->supplier_product_id ?? 0),
-                                'sku_attr' => (string) ($firstItem->supplier_sku_id ?? ''),
-                                'product_count' => (int) ($firstItem->qty_ordered ?? 1),
-                                'logistics_service_name' => 'CAINIAO_STANDARD',
-                            ],
-                        ],
-                        'logistics_address' => [
-                            'contact_person' => 'Hayest SA Ops',
-                            'full_name' => 'Hayest Saudi Fulfillment Hub',
-                            'address' => 'Ring Road Sorting Center',
-                            'city' => 'Riyadh',
-                            'province' => 'Riyadh',
-                            'country' => 'SA',
-                            'zip' => '11564',
-                            'phone_country' => '+966',
-                            'mobile_no' => '500000000',
-                        ],
-                        'out_order_id' => $correlationKey,
-                    ],
-                ];
-
-                $response = $client->call('aliexpress.ds.order.create', $tokenRow->access_token, $params);
-
-                // Check for transport or business error
-                if (! $response['ok'] || ! empty($response['code']) || ! empty($response['body']['error_response'])) {
-                    $errCode = $response['code'] ?? $response['body']['error_response']['code'] ?? 'API_ERROR';
-                    $errMsg = $response['message'] ?? $response['body']['error_response']['msg'] ?? 'External order creation failed';
-                    $reqId = $response['body']['error_response']['request_id'] ?? null;
-
-                    return new ExternalOrderSubmissionFailed(
-                        errorCode: (string) $errCode,
-                        errorMessageMasked: (string) $errMsg,
-                        providerRequestId: $reqId,
-                        retryClassification: 'fatal',
-                        rawResponse: $response
-                    );
-                }
-
-                // Extract authoritative external order ID
-                $orderList = $response['body']['aliexpress_ds_order_create_response']['result']['order_list'] ?? null;
-                $numericOrderId = $response['body']['aliexpress_ds_order_create_response']['order_id'] ?? null;
-
-                $extractedId = null;
-                if (is_array($orderList) && ! empty($orderList[0])) {
-                    $extractedId = (string) $orderList[0];
-                } elseif (is_string($orderList) && ! empty($orderList)) {
-                    $extractedId = $orderList;
-                } elseif (! empty($numericOrderId)) {
-                    $extractedId = (string) $numericOrderId;
-                }
-
-                if (! empty($extractedId)) {
-                    return new VerifiedExternalOrderCreated(
-                        externalOrderId: $extractedId,
-                        providerRequestId: $response['body']['aliexpress_ds_order_create_response']['_trace_id_'] ?? null,
-                        providerStatus: 'WAIT_BUYER_PAY',
-                        responseMetadata: $response['body']
-                    );
-                }
-
-                return new ExternalOrderSubmissionFailed(
-                    errorCode: 'EMPTY_EXTERNAL_ORDER_ID',
-                    errorMessageMasked: 'AliExpress returned HTTP 200 but without authoritative order ID.',
-                    providerRequestId: null,
-                    retryClassification: 'fatal',
-                    rawResponse: $response
-                );
-            } catch (\Throwable $e) {
-                return new ExternalOrderSubmissionFailed(
-                    errorCode: 'TRANSPORT_EXCEPTION',
-                    errorMessageMasked: $e->getMessage(),
-                    providerRequestId: null,
-                    retryClassification: 'transient'
-                );
-            }
+    /**
+     * Build an ExternalOrderDraft from a SupplierPurchaseOrder.
+     */
+    protected function buildOrderDraft(SupplierPurchaseOrder $spo, string $correlationKey): ExternalOrderDraft
+    {
+        $items = [];
+        foreach ($spo->items as $item) {
+            $items[] = [
+                'supplier_product_id' => (string) $item->supplier_product_id,
+                'supplier_sku_id' => (string) $item->supplier_sku_id,
+                'qty' => (int) $item->qty_ordered,
+                'expected_unit_cost' => (float) $item->expected_unit_cost,
+            ];
         }
 
-        return new ExternalOrderSubmissionFailed(
-            errorCode: 'PROVIDER_CLIENT_NOT_FOUND',
-            errorMessageMasked: 'AliExpress client is not available in current runtime.',
-            providerRequestId: null,
-            retryClassification: 'non_retryable'
+        return new ExternalOrderDraft(
+            supplierPurchaseOrderId: $spo->id,
+            correlationKey: $correlationKey,
+            items: $items,
+            currencyCode: (string) ($spo->currency_code ?: 'USD'),
+            providerAccountId: $spo->provider_account_id ? (int) $spo->provider_account_id : null
         );
     }
 }
