@@ -47,6 +47,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'stripe/*',
+            'aliexpress/webhook',
+            'aliexpress/receiveCallBack',
         ]);
 
         $middleware->trustProxies(at: '*');

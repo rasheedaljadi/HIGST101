@@ -4,19 +4,20 @@ use App\Http\Controllers\AliExpress\AliExpressImportController;
 use App\Http\Controllers\AliExpress\AliExpressKeysController;
 use App\Http\Controllers\AliExpress\AliExpressOAuthController;
 use App\Http\Controllers\AliExpress\AliExpressSyncController;
+use App\Http\Controllers\AliExpress\AliExpressWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| AliExpress Open Platform OAuth Routes
+| AliExpress Open Platform OAuth & Webhook Routes
 |--------------------------------------------------------------------------
 |
-| AliExpress only accepts HTTPS callback URLs. The callback route below is
-| the value that must be registered (byte-for-byte) as the "Callback URL"
-| in the AliExpress Open Platform console.
+| AliExpress requires HTTPS callback URLs for both OAuth and Message Push (Webhook).
 |
-|   Connect : GET /aliexpress/connect
-|   Callback: GET /aliexpress/callback   (name: aliexpress.oauth.callback)
+|   Connect : GET  /aliexpress/connect
+|   Callback: GET  /aliexpress/callback        (name: aliexpress.oauth.callback)
+|   Webhook : POST /aliexpress/webhook         (name: aliexpress.webhook)
+|   Webhook : POST /aliexpress/receiveCallBack (name: aliexpress.callback.receive)
 |
 */
 Route::prefix('aliexpress')->group(function () {
@@ -25,6 +26,12 @@ Route::prefix('aliexpress')->group(function () {
 
     Route::get('callback', [AliExpressOAuthController::class, 'callback'])
         ->name('aliexpress.oauth.callback');
+
+    Route::match(['get', 'post'], 'webhook', [AliExpressWebhookController::class, 'handle'])
+        ->name('aliexpress.webhook');
+
+    Route::match(['get', 'post'], 'receiveCallBack', [AliExpressWebhookController::class, 'handle'])
+        ->name('aliexpress.callback.receive');
 });
 
 /*
