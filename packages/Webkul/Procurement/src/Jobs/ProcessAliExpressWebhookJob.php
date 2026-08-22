@@ -23,11 +23,15 @@ class ProcessAliExpressWebhookJob implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $backoff = 30;
+    public int $backoff = 10;
+
+    public int $timeout = 90;
 
     public function __construct(
         public int $inboxMessageId
-    ) {}
+    ) {
+        $this->onQueue('aliexpress-webhooks');
+    }
 
     /**
      * Execute the webhook processing job.

@@ -102,7 +102,7 @@ class AliExpressWebhookController extends Controller
                 $isNew = true;
 
                 DB::afterCommit(function () use ($inboxMessage) {
-                    ProcessAliExpressWebhookJob::dispatch($inboxMessage->id);
+                    ProcessAliExpressWebhookJob::dispatch($inboxMessage->id)->onQueue('aliexpress-webhooks');
                 });
             });
         } catch (QueryException $e) {
