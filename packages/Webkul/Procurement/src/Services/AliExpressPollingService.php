@@ -40,6 +40,11 @@ class AliExpressPollingService
         return DB::transaction(function () use ($platformOrder, $payload) {
             /** @var ExternalPlatformOrder $platformOrder */
             $platformOrder = ExternalPlatformOrder::where('id', $platformOrder->id)->lockForUpdate()->firstOrFail();
+
+            if (empty($platformOrder->external_order_id)) {
+                throw new \DomainException("Cannot sync ExternalPlatformOrder #{$platformOrder->id} without an authoritative external_order_id.");
+            }
+
             /** @var SupplierPurchaseOrder $spo */
             $spo = SupplierPurchaseOrder::where('id', $platformOrder->supplier_purchase_order_id)->lockForUpdate()->firstOrFail();
 

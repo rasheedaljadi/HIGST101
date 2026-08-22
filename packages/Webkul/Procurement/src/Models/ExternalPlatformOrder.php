@@ -24,6 +24,10 @@ class ExternalPlatformOrder extends Model
 
     public const STATUS_CANCELLED = 'cancelled';
 
+    public const STATUS_SUBMISSION_FAILED = 'submission_failed';
+
+    public const STATUS_SUBMISSION_EXCEPTION = 'submission_exception';
+
     protected $table = 'external_platform_orders';
 
     protected $fillable = [
@@ -32,6 +36,10 @@ class ExternalPlatformOrder extends Model
         'provider_account_id',
         'supplier_store_id',
         'external_order_id',
+        'correlation_key',
+        'provider_request_id',
+        'failure_code',
+        'failure_message',
         'raw_status',
         'normalized_status',
         'currency_code',

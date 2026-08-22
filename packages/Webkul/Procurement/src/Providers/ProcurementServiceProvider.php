@@ -6,6 +6,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Webkul\Procurement\Console\Commands\PollAliExpressOrdersCommand;
 use Webkul\Procurement\Console\Commands\ProcessProcurementAutoBatchCommand;
+use Webkul\Procurement\Console\Commands\ProcurementRemediateFailedSubmissionCommand;
 
 class ProcurementServiceProvider extends ServiceProvider
 {
@@ -36,6 +37,7 @@ class ProcurementServiceProvider extends ServiceProvider
             $this->commands([
                 PollAliExpressOrdersCommand::class,
                 ProcessProcurementAutoBatchCommand::class,
+                ProcurementRemediateFailedSubmissionCommand::class,
             ]);
         }
 
