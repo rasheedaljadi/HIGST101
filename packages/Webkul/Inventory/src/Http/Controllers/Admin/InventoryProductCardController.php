@@ -30,11 +30,17 @@ class InventoryProductCardController extends Controller
     {
         $product = Product::findOrFail($id);
 
+        $targetProductIds = [$id];
+        if ($product->type === 'configurable') {
+            $variantIds = $product->variants()->pluck('id')->toArray();
+            $targetProductIds = array_merge($targetProductIds, $variantIds);
+        }
+
         // Fetch balances per source
         $sources = DB::table('inventory_sources')
-            ->leftJoin('product_inventories', function ($join) use ($id) {
+            ->leftJoin('product_inventories', function ($join) use ($targetProductIds) {
                 $join->on('inventory_sources.id', '=', 'product_inventories.inventory_source_id')
-                    ->where('product_inventories.product_id', '=', $id);
+                    ->whereIn('product_inventories.product_id', $targetProductIds);
             })
             ->select(
                 'inventory_sources.id',
@@ -45,15 +51,25 @@ class InventoryProductCardController extends Controller
                 'inventory_sources.source_type',
                 'inventory_sources.is_salable',
                 'inventory_sources.is_delivery_source',
-                DB::raw('COALESCE(product_inventories.qty, 0) as current_qty')
+                DB::raw('COALESCE(SUM(product_inventories.qty), 0) as current_qty')
+            )
+            ->groupBy(
+                'inventory_sources.id',
+                'inventory_sources.code',
+                'inventory_sources.name',
+                'inventory_sources.country',
+                'inventory_sources.city',
+                'inventory_sources.source_type',
+                'inventory_sources.is_salable',
+                'inventory_sources.is_delivery_source'
             )
             ->get();
 
         $virtualProjection = $sources->firstWhere('code', 'aliexpress_source');
         $legacySources = $sources->where('code', 'default');
-        $localSources = $sources->whereNotIn('code', ['aliexpress_source', 'default']);
+        $localSources = $sources->where('code', '!=', 'aliexpress_source');
 
-        $totalSalableLocal = $sources->where('is_salable', 1)->sum('current_qty');
+        $totalSalableLocal = $localSources->where('is_salable', 1)->where('is_delivery_source', 1)->sum('current_qty');
 
         // Fetch active order allocations for this product
         $allocations = DB::table('order_allocations')

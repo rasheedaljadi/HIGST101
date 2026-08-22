@@ -29,6 +29,7 @@ class InventoryProductCardDataGrid extends DataGrid
                 $join->on('products.id', '=', 'product_flat.product_id')
                     ->where('product_flat.locale', '=', $currentLocale);
             })
+            ->whereNull('products.parent_id')
             ->select(
                 'products.id as product_id',
                 'products.sku as sku',
@@ -37,30 +38,37 @@ class InventoryProductCardDataGrid extends DataGrid
                 // Salable Yemen Stock (hayest_internal_ye + hayest_dropship_ye)
                 DB::raw("(SELECT COALESCE(SUM(pi.qty), 0) FROM product_inventories pi 
                           JOIN inventory_sources src ON pi.inventory_source_id = src.id 
-                          WHERE pi.product_id = products.id AND src.code IN ('hayest_internal_ye', 'hayest_dropship_ye')) as salable_ye_qty"),
+                          WHERE (pi.product_id = products.id OR pi.product_id IN (SELECT child_p.id FROM products child_p WHERE child_p.parent_id = products.id))
+                          AND src.code IN ('hayest_internal_ye', 'hayest_dropship_ye')) as salable_ye_qty"),
                 // Internal Ready Stock
                 DB::raw("(SELECT COALESCE(SUM(pi.qty), 0) FROM product_inventories pi 
                           JOIN inventory_sources src ON pi.inventory_source_id = src.id 
-                          WHERE pi.product_id = products.id AND src.code = 'hayest_internal_ye') as internal_ye_qty"),
+                          WHERE (pi.product_id = products.id OR pi.product_id IN (SELECT child_p.id FROM products child_p WHERE child_p.parent_id = products.id))
+                          AND src.code = 'hayest_internal_ye') as internal_ye_qty"),
                 // Dropship Transit Hub Stock
                 DB::raw("(SELECT COALESCE(SUM(pi.qty), 0) FROM product_inventories pi 
                           JOIN inventory_sources src ON pi.inventory_source_id = src.id 
-                          WHERE pi.product_id = products.id AND src.code = 'hayest_dropship_ye') as dropship_ye_qty"),
+                          WHERE (pi.product_id = products.id OR pi.product_id IN (SELECT child_p.id FROM products child_p WHERE child_p.parent_id = products.id))
+                          AND src.code = 'hayest_dropship_ye') as dropship_ye_qty"),
                 // Saudi Staging Hub
                 DB::raw("(SELECT COALESCE(SUM(pi.qty), 0) FROM product_inventories pi 
                           JOIN inventory_sources src ON pi.inventory_source_id = src.id 
-                          WHERE pi.product_id = products.id AND src.code = 'hayest_dropship_sa') as staging_sa_qty"),
+                          WHERE (pi.product_id = products.id OR pi.product_id IN (SELECT child_p.id FROM products child_p WHERE child_p.parent_id = products.id))
+                          AND src.code = 'hayest_dropship_sa') as staging_sa_qty"),
                 // Quarantine (SA + YE)
                 DB::raw("(SELECT COALESCE(SUM(pi.qty), 0) FROM product_inventories pi 
                           JOIN inventory_sources src ON pi.inventory_source_id = src.id 
-                          WHERE pi.product_id = products.id AND src.code IN ('hayest_quarantine_sa', 'hayest_quarantine_ye')) as quarantine_qty"),
+                          WHERE (pi.product_id = products.id OR pi.product_id IN (SELECT child_p.id FROM products child_p WHERE child_p.parent_id = products.id))
+                          AND src.code IN ('hayest_quarantine_sa', 'hayest_quarantine_ye')) as quarantine_qty"),
                 // Virtual Projection (AliExpress - isolated)
                 DB::raw("(SELECT COALESCE(SUM(pi.qty), 0) FROM product_inventories pi 
                           JOIN inventory_sources src ON pi.inventory_source_id = src.id 
-                          WHERE pi.product_id = products.id AND src.code = 'aliexpress_source') as virtual_projection_qty"),
+                          WHERE (pi.product_id = products.id OR pi.product_id IN (SELECT child_p.id FROM products child_p WHERE child_p.parent_id = products.id))
+                          AND src.code = 'aliexpress_source') as virtual_projection_qty"),
                 // Allocated for active orders
                 DB::raw("(SELECT COALESCE(SUM(oa.reserved_qty), 0) FROM order_allocations oa 
-                          WHERE oa.product_id = products.id AND oa.state = 'reserved') as allocated_qty")
+                          WHERE (oa.product_id = products.id OR oa.product_id IN (SELECT child_p.id FROM products child_p WHERE child_p.parent_id = products.id))
+                          AND oa.state = 'reserved') as allocated_qty")
             )
             ->groupBy('products.id', 'products.sku', 'products.type', 'product_flat.name');
 
