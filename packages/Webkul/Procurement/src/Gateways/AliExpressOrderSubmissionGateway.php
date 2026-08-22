@@ -5,14 +5,15 @@ namespace Webkul\Procurement\Gateways;
 use App\Models\AliExpressToken;
 use App\Services\AliExpress\AliExpressApiClient;
 use App\Services\AliExpress\AliExpressOAuthService;
+use DomainException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Webkul\Procurement\Contracts\AliExpressOrderGateway;
 use Webkul\Procurement\DTO\AliExpressOrderPreflight;
 use Webkul\Procurement\DTO\AliExpressOrderSnapshot;
 use Webkul\Procurement\DTO\ExternalOrderDraft;
 use Webkul\Procurement\DTO\ExternalOrderSubmissionFailed;
 use Webkul\Procurement\DTO\VerifiedExternalOrderCreated;
+use Webkul\Procurement\Support\AliExpressMoneyNormalizer;
 
 class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
 {
@@ -25,10 +26,16 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
      * Resolve default Saudi warehouse shipping address configured in Key Management.
      *
      * @return array{contact_person: string, phone_num: string, mobile_no: string, phone_country: string, address: string, city: string, province: string, zip: string, country: string, company_name: string}
+     *
+     * @throws DomainException
      */
     public function resolveWarehouseShippingAddress(?array $override = null): array
     {
         if (! empty($override)) {
+            if (! app()->environment('testing')) {
+                throw new DomainException('SHIPPING_ADDRESS_OVERRIDE_FORBIDDEN: Address override is strictly forbidden outside testing.');
+            }
+
             return $this->normalizeAddress($override);
         }
 
@@ -36,50 +43,34 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             ->where('code', 'default')
             ->first();
 
-        if ($warehouse) {
-            $street = $warehouse->street ?? '';
-            $contactName = $warehouse->contact_name ?? 'Higesto Warehouse';
-            $city = $warehouse->city ?? 'Riyadh';
-            $state = $warehouse->state ?? 'Riyadh';
-            $country = $warehouse->country ?? 'SA';
-            $postcode = $warehouse->postcode ?? '11564';
-            $phone = $warehouse->contact_number ?? '0500000000';
-            $companyName = $warehouse->name ?? 'Higesto Fulfillment Hub';
-
-            // Auto-translate Arabic Miftah/Aziziyah warehouse names to English for international customs
-            if (mb_strpos((string) $street, 'العزيزية') !== false || mb_strpos((string) $street, 'المفتاح') !== false || mb_strpos((string) $contactName, 'المفتاح') !== false) {
-                $contactName = 'Al-Miftah Transport Office';
-                $street = 'Southern Ring Road, Al-Shabab District, Al-Aziziyah';
-                $city = 'Riyadh';
-                $state = 'Riyadh';
-            }
-
-            return $this->normalizeAddress([
-                'contact_person' => $contactName,
-                'phone_num' => $phone,
-                'mobile_no' => $phone,
-                'phone_country' => $this->getPhoneCountry($country),
-                'address' => $street ?: 'Southern Ring Road, Al-Aziziyah',
-                'city' => $city,
-                'province' => $state,
-                'zip' => $postcode,
-                'country' => strtoupper($country),
-                'company_name' => $companyName,
-            ]);
+        if (! $warehouse) {
+            throw new DomainException('SHIPPING_ADDRESS_NOT_CONFIGURED: Key Management inventory source [default] is not configured in database.');
         }
 
-        return $this->normalizeAddress([
-            'contact_person' => 'Al-Miftah Transport Office',
-            'phone_num' => '0500000000',
-            'mobile_no' => '0500000000',
+        $contactName = trim((string) ($warehouse->contact_name ?? $warehouse->name ?? ''));
+        $phone = trim((string) ($warehouse->contact_number ?? ''));
+        $street = trim((string) ($warehouse->street ?? $warehouse->address1 ?? ''));
+        $city = trim((string) ($warehouse->city ?? ''));
+        $state = trim((string) ($warehouse->state ?? ''));
+        $postcode = trim((string) ($warehouse->postcode ?? ''));
+        $country = strtoupper(trim((string) ($warehouse->country ?? '')));
+
+        if (empty($contactName) || empty($phone) || empty($street) || empty($city) || empty($state) || empty($postcode) || $country !== 'SA') {
+            throw new DomainException('SHIPPING_ADDRESS_NOT_CONFIGURED: Missing mandatory address fields in [default] inventory source (contact, phone, street, city, state, zip, or country is not SA).');
+        }
+
+        return [
+            'contact_person' => $contactName,
+            'phone_num' => $phone,
+            'mobile_no' => $phone,
             'phone_country' => '966',
-            'address' => 'Southern Ring Road, Al-Shabab District, Al-Aziziyah',
-            'city' => 'Riyadh',
-            'province' => 'Riyadh',
-            'zip' => '11564',
+            'address' => $street,
+            'city' => $city,
+            'province' => $state,
+            'zip' => $postcode,
             'country' => 'SA',
-            'company_name' => 'Higesto Saudi Fulfillment Hub',
-        ]);
+            'company_name' => trim((string) ($warehouse->name ?? $contactName)),
+        ];
     }
 
     /**
@@ -115,10 +106,23 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         $productId = (string) ($firstItem['supplier_product_id'] ?? '');
         $skuId = (string) ($firstItem['supplier_sku_id'] ?? '');
         $qty = (int) ($firstItem['qty'] ?? 1);
-        $shippingAddress = $this->resolveWarehouseShippingAddress($draft->overrideShippingAddress);
+
+        try {
+            $shippingAddress = $this->resolveWarehouseShippingAddress($draft->overrideShippingAddress);
+        } catch (DomainException $e) {
+            return new AliExpressOrderPreflight(
+                isSuccess: false,
+                isDeliverableToDestination: false,
+                destinationCountry: 'SA',
+                errorCode: 'SHIPPING_ADDRESS_NOT_CONFIGURED',
+                errorMessage: $e->getMessage(),
+                rawDetails: []
+            );
+        }
+
         $country = $shippingAddress['country'] ?: 'SA';
 
-        // 1. Resolve product details & exact sku_attr
+        // 1. Resolve product details & exact sku_attr (Must match exact SKU)
         $resolvedSkuAttr = null;
         try {
             $prodRes = $this->apiClient->call('aliexpress.ds.product.get', $token->access_token, [
@@ -128,23 +132,53 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                 'target_language' => 'en',
             ]);
 
-            if ($prodRes['ok']) {
-                $body = $prodRes['body'];
-                $resp = $body['aliexpress_ds_product_get_response'] ?? $body;
-                $result = $resp['result'] ?? [];
-                $variants = $result['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
-                foreach ($variants as $v) {
-                    if (($v['sku_id'] ?? '') == $skuId && ! empty($v['sku_attr'])) {
-                        $resolvedSkuAttr = $v['sku_attr'];
-                        break;
-                    }
+            if (! $prodRes['ok'] || ! empty($prodRes['body']['error_response'])) {
+                $msg = $prodRes['message'] ?? $prodRes['body']['error_response']['msg'] ?? 'Product lookup failed';
+
+                return new AliExpressOrderPreflight(
+                    isSuccess: false,
+                    isDeliverableToDestination: false,
+                    destinationCountry: $country,
+                    errorCode: 'SKU_ATTR_RESOLUTION_FAILED',
+                    errorMessage: "AliExpress product inquiry failed: {$msg}",
+                    rawDetails: $prodRes['body'] ?? []
+                );
+            }
+
+            $body = $prodRes['body'];
+            $resp = $body['aliexpress_ds_product_get_response'] ?? $body;
+            $result = $resp['result'] ?? [];
+            $variants = $result['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
+
+            foreach ($variants as $v) {
+                if (($v['sku_id'] ?? '') == $skuId && ! empty($v['sku_attr'])) {
+                    $resolvedSkuAttr = (string) $v['sku_attr'];
+                    break;
                 }
             }
         } catch (\Throwable $e) {
-            Log::channel('aliexpress')->warning('Preflight product resolution warning: '.$e->getMessage());
+            return new AliExpressOrderPreflight(
+                isSuccess: false,
+                isDeliverableToDestination: false,
+                destinationCountry: $country,
+                errorCode: 'SKU_ATTR_RESOLUTION_FAILED',
+                errorMessage: 'Exception during product sku_attr resolution: '.$e->getMessage(),
+                rawDetails: []
+            );
         }
 
-        // 2. Query live freight options to Saudi Arabia
+        if (empty($resolvedSkuAttr)) {
+            return new AliExpressOrderPreflight(
+                isSuccess: false,
+                isDeliverableToDestination: false,
+                destinationCountry: $country,
+                errorCode: 'SKU_ATTR_RESOLUTION_FAILED',
+                errorMessage: "Exact sku_attr could not be resolved for product ID {$productId} and SKU ID {$skuId}.",
+                rawDetails: $prodRes['body'] ?? []
+            );
+        }
+
+        // 2. Query live freight options specifically for selected SKU
         try {
             $freightReq = [
                 'productId' => $productId,
@@ -153,10 +187,8 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                 'currency' => $draft->currencyCode ?: 'USD',
                 'language' => 'en_US',
                 'locale' => 'en_US',
+                'selectedSkuId' => $skuId,
             ];
-            if (! empty($skuId)) {
-                $freightReq['selectedSkuId'] = $skuId;
-            }
 
             $freightRes = $this->apiClient->call('aliexpress.ds.freight.query', $token->access_token, [
                 'queryDeliveryReq' => $freightReq,
@@ -179,47 +211,50 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             $body = $freightRes['body']['aliexpress_ds_freight_query_response'] ?? $freightRes['body'] ?? [];
             $options = data_get($body, 'result.delivery_options.delivery_option_d_t_o', []);
 
-            // Smart fallback if variant-specific query had no options
-            if ((! is_array($options) || empty($options)) && isset($freightReq['selectedSkuId'])) {
-                unset($freightReq['selectedSkuId']);
-                $fallbackRes = $this->apiClient->call('aliexpress.ds.freight.query', $token->access_token, [
-                    'queryDeliveryReq' => $freightReq,
-                ]);
-                if ($fallbackRes['ok']) {
-                    $fallbackBody = $fallbackRes['body']['aliexpress_ds_freight_query_response'] ?? $fallbackRes['body'] ?? [];
-                    $options = data_get($fallbackBody, 'result.delivery_options.delivery_option_d_t_o', []);
-                }
-            }
-
             if (! is_array($options) || empty($options)) {
                 return new AliExpressOrderPreflight(
-                    isSuccess: true,
+                    isSuccess: false,
                     isDeliverableToDestination: false,
                     destinationCountry: $country,
                     resolvedSkuAttr: $resolvedSkuAttr,
-                    errorCode: 'NO_SHIPPING_OPTIONS',
-                    errorMessage: 'No live shipping options available for destination.',
+                    errorCode: 'NO_SKU_SPECIFIC_SHIPPING_OPTION',
+                    errorMessage: "No live shipping options available specifically for SKU ID {$skuId} to {$country}.",
                     rawDetails: $body
                 );
             }
 
-            if (isset($options['code']) || isset($options['shipping_fee_cent'])) {
+            if (isset($options['code']) || isset($options['shipping_fee_cent']) || isset($options['service_name'])) {
                 $options = [$options];
             }
 
-            $bestOption = $this->pickBestShippingOption($options, $draft->currencyCode);
+            $bestOption = $this->pickBestShippingOption($options, $draft->currencyCode ?: 'USD');
+
+            if (! $bestOption['is_valid']) {
+                return new AliExpressOrderPreflight(
+                    isSuccess: false,
+                    isDeliverableToDestination: false,
+                    destinationCountry: $country,
+                    resolvedSkuAttr: $resolvedSkuAttr,
+                    errorCode: $bestOption['error_code'] ?? 'PRICE_OR_FREIGHT_AMOUNT_AMBIGUOUS',
+                    errorMessage: $bestOption['error_message'] ?? 'Could not determine valid normalized shipping fee.',
+                    rawDetails: $body
+                );
+            }
 
             return new AliExpressOrderPreflight(
                 isSuccess: true,
                 isDeliverableToDestination: true,
                 destinationCountry: $country,
-                shippingServiceName: $bestOption['service_name'] ?? $bestOption['code'] ?? null,
-                shippingCost: (float) ($bestOption['cost'] ?? 0.0),
-                shippingCurrency: (string) ($bestOption['currency'] ?? 'USD'),
-                minDeliveryDays: isset($bestOption['min_days']) ? (int) $bestOption['min_days'] : null,
-                maxDeliveryDays: isset($bestOption['max_days']) ? (int) $bestOption['max_days'] : null,
-                trackingAvailable: (bool) ($bestOption['tracking'] ?? false),
+                shippingServiceName: $bestOption['service_name'],
+                shippingCost: $bestOption['cost_decimal'],
+                shippingCurrency: $bestOption['currency'],
+                minDeliveryDays: $bestOption['min_days'],
+                maxDeliveryDays: $bestOption['max_days'],
+                trackingAvailable: $bestOption['tracking'],
                 resolvedSkuAttr: $resolvedSkuAttr,
+                shippingCostMinor: $bestOption['cost_minor'],
+                shippingCostFormatted: $bestOption['cost_formatted'],
+                moneyEvidence: $bestOption['money_evidence'],
                 rawDetails: [
                     'available_options_count' => count($options),
                     'selected_option' => $bestOption,
@@ -263,61 +298,48 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             );
         }
 
-        // 3. Resolve shipping address
-        $shippingAddress = $this->resolveWarehouseShippingAddress($draft->overrideShippingAddress);
+        // 3. Resolve shipping address strictly
+        try {
+            $shippingAddress = $this->resolveWarehouseShippingAddress($draft->overrideShippingAddress);
+        } catch (DomainException $e) {
+            return new ExternalOrderSubmissionFailed(
+                errorCode: 'SHIPPING_ADDRESS_NOT_CONFIGURED',
+                errorMessageMasked: $e->getMessage(),
+                providerRequestId: null,
+                retryClassification: 'fatal'
+            );
+        }
 
-        // 4. Build product items with live sku_attr resolution
+        // 4. Mandatory Preflight Validation of Draft before creation
+        $preflight = $this->preflight($draft);
+        if (! $preflight->isSuccess || ! $preflight->isDeliverableToDestination || empty($preflight->resolvedSkuAttr) || empty($preflight->shippingServiceName)) {
+            return new ExternalOrderSubmissionFailed(
+                errorCode: $preflight->errorCode ?: 'PREFLIGHT_VALIDATION_FAILED',
+                errorMessageMasked: $preflight->errorMessage ?: 'Draft preflight validation failed before submission.',
+                providerRequestId: null,
+                retryClassification: 'non_retryable',
+                rawResponse: $preflight->rawDetails
+            );
+        }
+
+        // 5. Build product items using ONLY verified Preflight outputs
         $productItems = [];
         foreach ($draft->items as $item) {
             $prodId = (string) ($item['supplier_product_id'] ?? '');
             $skuId = (string) ($item['supplier_sku_id'] ?? '');
             $qty = (int) ($item['qty'] ?? 1);
-            $skuAttr = $item['sku_attr'] ?? null;
 
-            $itemData = [
-                'product_count' => $qty,
+            $productItems[] = [
+                'product_count' => $qty > 0 ? $qty : 1,
                 'product_id' => $prodId,
+                'sku_id' => $skuId,
+                'sku_attr' => $preflight->resolvedSkuAttr,
+                'sku_define_type' => 'sku_id',
+                'logistics_service_name' => $preflight->shippingServiceName,
             ];
-
-            if (! empty($skuId)) {
-                $itemData['sku_define_type'] = 'sku_id';
-                $itemData['sku_id'] = $skuId;
-
-                if (empty($skuAttr)) {
-                    // Preflight dynamic sku_attr resolution
-                    try {
-                        $res = $this->apiClient->call('aliexpress.ds.product.get', $token->access_token, [
-                            'product_id' => $prodId,
-                            'ship_to_country' => $shippingAddress['country'] ?: 'SA',
-                            'target_currency' => $draft->currencyCode ?: 'USD',
-                            'target_language' => 'en',
-                        ]);
-                        if ($res['ok']) {
-                            $variants = data_get($res['body'], 'aliexpress_ds_product_get_response.result.ae_item_sku_info_dtos.ae_item_sku_info_d_t_o', []);
-                            foreach ($variants as $v) {
-                                if (($v['sku_id'] ?? '') == $skuId && ! empty($v['sku_attr'])) {
-                                    $skuAttr = $v['sku_attr'];
-                                    break;
-                                }
-                            }
-                        }
-                    } catch (\Throwable $e) {
-                        Log::channel('aliexpress')->warning('Live sku_attr resolution error: '.$e->getMessage());
-                    }
-                }
-
-                if (! empty($skuAttr)) {
-                    $itemData['sku_attr'] = $skuAttr;
-                }
-            }
-
-            if (! empty($item['logistics_service_name'])) {
-                $itemData['logistics_service_name'] = $item['logistics_service_name'];
-            }
-
-            $productItems[] = $itemData;
         }
 
+        // Strict Unpaid creation payload (NO payment parameters, try_to_pay omitted or false)
         $params = [
             'param_place_order_request4_open_api_d_t_o' => [
                 'out_order_id' => (string) $draft->correlationKey,
@@ -326,13 +348,13 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             ],
         ];
 
-        // 5. Invoke API call
+        // 6. Invoke API call
         try {
             $response = $this->apiClient->call('aliexpress.ds.order.create', $token->access_token, $params);
         } catch (\Throwable $e) {
             return new ExternalOrderSubmissionFailed(
                 errorCode: 'API_TRANSPORT_ERROR',
-                errorMessageMasked: $e->getMessage(),
+                errorMessageMasked: 'AliExpress API connection failed.',
                 providerRequestId: null,
                 retryClassification: 'transient'
             );
@@ -343,8 +365,8 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         $message = $response['message'] ?? ($body['error_response']['msg'] ?? 'Order creation failed');
         $requestId = $body['error_response']['request_id'] ?? ($body['aliexpress_ds_order_create_response']['_trace_id_'] ?? null);
 
-        // 6. Check for transport or API error envelope
-        if (! $response['ok'] || ! empty($body['error_response']) || ($code !== null && (string) $code !== '0')) {
+        // 7. Check for transport or API error envelope
+        if (! $response['ok'] || ! empty($body['error_response']) || ($code !== null && (string) $code !== '0' && (string) $code !== '200')) {
             return new ExternalOrderSubmissionFailed(
                 errorCode: (string) ($code ?? 'API_ERROR'),
                 errorMessageMasked: (string) $message,
@@ -354,13 +376,13 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             );
         }
 
-        // 7. Check for business failure inside response result
+        // 8. Strict Business Success Check (is_success MUST explicitly be true)
         $resp = $body['aliexpress_ds_order_create_response'] ?? $body;
         $result = $resp['result'] ?? [];
 
-        if (isset($result['is_success']) && ! $result['is_success']) {
-            $errCode = $result['error_code'] ?? 'BUSINESS_ERROR';
-            $errMsg = $result['error_msg'] ?? 'AliExpress business validation failed.';
+        if (! isset($result['is_success']) || $result['is_success'] !== true) {
+            $errCode = $result['error_code'] ?? 'ORDER_SUBMISSION_REJECTED';
+            $errMsg = $result['error_msg'] ?? 'AliExpress order creation rejected or is_success was false.';
 
             return new ExternalOrderSubmissionFailed(
                 errorCode: (string) $errCode,
@@ -371,13 +393,13 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             );
         }
 
-        // 8. Extract official numeric external order ID
+        // 9. Extract official numeric external order ID
         $extractedId = $this->parseAuthoritativeOrderId($body);
 
-        if (empty($extractedId) || ! ctype_digit($extractedId)) {
+        if (empty($extractedId) || ! ctype_digit($extractedId) || strlen($extractedId) < 10) {
             return new ExternalOrderSubmissionFailed(
-                errorCode: 'EMPTY_EXTERNAL_ORDER_ID',
-                errorMessageMasked: 'AliExpress returned HTTP 200 but without authoritative numeric order ID.',
+                errorCode: 'EMPTY_OR_NON_NUMERIC_EXTERNAL_ORDER_ID',
+                errorMessageMasked: 'AliExpress returned success envelope without valid authoritative numeric order ID.',
                 providerRequestId: $requestId,
                 retryClassification: 'fatal',
                 rawResponse: $this->redactSensitivePayload($body)
@@ -397,6 +419,15 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
      */
     public function getOrder(string $officialExternalOrderId, ?int $providerAccountId = null): AliExpressOrderSnapshot
     {
+        // 1. Upfront numeric validation - Reject invalid/non-numeric/synthetic IDs immediately
+        if (empty($officialExternalOrderId) || ! ctype_digit($officialExternalOrderId) || strlen($officialExternalOrderId) < 10) {
+            return new AliExpressOrderSnapshot(
+                externalOrderId: $officialExternalOrderId,
+                orderStatus: 'INVALID_EXTERNAL_ORDER_ID',
+                rawStatus: 'NON_NUMERIC_OR_EMPTY_ORDER_ID'
+            );
+        }
+
         $token = $this->resolveToken($providerAccountId);
         if ($token === null || empty($token->access_token)) {
             return new AliExpressOrderSnapshot(
@@ -442,7 +473,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             return new AliExpressOrderSnapshot(
                 externalOrderId: $officialExternalOrderId,
                 orderStatus: 'TRANSPORT_ERROR',
-                rawStatus: $e->getMessage()
+                rawStatus: 'AliExpress query transport error.'
             );
         }
     }
@@ -460,39 +491,22 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
     }
 
     /**
-     * Normalize and sanitize address fields.
+     * Normalize and sanitize address fields for testing adapter.
      */
     protected function normalizeAddress(array $addr): array
     {
         return [
-            'contact_person' => (string) ($addr['contact_person'] ?? 'Higesto Warehouse'),
+            'contact_person' => (string) ($addr['contact_person'] ?? ''),
             'phone_num' => (string) ($addr['phone_num'] ?? $addr['mobile_no'] ?? ''),
             'mobile_no' => (string) ($addr['mobile_no'] ?? $addr['phone_num'] ?? ''),
             'phone_country' => (string) ($addr['phone_country'] ?? '966'),
             'address' => (string) ($addr['address'] ?? ''),
-            'city' => (string) ($addr['city'] ?? 'Riyadh'),
-            'province' => (string) ($addr['province'] ?? $addr['state'] ?? 'Riyadh'),
-            'zip' => (string) ($addr['zip'] ?? $addr['postcode'] ?? '11564'),
+            'city' => (string) ($addr['city'] ?? ''),
+            'province' => (string) ($addr['province'] ?? $addr['state'] ?? ''),
+            'zip' => (string) ($addr['zip'] ?? $addr['postcode'] ?? ''),
             'country' => strtoupper((string) ($addr['country'] ?? 'SA')),
-            'company_name' => (string) ($addr['company_name'] ?? 'Higesto Warehouse'),
+            'company_name' => (string) ($addr['company_name'] ?? ($addr['contact_person'] ?? '')),
         ];
-    }
-
-    /**
-     * Resolve international phone country code without plus sign.
-     */
-    protected function getPhoneCountry(string $country): string
-    {
-        $map = [
-            'SA' => '966',
-            'YE' => '967',
-            'AE' => '971',
-            'US' => '1',
-            'GB' => '44',
-            'CA' => '1',
-        ];
-
-        return $map[strtoupper($country)] ?? '966';
     }
 
     /**
@@ -532,37 +546,79 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
     }
 
     /**
-     * Pick the best shipping option from freight query response.
+     * Pick and normalize the best shipping option from freight query response.
+     *
+     * @return array{
+     *     is_valid: bool,
+     *     service_name: ?string,
+     *     cost_minor: int,
+     *     cost_decimal: float,
+     *     cost_formatted: string,
+     *     currency: string,
+     *     min_days: ?int,
+     *     max_days: ?int,
+     *     tracking: bool,
+     *     money_evidence: array,
+     *     error_code: ?string,
+     *     error_message: ?string
+     * }
      */
     protected function pickBestShippingOption(array $options, string $currency): array
     {
         $best = null;
-        $bestCost = null;
+        $bestNorm = null;
 
         foreach ($options as $opt) {
             if (! is_array($opt)) {
                 continue;
             }
-            $cost = isset($opt['shipping_fee_cent']) && is_numeric($opt['shipping_fee_cent'])
-                ? (float) $opt['shipping_fee_cent']
-                : (float) ($opt['shipping_fee_amount'] ?? 0.0);
 
-            if ($best === null || $cost < $bestCost) {
+            $serviceName = (string) ($opt['service_name'] ?? $opt['code'] ?? $opt['company'] ?? '');
+            if (empty($serviceName)) {
+                continue;
+            }
+
+            $norm = AliExpressMoneyNormalizer::normalizeFreightOption($opt, $currency);
+            if (! $norm['is_valid']) {
+                continue;
+            }
+
+            if ($bestNorm === null || $norm['normalized_minor'] < $bestNorm['normalized_minor']) {
                 $best = $opt;
-                $bestCost = $cost;
+                $bestNorm = $norm;
             }
         }
 
-        $best ??= $options[0];
+        if ($best === null || $bestNorm === null) {
+            return [
+                'is_valid' => false,
+                'service_name' => null,
+                'cost_minor' => 0,
+                'cost_decimal' => 0.0,
+                'cost_formatted' => '0.00',
+                'currency' => $currency,
+                'min_days' => null,
+                'max_days' => null,
+                'tracking' => false,
+                'money_evidence' => [],
+                'error_code' => 'NO_VALID_SHIPPING_SERVICE_FOUND',
+                'error_message' => 'No shipping service option had a valid service name and normalized fee.',
+            ];
+        }
 
         return [
-            'service_name' => $best['service_name'] ?? $best['code'] ?? null,
-            'code' => $best['code'] ?? null,
-            'cost' => $bestCost ?? 0.0,
-            'currency' => (string) ($best['shipping_fee_currency'] ?? $currency),
-            'min_days' => $best['min_delivery_days'] ?? null,
-            'max_days' => $best['max_delivery_days'] ?? ($best['guaranteed_delivery_days'] ?? null),
+            'is_valid' => true,
+            'service_name' => (string) ($best['service_name'] ?? $best['code'] ?? 'CAINIAO_STANDARD'),
+            'cost_minor' => $bestNorm['normalized_minor'],
+            'cost_decimal' => (float) ($bestNorm['normalized_minor'] / 100),
+            'cost_formatted' => $bestNorm['formatted_decimal'],
+            'currency' => $bestNorm['currency'],
+            'min_days' => isset($best['min_delivery_days']) ? (int) $best['min_delivery_days'] : null,
+            'max_days' => isset($best['max_delivery_days']) ? (int) $best['max_delivery_days'] : (isset($best['guaranteed_delivery_days']) ? (int) $best['guaranteed_delivery_days'] : null),
             'tracking' => (bool) ($best['tracking'] ?? false),
+            'money_evidence' => $bestNorm,
+            'error_code' => null,
+            'error_message' => null,
         ];
     }
 

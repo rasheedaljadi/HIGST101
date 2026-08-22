@@ -5,6 +5,7 @@ namespace Webkul\Procurement\DTO;
 class AliExpressOrderPreflight
 {
     /**
+     * @param  array<string, mixed>  $moneyEvidence
      * @param  array<string, mixed>  $rawDetails
      */
     public function __construct(
@@ -18,6 +19,9 @@ class AliExpressOrderPreflight
         public readonly ?int $maxDeliveryDays = null,
         public readonly bool $trackingAvailable = false,
         public readonly ?string $resolvedSkuAttr = null,
+        public readonly ?int $shippingCostMinor = null,
+        public readonly ?string $shippingCostFormatted = null,
+        public readonly array $moneyEvidence = [],
         public readonly ?string $errorCode = null,
         public readonly ?string $errorMessage = null,
         public readonly array $rawDetails = []
