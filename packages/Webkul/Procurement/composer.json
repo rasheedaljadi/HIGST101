@@ -1,0 +1,24 @@
+{
+    "name": "webkul/procurement",
+    "description": "Hayest Multi-Tier dropshipping procurement and aggregated purchase orders engine V2",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hayest Architecture Team",
+            "email": "dev@higesto.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Webkul\\Procurement\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\Procurement\\Providers\\ProcurementServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev"
+}

@@ -109,7 +109,8 @@
             "Webkul\\User\\": "packages/Webkul/User/src",
             "Webkul\\Wallet\\": "packages/Webkul/Wallet/src",
             "Webkul\\FlashDeal\\": "packages/Webkul/FlashDeal/src",
-            "Webkul\\DeliveryManagement\\": "packages/Webkul/DeliveryManagement/src"
+            "Webkul\\DeliveryManagement\\": "packages/Webkul/DeliveryManagement/src",
+            "Webkul\\Procurement\\": "packages/Webkul/Procurement/src"
         }
     },
     "autoload-dev": {
@@ -124,6 +125,7 @@
             "Webkul\\Installer\\Tests\\": "packages/Webkul/Installer/tests",
             "Webkul\\Payment\\Tests\\": "packages/Webkul/Payment/tests",
             "Webkul\\PayU\\Tests\\": "packages/Webkul/PayU/tests",
+            "Webkul\\Procurement\\Tests\\": "packages/Webkul/Procurement/tests",
             "Webkul\\Razorpay\\Tests\\": "packages/Webkul/Razorpay/tests",
             "Webkul\\Shop\\Tests\\": "packages/Webkul/Shop/tests",
             "Webkul\\Stripe\\Tests\\": "packages/Webkul/Stripe/tests"

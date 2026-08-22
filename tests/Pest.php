@@ -42,6 +42,7 @@ uses(TestCase::class)->in('../packages/Webkul/Wallet/tests');
 uses(TestCase::class)->in('../packages/Webkul/DeliveryManagement/tests');
 uses(TestCase::class)->in('../packages/Webkul/Fulfillment/tests');
 uses(TestCase::class)->in('../packages/Webkul/Inventory/tests');
+uses(TestCase::class)->in('../packages/Webkul/Procurement/tests');
 uses(TestCase::class)->in('Feature/Wallet');
 uses(MapperTestCase::class)->in('Unit/AliExpress');
 

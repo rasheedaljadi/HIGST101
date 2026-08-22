@@ -30,6 +30,7 @@ use Webkul\OfflinePayments\Providers\OfflinePaymentsServiceProvider;
 use Webkul\Payment\Providers\PaymentServiceProvider;
 use Webkul\Paypal\Providers\PaypalServiceProvider;
 use Webkul\PayU\Providers\PayUServiceProvider;
+use Webkul\Procurement\Providers\ProcurementServiceProvider;
 use Webkul\Product\Providers\ProductServiceProvider;
 use Webkul\Razorpay\Providers\RazorpayServiceProvider;
 use Webkul\RMA\Providers\RMAServiceProvider;
@@ -99,4 +100,5 @@ return [
     UserServiceProvider::class,
     WalletServiceProvider::class,
     DeliveryManagementServiceProvider::class,
+    ProcurementServiceProvider::class,
 ];

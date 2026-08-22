@@ -125,11 +125,75 @@ class Admin extends Authenticatable implements AdminContract
             return true;
         }
 
-        // Support dot notation hierarchy (e.g. 'delivery' grants 'delivery.assigned', etc.)
+        // Support dot notation hierarchy:
+        // 1. Parent grant allows child access (e.g. 'delivery' grants 'delivery.assigned')
+        // 2. Child grant allows parent menu branch visibility
         foreach ($permissions as $p) {
             if (str_starts_with($permission, $p.'.')) {
                 return true;
             }
+
+            if (str_starts_with($p, $permission.'.')) {
+                // If checking 'dropshipping' parent, do not grant solely based on legacy procurement prefix
+                if ($permission === 'dropshipping' && str_starts_with($p, 'dropshipping.procurement_v2')) {
+                    continue;
+                }
+
+                return true;
+            }
+        }
+
+        // Procurement V2 independent top-level navigation mapping
+        if ($permission === 'procurement_v2') {
+            foreach ($permissions as $p) {
+                if (str_starts_with($p, 'dropshipping.procurement_v2.') || str_starts_with($p, 'procurement_v2.')) {
+                    return true;
+                }
+            }
+        }
+
+        if (in_array('dropshipping.procurement_v2.view', $permissions) || in_array('procurement_v2.view', $permissions)) {
+            if (in_array($permission, [
+                'procurement_v2.demands',
+                'procurement_v2.batches',
+                'procurement_v2.supplier_orders',
+                'procurement_v2.platform_orders',
+                'dropshipping.procurement_v2.overview',
+                'dropshipping.procurement_v2.demands',
+                'dropshipping.procurement_v2.batches',
+                'dropshipping.procurement_v2.supplier_orders',
+                'dropshipping.procurement_v2.platform_orders',
+            ])) {
+                return true;
+            }
+        }
+
+        if (
+            (in_array('dropshipping.procurement_v2.payment_confirm', $permissions) || in_array('procurement_v2.payment_confirm', $permissions))
+            && in_array($permission, ['procurement_v2.manual_payments', 'dropshipping.procurement_v2.manual_payments'])
+        ) {
+            return true;
+        }
+
+        if (
+            (in_array('dropshipping.procurement_v2.cost_view', $permissions) || in_array('dropshipping.procurement_v2.variance_approve', $permissions) || in_array('procurement_v2.cost_view', $permissions) || in_array('procurement_v2.variance_approve', $permissions))
+            && in_array($permission, ['procurement_v2.cost_variances', 'dropshipping.procurement_v2.cost_variances'])
+        ) {
+            return true;
+        }
+
+        if (
+            (in_array('dropshipping.procurement_v2.exception_handle', $permissions) || in_array('procurement_v2.exception_handle', $permissions))
+            && in_array($permission, ['procurement_v2.exceptions', 'dropshipping.procurement_v2.exceptions'])
+        ) {
+            return true;
+        }
+
+        if (
+            (in_array('dropshipping.procurement_v2.reports_view', $permissions) || in_array('procurement_v2.reports_view', $permissions))
+            && in_array($permission, ['procurement_v2.reports', 'dropshipping.procurement_v2.reports'])
+        ) {
+            return true;
         }
 
         if (
