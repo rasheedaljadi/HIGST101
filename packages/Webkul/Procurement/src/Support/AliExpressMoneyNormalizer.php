@@ -23,7 +23,31 @@ class AliExpressMoneyNormalizer
     {
         $currency = (string) ($option['shipping_fee_currency'] ?? $option['currency'] ?? $defaultCurrency);
 
-        // Check for minor unit fields (cents)
+        // Check for conflicting explicit fee fields
+        $centVal = $option['shipping_fee_cent'] ?? $option['amount_cent'] ?? null;
+        $decVal = $option['shipping_fee'] ?? $option['shipping_fee_amount'] ?? $option['freight'] ?? null;
+
+        if ($centVal !== null && $decVal !== null && is_numeric($centVal) && is_numeric($decVal)) {
+            $centMinor = is_string($centVal) && str_contains($centVal, '.')
+                ? (int) round(((float) $centVal) * 100)
+                : (int) round((float) $centVal);
+            $decMinor = (int) round(((float) $decVal) * 100);
+
+            if ($centMinor !== $decMinor) {
+                return [
+                    'raw_amount' => ['cent' => $centVal, 'decimal' => $decVal],
+                    'raw_field' => 'conflicting_fields',
+                    'raw_unit' => 'conflict',
+                    'normalized_minor' => 0,
+                    'formatted_decimal' => '0.00',
+                    'currency' => strtoupper($currency),
+                    'is_valid' => false,
+                    'error' => 'PRICE_OR_FREIGHT_AMOUNT_AMBIGUOUS: Conflicting shipping fee amounts detected between cent and decimal fields.',
+                ];
+            }
+        }
+
+        // 1. Check for minor unit fields (cents)
         if (isset($option['shipping_fee_cent']) && is_numeric($option['shipping_fee_cent'])) {
             $rawAmount = $option['shipping_fee_cent'];
             $isDecimalString = is_string($rawAmount) && str_contains($rawAmount, '.');
@@ -35,7 +59,7 @@ class AliExpressMoneyNormalizer
             return [
                 'raw_amount' => $rawAmount,
                 'raw_field' => 'shipping_fee_cent',
-                'raw_unit' => $isDecimalString ? 'decimal_string_in_cent_field' : 'minor_cents',
+                'raw_unit' => $isDecimalString ? 'decimal_major_despite_cent_name' : 'minor_cents',
                 'normalized_minor' => $minor,
                 'formatted_decimal' => number_format($minor / 100, 2, '.', ''),
                 'currency' => strtoupper($currency),
@@ -55,7 +79,7 @@ class AliExpressMoneyNormalizer
             return [
                 'raw_amount' => $rawAmount,
                 'raw_field' => 'amount_cent',
-                'raw_unit' => $isDecimalString ? 'decimal_string_in_cent_field' : 'minor_cents',
+                'raw_unit' => $isDecimalString ? 'decimal_major_despite_cent_name' : 'minor_cents',
                 'normalized_minor' => $minor,
                 'formatted_decimal' => number_format($minor / 100, 2, '.', ''),
                 'currency' => strtoupper($currency),
@@ -64,7 +88,7 @@ class AliExpressMoneyNormalizer
             ];
         }
 
-        // Check for decimal fields (standard units e.g. 12.50)
+        // 2. Check for decimal fields (standard units e.g. "5.00" or 5.00)
         if (isset($option['shipping_fee']) && is_numeric($option['shipping_fee'])) {
             $rawAmount = $option['shipping_fee'];
             $minor = (int) round(((float) $rawAmount) * 100);
@@ -113,7 +137,7 @@ class AliExpressMoneyNormalizer
             ];
         }
 
-        // Check if explicitly free shipping
+        // 3. Check if explicitly free shipping
         if (isset($option['is_free']) && $option['is_free'] === true) {
             return [
                 'raw_amount' => 0,
