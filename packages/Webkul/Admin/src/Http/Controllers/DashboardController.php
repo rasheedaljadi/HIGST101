@@ -60,7 +60,10 @@ class DashboardController extends Controller
         ];
 
         if ($viewMode === 'advanced') {
-            $data['advancedData'] = $this->getAdvancedDashboardData();
+            $data['advancedData'] = $this->getAdvancedDashboardData([
+                'start_date' => $data['startDate'],
+                'end_date' => $data['endDate'],
+            ]);
         }
 
         return view('admin::dashboard.index')->with($data);
@@ -109,8 +112,8 @@ class DashboardController extends Controller
     /**
      * Gather read-only data for the Advanced Dashboard view.
      */
-    protected function getAdvancedDashboardData(): array
+    protected function getAdvancedDashboardData(array $filters = []): array
     {
-        return app(HayestDashboardAggregationService::class)->getAdvancedData();
+        return app(HayestDashboardAggregationService::class)->getAdvancedData($filters);
     }
 }

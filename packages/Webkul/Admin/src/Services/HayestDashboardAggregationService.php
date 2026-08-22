@@ -56,6 +56,8 @@ class HayestDashboardAggregationService
                 'delivery' => $this->getDeliveryData($startDate, $endDate),
                 'financial' => $this->getFinancialLedgerData($startDate, $endDate),
                 'customers_products' => $this->getCustomersAndProductsData($startDate, $endDate),
+                'catalog' => $this->getCatalogSummary(),
+                'wallet' => $this->getWalletSummary(),
                 'system_health' => $this->getSystemHealthData(),
                 'alerts' => $this->getAlertsAndExceptionsData(),
                 'exceptions' => [
@@ -358,6 +360,73 @@ class HayestDashboardAggregationService
                 'user' => 'مدير النظام',
                 'type' => 'user',
             ],
+        ];
+    }
+
+    /**
+     * Section: Catalog Summary (Main Categories, Subcategories, Products, Variants)
+     */
+    protected function getCatalogSummary(): array
+    {
+        $mainCategories = DB::table('categories')->where('parent_id', 1)->count();
+        $subCategories = DB::table('categories')->where('parent_id', '>', 1)->count();
+        $totalCategories = DB::table('categories')->where('id', '>', 1)->count();
+        $baseProducts = DB::table('products')->whereNull('parent_id')->count();
+        $variants = DB::table('products')->whereNotNull('parent_id')->count();
+        $totalProducts = DB::table('products')->count();
+
+        return [
+            'main_categories' => $mainCategories,
+            'sub_categories' => $subCategories,
+            'total_categories' => $totalCategories,
+            'base_products' => $baseProducts,
+            'variants' => $variants,
+            'total_products' => $totalProducts,
+        ];
+    }
+
+    /**
+     * Section: Wallet Financial Summary (السيولة المتاحة، إجمالي التزامات النظام، الرصيد المحجوز، طلبات السحب المعلقة)
+     */
+    protected function getWalletSummary(): array
+    {
+        $hasWalletAccounts = Schema::hasTable('wallet_accounts');
+        $hasWithdrawalRequests = Schema::hasTable('wallet_withdrawal_requests');
+
+        $totalLiability = 0.0;
+        $availableBalance = 0.0;
+        $heldBalance = 0.0;
+        $totalAccounts = 0;
+        $activeAccounts = 0;
+        $pendingWithdrawals = 0;
+        $pendingWithdrawalsAmount = 0.0;
+
+        if ($hasWalletAccounts) {
+            $activeWallets = DB::table('wallet_accounts')->where('status', 'active');
+            $totalLiability = (float) (clone $activeWallets)->sum('total_balance');
+            $availableBalance = (float) (clone $activeWallets)->sum('available_balance');
+            $heldBalance = (float) (clone $activeWallets)->sum('held_balance');
+            $totalAccounts = DB::table('wallet_accounts')->count();
+            $activeAccounts = (clone $activeWallets)->count();
+        }
+
+        if ($hasWithdrawalRequests) {
+            $pendingWithdrawalsQuery = DB::table('wallet_withdrawal_requests')->where('status', 'pending');
+            $pendingWithdrawals = (int) (clone $pendingWithdrawalsQuery)->count();
+            $pendingWithdrawalsAmount = (float) (clone $pendingWithdrawalsQuery)->sum('amount');
+        }
+
+        $activePercentage = $totalAccounts > 0 ? round(($activeAccounts / $totalAccounts) * 100) : 100;
+
+        return [
+            'total_liability' => $totalLiability,
+            'available_balance' => $availableBalance,
+            'held_balance' => $heldBalance,
+            'total_accounts' => $totalAccounts,
+            'active_accounts' => $activeAccounts,
+            'active_percentage' => $activePercentage,
+            'pending_withdrawals' => $pendingWithdrawals,
+            'pending_withdrawals_amount' => $pendingWithdrawalsAmount,
         ];
     }
 
