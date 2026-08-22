@@ -26,12 +26,16 @@ class AliExpressMoneyNormalizer
         // Check for minor unit fields (cents)
         if (isset($option['shipping_fee_cent']) && is_numeric($option['shipping_fee_cent'])) {
             $rawAmount = $option['shipping_fee_cent'];
-            $minor = (int) round((float) $rawAmount);
+            $isDecimalString = is_string($rawAmount) && str_contains($rawAmount, '.');
+
+            $minor = $isDecimalString
+                ? (int) round(((float) $rawAmount) * 100)
+                : (int) round((float) $rawAmount);
 
             return [
                 'raw_amount' => $rawAmount,
                 'raw_field' => 'shipping_fee_cent',
-                'raw_unit' => 'minor_cents',
+                'raw_unit' => $isDecimalString ? 'decimal_string_in_cent_field' : 'minor_cents',
                 'normalized_minor' => $minor,
                 'formatted_decimal' => number_format($minor / 100, 2, '.', ''),
                 'currency' => strtoupper($currency),
@@ -42,12 +46,16 @@ class AliExpressMoneyNormalizer
 
         if (isset($option['amount_cent']) && is_numeric($option['amount_cent'])) {
             $rawAmount = $option['amount_cent'];
-            $minor = (int) round((float) $rawAmount);
+            $isDecimalString = is_string($rawAmount) && str_contains($rawAmount, '.');
+
+            $minor = $isDecimalString
+                ? (int) round(((float) $rawAmount) * 100)
+                : (int) round((float) $rawAmount);
 
             return [
                 'raw_amount' => $rawAmount,
                 'raw_field' => 'amount_cent',
-                'raw_unit' => 'minor_cents',
+                'raw_unit' => $isDecimalString ? 'decimal_string_in_cent_field' : 'minor_cents',
                 'normalized_minor' => $minor,
                 'formatted_decimal' => number_format($minor / 100, 2, '.', ''),
                 'currency' => strtoupper($currency),
@@ -110,6 +118,19 @@ class AliExpressMoneyNormalizer
             return [
                 'raw_amount' => 0,
                 'raw_field' => 'is_free',
+                'raw_unit' => 'boolean_free',
+                'normalized_minor' => 0,
+                'formatted_decimal' => '0.00',
+                'currency' => strtoupper($currency),
+                'is_valid' => true,
+                'error' => null,
+            ];
+        }
+
+        if (isset($option['free_shipping']) && $option['free_shipping'] === true) {
+            return [
+                'raw_amount' => 0,
+                'raw_field' => 'free_shipping',
                 'raw_unit' => 'boolean_free',
                 'normalized_minor' => 0,
                 'formatted_decimal' => '0.00',
