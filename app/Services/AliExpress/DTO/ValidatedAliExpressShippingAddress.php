@@ -14,29 +14,21 @@ class ValidatedAliExpressShippingAddress
         public readonly string $province,
         public readonly string $zip,
         public readonly string $country,
-        public readonly ?string $companyName = null
+        public readonly ?string $companyName = null,
+        public readonly ?string $passportNo = null,
+        public readonly ?string $address2 = null
     ) {}
 
     /**
      * Convert to the canonical logistics_address payload expected by AliExpress API.
      *
-     * @return array{
-     *     contact_person: string,
-     *     phone_num: string,
-     *     mobile_no: string,
-     *     phone_country: string,
-     *     address: string,
-     *     city: string,
-     *     province: string,
-     *     zip: string,
-     *     country: string,
-     *     company_name: string
-     * }
+     * @return array<string, string>
      */
     public function toLogisticsAddressArray(): array
     {
-        return [
+        $payload = [
             'contact_person' => $this->contactPerson,
+            'full_name' => $this->contactPerson,
             'phone_num' => $this->phoneNum,
             'mobile_no' => $this->mobileNo,
             'phone_country' => $this->phoneCountry,
@@ -47,6 +39,19 @@ class ValidatedAliExpressShippingAddress
             'country' => $this->country,
             'company_name' => $this->companyName ?? $this->contactPerson,
         ];
+
+        if ($this->country === 'SA') {
+            $payload['passport_no'] = $this->passportNo ?: $this->zip;
+            $payload['address2'] = $this->address2 ?: $this->zip;
+        } elseif (! empty($this->passportNo)) {
+            $payload['passport_no'] = $this->passportNo;
+        }
+
+        if (! empty($this->address2) && ! isset($payload['address2'])) {
+            $payload['address2'] = $this->address2;
+        }
+
+        return $payload;
     }
 
     /**
