@@ -23,6 +23,7 @@ class SupplierPurchaseOrderDataGrid extends DataGrid
                 'supplier_purchase_orders.actual_total',
                 'supplier_purchase_orders.cost_variance_amount',
                 'supplier_purchase_orders.state',
+                'supplier_purchase_orders.state as raw_state',
                 'supplier_purchase_orders.payment_state',
                 'supplier_purchase_orders.created_at'
             );
@@ -152,7 +153,7 @@ class SupplierPurchaseOrderDataGrid extends DataGrid
                 'icon' => 'icon-cancel text-2xl text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300',
                 'title' => trans('procurement::app.datagrid.cancel-order'),
                 'method' => 'POST',
-                'url' => fn ($row) => ! in_array($row->state, ['cancelled', 'closed', 'received_in_full'], true)
+                'url' => fn ($row) => ! in_array($row->raw_state ?? $row->state, ['cancelled', 'closed', 'received_in_full'], true)
                     ? route('admin.procurement.supplier_orders.cancel', $row->spo_id)
                     : null,
             ]);

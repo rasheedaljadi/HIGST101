@@ -21,6 +21,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'supplier_purchase_orders.supplier_store_name',
                 'external_platform_orders.provider',
                 'external_platform_orders.normalized_status',
+                'external_platform_orders.normalized_status as raw_normalized_status',
                 'external_platform_orders.raw_status',
                 'external_platform_orders.tracking_number',
                 'external_platform_orders.carrier_name',
@@ -105,7 +106,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             'sortable' => true,
             'filterable' => true,
             'closure' => function ($row) {
-                $status = $row->normalized_status ?? 'unknown';
+                $status = $row->raw_normalized_status ?? ($row->normalized_status ?? 'unknown');
                 $colors = [
                     'wait_buyer_pay' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-300 dark:border-amber-700',
                     'processing' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
@@ -185,7 +186,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'icon' => 'icon-cart text-2xl text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300',
                 'title' => trans('procurement::app.datagrid.reorder'),
                 'method' => 'POST',
-                'url' => fn ($row) => $row->normalized_status === 'cancelled'
+                'url' => fn ($row) => ($row->raw_normalized_status ?? $row->normalized_status) === 'cancelled'
                     ? route('admin.procurement.platform_orders.reorder', $row->platform_order_id)
                     : null,
             ]);
@@ -194,7 +195,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'icon' => 'icon-cancel text-2xl text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300',
                 'title' => trans('procurement::app.datagrid.cancel-order'),
                 'method' => 'POST',
-                'url' => fn ($row) => $row->normalized_status === 'wait_buyer_pay'
+                'url' => fn ($row) => ($row->raw_normalized_status ?? $row->normalized_status) === 'wait_buyer_pay'
                     ? route('admin.procurement.platform_orders.cancel', $row->platform_order_id)
                     : null,
             ]);
@@ -203,7 +204,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'icon' => 'icon-delete text-2xl text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300',
                 'title' => trans('procurement::app.datagrid.delete'),
                 'method' => 'DELETE',
-                'url' => fn ($row) => in_array($row->normalized_status, ['cancelled', 'submission_failed'], true)
+                'url' => fn ($row) => in_array($row->raw_normalized_status ?? $row->normalized_status, ['cancelled', 'submission_failed'], true)
                     ? route('admin.procurement.platform_orders.destroy', $row->platform_order_id)
                     : null,
             ]);
