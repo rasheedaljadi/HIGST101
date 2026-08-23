@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => 'মোট',
+        'allocated-demands' => 'বরাদ্দকৃত চাহিদা',
+        'qty-ordered' => 'অর্ডার করা পরিমাণ',
         'title' => 'Administrative Procurement Batches',
         'description' => 'Aggregate eligible customer demands and split them by store into consolidated purchase orders',
         'create-batch' => 'Create Procurement Batch',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => 'ঐচ্ছিক অডিট নোট',
+        'external-ref-placeholder' => 'যেমন: AliExpress অর্ডার আইডি / পেমেন্ট রেফারেন্স',
+        'aliexpress-store' => 'AliExpress স্টোর',
+        'batch' => 'ব্যাচ',
+        'remaining-to-receive' => 'গ্রহণের জন্য অবশিষ্ট',
+        'missing' => 'অনুপস্থিত',
+        'damaged' => 'ক্ষতিগ্রস্ত',
+        'receive-good' => 'ভালো গ্রহণ করুন',
+        'received-good' => 'ভালো প্রাপ্ত',
+        'sku' => 'SKU',
+        'sku-product' => 'SKU / পণ্য',
         'cancel-confirm' => 'আপনি কি নিশ্চিত যে আপনি এই ক্রয় আদেশ বাতিল করতে চান?',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',

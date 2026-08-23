@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => 'එකතුව',
+        'allocated-demands' => 'වෙන් කළ ඉල්ලුම',
+        'qty-ordered' => 'ඇණවුම් කළ ප්‍රමාණය',
         'title' => 'Administrative Procurement Batches',
         'description' => 'Aggregate eligible customer demands and split them by store into consolidated purchase orders',
         'create-batch' => 'Create Procurement Batch',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => 'අමතර සටහන්',
+        'external-ref-placeholder' => 'උදා: AliExpress ඇණවුම් අංකය / ගෙවීම් යොමුව',
+        'aliexpress-store' => 'AliExpress වෙළඳසැල',
+        'batch' => 'කාණ්ඩය',
+        'remaining-to-receive' => 'ලැබීමට ඉතිරි ප්‍රමාණය',
+        'missing' => 'අඩු වූ',
+        'damaged' => 'හානි වූ',
+        'receive-good' => 'හොඳින් භාරගන්න',
+        'received-good' => 'හොඳින් ලැබුණු ප්‍රමාණය',
+        'sku' => 'SKU',
+        'sku-product' => 'SKU / භාණ්ඩය',
         'cancel-confirm' => 'ඔබට මෙම මිලදී ගැනීමේ ඇණවුම අවලංගු කිරීමට අවශ්‍ය බව විශ්වාසද?',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',

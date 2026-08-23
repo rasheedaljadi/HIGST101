@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => 'סה\"כ',
+        'allocated-demands' => 'דרישות שהוקצו',
+        'qty-ordered' => 'כמות שהוזמנה',
         'title' => 'Administrative Procurement Batches',
         'description' => 'Aggregate eligible customer demands and split them by store into consolidated purchase orders',
         'create-batch' => 'Create Procurement Batch',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => 'הערות ביקורת אופציונליות',
+        'external-ref-placeholder' => 'לדוגמה: מזהה הזמנת עלי אקספרס / אסמכתת תשלום',
+        'aliexpress-store' => 'חנות עלי אקספרס',
+        'batch' => 'אצווה',
+        'remaining-to-receive' => 'נותר לקבלה',
+        'missing' => 'חסר',
+        'damaged' => 'פגום',
+        'receive-good' => 'קבלת פריט תקין',
+        'received-good' => 'התקבל תקין',
+        'sku' => 'מק\"ט',
+        'sku-product' => 'מק\"ט / מוצר',
         'cancel-confirm' => 'האם אתה בטוח שברצונך לבטל הזמנת רכש זו?',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',

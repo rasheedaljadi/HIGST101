@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => '总计',
+        'allocated-demands' => '已分配需求',
+        'qty-ordered' => '订购数量',
         'title' => 'Administrative Procurement Batches',
         'description' => 'Aggregate eligible customer demands and split them by store into consolidated purchase orders',
         'create-batch' => 'Create Procurement Batch',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => '可选的审计备注',
+        'external-ref-placeholder' => '例如：速卖通订单号 / 支付参考号',
+        'aliexpress-store' => '速卖通店铺',
+        'batch' => '批次',
+        'remaining-to-receive' => '待收货剩余',
+        'missing' => '短缺',
+        'damaged' => '破损',
+        'receive-good' => '完好入库',
+        'received-good' => '完好收货',
+        'sku' => 'SKU',
+        'sku-product' => 'SKU / 商品',
         'cancel-confirm' => '您确定要取消此采购订单吗？',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',

@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => 'Toplam',
+        'allocated-demands' => 'Tahsis Edilen Talepler',
+        'qty-ordered' => 'Sipariş Miktarı',
         'title' => 'Administrative Procurement Batches',
         'description' => 'Aggregate eligible customer demands and split them by store into consolidated purchase orders',
         'create-batch' => 'Create Procurement Batch',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => 'İsteğe bağlı denetim notları',
+        'external-ref-placeholder' => 'örn. AliExpress Sipariş No / Ödeme Referansı',
+        'aliexpress-store' => 'AliExpress Mağazası',
+        'batch' => 'Parti',
+        'remaining-to-receive' => 'Teslim Alınacak Kalan',
+        'missing' => 'Eksik',
+        'damaged' => 'Hasarlı',
+        'receive-good' => 'Sağlam Kabul Et',
+        'received-good' => 'Sağlam Alınan',
+        'sku' => 'SKU',
+        'sku-product' => 'SKU / Ürün',
         'cancel-confirm' => 'Bu satın alma siparişini iptal etmek istediğinizden emin misiniz?',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',

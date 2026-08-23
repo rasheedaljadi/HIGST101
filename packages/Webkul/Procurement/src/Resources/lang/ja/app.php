@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => '合計',
+        'allocated-demands' => '割当需要',
+        'qty-ordered' => '発注数量',
         'title' => 'Administrative Procurement Batches',
         'description' => 'Aggregate eligible customer demands and split them by store into consolidated purchase orders',
         'create-batch' => 'Create Procurement Batch',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => '任意の監査メモ',
+        'external-ref-placeholder' => '例：AliExpress 注文ID / 支払参照番号',
+        'aliexpress-store' => 'AliExpress ストア',
+        'batch' => 'バッチ',
+        'remaining-to-receive' => '未受領残数',
+        'missing' => '欠品',
+        'damaged' => '破損',
+        'receive-good' => '良品受取',
+        'received-good' => '良品受領',
+        'sku' => 'SKU',
+        'sku-product' => 'SKU / 商品',
         'cancel-confirm' => 'この発注をキャンセルしてもよろしいですか？',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',

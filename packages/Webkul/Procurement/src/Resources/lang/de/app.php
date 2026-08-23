@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => 'Gesamt',
+        'allocated-demands' => 'Zugewiesener Bedarf',
+        'qty-ordered' => 'Bestellte Menge',
         'title' => 'Administrative Procurement Batches',
         'description' => 'Aggregate eligible customer demands and split them by store into consolidated purchase orders',
         'create-batch' => 'Create Procurement Batch',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => 'Optionale Prüfhinweise',
+        'external-ref-placeholder' => 'z. B. AliExpress-Bestell-ID / Zahlungsreferenz',
+        'aliexpress-store' => 'AliExpress-Shop',
+        'batch' => 'Charge',
+        'remaining-to-receive' => 'Noch zu empfangen',
+        'missing' => 'Fehlt',
+        'damaged' => 'Beschädigt',
+        'receive-good' => 'Einwandfrei annehmen',
+        'received-good' => 'Einwandfrei erhalten',
+        'sku' => 'SKU',
+        'sku-product' => 'SKU / Produkt',
         'cancel-confirm' => 'Sind Sie sicher, dass Sie diese Bestellung stornieren möchten?',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',

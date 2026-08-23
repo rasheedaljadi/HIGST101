@@ -108,15 +108,15 @@
 
                         {{-- PO Items Table --}}
                         <div class="overflow-x-auto">
-                            <table class="w-full text-xs text-left text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 rounded-lg">
+                            <table class="w-full text-xs ltr:text-left rtl:text-right text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 rounded-lg">
                                 <thead class="text-gray-700 dark:text-gray-300 uppercase bg-gray-100 dark:bg-gray-800">
                                     <tr>
-                                        <th class="p-2.5">SKU / Product</th>
-                                        <th class="p-2.5 text-center">Qty Ordered</th>
-                                        <th class="p-2.5 text-center">Allocated Demands</th>
+                                        <th class="p-2.5 ltr:text-left rtl:text-right">{{ trans('procurement::app.supplier_orders.sku-product') }}</th>
+                                        <th class="p-2.5 text-center">{{ trans('procurement::app.batches.qty-ordered') }}</th>
+                                        <th class="p-2.5 text-center">{{ trans('procurement::app.batches.allocated-demands') }}</th>
                                         @if (bouncer()->hasPermission('dropshipping.procurement_v2.cost_view'))
-                                            <th class="p-2.5 text-right">Unit Cost</th>
-                                            <th class="p-2.5 text-right">Total</th>
+                                            <th class="p-2.5 ltr:text-right rtl:text-left">{{ trans('procurement::app.batches.unit-cost') }}</th>
+                                            <th class="p-2.5 ltr:text-right rtl:text-left">{{ trans('procurement::app.batches.total') }}</th>
                                         @endif
                                     </tr>
                                 </thead>
@@ -131,13 +131,13 @@
                                             <td class="p-2.5 text-center">
                                                 @foreach ($item->allocations as $alloc)
                                                     <span class="inline-block bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-1.5 py-0.5 rounded text-[11px] font-mono mr-1 mb-1">
-                                                        Demand #{{ $alloc->procurement_demand_id }} ({{ $alloc->qty_allocated }})
+                                                        {{ trans('procurement::app.datagrid.demand-id') }}: #{{ $alloc->procurement_demand_id }} ({{ $alloc->qty_allocated }})
                                                     </span>
                                                 @endforeach
                                             </td>
                                             @if (bouncer()->hasPermission('dropshipping.procurement_v2.cost_view'))
-                                                <td class="p-2.5 text-right">${{ number_format((float) $item->expected_unit_cost, 2) }}</td>
-                                                <td class="p-2.5 text-right font-bold text-gray-900 dark:text-white">${{ number_format((float) ($item->qty_ordered * $item->expected_unit_cost), 2) }}</td>
+                                                <td class="p-2.5 ltr:text-right rtl:text-left">${{ number_format((float) $item->expected_unit_cost, 2) }}</td>
+                                                <td class="p-2.5 ltr:text-right rtl:text-left font-bold text-gray-900 dark:text-white">${{ number_format((float) ($item->qty_ordered * $item->expected_unit_cost), 2) }}</td>
                                             @endif
                                         </tr>
                                     @endforeach

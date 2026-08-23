@@ -18,7 +18,7 @@
                     {{ $order->purchase_order_number }}
                 </h1>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ $order->supplier_store_name ?: ($order->supplier_store_id ?: 'AliExpress Store') }} &bull; Batch: #{{ $order->batch?->batch_number }}
+                    {{ $order->supplier_store_name ?: ($order->supplier_store_id ?: trans('procurement::app.supplier_orders.aliexpress-store')) }} &bull; {{ trans('procurement::app.supplier_orders.batch') }}: #{{ $order->batch?->batch_number }}
                 </p>
             </div>
 
@@ -76,16 +76,16 @@
                 <h2 class="text-base font-bold text-gray-900 dark:text-white">{{ trans('procurement::app.supplier_orders.items-title') }}</h2>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-600 dark:text-gray-400">
+                <table class="w-full text-sm ltr:text-left rtl:text-right text-gray-600 dark:text-gray-400">
                     <thead class="bg-gray-50 dark:bg-gray-800 text-xs font-semibold uppercase text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
                         <tr>
-                            <th class="p-4">SKU / Product</th>
-                            <th class="p-4 text-center">Ordered</th>
-                            <th class="p-4 text-center">Received Good</th>
-                            <th class="p-4 text-center">Damaged</th>
-                            <th class="p-4 text-center">Missing</th>
+                            <th class="p-4 ltr:text-left rtl:text-right">{{ trans('procurement::app.supplier_orders.sku-product') }}</th>
+                            <th class="p-4 text-center">{{ trans('procurement::app.supplier_orders.ordered') }}</th>
+                            <th class="p-4 text-center">{{ trans('procurement::app.supplier_orders.received-good') }}</th>
+                            <th class="p-4 text-center">{{ trans('procurement::app.supplier_orders.damaged') }}</th>
+                            <th class="p-4 text-center">{{ trans('procurement::app.supplier_orders.missing') }}</th>
                             @if (bouncer()->hasPermission('dropshipping.procurement_v2.cost_view'))
-                                <th class="p-4 text-right">Expected Cost</th>
+                                <th class="p-4 ltr:text-right rtl:text-left">{{ trans('procurement::app.supplier_orders.expected-cost') }}</th>
                             @endif
                         </tr>
                     </thead>
@@ -101,7 +101,7 @@
                                 <td class="p-4 text-center text-rose-600 font-semibold">{{ $item->qty_damaged }}</td>
                                 <td class="p-4 text-center text-amber-600 font-semibold">{{ $item->qty_missing }}</td>
                                 @if (bouncer()->hasPermission('dropshipping.procurement_v2.cost_view'))
-                                    <td class="p-4 text-right font-semibold">${{ number_format((float) $item->expected_unit_cost, 2) }}</td>
+                                    <td class="p-4 ltr:text-right rtl:text-left font-semibold">${{ number_format((float) $item->expected_unit_cost, 2) }}</td>
                                 @endif
                             </tr>
                         @endforeach
@@ -132,14 +132,14 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 rounded-lg">
+                    <table class="w-full text-xs ltr:text-left rtl:text-right text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 rounded-lg">
                         <thead class="text-gray-700 dark:text-gray-300 uppercase bg-gray-100 dark:bg-gray-800">
                             <tr>
-                                <th class="p-3">SKU</th>
-                                <th class="p-3 text-center">Remaining to Receive</th>
-                                <th class="p-3 text-center">Receive Good</th>
-                                <th class="p-3 text-center">Damaged</th>
-                                <th class="p-3 text-center">Missing</th>
+                                <th class="p-3 ltr:text-left rtl:text-right">{{ trans('procurement::app.supplier_orders.sku') }}</th>
+                                <th class="p-3 text-center">{{ trans('procurement::app.supplier_orders.remaining-to-receive') }}</th>
+                                <th class="p-3 text-center">{{ trans('procurement::app.supplier_orders.receive-good') }}</th>
+                                <th class="p-3 text-center">{{ trans('procurement::app.supplier_orders.damaged') }}</th>
+                                <th class="p-3 text-center">{{ trans('procurement::app.supplier_orders.missing') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -187,7 +187,7 @@
                 <input type="hidden" name="supplier_purchase_order_id" value="{{ $order->id }}">
                 <div>
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400 mb-1">{{ trans('procurement::app.manual_payments.external-reference') }}</label>
-                    <input type="text" name="external_reference" required class="custom-input w-full rounded-lg border-gray-300" placeholder="e.g. AliExpress Order ID / Payment Ref">
+                    <input type="text" name="external_reference" required class="custom-input w-full rounded-lg border-gray-300" placeholder="{{ trans('procurement::app.supplier_orders.external-ref-placeholder') }}">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400 mb-1">{{ trans('procurement::app.manual_payments.declared-amount-usd') }}</label>
@@ -195,7 +195,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400 mb-1">{{ trans('procurement::app.general.notes') }}</label>
-                    <textarea name="notes" rows="2" class="custom-textarea w-full rounded-lg border-gray-300" placeholder="Optional audit notes"></textarea>
+                    <textarea name="notes" rows="2" class="custom-textarea w-full rounded-lg border-gray-300" placeholder="{{ trans('procurement::app.supplier_orders.notes-placeholder') }}"></textarea>
                 </div>
                 <div class="flex justify-end gap-2 mt-2">
                     <button type="button" onclick="document.getElementById('manual-payment-modal').classList.add('hidden')" class="secondary-button">{{ trans('procurement::app.general.cancel') }}</button>

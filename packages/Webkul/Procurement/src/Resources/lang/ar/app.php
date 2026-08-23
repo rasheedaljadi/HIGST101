@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => 'الإجمالي',
+        'allocated-demands' => 'الطلبات المخصصة',
+        'qty-ordered' => 'الكمية المطلوبة',
         'title' => 'دفعات التجميع الإدارية',
         'description' => 'تجميع طلبات العملاء المؤهلة وتقسيمها حسب المتاجر إلى أوامر شراء موحدة',
         'create-batch' => 'إنشاء دفعة تجميع',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => 'ملاحظات تدقيق اختيارية',
+        'external-ref-placeholder' => 'مثال: رقم أمر علي إكسبرس أو مرجع الدفع',
+        'aliexpress-store' => 'متجر علي إكسبرس',
+        'batch' => 'الدفعة',
+        'remaining-to-receive' => 'المتبقي للاستلام',
+        'missing' => 'مفقود',
+        'damaged' => 'تالف',
+        'receive-good' => 'استلام سليم',
+        'received-good' => 'مستلم سليم',
+        'sku' => 'رمز المنتج (SKU)',
+        'sku-product' => 'الرمز / المنتج (SKU)',
         'cancel-confirm' => 'هل أنت متأكد من رغبتك في إلغاء أمر الشراء هذا؟ سيتم تحرير وإعادة الكميات للتجميع.',
         'title' => 'أوامر المورد (Supplier POs)',
         'description' => 'أوامر التوريد الموجهة لكل متجر مستقل على منصة علي إكسبرس',

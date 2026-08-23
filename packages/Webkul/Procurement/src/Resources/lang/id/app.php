@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => 'Total',
+        'allocated-demands' => 'Permintaan Dialokasikan',
+        'qty-ordered' => 'Jml Dipesan',
         'title' => 'Administrative Procurement Batches',
         'description' => 'Aggregate eligible customer demands and split them by store into consolidated purchase orders',
         'create-batch' => 'Create Procurement Batch',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => 'Catatan audit opsional',
+        'external-ref-placeholder' => 'cth. ID Pesanan AliExpress / Ref Pembayaran',
+        'aliexpress-store' => 'Toko AliExpress',
+        'batch' => 'Batch',
+        'remaining-to-receive' => 'Sisa Diterima',
+        'missing' => 'Kurang / Hilang',
+        'damaged' => 'Rusak',
+        'receive-good' => 'Terima Baik',
+        'received-good' => 'Diterima Baik',
+        'sku' => 'SKU',
+        'sku-product' => 'SKU / Produk',
         'cancel-confirm' => 'Apakah Anda yakin ingin membatalkan pesanan pembelian ini?',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',

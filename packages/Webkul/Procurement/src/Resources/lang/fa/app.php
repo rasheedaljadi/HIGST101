@@ -40,6 +40,9 @@ return [
     ],
 
     'batches' => [
+        'total' => 'مجموع',
+        'allocated-demands' => 'تقاضاهای تخصیص یافته',
+        'qty-ordered' => 'تعداد سفارش',
         'title' => 'Administrative Procurement Batches',
         'description' => 'Aggregate eligible customer demands and split them by store into consolidated purchase orders',
         'create-batch' => 'Create Procurement Batch',
@@ -58,6 +61,17 @@ return [
     ],
 
     'supplier_orders' => [
+        'notes-placeholder' => 'یادداشت‌های حسابرسی اختیاری',
+        'external-ref-placeholder' => 'مثال: شماره سفارش علی‌اکسپرس / مرجع پرداخت',
+        'aliexpress-store' => 'فروشگاه علی‌اکسپرس',
+        'batch' => 'دسته',
+        'remaining-to-receive' => 'باقیمانده جهت دریافت',
+        'missing' => 'کسری',
+        'damaged' => 'آسیب دیده',
+        'receive-good' => 'دریافت سالم',
+        'received-good' => 'دریافت شده سالم',
+        'sku' => 'شناسه SKU',
+        'sku-product' => 'SKU / محصول',
         'cancel-confirm' => 'آیا مطمئن هستید که می خواهید این سفارش خرید را لغو کنید؟',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',
