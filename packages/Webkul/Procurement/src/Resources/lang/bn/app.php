@@ -82,6 +82,12 @@ return [
     'platform_orders' => [
         'title' => 'AliExpress Platform Orders',
         'description' => 'Track individual supplier platform orders and synchronize statuses and tracking automatically',
+        'tab-all' => 'সব দেখুন',
+        'tab-wait-buyer-pay' => 'পেমেন্টের অপেক্ষায়',
+        'tab-processing' => 'প্রক্রিয়াধীন',
+        'tab-shipped' => 'পাঠানো হয়েছে',
+        'tab-completed' => 'সম্পূর্ণ হয়েছে',
+        'tab-cancelled' => 'বাতিল',
     ],
     'manual_payments' => [
         'title' => 'Manual Payment Declarations',

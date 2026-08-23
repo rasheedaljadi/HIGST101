@@ -82,6 +82,12 @@ return [
     'platform_orders' => [
         'title' => 'AliExpress Platform Orders',
         'description' => 'Track individual supplier platform orders and synchronize statuses and tracking automatically',
+        'tab-all' => 'Tout afficher',
+        'tab-wait-buyer-pay' => 'En attente de paiement',
+        'tab-processing' => 'En cours',
+        'tab-shipped' => 'Expédié',
+        'tab-completed' => 'Terminé',
+        'tab-cancelled' => 'Annulé',
     ],
     'manual_payments' => [
         'title' => 'Manual Payment Declarations',

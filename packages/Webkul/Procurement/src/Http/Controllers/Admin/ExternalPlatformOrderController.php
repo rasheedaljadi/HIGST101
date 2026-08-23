@@ -30,7 +30,22 @@ class ExternalPlatformOrderController extends Controller
             return datagrid(ExternalPlatformOrderDataGrid::class)->process();
         }
 
-        return view('procurement::admin.platform_orders.index');
+        $counts = [
+            'all' => ExternalPlatformOrder::count(),
+            'wait_buyer_pay' => ExternalPlatformOrder::where('normalized_status', ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY)->count(),
+            'processing' => ExternalPlatformOrder::whereIn('normalized_status', [
+                ExternalPlatformOrder::STATUS_PROCESSING,
+                ExternalPlatformOrder::STATUS_PAYMENT_CONFIRMED,
+            ])->count(),
+            'shipped' => ExternalPlatformOrder::where('normalized_status', ExternalPlatformOrder::STATUS_SHIPPED)->count(),
+            'completed' => ExternalPlatformOrder::whereIn('normalized_status', [
+                ExternalPlatformOrder::STATUS_COMPLETED,
+                ExternalPlatformOrder::STATUS_DELIVERED,
+            ])->count(),
+            'cancelled' => ExternalPlatformOrder::where('normalized_status', ExternalPlatformOrder::STATUS_CANCELLED)->count(),
+        ];
+
+        return view('procurement::admin.platform_orders.index', compact('counts'));
     }
 
     public function sync(Request $request, int $id)

@@ -82,6 +82,12 @@ return [
     'platform_orders' => [
         'title' => 'أوامر منصة علي إكسبرس',
         'description' => 'تتبع طلبات المنصة الفردية ومزامنة الحالات وأرقام التتبع تلقائياً',
+        'tab-all' => 'عرض الكل',
+        'tab-wait-buyer-pay' => 'قيد انتظار الدفع',
+        'tab-processing' => 'جاري الإجراء',
+        'tab-shipped' => 'تم الإجراء',
+        'tab-completed' => 'تم الاكتمال',
+        'tab-cancelled' => 'ملغي',
     ],
     'manual_payments' => [
         'title' => 'إقرارات الدفع اليدوي',

@@ -37,6 +37,23 @@ class ExternalPlatformOrderDataGrid extends DataGrid
         $this->addFilter('created_at', 'external_platform_orders.created_at');
         $this->addFilter('last_synced_at', 'external_platform_orders.last_synced_at');
 
+        $status = request()->get('status');
+        if (! empty($status) && $status !== 'all') {
+            if ($status === 'processing') {
+                $queryBuilder->whereIn('external_platform_orders.normalized_status', [
+                    'processing',
+                    'payment_confirmed',
+                ]);
+            } elseif ($status === 'completed') {
+                $queryBuilder->whereIn('external_platform_orders.normalized_status', [
+                    'completed',
+                    'delivered',
+                ]);
+            } else {
+                $queryBuilder->where('external_platform_orders.normalized_status', $status);
+            }
+        }
+
         return $queryBuilder;
     }
 

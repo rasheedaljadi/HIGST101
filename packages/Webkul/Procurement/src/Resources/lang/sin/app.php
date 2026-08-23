@@ -82,6 +82,12 @@ return [
     'platform_orders' => [
         'title' => 'AliExpress Platform Orders',
         'description' => 'Track individual supplier platform orders and synchronize statuses and tracking automatically',
+        'tab-all' => 'සියල්ල පෙන්වන්න',
+        'tab-wait-buyer-pay' => 'ගෙවීම් බලාපොරොත්තුවෙන්',
+        'tab-processing' => 'ක්‍රියාවලියේ',
+        'tab-shipped' => 'යවන ලදී',
+        'tab-completed' => 'සම්පූර්ණයි',
+        'tab-cancelled' => 'අවලංගුයි',
     ],
     'manual_payments' => [
         'title' => 'Manual Payment Declarations',

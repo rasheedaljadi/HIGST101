@@ -82,6 +82,12 @@ return [
     'platform_orders' => [
         'title' => 'AliExpress Platform Orders',
         'description' => 'Track individual supplier platform orders and synchronize statuses and tracking automatically',
+        'tab-all' => 'הצג הכל',
+        'tab-wait-buyer-pay' => 'ממתין לתשלום',
+        'tab-processing' => 'בביצוע',
+        'tab-shipped' => 'נשלח',
+        'tab-completed' => 'הושלם',
+        'tab-cancelled' => 'בוטל',
     ],
     'manual_payments' => [
         'title' => 'Manual Payment Declarations',
