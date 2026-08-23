@@ -144,7 +144,7 @@ class ProcurementEligibilityService
         return [
             'is_imported' => true,
             'provider' => 'aliexpress',
-            'provider_account_id' => $payload['provider_account_id'] ?? 1,
+            'provider_account_id' => $payload['provider_account_id'] ?? null,
             'supplier_store_id' => $supplierStoreId,
             'supplier_store_name' => $supplierStoreName,
             'supplier_product_id' => $supplierProductId,

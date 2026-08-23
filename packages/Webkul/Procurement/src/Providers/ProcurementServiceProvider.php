@@ -7,8 +7,10 @@ use Illuminate\Support\ServiceProvider;
 use Webkul\Procurement\Console\Commands\PollAliExpressOrdersCommand;
 use Webkul\Procurement\Console\Commands\ProcessProcurementAutoBatchCommand;
 use Webkul\Procurement\Console\Commands\ProcurementRemediateFailedSubmissionCommand;
+use Webkul\Procurement\Contracts\AliExpressAuthorizationContextResolver;
 use Webkul\Procurement\Contracts\AliExpressOrderGateway;
 use Webkul\Procurement\Gateways\AliExpressOrderSubmissionGateway;
+use Webkul\Procurement\Services\AliExpressAuthorizationResolver;
 
 class ProcurementServiceProvider extends ServiceProvider
 {
@@ -22,6 +24,11 @@ class ProcurementServiceProvider extends ServiceProvider
         $this->app->singleton(
             AliExpressOrderGateway::class,
             AliExpressOrderSubmissionGateway::class
+        );
+
+        $this->app->singleton(
+            AliExpressAuthorizationContextResolver::class,
+            AliExpressAuthorizationResolver::class
         );
 
         $this->app->register(EventServiceProvider::class);

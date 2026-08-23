@@ -2,25 +2,29 @@
 
 namespace Webkul\Procurement\Gateways;
 
-use App\Models\AliExpressToken;
 use App\Services\AliExpress\AliExpressApiClient;
 use App\Services\AliExpress\AliExpressOAuthService;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Webkul\Procurement\Contracts\AliExpressAuthorizationContextResolver;
 use Webkul\Procurement\Contracts\AliExpressOrderGateway;
 use Webkul\Procurement\DTO\AliExpressOrderPreflight;
 use Webkul\Procurement\DTO\AliExpressOrderSnapshot;
 use Webkul\Procurement\DTO\ExternalOrderDraft;
 use Webkul\Procurement\DTO\ExternalOrderSubmissionFailed;
 use Webkul\Procurement\DTO\VerifiedExternalOrderCreated;
+use Webkul\Procurement\Exceptions\AliExpressAuthorizationUnavailableException;
 use Webkul\Procurement\Support\AliExpressMoneyNormalizer;
 
 class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
 {
     public function __construct(
         protected AliExpressApiClient $apiClient,
-        protected AliExpressOAuthService $oauthService
-    ) {}
+        protected AliExpressOAuthService $oauthService,
+        protected ?AliExpressAuthorizationContextResolver $authResolver = null
+    ) {
+        $this->authResolver ??= app(AliExpressAuthorizationContextResolver::class);
+    }
 
     /**
      * Resolve default Saudi warehouse shipping address configured in Key Management.
@@ -78,14 +82,17 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
      */
     public function preflight(ExternalOrderDraft $draft): AliExpressOrderPreflight
     {
-        $token = $this->resolveToken($draft->providerAccountId);
-        if ($token === null || empty($token->access_token)) {
+        try {
+            $auth = $this->authResolver->resolveForDropshipperSubmission(
+                $draft->providerAccountId ? (string) $draft->providerAccountId : null
+            );
+        } catch (AliExpressAuthorizationUnavailableException $e) {
             return new AliExpressOrderPreflight(
                 isSuccess: false,
                 isDeliverableToDestination: false,
                 destinationCountry: 'SA',
-                errorCode: 'IllegalAccessToken',
-                errorMessage: 'No valid AliExpress OAuth access token available for preflight.',
+                errorCode: $e->errorCode,
+                errorMessage: $e->getMessage(),
                 rawDetails: ['token_valid' => false]
             );
         }
@@ -125,7 +132,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         // 1. Resolve product details & exact sku_attr (Must match exact SKU)
         $resolvedSkuAttr = null;
         try {
-            $prodRes = $this->apiClient->call('aliexpress.ds.product.get', $token->access_token, [
+            $prodRes = $this->apiClient->call('aliexpress.ds.product.get', $auth->accessToken, [
                 'product_id' => $productId,
                 'ship_to_country' => $country,
                 'target_currency' => $draft->currencyCode ?: 'USD',
@@ -190,7 +197,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                 'selectedSkuId' => $skuId,
             ];
 
-            $freightRes = $this->apiClient->call('aliexpress.ds.freight.query', $token->access_token, [
+            $freightRes = $this->apiClient->call('aliexpress.ds.freight.query', $auth->accessToken, [
                 'queryDeliveryReq' => $freightReq,
             ]);
 
@@ -288,11 +295,14 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         }
 
         // 2. Resolve access token
-        $token = $this->resolveToken($draft->providerAccountId);
-        if ($token === null || empty($token->access_token)) {
+        try {
+            $auth = $this->authResolver->resolveForDropshipperSubmission(
+                $draft->providerAccountId ? (string) $draft->providerAccountId : null
+            );
+        } catch (AliExpressAuthorizationUnavailableException $e) {
             return new ExternalOrderSubmissionFailed(
-                errorCode: 'IllegalAccessToken',
-                errorMessageMasked: 'No valid AliExpress OAuth access token configured.',
+                errorCode: $e->errorCode,
+                errorMessageMasked: $e->getMessage(),
                 providerRequestId: null,
                 retryClassification: 'non_retryable'
             );
@@ -350,7 +360,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
 
         // 6. Invoke API call
         try {
-            $response = $this->apiClient->call('aliexpress.ds.order.create', $token->access_token, $params);
+            $response = $this->apiClient->call('aliexpress.ds.order.create', $auth->accessToken, $params);
         } catch (\Throwable $e) {
             return new ExternalOrderSubmissionFailed(
                 errorCode: 'API_TRANSPORT_ERROR',
@@ -428,17 +438,20 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             );
         }
 
-        $token = $this->resolveToken($providerAccountId);
-        if ($token === null || empty($token->access_token)) {
+        try {
+            $auth = $this->authResolver->resolveForDropshipperSubmission(
+                $providerAccountId ? (string) $providerAccountId : null
+            );
+        } catch (AliExpressAuthorizationUnavailableException $e) {
             return new AliExpressOrderSnapshot(
                 externalOrderId: $officialExternalOrderId,
-                orderStatus: 'OAUTH_TOKEN_MISSING',
-                rawStatus: 'OAUTH_TOKEN_MISSING'
+                orderStatus: 'AUTH_UNAVAILABLE',
+                rawStatus: $e->getMessage()
             );
         }
 
         try {
-            $result = $this->apiClient->call('aliexpress.ds.order.get', $token->access_token, [
+            $result = $this->apiClient->call('aliexpress.ds.order.get', $auth->accessToken, [
                 'order_id' => $officialExternalOrderId,
             ]);
 
@@ -476,18 +489,6 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                 rawStatus: 'AliExpress query transport error.'
             );
         }
-    }
-
-    /**
-     * Resolve OAuth Token.
-     */
-    protected function resolveToken(?int $accountId = null): ?AliExpressToken
-    {
-        if ($accountId) {
-            return $this->oauthService->getTokenById($accountId);
-        }
-
-        return $this->oauthService->latestToken();
     }
 
     /**
