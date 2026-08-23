@@ -132,6 +132,7 @@ return [
         'confirmed-at' => 'Confirmed At',
         'exception-type' => 'Exception Type',
         'details' => 'Details',
+        'sync' => 'Sync Status',
     ],
 
     'states' => [

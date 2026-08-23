@@ -132,6 +132,7 @@ return [
         'confirmed-at' => 'تاريخ الإقرار',
         'exception-type' => 'نوع الاستثناء',
         'details' => 'التفاصيل',
+        'sync' => 'مزامنة الحالة',
     ],
 
     'states' => [

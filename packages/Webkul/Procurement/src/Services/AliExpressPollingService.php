@@ -4,10 +4,12 @@ namespace Webkul\Procurement\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Webkul\Procurement\Contracts\AliExpressOrderGateway;
 use Webkul\Procurement\Models\ExternalPlatformOrder;
 use Webkul\Procurement\Models\ProcurementAuditLog;
 use Webkul\Procurement\Models\ProcurementBatch;
 use Webkul\Procurement\Models\ProcurementCostSnapshot;
+use Webkul\Procurement\Models\ProcurementDemandAllocation;
 use Webkul\Procurement\Models\SupplierPurchaseOrder;
 
 class AliExpressPollingService
@@ -24,19 +26,32 @@ class AliExpressPollingService
         'cancelled' => 50,
     ];
 
+    public function __construct(
+        protected ?AliExpressOrderGateway $orderGateway = null
+    ) {
+        $this->orderGateway ??= app(AliExpressOrderGateway::class);
+    }
+
     /**
      * Poll a specific platform order with idempotent payload processing and monotonic state protection.
+     * If $payload is null, performs a live authoritative query via AliExpressOrderGateway.
      *
      * @param  array{
      *     status: string,
      *     actual_total?: float,
      *     tracking_number?: string,
      *     carrier?: string,
+     *     end_reason?: string,
+     *     end_reason_desc?: string,
      *     provider_updated_at?: string
      * }|null  $payload
      */
     public function syncOrder(ExternalPlatformOrder $platformOrder, ?array $payload = null): ExternalPlatformOrder
     {
+        if ($payload === null) {
+            $payload = $this->fetchLiveOrderPayload($platformOrder);
+        }
+
         return DB::transaction(function () use ($platformOrder, $payload) {
             /** @var ExternalPlatformOrder $platformOrder */
             $platformOrder = ExternalPlatformOrder::where('id', $platformOrder->id)->lockForUpdate()->firstOrFail();
@@ -49,14 +64,10 @@ class AliExpressPollingService
             $spo = SupplierPurchaseOrder::where('id', $platformOrder->supplier_purchase_order_id)->lockForUpdate()->firstOrFail();
 
             $rawStatus = strtoupper((string) ($payload['status'] ?? 'WAIT_SELLER_SEND_GOODS'));
-            $normalizedStatus = match ($rawStatus) {
-                'WAIT_BUYER_PAY' => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
-                'WAIT_SELLER_SEND_GOODS', 'PROCESSING' => ExternalPlatformOrder::STATUS_PROCESSING,
-                'SELLER_SEND_GOODS', 'SHIPPED', 'WAIT_RECEIVE' => ExternalPlatformOrder::STATUS_SHIPPED,
-                'FINISH', 'COMPLETED' => ExternalPlatformOrder::STATUS_COMPLETED,
-                'IN_CANCEL', 'CANCELLED', 'CLOSED' => ExternalPlatformOrder::STATUS_CANCELLED,
-                default => ExternalPlatformOrder::STATUS_PROCESSING,
-            };
+            $endReason = strtoupper((string) ($payload['end_reason'] ?? ''));
+            $endReasonDesc = (string) ($payload['end_reason_desc'] ?? '');
+
+            $normalizedStatus = $this->resolveNormalizedStatus($rawStatus, $endReason, $endReasonDesc);
 
             $currentRank = $this->statusRanks[$platformOrder->normalized_status] ?? 0;
             $newRank = $this->statusRanks[$normalizedStatus] ?? 0;
@@ -180,11 +191,155 @@ class AliExpressPollingService
             } elseif ($normalizedStatus === ExternalPlatformOrder::STATUS_CANCELLED) {
                 $spo->update([
                     'state' => SupplierPurchaseOrder::STATE_CANCELLED,
+                    'payment_state' => 'cancelled',
                     'external_sync_state' => 'cancelled',
+                ]);
+
+                // Update batch if all SPOs are cancelled/closed
+                if ($spo->batch) {
+                    $hasActiveSpos = SupplierPurchaseOrder::where('batch_id', $spo->batch_id)
+                        ->whereNotIn('state', [
+                            SupplierPurchaseOrder::STATE_CANCELLED,
+                            SupplierPurchaseOrder::STATE_SUPPLIER_EXCEPTION,
+                            SupplierPurchaseOrder::STATE_CLOSED,
+                        ])
+                        ->exists();
+
+                    if (! $hasActiveSpos) {
+                        $spo->batch->update([
+                            'state' => ProcurementBatch::STATE_CANCELLED,
+                        ]);
+                    }
+                }
+
+                // Release demand allocations
+                if ($spo->items) {
+                    $itemIds = $spo->items->pluck('id')->toArray();
+                    if (! empty($itemIds)) {
+                        ProcurementDemandAllocation::whereIn('supplier_purchase_order_item_id', $itemIds)
+                            ->where('state', 'allocated')
+                            ->update([
+                                'state' => 'cancelled',
+                                'qty_cancelled' => DB::raw('qty_allocated'),
+                                'qty_allocated' => 0,
+                            ]);
+                    }
+                }
+
+                ProcurementAuditLog::create([
+                    'auditable_type' => SupplierPurchaseOrder::class,
+                    'auditable_id' => $spo->id,
+                    'action' => 'supplier_order_cancelled_externally',
+                    'old_state' => $spo->getOriginal('state'),
+                    'new_state' => SupplierPurchaseOrder::STATE_CANCELLED,
+                    'details' => [
+                        'external_order_id' => $platformOrder->external_order_id,
+                        'raw_status' => $rawStatus,
+                        'end_reason' => $endReason,
+                        'end_reason_desc' => $endReasonDesc,
+                    ],
+                    'correlation_id' => "spo-{$spo->id}-cancel",
                 ]);
             }
 
             return $platformOrder->fresh();
         });
+    }
+
+    /**
+     * Fetch live order payload from AliExpress API via AliExpressOrderGateway.
+     *
+     * @return array{
+     *     status: string,
+     *     tracking_number: ?string,
+     *     carrier: ?string,
+     *     actual_total: ?float,
+     *     end_reason: string,
+     *     end_reason_desc: string,
+     *     provider_updated_at: string
+     * }
+     */
+    protected function fetchLiveOrderPayload(ExternalPlatformOrder $platformOrder): array
+    {
+        $snapshot = $this->orderGateway->getOrder(
+            $platformOrder->external_order_id,
+            $platformOrder->provider_account_id
+        );
+
+        if (in_array($snapshot->orderStatus, ['AUTH_UNAVAILABLE', 'QUERY_FAILED', 'TRANSPORT_ERROR', 'INVALID_EXTERNAL_ORDER_ID'], true)) {
+            throw new \RuntimeException("AliExpress query failed for order #{$platformOrder->external_order_id}: {$snapshot->rawStatus}");
+        }
+
+        $endReason = '';
+        $endReasonDesc = '';
+        $resp = $snapshot->rawResponse['aliexpress_trade_ds_order_get_response']['result']
+            ?? $snapshot->rawResponse['result']
+            ?? $snapshot->rawResponse;
+
+        $childList = $resp['child_order_list']['aeop_child_order_info'] ?? [];
+        if (! empty($childList)) {
+            $firstChild = is_array($childList) ? ($childList[0] ?? $childList) : [];
+            $endReason = (string) ($firstChild['end_reason'] ?? '');
+            $endReasonDesc = (string) ($firstChild['end_reason_desc'] ?? '');
+        }
+
+        $actualTotal = null;
+        if (isset($resp['order_amount']['amount'])) {
+            $actualTotal = (float) $resp['order_amount']['amount'];
+        }
+
+        return [
+            'status' => $snapshot->orderStatus,
+            'tracking_number' => $snapshot->trackingNumber,
+            'carrier' => $snapshot->carrierName,
+            'actual_total' => $actualTotal,
+            'end_reason' => $endReason,
+            'end_reason_desc' => $endReasonDesc,
+            'provider_updated_at' => now()->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Resolve normalized status taking into account AliExpress order_status and end_reason.
+     */
+    public function resolveNormalizedStatus(string $rawStatus, string $endReason = '', string $endReasonDesc = ''): string
+    {
+        $cancelIndicators = [
+            'PAYMENT_TIMEOUT',
+            'PAYMENT_TIMEOUT_BUYER',
+            'BUYER_CANCEL_ORDER',
+            'BUYER_CANCELLED',
+            'BUYER_CANCEL',
+            'BUYER_NOT_PAY',
+            'SELLER_CANCEL',
+            'RISK_CONTROL_CANCEL',
+            'CANCEL',
+            'CLOSED',
+            'IN_CANCEL',
+            'CANCELLED',
+        ];
+
+        foreach ($cancelIndicators as $indicator) {
+            if (str_contains($endReason, $indicator) || str_contains($rawStatus, $indicator)) {
+                return ExternalPlatformOrder::STATUS_CANCELLED;
+            }
+        }
+
+        if (! empty($endReasonDesc) && (
+            stripos($endReasonDesc, 'No payment') !== false ||
+            stripos($endReasonDesc, 'cancel') !== false ||
+            stripos($endReasonDesc, 'closed') !== false
+        )) {
+            return ExternalPlatformOrder::STATUS_CANCELLED;
+        }
+
+        return match ($rawStatus) {
+            'WAIT_BUYER_PAY' => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
+            'WAIT_SELLER_SEND_GOODS', 'PROCESSING' => ExternalPlatformOrder::STATUS_PROCESSING,
+            'SELLER_SEND_GOODS', 'SHIPPED', 'WAIT_RECEIVE' => ExternalPlatformOrder::STATUS_SHIPPED,
+            'FINISH', 'COMPLETED' => ExternalPlatformOrder::STATUS_COMPLETED,
+            'IN_CANCEL', 'CANCELLED', 'CLOSED' => ExternalPlatformOrder::STATUS_CANCELLED,
+            default => ExternalPlatformOrder::STATUS_PROCESSING,
+        };
     }
 }

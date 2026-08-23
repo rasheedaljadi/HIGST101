@@ -106,4 +106,16 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             'filterable' => true,
         ]);
     }
+
+    public function prepareActions(): void
+    {
+        if (bouncer()->hasPermission('dropshipping.procurement_v2.submit')) {
+            $this->addAction([
+                'icon' => 'icon-refresh text-2xl',
+                'title' => trans('procurement::app.datagrid.sync'),
+                'method' => 'POST',
+                'url' => fn ($row) => route('admin.procurement.platform_orders.sync', $row->platform_order_id),
+            ]);
+        }
+    }
 }
