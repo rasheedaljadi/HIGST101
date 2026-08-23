@@ -4,6 +4,8 @@ namespace Webkul\Procurement\Gateways;
 
 use App\Services\AliExpress\AliExpressApiClient;
 use App\Services\AliExpress\AliExpressOAuthService;
+use App\Services\AliExpress\Exceptions\AliExpressInvalidShippingAddressException;
+use App\Services\AliExpress\Shipping\AliExpressShippingAddressValidator;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Webkul\Procurement\Contracts\AliExpressAuthorizationContextResolver;
@@ -51,30 +53,20 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             throw new DomainException('SHIPPING_ADDRESS_NOT_CONFIGURED: Key Management inventory source [default] is not configured in database.');
         }
 
-        $contactName = trim((string) ($warehouse->contact_name ?? $warehouse->name ?? ''));
-        $phone = trim((string) ($warehouse->contact_number ?? ''));
-        $street = trim((string) ($warehouse->street ?? $warehouse->address1 ?? ''));
-        $city = trim((string) ($warehouse->city ?? ''));
-        $state = trim((string) ($warehouse->state ?? ''));
-        $postcode = trim((string) ($warehouse->postcode ?? ''));
-        $country = strtoupper(trim((string) ($warehouse->country ?? '')));
-
-        if (empty($contactName) || empty($phone) || empty($street) || empty($city) || empty($state) || empty($postcode) || $country !== 'SA') {
-            throw new DomainException('SHIPPING_ADDRESS_NOT_CONFIGURED: Missing mandatory address fields in [default] inventory source (contact, phone, street, city, state, zip, or country is not SA).');
-        }
-
-        return [
-            'contact_person' => $contactName,
-            'phone_num' => $phone,
-            'mobile_no' => $phone,
+        $candidate = [
+            'contact_person' => trim((string) ($warehouse->contact_name ?? $warehouse->name ?? '')),
+            'phone_num' => trim((string) ($warehouse->contact_number ?? '')),
+            'mobile_no' => trim((string) ($warehouse->contact_number ?? '')),
             'phone_country' => '966',
-            'address' => $street,
-            'city' => $city,
-            'province' => $state,
-            'zip' => $postcode,
-            'country' => 'SA',
-            'company_name' => trim((string) ($warehouse->name ?? $contactName)),
+            'address' => trim((string) ($warehouse->street ?? $warehouse->address1 ?? '')),
+            'city' => trim((string) ($warehouse->city ?? '')),
+            'province' => trim((string) ($warehouse->state ?? '')),
+            'zip' => trim((string) ($warehouse->postcode ?? '')),
+            'country' => strtoupper(trim((string) ($warehouse->country ?? 'SA'))),
+            'company_name' => trim((string) ($warehouse->name ?? $warehouse->contact_name ?? '')),
         ];
+
+        return AliExpressShippingAddressValidator::normalizeAndValidate($candidate)->toLogisticsAddressArray();
     }
 
     /**
@@ -117,11 +109,13 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         try {
             $shippingAddress = $this->resolveWarehouseShippingAddress($draft->overrideShippingAddress);
         } catch (DomainException $e) {
+            $errorCode = ($e instanceof AliExpressInvalidShippingAddressException) ? $e->errorCode : 'SHIPPING_ADDRESS_NOT_CONFIGURED';
+
             return new AliExpressOrderPreflight(
                 isSuccess: false,
                 isDeliverableToDestination: false,
                 destinationCountry: 'SA',
-                errorCode: 'SHIPPING_ADDRESS_NOT_CONFIGURED',
+                errorCode: $errorCode,
                 errorMessage: $e->getMessage(),
                 rawDetails: []
             );
@@ -312,8 +306,10 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         try {
             $shippingAddress = $this->resolveWarehouseShippingAddress($draft->overrideShippingAddress);
         } catch (DomainException $e) {
+            $errorCode = ($e instanceof AliExpressInvalidShippingAddressException) ? $e->errorCode : 'SHIPPING_ADDRESS_NOT_CONFIGURED';
+
             return new ExternalOrderSubmissionFailed(
-                errorCode: 'SHIPPING_ADDRESS_NOT_CONFIGURED',
+                errorCode: $errorCode,
                 errorMessageMasked: $e->getMessage(),
                 providerRequestId: null,
                 retryClassification: 'fatal'
@@ -496,18 +492,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
      */
     protected function normalizeAddress(array $addr): array
     {
-        return [
-            'contact_person' => (string) ($addr['contact_person'] ?? ''),
-            'phone_num' => (string) ($addr['phone_num'] ?? $addr['mobile_no'] ?? ''),
-            'mobile_no' => (string) ($addr['mobile_no'] ?? $addr['phone_num'] ?? ''),
-            'phone_country' => (string) ($addr['phone_country'] ?? '966'),
-            'address' => (string) ($addr['address'] ?? ''),
-            'city' => (string) ($addr['city'] ?? ''),
-            'province' => (string) ($addr['province'] ?? $addr['state'] ?? ''),
-            'zip' => (string) ($addr['zip'] ?? $addr['postcode'] ?? ''),
-            'country' => strtoupper((string) ($addr['country'] ?? 'SA')),
-            'company_name' => (string) ($addr['company_name'] ?? ($addr['contact_person'] ?? '')),
-        ];
+        return AliExpressShippingAddressValidator::normalizeAndValidate($addr)->toLogisticsAddressArray();
     }
 
     /**

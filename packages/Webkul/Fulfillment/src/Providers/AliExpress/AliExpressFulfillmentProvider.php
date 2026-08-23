@@ -4,6 +4,8 @@ namespace Webkul\Fulfillment\Providers\AliExpress;
 
 use App\Services\AliExpress\AliExpressApiClient;
 use App\Services\AliExpress\AliExpressOAuthService;
+use App\Services\AliExpress\Exceptions\AliExpressInvalidShippingAddressException;
+use App\Services\AliExpress\Shipping\AliExpressShippingAddressValidator;
 use Illuminate\Support\Facades\Log;
 use Webkul\Fulfillment\Contracts\FulfillmentProviderInterface;
 use Webkul\Fulfillment\DataObjects\SupplierOrderRequest;
@@ -54,6 +56,16 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
             );
         }
 
+        try {
+            $validatedAddress = AliExpressShippingAddressValidator::normalizeAndValidate($request->shippingAddress);
+        } catch (AliExpressInvalidShippingAddressException $e) {
+            return SupplierOrderResult::failure(
+                isRetryable: false,
+                code: $e->errorCode,
+                message: $e->getMessage()
+            );
+        }
+
         $items = array_map(function ($item) use ($token) {
             $data = [
                 'product_count' => (int) $item->qty,
@@ -93,23 +105,10 @@ class AliExpressFulfillmentProvider implements FulfillmentProviderInterface
             return $data;
         }, $request->items);
 
-        $phoneCountry = $this->getPhoneCountry($request->shippingAddress->country ?? '');
-
         $params = [
             'param_place_order_request4_open_api_d_t_o' => [
                 'out_order_id' => (string) $request->internalReference,
-                'logistics_address' => [
-                    'contact_person' => $request->shippingAddress->fullName(),
-                    'phone_num' => $request->shippingAddress->phone ?? '',
-                    'mobile_no' => $request->shippingAddress->phone ?? '',
-                    'phone_country' => $phoneCountry,
-                    'address' => $request->shippingAddress->address,
-                    'city' => $request->shippingAddress->city,
-                    'province' => $request->shippingAddress->state ?? '',
-                    'zip' => $request->shippingAddress->postcode ?? '',
-                    'country' => $request->shippingAddress->country ?? '',
-                    'company_name' => $request->shippingAddress->companyName ?? '',
-                ],
+                'logistics_address' => $validatedAddress->toLogisticsAddressArray(),
                 'product_items' => $items,
             ],
         ];

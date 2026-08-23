@@ -109,6 +109,7 @@ class AliExpressKeysController extends Controller
                 'exclude_choice_from_shipping_price' => ['nullable', 'boolean'],
             ];
         } elseif ($section === 'warehouse') {
+            $isSa = strtoupper(trim((string) $request->input('warehouse_country', 'SA'))) === 'SA';
             $rules = [
                 'warehouse_contact_name' => ['required', 'string', 'max:255'],
                 'warehouse_contact_number' => ['required', 'string', 'max:255'],
@@ -117,13 +118,20 @@ class AliExpressKeysController extends Controller
                 'warehouse_city' => ['required', 'string', 'max:255'],
                 'warehouse_state' => ['required', 'string', 'max:255'],
                 'warehouse_country' => ['required', 'string', 'size:2'],
-                'warehouse_postcode' => ['required', 'string', 'max:255'],
+                'warehouse_postcode' => [
+                    'required',
+                    'string',
+                    $isSa ? 'regex:/^[A-Za-z]{4}[0-9]{4}$/' : 'max:20',
+                ],
+            ];
+            $customMessages = [
+                'warehouse_postcode.regex' => 'يجب أن يتكون رمز العنوان الوطني السعودي المختصر من 8 خانات (4 أحرف إنجليزية متبوعة بـ 4 أرقام، مثل ABCD1234).',
             ];
         } else {
             return redirect()->back()->with('error', 'القسم غير صالح.');
         }
 
-        $validated = $request->validate($rules, [], [
+        $validated = $request->validate($rules, $customMessages ?? [], [
             'app_key' => 'مفتاح التطبيق',
             'app_secret' => 'السر',
             'authorize_url' => 'رابط المصادقة',
@@ -200,8 +208,8 @@ class AliExpressKeysController extends Controller
                     'street' => $validated['warehouse_street'],
                     'city' => $validated['warehouse_city'],
                     'state' => $validated['warehouse_state'],
-                    'country' => $validated['warehouse_country'],
-                    'postcode' => $validated['warehouse_postcode'],
+                    'country' => strtoupper(trim((string) $validated['warehouse_country'])),
+                    'postcode' => strtoupper(trim((string) $validated['warehouse_postcode'])),
                 ]);
         }
 
