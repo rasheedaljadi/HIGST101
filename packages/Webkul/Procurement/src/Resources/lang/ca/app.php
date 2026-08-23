@@ -15,7 +15,6 @@ return [
             'reports' => 'Reports & Profitability',
         ],
     ],
-
     'acl' => [
         'procurement-v2' => 'Purchase Orders V2',
         'view' => 'View',
@@ -28,7 +27,6 @@ return [
         'exception-handle' => 'Handle Exceptions',
         'reports-view' => 'View Reports',
     ],
-
     'demands' => [
         'title' => 'Eligible Procurement Demands',
         'description' => 'Manage and track external sourcing requirements computed from local stock deficits',
@@ -38,7 +36,6 @@ return [
         'fulfilled' => 'Fulfilled',
         'no-open-demands' => 'No open procurement demands available for batching at this time.',
     ],
-
     'batches' => [
         'total' => 'Total',
         'allocated-demands' => 'Demandes assignades',
@@ -58,8 +55,8 @@ return [
         'reject' => 'Reject & Release Batch',
         'confirm-reject' => 'Are you sure you want to reject this batch and release all demands back to the open pool?',
         'submit-to-aliexpress' => 'Submit to AliExpress',
+        'unit-cost' => 'Cost unitari',
     ],
-
     'supplier_orders' => [
         'notes-placeholder' => 'Notes d\'auditoria opcionals',
         'external-ref-placeholder' => 'ex. ID de comanda AliExpress / Ref. de pagament',
@@ -73,19 +70,19 @@ return [
         'sku' => 'SKU',
         'sku-product' => 'SKU / Producte',
         'cancel-confirm' => 'Esteu segur que voleu cancel·lar aquesta comanda de compra?',
-        'title' => 'Supplier Purchase Orders (POs)',
-        'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',
-        'items-title' => 'Purchase Order Lines & Demand Allocations',
-        'receive-goods' => 'Receive Shipment & Allocate Quantities',
-        'destination-warehouse' => 'Destination Receipt Warehouse',
-        'confirm-receipt' => 'Confirm Receipt & Update Stock',
+        'title' => 'Comandes del proveïdor',
+        'description' => 'Ordres de compra dividides per botigues AliExpress',
+        'items-title' => 'Articles de comanda i assignacions',
+        'receive-goods' => 'Recepció de mercaderies',
+        'destination-warehouse' => 'Magatzem de destinació',
+        'confirm-receipt' => 'Confirmar recepció',
+        'ordered' => 'Demanat',
+        'expected-cost' => 'Cost esperat',
     ],
-
     'platform_orders' => [
         'title' => 'AliExpress Platform Orders',
         'description' => 'Track individual supplier platform orders and synchronize statuses and tracking automatically',
     ],
-
     'manual_payments' => [
         'title' => 'Manual Payment Declarations',
         'description' => 'Audit log of manual payments performed in AliExpress console without storing payment credentials',
@@ -94,19 +91,16 @@ return [
         'declared-amount-usd' => 'Actual Paid Amount (USD)',
         'confirm' => 'Save & Confirm Declaration',
     ],
-
     'cost_variances' => [
         'title' => 'Cost Variances & Approvals',
         'description' => 'Review and approve discrepancies between expected batch costs and actual paid costs',
         'approve' => 'Approve Variance',
         'reject' => 'Reject Variance',
     ],
-
     'exceptions' => [
         'title' => 'Reconciliations & Exceptions',
         'description' => 'Audit log for internal stock deficits, receiving discrepancies, and synchronization exceptions',
     ],
-
     'reports' => [
         'title' => 'Procurement & Profitability Reports',
         'description' => 'Operational and financial KPIs for the aggregated Procurement V2 module',
@@ -119,7 +113,6 @@ return [
         'delayed-platform-orders' => 'Delayed Platform Orders (> 3 days)',
         'delayed-platform-desc' => 'AliExpress orders exceeding 3 business days without tracking numbers from suppliers.',
     ],
-
     'datagrid' => [
         'cancel-order' => 'Cancel·lar comanda de compra',
         'demand-id' => 'Demand ID',
@@ -151,7 +144,6 @@ return [
         'details' => 'Details',
         'sync' => 'Sync Status',
     ],
-
     'states' => [
         'eligible' => 'Eligible',
         'open_for_batching' => 'Open for Batching',
@@ -180,7 +172,6 @@ return [
         'completed' => 'Completed',
         'partially_cancelled' => 'Partially Cancelled',
     ],
-
     'messages' => [
         'order-cancelled-success' => 'Comanda de compra cancel·lada correctament.',
         'batch-created-success' => 'Batch :number created successfully and split into store purchase orders.',
@@ -193,7 +184,6 @@ return [
         'receipt-processed-success' => 'Inbound receipt processed and stock quantities updated successfully.',
         'platform-order-synced-success' => 'AliExpress platform order synced successfully.',
     ],
-
     'general' => [
         'cancel' => 'Cancel',
         'currency' => 'Currency',
