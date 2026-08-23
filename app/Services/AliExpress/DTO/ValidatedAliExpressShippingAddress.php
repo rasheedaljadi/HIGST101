@@ -41,10 +41,14 @@ class ValidatedAliExpressShippingAddress
         ];
 
         if ($this->country === 'SA') {
-            $payload['passport_no'] = $this->passportNo ?: $this->zip;
-            $payload['tax_number'] = $this->passportNo ?: $this->zip;
-            $payload['foreigner_passport_no'] = $this->passportNo ?: $this->zip;
-            $payload['address2'] = $this->address2 ?: $this->zip;
+            $code = $this->passportNo ?: $this->zip;
+            $payload['passport_no'] = $code;
+            $payload['tax_number'] = $code;
+            $payload['foreigner_passport_no'] = $code;
+            $payload['national_address'] = $code;
+            $payload['national_number'] = $code;
+            $payload['short_address'] = $code;
+            $payload['address2'] = $this->address2 ?: $code;
         } elseif (! empty($this->passportNo)) {
             $payload['passport_no'] = $this->passportNo;
         }
