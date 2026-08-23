@@ -42,6 +42,8 @@ class ValidatedAliExpressShippingAddress
 
         if ($this->country === 'SA') {
             $payload['passport_no'] = $this->passportNo ?: $this->zip;
+            $payload['tax_number'] = $this->passportNo ?: $this->zip;
+            $payload['foreigner_passport_no'] = $this->passportNo ?: $this->zip;
             $payload['address2'] = $this->address2 ?: $this->zip;
         } elseif (! empty($this->passportNo)) {
             $payload['passport_no'] = $this->passportNo;
