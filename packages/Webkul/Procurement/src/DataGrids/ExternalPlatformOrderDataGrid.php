@@ -182,31 +182,30 @@ class ExternalPlatformOrderDataGrid extends DataGrid
     {
         if (bouncer()->hasPermission('dropshipping.procurement_v2.submit')) {
             $this->addAction([
-                'icon' => 'icon-repeat text-2xl text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300',
-                'title' => trans('procurement::app.datagrid.sync'),
-                'method' => 'POST',
-                'url' => fn ($row) => route('admin.procurement.platform_orders.sync', $row->platform_order_id),
-            ]);
-
-            $this->addAction([
                 'icon' => 'icon-cart text-2xl text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300',
                 'title' => trans('procurement::app.datagrid.reorder'),
                 'method' => 'POST',
-                'url' => fn ($row) => route('admin.procurement.platform_orders.reorder', $row->platform_order_id),
+                'url' => fn ($row) => $row->normalized_status === 'cancelled'
+                    ? route('admin.procurement.platform_orders.reorder', $row->platform_order_id)
+                    : null,
             ]);
 
             $this->addAction([
                 'icon' => 'icon-cancel text-2xl text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300',
                 'title' => trans('procurement::app.datagrid.cancel-order'),
                 'method' => 'POST',
-                'url' => fn ($row) => route('admin.procurement.platform_orders.cancel', $row->platform_order_id),
+                'url' => fn ($row) => $row->normalized_status === 'wait_buyer_pay'
+                    ? route('admin.procurement.platform_orders.cancel', $row->platform_order_id)
+                    : null,
             ]);
 
             $this->addAction([
                 'icon' => 'icon-delete text-2xl text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300',
                 'title' => trans('procurement::app.datagrid.delete'),
                 'method' => 'DELETE',
-                'url' => fn ($row) => route('admin.procurement.platform_orders.destroy', $row->platform_order_id),
+                'url' => fn ($row) => in_array($row->normalized_status, ['cancelled', 'submission_failed'], true)
+                    ? route('admin.procurement.platform_orders.destroy', $row->platform_order_id)
+                    : null,
             ]);
         }
     }

@@ -152,7 +152,9 @@ class SupplierPurchaseOrderDataGrid extends DataGrid
                 'icon' => 'icon-cancel text-2xl text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300',
                 'title' => trans('procurement::app.datagrid.cancel-order'),
                 'method' => 'POST',
-                'url' => fn ($row) => route('admin.procurement.supplier_orders.cancel', $row->spo_id),
+                'url' => fn ($row) => ! in_array($row->state, ['cancelled', 'closed', 'received_in_full'], true)
+                    ? route('admin.procurement.supplier_orders.cancel', $row->spo_id)
+                    : null,
             ]);
         }
     }
