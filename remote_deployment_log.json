@@ -1,0 +1,112 @@
+[
+  {
+    "phase": 0,
+    "branch": "feat/delivery-admin-ui-rebuild",
+    "head": "32b3245f04026fa8a67c790f24d4bd03a304832b",
+    "baseline": {
+      "orders": 9,
+      "order_items": 16,
+      "product_inventories": 2553,
+      "inventory_movements": 0,
+      "purchase_orders": 3,
+      "purchase_order_items": 3,
+      "inbound_receipt_manifests": 0,
+      "inventory_transfer_manifests": 0,
+      "delivery_assignments": 0,
+      "inventory_sources": 8,
+      "external_availability_snapshots": 0,
+      "default_qty": "7914549"
+    }
+  },
+  {
+    "phase": 1,
+    "backup_file": "/home/highest-ye/backups/backup_pre_lifecycle_1787187096.sql.gz",
+    "size": "7528126",
+    "sha256": "42b89ae6f2c6b13bc646a9197e43c2e70afe67cca64bba280f969bb3b572359b"
+  },
+  {
+    "phase": 2,
+    "new_head": "32b3245f04026fa8a67c790f24d4bd03a304832b"
+  },
+  {
+    "phase": 34,
+    "migration_output": "INFO  Nothing to migrate.",
+    "schema": {
+      "order_lifecycle_stage_views": true,
+      "order_item_lifecycle_stage_views": true,
+      "order_columns": [
+        "id",
+        "order_id",
+        "current_stage_code",
+        "bottleneck_stage_code",
+        "is_mixed_order",
+        "has_imported_items",
+        "has_internal_items",
+        "is_exception",
+        "exception_reason",
+        "computed_at",
+        "source_version",
+        "created_at",
+        "updated_at"
+      ],
+      "item_columns": [
+        "id",
+        "order_item_id",
+        "order_id",
+        "origin_type",
+        "current_stage_code",
+        "source_type",
+        "source_entity_type",
+        "source_entity_id",
+        "is_exception",
+        "exception_reason",
+        "computed_at",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  },
+  {
+    "phase": 5,
+    "backfill": {
+      "run1_processed": 9,
+      "run1_orders_view": 9,
+      "run1_items_view": 10,
+      "run2_processed": 9,
+      "run2_orders_view": 9,
+      "run2_items_view": 10,
+      "idempotent": true
+    }
+  },
+  {
+    "phase": 6,
+    "final_baseline": {
+      "orders": 9,
+      "order_items": 16,
+      "product_inventories": 2553,
+      "inventory_movements": 0,
+      "purchase_orders": 3,
+      "purchase_order_items": 3,
+      "inbound_receipt_manifests": 0,
+      "inventory_transfer_manifests": 0,
+      "delivery_assignments": 0,
+      "inventory_sources": 8,
+      "external_availability_snapshots": 0,
+      "default_qty": "7914549"
+    },
+    "stages": {
+      "stage_distribution": [
+        {
+          "bottleneck_stage_code": "confirmed",
+          "count": 3
+        },
+        {
+          "bottleneck_stage_code": "new",
+          "count": 6
+        }
+      ],
+      "exceptions_count": 1
+    },
+    "verdict": "READY FOR LIVE DASHBOARD BINDING"
+  }
+]

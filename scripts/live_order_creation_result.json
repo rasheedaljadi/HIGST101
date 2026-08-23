@@ -1,0 +1,24 @@
+{
+    "status": "LIVE_ORDER_CREATED_SUCCESS",
+    "spo": {
+        "id": 1,
+        "purchase_order_number": "SPO-20260822-QJYCHK-01",
+        "state": "awaiting_manual_payment",
+        "expected_total_usd": 10.19,
+        "correlation_key": "IDEMP-SPO-SPO-20260822-QJYCHK-01"
+    },
+    "platform_order": {
+        "id": 1,
+        "external_order_id": "AE-LIVE-20260822-4586371333",
+        "raw_status": "WAIT_BUYER_PAY",
+        "normalized_status": "wait_buyer_pay",
+        "currency_code": "USD"
+    },
+    "api_response": {
+        "ok": true,
+        "status_code": 200,
+        "has_body": true
+    },
+    "payment_state": "AWAITING_MANUAL_PAYMENT (No automated charge executed)",
+    "action_required_from_user": "Log in to AliExpress console to view\/cancel this order."
+}

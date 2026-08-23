@@ -1,0 +1,61 @@
+{
+    "stage_count": 11,
+    "stages": [
+        "new",
+        "payment_pending",
+        "confirmed",
+        "sourcing_required",
+        "po_created",
+        "supplier_shipped",
+        "sa_received",
+        "ye_in_transit",
+        "ye_received",
+        "handed_off",
+        "delivered"
+    ],
+    "last_computed_at": null,
+    "data_quality": {
+        "total_items": 0,
+        "projected_items": 0,
+        "unclassified_count": 0,
+        "items": []
+    },
+    "currency_symbol": "US$",
+    "html_length": 67079,
+    "has_section_title": true,
+    "has_arabic_title": true,
+    "has_unclassified_card": true,
+    "sample_json": {
+        "stages_count": 11,
+        "first_stage": {
+            "code": "new",
+            "rank": 1,
+            "label": "طلب جديد",
+            "group": "customer",
+            "group_label": "رحلة العميل",
+            "icon": "shopping-bag",
+            "color": "#253691",
+            "bg_light": "bg-blue-50\/90 text-blue-900 border-blue-200",
+            "count": 0,
+            "value": 0,
+            "exception_count": 0,
+            "last_computed_at": null
+        },
+        "last_stage": {
+            "code": "delivered",
+            "rank": 11,
+            "label": "تم التسليم",
+            "group": "local",
+            "group_label": "التنفيذ والتسليم المحلي",
+            "icon": "shield-check",
+            "color": "#0C9677",
+            "bg_light": "bg-emerald-100\/90 text-emerald-950 border-emerald-300",
+            "count": 0,
+            "value": 0,
+            "exception_count": 0,
+            "last_computed_at": null
+        },
+        "total_active_orders": 0,
+        "unclassified_count": 0
+    }
+}

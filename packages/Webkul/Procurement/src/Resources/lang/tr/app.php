@@ -125,6 +125,7 @@ return [
         'po-number' => 'PO Number',
         'aliexpress-order-id' => 'AliExpress Order ID',
         'tracking-number' => 'Tracking Number',
+        'purchased-at' => 'Satın Alma Tarihi ve Saati',
         'last-synced-at' => 'Last Synced At',
         'payment-reference' => 'Payment Reference',
         'declared-total' => 'Declared Total',

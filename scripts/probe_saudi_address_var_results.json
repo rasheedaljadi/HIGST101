@@ -1,0 +1,138 @@
+{
+  "V01_lowercase_short": {
+    "is_success": false,
+    "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+    "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+    "order_list": null,
+    "raw": {
+      "aliexpress_ds_order_create_response": {
+        "result": {
+          "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+          "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+          "is_success": false
+        },
+        "request_id": "21410da317874526555144220",
+        "_trace_id_": "2151fd2c17874526555136898e0de0"
+      }
+    }
+  },
+  "V02_postal_dash_building": {
+    "is_success": false,
+    "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+    "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+    "order_list": null,
+    "raw": {
+      "aliexpress_ds_order_create_response": {
+        "result": {
+          "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+          "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+          "is_success": false
+        },
+        "request_id": "2151e41c17874526569498605",
+        "_trace_id_": "2102f1cd17874526569474402e0f78"
+      }
+    }
+  },
+  "V03_building_dash_postal": {
+    "is_success": false,
+    "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+    "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+    "order_list": null,
+    "raw": {
+      "aliexpress_ds_order_create_response": {
+        "result": {
+          "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+          "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+          "is_success": false
+        },
+        "request_id": "212e59e617874526583244531",
+        "_trace_id_": "2151fca717874526583244882e0dc1"
+      }
+    }
+  },
+  "V04_postal_secondary_8digits": {
+    "is_success": false,
+    "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+    "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+    "order_list": null,
+    "raw": {
+      "aliexpress_ds_order_create_response": {
+        "result": {
+          "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+          "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+          "is_success": false
+        },
+        "request_id": "0bb4a9a517874526597034282",
+        "_trace_id_": "2141315917874526597018965e0ec6"
+      }
+    }
+  },
+  "V05_building_secondary_8digits": {
+    "is_success": false,
+    "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+    "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+    "order_list": null,
+    "raw": {
+      "aliexpress_ds_order_create_response": {
+        "result": {
+          "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+          "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+          "is_success": false
+        },
+        "request_id": "212e59e617874526610905048",
+        "_trace_id_": "2151fd3a17874526610897969e0e18"
+      }
+    }
+  },
+  "V06_building_dash_secondary": {
+    "is_success": false,
+    "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+    "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+    "order_list": null,
+    "raw": {
+      "aliexpress_ds_order_create_response": {
+        "result": {
+          "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+          "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+          "is_success": false
+        },
+        "request_id": "2151e4fa17874526624608220",
+        "_trace_id_": "2141149b17874526624575666e0d95"
+      }
+    }
+  },
+  "V07_standard_district_ar_riyad": {
+    "is_success": false,
+    "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+    "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+    "order_list": null,
+    "raw": {
+      "aliexpress_ds_order_create_response": {
+        "result": {
+          "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+          "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+          "is_success": false
+        },
+        "request_id": "212a715417874526638858991",
+        "_trace_id_": "212a7b8d17874526638842919e0fa5"
+      }
+    }
+  },
+  "V08_district_west_naseem": {
+    "is_success": false,
+    "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+    "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+    "order_list": null,
+    "raw": {
+      "aliexpress_ds_order_create_response": {
+        "result": {
+          "error_msg": "Please enter a 8-digit national address in right format, eg. ABCD1234.",
+          "error_code": "B_DROPSHIPPER_DELIVERY_ADDRESS_VALIDATE_FAIL",
+          "is_success": false
+        },
+        "request_id": "212e59e617874526653015807",
+        "_trace_id_": "2102f1cd17874526652991141e0c6c"
+      }
+    }
+  }
+}

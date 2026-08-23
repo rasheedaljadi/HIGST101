@@ -125,6 +125,7 @@ return [
         'po-number' => 'رقم أمر الشراء',
         'aliexpress-order-id' => 'رقم علي إكسبرس',
         'tracking-number' => 'رقم التتبع',
+        'purchased-at' => 'تاريخ ووقت الشراء',
         'last-synced-at' => 'آخر مزامنة',
         'payment-reference' => 'مرجع الدفع',
         'declared-total' => 'المبلغ المقر',

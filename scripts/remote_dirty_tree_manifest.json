@@ -1,0 +1,282 @@
+[
+  {
+    "path": "app/Console/Commands/AliExpressSyncProducts.php",
+    "status": "M",
+    "size_bytes": 8132,
+    "mtime": 1787199113,
+    "sha256": "70f98d6831cd08c40cfc0a25dfc3911f7dd0293d8e93fa5d1594f2a0a62765e6",
+    "classification": "FEATURE_ALIEXPRESS",
+    "patch_file": "patches/app__Console__Commands__AliExpressSyncProducts.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "app/Services/AliExpress/AliExpressApiClient.php",
+    "status": "M",
+    "size_bytes": 6126,
+    "mtime": 1787199112,
+    "sha256": "f78c7cc3adfcfceb33702808d1556e5193efb6b2ffb24e344cd0b67eec4d5a43",
+    "classification": "FEATURE_ALIEXPRESS",
+    "patch_file": "patches/app__Services__AliExpress__AliExpressApiClient.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "app/Services/AliExpress/AliExpressProductImporter.php",
+    "status": "M",
+    "size_bytes": 83447,
+    "mtime": 1787250488,
+    "sha256": "b3a3e456d1355a92ead2121525bec9f46faff4f5c0b034b4b390cf95e1f2cb07",
+    "classification": "FEATURE_ALIEXPRESS",
+    "patch_file": "patches/app__Services__AliExpress__AliExpressProductImporter.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "app/Services/AliExpress/AliExpressProductSyncer.php",
+    "status": "M",
+    "size_bytes": 21704,
+    "mtime": 1787199111,
+    "sha256": "5fbc5cf5c8deec16e97b92389f2e67d8e2e95552f38b69d80979b43a5bfaeec0",
+    "classification": "FEATURE_ALIEXPRESS",
+    "patch_file": "patches/app__Services__AliExpress__AliExpressProductSyncer.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/Admin/src/Http/Controllers/DashboardController.php",
+    "status": "M",
+    "size_bytes": 3356,
+    "mtime": 1787199108,
+    "sha256": "a9b79a545c7370f185a349b1cebfdee14425e115c5727835efbba1a00230f40f",
+    "classification": "FEATURE_DASHBOARD",
+    "patch_file": "patches/packages__Webkul__Admin__src__Http__Controllers__DashboardController.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/Admin/src/Resources/views/dashboard/advanced/index.blade.php",
+    "status": "M",
+    "size_bytes": 108966,
+    "mtime": 1787199110,
+    "sha256": "5ea49f79802d6f9057db1a8e32c0bcd04179b653fa50b4b14afd9d38ad3b8493",
+    "classification": "UNTRACKED_OR_OTHER",
+    "patch_file": "patches/packages__Webkul__Admin__src__Resources__views__dashboard__advanced__index.blade.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/Admin/src/Services/HayestDashboardAggregationService.php",
+    "status": "M",
+    "size_bytes": 18395,
+    "mtime": 1787199108,
+    "sha256": "cab371de840e1a4594a4c207347dee78e71ea2ff7fa9b24b7b036ca8d603af9d",
+    "classification": "FEATURE_DASHBOARD",
+    "patch_file": "patches/packages__Webkul__Admin__src__Services__HayestDashboardAggregationService.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/DeliveryManagement/src/Config/admin-menu.php",
+    "status": "M",
+    "size_bytes": 2482,
+    "mtime": 1787199110,
+    "sha256": "ba0d988c65d35ee6ddbe4dfe9977a838909d101055113819d09630e6b0dc2bac",
+    "classification": "FEATURE_DELIVERY",
+    "patch_file": "patches/packages__Webkul__DeliveryManagement__src__Config__admin-menu.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/Fulfillment/src/Listeners/AliExpressStockListener.php",
+    "status": "M",
+    "size_bytes": 7351,
+    "mtime": 1787250488,
+    "sha256": "bac9e7e4e55ef7759c6fd001e011af27184522cb44741e54610289a872a5ae78",
+    "classification": "FEATURE_FULFILLMENT",
+    "patch_file": "patches/packages__Webkul__Fulfillment__src__Listeners__AliExpressStockListener.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/Inventory/src/DataGrids/InventoryProductCardDataGrid.php",
+    "status": "M",
+    "size_bytes": 9392,
+    "mtime": 1787250972,
+    "sha256": "6034a8c4379e5b240e3ca2050cd7c0297f95f00ca354a7efc73a3c619568721c",
+    "classification": "FEATURE_INVENTORY",
+    "patch_file": "patches/packages__Webkul__Inventory__src__DataGrids__InventoryProductCardDataGrid.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/Inventory/src/Database/Seeders/InventorySourcesModelV12Seeder.php",
+    "status": "M",
+    "size_bytes": 6891,
+    "mtime": 1787250489,
+    "sha256": "c1c850748090e0f8919d0f25b6887f0e69a60fb20a17df159489fa278b4793ec",
+    "classification": "FEATURE_INVENTORY",
+    "patch_file": "patches/packages__Webkul__Inventory__src__Database__Seeders__InventorySourcesModelV12Seeder.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/Inventory/src/Http/Controllers/Admin/InventoryProductCardController.php",
+    "status": "M",
+    "size_bytes": 3900,
+    "mtime": 1787251275,
+    "sha256": "cc9a63f00f89994506cc99e849634930d30bf5a0c1e6c96f58173ae82eba5a7a",
+    "classification": "FEATURE_INVENTORY",
+    "patch_file": "patches/packages__Webkul__Inventory__src__Http__Controllers__Admin__InventoryProductCardController.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/Sales/src/Services/Lifecycle/OrderLifecycleDashboardQueryService.php",
+    "status": "M",
+    "size_bytes": 16433,
+    "mtime": 1787199107,
+    "sha256": "7680339fe4617d8d06bfccd8adc1ba047061a2f3f57b51733bfa04df25b6f8c3",
+    "classification": "FEATURE_DASHBOARD",
+    "patch_file": "patches/packages__Webkul__Sales__src__Services__Lifecycle__OrderLifecycleDashboardQueryService.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "packages/Webkul/Shop/src/Resources/views/customers/account/orders/pdf.blade.php",
+    "status": "M",
+    "size_bytes": 31014,
+    "mtime": 1787199113,
+    "sha256": "f2f3ee4c2562ee86bbb8264a77e5a0e1f458aaf4addf3463a1d98307812d5abf",
+    "classification": "FEATURE_SHOP",
+    "patch_file": "patches/packages__Webkul__Shop__src__Resources__views__customers__account__orders__pdf.blade.php.patch",
+    "review_status": "TRACKED_PATCH_PRESERVED"
+  },
+  {
+    "path": "app/Models/AliExpress/SemanticAttributeMemory.php",
+    "status": "??",
+    "size_bytes": 2442,
+    "mtime": 1787166170,
+    "sha256": "e8ee1b3a1f8a8a2961393d9daa91a2ae0332707079367eac860f47c318e3c24e",
+    "classification": "FEATURE_ALIEXPRESS",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "app/Services/AliExpress/Semantic/",
+    "status": "??",
+    "size_bytes": 4096,
+    "mtime": 1787166169,
+    "sha256": "N/A",
+    "classification": "FEATURE_ALIEXPRESS",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "database/migrations/2026_08_19_215326_create_semantic_attribute_memory_table.php",
+    "status": "??",
+    "size_bytes": 1989,
+    "mtime": 1787166171,
+    "sha256": "a5b7fdbbf4dfc0762972ccfbc3012d95a752523b4f170a82f6aaa4536451d30c",
+    "classification": "MIGRATION",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "diag_routes.php",
+    "status": "??",
+    "size_bytes": 875,
+    "mtime": 1787090259,
+    "sha256": "dbd620c7a5c6dcfedc903e5932d6883e22701d487dfb76836eaf6d905b33be0a",
+    "classification": "DIAGNOSTIC_SCRIPT",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "email}",
+    "status": "??",
+    "size_bytes": 0,
+    "mtime": 1787088959,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "classification": "SHELL_LEFTOVER_ARTIFACT",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "encoding_test.php",
+    "status": "??",
+    "size_bytes": 1976,
+    "mtime": 1787160926,
+    "sha256": "047917a8888db5f1a249eed1119fbc2b841708e8fb7c2d78c595dc602ecaa071",
+    "classification": "DIAGNOSTIC_SCRIPT",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "id}",
+    "status": "??",
+    "size_bytes": 0,
+    "mtime": 1787088959,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "classification": "SHELL_LEFTOVER_ARTIFACT",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "name}",
+    "status": "??",
+    "size_bytes": 0,
+    "mtime": 1787088959,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "classification": "SHELL_LEFTOVER_ARTIFACT",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "permission_type}",
+    "status": "??",
+    "size_bytes": 0,
+    "mtime": 1787088959,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "classification": "SHELL_LEFTOVER_ARTIFACT",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "permissions}n;\\n}\\n\\necho n===",
+    "status": "??",
+    "size_bytes": 0,
+    "mtime": 0,
+    "sha256": "N/A",
+    "classification": "UNTRACKED_OR_OTHER",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "role_id}",
+    "status": "??",
+    "size_bytes": 0,
+    "mtime": 1787088959,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "classification": "SHELL_LEFTOVER_ARTIFACT",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "scripts_check.php",
+    "status": "??",
+    "size_bytes": 1271,
+    "mtime": 1787086831,
+    "sha256": "f860ee6f4138e8fda2614bc710f32b34785a86a894bb3a7249e7fdd966d231ca",
+    "classification": "DIAGNOSTIC_SCRIPT",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "status}n;\\n}\\n\\necho n===",
+    "status": "??",
+    "size_bytes": 0,
+    "mtime": 0,
+    "sha256": "N/A",
+    "classification": "UNTRACKED_OR_OTHER",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  },
+  {
+    "path": "storage/framework/views/",
+    "status": "??",
+    "size_bytes": 61440,
+    "mtime": 1787359259,
+    "sha256": "N/A",
+    "classification": "CACHE_GENERATED",
+    "patch_file": null,
+    "review_status": "NEEDS_OWNER_REVIEW"
+  }
+]

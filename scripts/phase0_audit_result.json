@@ -1,0 +1,17 @@
+{
+  "hostname": "srv1697338",
+  "uname": "Linux srv1697338 6.8.0-111-generic #111-Ubuntu SMP PREEMPT_DYNAMIC Sat Apr 11 23:16:02 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+  "user": "highest-ye",
+  "php_version": "PHP 8.4.22 (cli) (built: Jun  9 2026 07:08:08) (NTS)",
+  "app_path": "/home/highest-ye/htdocs/highest-ye.store",
+  "git_head": "02658011a0a9f55e4b75b520b0d967dab7ade336",
+  "git_branch": "feat/delivery-admin-ui-rebuild",
+  "git_status_clean": false,
+  "git_status_short": "M app/Console/Commands/AliExpressSyncProducts.php\n M app/Services/AliExpress/AliExpressApiClient.php\n M app/Services/AliExpress/AliExpressProductImporter.php\n M app/Services/AliExpress/AliExpressProductSyncer.php\n M packages/Webkul/Admin/src/Http/Controllers/DashboardController.php\n M packages/Webkul/Admin/src/Resources/views/dashboard/advanced/index.blade.php\n M packages/Webkul/Admin/src/Services/HayestDashboardAggregationService.php\n M packages/Webkul/DeliveryManagement/src/Config/admin-menu.php\n M packages/Webkul/Fulfillment/src/Listeners/AliExpressStockListener.php\n M packages/Webkul/Inventory/src/DataGrids/InventoryProductCardDataGrid.php\n M packages/Webkul/Inventory/src/Database/Seeders/InventorySourcesModelV12Seeder.php\n M packages/Webkul/Inventory/src/Http/Controllers/Admin/InventoryProductCardController.php\n M packages/Webkul/Sales/src/Services/Lifecycle/OrderLifecycleDashboardQueryService.php\n M packages/Webkul/Shop/src/Resources/views/customers/account/orders/pdf.blade.php\n?? app/Models/AliExpress/SemanticAttributeMemory.php\n?? app/Services/AliExpress/Semantic/\n?? database/migrations/2026_08_19_215326_create_semantic_attribute_memory_table.php\n?? diag_routes.php\n?? email}\n?? encoding_test.php\n?? id}\n?? name}\n?? permission_type}\n?? \"permissions}n;\\n}\\n\\necho n===\"\n?? role_id}\n?? scripts_check.php\n?? \"status}n;\\n}\\n\\necho n===\"\n?? storage/framework/views/",
+  "target_commit_present": false,
+  "lineage_valid": false,
+  "runtime_config": "",
+  "db_snapshot": "",
+  "migrate_status_lines": 270,
+  "procurement_routes_count": 1
+}

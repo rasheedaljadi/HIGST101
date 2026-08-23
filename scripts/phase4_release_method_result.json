@@ -1,0 +1,14 @@
+{
+  "app_path": "/home/highest-ye/htdocs/highest-ye.store",
+  "is_symlink": "PHYSICAL_DIRECTORY",
+  "ls_htdocs": [
+    "total 20",
+    "drwxrwx---  3 highest-ye highest-ye 4096 Jun  4 18:50 .",
+    "drwxrwx--- 11 highest-ye highest-ye 4096 Aug 17 00:44 ..",
+    "-rwxrwx---  1 highest-ye highest-ye   11 May  5 09:56 .gitignore",
+    "drwxrwx--- 20 highest-ye highest-ye 4096 Aug 20 18:41 highest-ye.store"
+  ],
+  "releases_found": [],
+  "finding": "DIRECTORY DEPLOYMENT ONLY",
+  "description": "Application runs directly from a physical fixed directory (/home/highest-ye/htdocs/highest-ye.store) without an automated atomic symlink/releases structure."
+}

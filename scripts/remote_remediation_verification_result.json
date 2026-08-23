@@ -1,0 +1,50 @@
+{
+    "spo": {
+        "id": 1,
+        "purchase_order_number": "SPO-20260822-QJYCHK-01",
+        "state": "supplier_exception",
+        "payment_state": "submission_failed",
+        "external_sync_state": "submission_failed",
+        "expected_total": 10.19
+    },
+    "platform_order": {
+        "id": 1,
+        "external_order_id": null,
+        "correlation_key": "SPO-20260822-QJYCHK-01",
+        "provider_request_id": "212a73a517874213795736385",
+        "failure_code": "IllegalAccessToken",
+        "raw_status": "SUBMISSION_FAILED",
+        "normalized_status": "submission_failed",
+        "snapshots": {
+            "created_via": "aliexpress.ds.order.create",
+            "submitted_at": "2026-08-22T08:04:56+03:00",
+            "remediated_at": "2026-08-22T21:18:14+03:00",
+            "expected_total": 10.19,
+            "correlation_key": "IDEMP-SPO-SPO-20260822-QJYCHK-01",
+            "api_response_status": 200,
+            "remediation_actor_id": 1,
+            "synthetic_fallback_rejected": "AE-LIVE-20260822-4586371333"
+        }
+    },
+    "audit_logs_count": 5,
+    "latest_audit_log": {
+        "id": 5,
+        "auditable_type": "Webkul\\Procurement\\Models\\SupplierPurchaseOrder",
+        "auditable_id": 1,
+        "action": "synthetic_external_order_remediated",
+        "actor_id": 1,
+        "actor_type": "admin",
+        "old_state": "awaiting_manual_payment",
+        "new_state": "supplier_exception",
+        "details": {
+            "failure_code": "IllegalAccessToken",
+            "failure_message": "The specified API Path or access token is invalid or ungranted on AliExpress IOP gateway",
+            "remediation_notes": "Cleansed synthetic fallback external ID; order not created on AliExpress Open Platform.",
+            "provider_request_id": "212a73a517874213795736385",
+            "external_order_created": false,
+            "synthetic_reference_rejected": "AE-LIVE-20260822-4586371333"
+        },
+        "correlation_id": "spo-1-remediation",
+        "created_at": "2026-08-22T15:18:14.000000Z"
+    }
+}

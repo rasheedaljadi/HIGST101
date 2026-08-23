@@ -1,0 +1,62 @@
+{
+  "ruling": "SA_SHORT_ADDRESS_SAVED_AND_PAYLOAD_READY",
+  "timestamp": "2026-08-23 04:10:13 +03:00",
+  "source_inspection": {
+    "table": "inventory_sources",
+    "code": "default",
+    "postcode_masked": "RO****41",
+    "postcode_length": 8,
+    "matches_pattern": true,
+    "companion_fields": {
+      "contact_name": true,
+      "contact_number": true,
+      "street": true,
+      "city": true,
+      "state": true,
+      "country_is_sa": true
+    }
+  },
+  "v1_verification": {
+    "zip_present": true,
+    "zip_length": 8,
+    "zip_matches_pattern": true,
+    "zip_equals_normalized_source": true,
+    "contact_person_present": true,
+    "phone_country_is_966": true,
+    "mobile_present": true,
+    "address_present": true,
+    "city_present": true,
+    "province_present": true,
+    "country_is_sa": true
+  },
+  "v2_verification": {
+    "zip_present": true,
+    "zip_length": 8,
+    "zip_matches_pattern": true,
+    "zip_equals_normalized_source": true,
+    "contact_person_present": true,
+    "phone_country_is_966": true,
+    "mobile_present": true,
+    "address_present": true,
+    "city_present": true,
+    "province_present": true,
+    "country_is_sa": true
+  },
+  "invalid_sa_fixture_guard": {
+    "status": "GUARD_ACTIVE",
+    "exception": "SHIPPING_ADDRESS_OVERRIDE_FORBIDDEN: Address override is strictly forbidden outside testing."
+  },
+  "db_deltas": {
+    "inventory_sources": 0,
+    "supplier_purchase_orders": 0,
+    "external_platform_orders": 0,
+    "procurement_audit_logs": 0,
+    "orders": 0,
+    "order_items": 0,
+    "product_inventories": 0,
+    "invoices": 0,
+    "shipments": 0,
+    "refunds": 0
+  },
+  "all_zero_deltas": true
+}

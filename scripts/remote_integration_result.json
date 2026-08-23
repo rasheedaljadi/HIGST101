@@ -1,0 +1,80 @@
+{
+  "timestamp_utc": "20260822_034910Z",
+  "marker_dir": "/home/highest-ye/backups/promote-remote-changes-20260822_034910Z",
+  "quarantine_dir": "/home/highest-ye/backups/promote-remote-changes-20260822_034910Z/quarantine",
+  "thematic_commits": [
+    {
+      "commit": "A",
+      "sha": "05203209099ace81401700ad06c0580839cfcda3",
+      "msg": "feat(aliexpress): preserve semantic attribute synchronization improvements",
+      "files": [
+        "app/Console/Commands/AliExpressSyncProducts.php",
+        "app/Services/AliExpress/AliExpressApiClient.php",
+        "app/Services/AliExpress/AliExpressProductImporter.php",
+        "app/Services/AliExpress/AliExpressProductSyncer.php",
+        "database/migrations/2026_08_19_215326_create_semantic_attribute_memory_table.php",
+        "app/Models/AliExpress/SemanticAttributeMemory.php",
+        "app/Services/AliExpress/Semantic"
+      ]
+    },
+    {
+      "commit": "B",
+      "sha": "278b3e1144db32371e5b1a2169199e0c3ecb2ba1",
+      "msg": "feat(admin): preserve advanced dashboard and order lifecycle improvements",
+      "files": [
+        "packages/Webkul/Admin/src/Http/Controllers/DashboardController.php",
+        "packages/Webkul/Admin/src/Resources/views/dashboard/advanced/index.blade.php",
+        "packages/Webkul/Admin/src/Services/HayestDashboardAggregationService.php",
+        "packages/Webkul/Sales/src/Services/Lifecycle/OrderLifecycleDashboardQueryService.php"
+      ]
+    },
+    {
+      "commit": "C",
+      "sha": "c599cc9a2a8b5e28f1e78e5b848c57c569a142f4",
+      "msg": "feat(operations): preserve inventory delivery and fulfillment improvements",
+      "files": [
+        "packages/Webkul/DeliveryManagement/src/Config/admin-menu.php",
+        "packages/Webkul/Fulfillment/src/Listeners/AliExpressStockListener.php",
+        "packages/Webkul/Inventory/src/DataGrids/InventoryProductCardDataGrid.php",
+        "packages/Webkul/Inventory/src/Database/Seeders/InventorySourcesModelV12Seeder.php",
+        "packages/Webkul/Inventory/src/Http/Controllers/Admin/InventoryProductCardController.php"
+      ]
+    },
+    {
+      "commit": "D",
+      "sha": "cd6283a64234a585dd89a8c968209294fd5ed467",
+      "msg": "fix(shop): preserve customer order document enhancement",
+      "files": [
+        "packages/Webkul/Shop/src/Resources/views/customers/account/orders/pdf.blade.php"
+      ]
+    }
+  ],
+  "procurement_target": "0316298afa2c15ae5aca6b312d4b7b5f284a01e0",
+  "merge_sha": "11eeeeb088f2cd5ef2ce3ac2cd9d5bcb4a5bec92",
+  "log_graph": [
+    "*   11eeeeb merge: integrate procurement v2 into preserved staging improvements",
+    "|\\  ",
+    "| * 0316298 fix(procurement): promote purchase management to top-level navigation",
+    "| * 4c3b867 fix(procurement): enforce authorization and concurrency safeguards",
+    "| * c350152 feat(procurement): add aggregated procurement v2 foundation",
+    "| * fd6bc72 fix(fulfillment): settle COD shipments to unearned liability and recognize revenue on delivery collection",
+    "* | cd6283a fix(shop): preserve customer order document enhancement",
+    "* | c599cc9 feat(operations): preserve inventory delivery and fulfillment improvements",
+    "* | 278b3e1 feat(admin): preserve advanced dashboard and order lifecycle improvements",
+    "* | 0520320 feat(aliexpress): preserve semantic attribute synchronization improvements",
+    "|/  ",
+    "* 0265801 fix(dashboard): eliminate un-dismissible modal overlay by adopting Vanilla JS with hardcoded display none",
+    "* d102ccc fix(dashboard): add v-pre to advanced lifecycle rail container to prevent Vue 3 template compilation collision",
+    "* f51170b fix(dashboard): add optional chaining and explicit fallbacks for Vue and Alpine stage objects",
+    "* 8a551ea fix(lifecycle): polish dynamic currency symbol formatting and record local acceptance audit report",
+    "* 6528e57 feat(admin): implement interactive 11-stage order lifecycle pipeline rail in section 2 of advanced dashboard",
+    "* 7a6beb8 fix(admin): resolve array index key type in pipeline blade view",
+    "* 32b3245 fix(sales): resolve order lifecycle gaps for handoff, transit events, and migration upgrade safety",
+    "* 4963825 feat(sales): implement order lifecycle read model, event subscribers, and safety integration tests",
+    "* 731ed4e style(admin): add section title 'الملخص' above the executive KPI cards",
+    "* b1e1574 fix(admin): enforce inline background and white text colors on all 4 card footers and borders",
+    "* fc82d41 style(admin): add SVG icons and distinct full brand borders to all executive dashboard cards"
+  ],
+  "remote_branch_head": "11eeeeb088f2cd5ef2ce3ac2cd9d5bcb4a5bec92\trefs/heads/feat/delivery-admin-ui-rebuild",
+  "final_git_status": "clean"
+}

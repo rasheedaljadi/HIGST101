@@ -32,6 +32,8 @@ class ExternalPlatformOrderDataGrid extends DataGrid
         $this->addFilter('purchase_order_number', 'supplier_purchase_orders.purchase_order_number');
         $this->addFilter('normalized_status', 'external_platform_orders.normalized_status');
         $this->addFilter('tracking_number', 'external_platform_orders.tracking_number');
+        $this->addFilter('created_at', 'external_platform_orders.created_at');
+        $this->addFilter('last_synced_at', 'external_platform_orders.last_synced_at');
 
         return $queryBuilder;
     }
@@ -97,6 +99,15 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             'sortable' => true,
             'filterable' => true,
             'closure' => fn ($row) => $row->tracking_number ? "<span class=\"font-mono\">{$row->tracking_number}</span>" : '<span class="text-gray-400">-</span>',
+        ]);
+
+        $this->addColumn([
+            'index' => 'created_at',
+            'label' => trans('procurement::app.datagrid.purchased-at'),
+            'type' => 'datetime',
+            'searchable' => false,
+            'sortable' => true,
+            'filterable' => true,
         ]);
 
         $this->addColumn([

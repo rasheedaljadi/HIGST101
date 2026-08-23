@@ -1,0 +1,15 @@
+{
+    "token_id": 192,
+    "seller_id": "4586371333",
+    "token_updated_at": "2026-08-21 20:53:31",
+    "api_call_ok": true,
+    "api_status_code": 200,
+    "api_error_code": null,
+    "api_error_message": null,
+    "response_summary": {
+        "has_body": true,
+        "body_keys": [
+            "aliexpress_ds_product_get_response"
+        ]
+    }
+}

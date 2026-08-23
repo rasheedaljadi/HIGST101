@@ -1,0 +1,170 @@
+{
+  "timestamp": "2026-08-23T06:08:20+03:00",
+  "phase1_freeze": {
+    "git_head": "0dd0a570d9391b973fb6241ace19d08b1b38d9a9",
+    "git_status_clean": true,
+    "app_debug": false,
+    "spo_record": {
+      "spo_id": 44,
+      "purchase_order_number": "SPO-20260823-8RIC7M-01",
+      "batch_id": 36,
+      "state": "awaiting_manual_payment",
+      "payment_state": "awaiting_manual_payment",
+      "total_expected_cost": 0,
+      "currency_code": "USD",
+      "created_at": "2026-08-23 05:57:00",
+      "updated_at": "2026-08-23 05:57:05"
+    },
+    "epo_record": {
+      "epo_id": 35,
+      "supplier_purchase_order_id": 44,
+      "external_order_id_masked": "1122****1333",
+      "is_numeric_id": true,
+      "raw_status": "WAIT_BUYER_PAY",
+      "failure_code": null,
+      "failure_message": null,
+      "currency_code": "USD",
+      "created_at": "2026-08-23 05:57:05",
+      "updated_at": "2026-08-23 05:57:05"
+    },
+    "audit_logs": [
+      {
+        "id": 52,
+        "event": "supplier_order_submitted",
+        "auditable_type": "SupplierPurchaseOrder",
+        "auditable_id": 44,
+        "actor_type": "admin",
+        "created_at": "2026-08-23 02:57:05"
+      }
+    ]
+  },
+  "phase2_source_audit": {
+    "country_code_in_source": "AE",
+    "default_source_used": true,
+    "override_used": false,
+    "fallback_used": false,
+    "cost_snapshots": [
+      {
+        "id": 32,
+        "snapshot_type": "expected_before_submit",
+        "product_cost": 0,
+        "shipping_cost": 0,
+        "total_cost": 0,
+        "currency_code": "USD",
+        "created_at": "2026-08-23 05:57:05"
+      },
+      {
+        "id": 31,
+        "snapshot_type": "expected_at_batching",
+        "product_cost": 0,
+        "shipping_cost": 0,
+        "total_cost": 0,
+        "currency_code": "USD",
+        "created_at": "2026-08-23 05:57:00"
+      },
+      {
+        "id": 30,
+        "snapshot_type": "expected_at_batching",
+        "product_cost": 0,
+        "shipping_cost": 0,
+        "total_cost": 0,
+        "currency_code": "USD",
+        "created_at": "2026-08-23 05:57:00"
+      },
+      {
+        "id": 29,
+        "snapshot_type": "expected_at_batching",
+        "product_cost": 0,
+        "shipping_cost": 0,
+        "total_cost": 0,
+        "currency_code": "USD",
+        "created_at": "2026-08-23 05:27:55"
+      },
+      {
+        "id": 28,
+        "snapshot_type": "expected_at_batching",
+        "product_cost": 0,
+        "shipping_cost": 0,
+        "total_cost": 0,
+        "currency_code": "USD",
+        "created_at": "2026-08-23 05:27:55"
+      }
+    ]
+  },
+  "phase3_external_verification": {
+    "external_id_queried_masked": "1122****1333",
+    "official_order_status": "PLACE_ORDER_SUCCESS",
+    "official_store_name": "Shop1102890756 Store",
+    "official_store_id": 1102890756,
+    "official_total_amount": "38.15",
+    "official_currency": "USD",
+    "pay_timeout_second": "7200",
+    "product_count": 1,
+    "destination_country_code": "AE"
+  },
+  "historical_integrity": {
+    "spo35_state": "supplier_exception",
+    "epo26_status": "SUBMISSION_FAILED",
+    "spo36_state": "supplier_exception",
+    "epo27_status": "SUBMISSION_FAILED",
+    "spo37_state": "supplier_exception",
+    "epo28_status": "SUBMISSION_FAILED",
+    "spo38_state": "supplier_exception",
+    "epo29_status": "SUBMISSION_FAILED",
+    "spo39_state": "supplier_exception",
+    "epo30_status": "SUBMISSION_FAILED",
+    "spo40_state": "supplier_exception",
+    "epo31_status": "SUBMISSION_FAILED",
+    "spo41_state": "supplier_exception",
+    "epo32_status": "SUBMISSION_FAILED",
+    "spo42_state": "supplier_exception",
+    "epo33_status": "SUBMISSION_FAILED",
+    "spo43_state": "supplier_exception",
+    "epo34_status": "SUBMISSION_FAILED",
+    "all_intact": true
+  },
+  "db_counts_snapshot": {
+    "orders": 26,
+    "order_items": 34,
+    "order_payment": 23,
+    "addresses": 81,
+    "procurement_demands": 11,
+    "procurement_batches": 36,
+    "supplier_purchase_orders": 36,
+    "supplier_purchase_order_items": 16,
+    "procurement_demand_allocations": 14,
+    "procurement_cost_snapshots": 32,
+    "procurement_audit_logs": 52,
+    "external_platform_orders": 33,
+    "external_platform_order_items": 13,
+    "invoices": 5,
+    "shipments": 0,
+    "refunds": 2,
+    "product_inventories": 2759,
+    "inventory_sources": 8
+  },
+  "truth_table": {
+    "spo_id": 44,
+    "epo_id": 35,
+    "spo_epo_linkage_verified": true,
+    "numeric_official_id": true,
+    "external_order_id_masked": "1122****1333",
+    "local_spo_state": "awaiting_manual_payment",
+    "local_spo_payment_state": "awaiting_manual_payment",
+    "local_epo_raw_status": "WAIT_BUYER_PAY",
+    "official_external_state": "PLACE_ORDER_SUCCESS",
+    "destination_country_code": "AE",
+    "default_source_used": true,
+    "override_used": false,
+    "fallback_used": false,
+    "db_deltas_zero": true,
+    "payment_calls_zero": true,
+    "cancellation_calls_zero": true
+  },
+  "final_ruling": "OFFICIAL_UNPAID_ORDER_INDEPENDENTLY_VERIFIED",
+  "recommendations": {
+    "Option A (Keep Unpaid)": "Leave order unpaid on AliExpress; it will naturally expire after timeout (7200s) without financial charge.",
+    "Option B (Manual Cancellation)": "The authorized store owner may log in to AliExpress console and click Cancel Order manually if desired.",
+    "Option C (Resume with Confirmed Saudi Address)": "Once the Saudi National Address is configured and verified in AliExpress Dropshipper Center, run the verified sequential pipeline for Saudi Arabia."
+  }
+}

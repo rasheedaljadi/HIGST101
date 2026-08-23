@@ -130,8 +130,8 @@ class SupplierPurchaseOrderDataGrid extends DataGrid
 
         $this->addColumn([
             'index' => 'created_at',
-            'label' => trans('procurement::app.datagrid.created-at'),
-            'type' => 'date',
+            'label' => trans('procurement::app.datagrid.purchased-at'),
+            'type' => 'datetime',
             'searchable' => false,
             'sortable' => true,
             'filterable' => true,

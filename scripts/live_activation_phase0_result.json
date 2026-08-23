@@ -1,0 +1,91 @@
+{
+    "procurement_v2_enabled": false,
+    "procurement_polling_enabled": true,
+    "procurement_keys": [
+        "v2_enabled",
+        "currency",
+        "destination_source_code",
+        "transit_sa_source_code",
+        "internal_source_code",
+        "quarantine_sa_source_code",
+        "quarantine_ye_source_code",
+        "polling",
+        "batching",
+        "provider_limits"
+    ],
+    "aliexpress_keys": [
+        "app_key",
+        "app_secret",
+        "redirect_uri",
+        "authorize_url",
+        "token_url",
+        "business_url",
+        "token_create_path",
+        "token_refresh_path",
+        "sign_method",
+        "timeout",
+        "connect_timeout",
+        "import",
+        "category",
+        "defer_indexing"
+    ],
+    "aliexpress_has_app_key": true,
+    "aliexpress_has_app_secret": true,
+    "aliexpress_has_access_token": false,
+    "aliexpress_environment": "sandbox",
+    "aliexpress_callback_url": "",
+    "queue_connection": "sync",
+    "app_debug": false,
+    "app_env": "production",
+    "ae_client_methods": [
+        "__construct",
+        "call"
+    ],
+    "inventory_sources": [
+        {
+            "code": "default",
+            "name": "\u0627\u0644\u0645\u0633\u062a\u0648\u062f\u0639 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a",
+            "status": 1
+        },
+        {
+            "code": "hayest_central",
+            "name": "\u0645\u0633\u062a\u0648\u062f\u0639 \u0647\u0627\u064a\u0633\u062a \u0627\u0644\u0645\u0631\u0643\u0632\u064a (\u0635\u0646\u0639\u0627\u0621)",
+            "status": 1
+        },
+        {
+            "code": "aliexpress_source",
+            "name": "\u0645\u0635\u062f\u0631 \u0643\u062a\u0627\u0644\u0648\u062c \u0639\u0644\u064a \u0625\u0643\u0633\u0628\u0631\u0633 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a",
+            "status": 1
+        },
+        {
+            "code": "hayest_dropship_sa",
+            "name": "\u0645\u062d\u0637\u0629 \u062a\u0648\u0631\u064a\u062f \u0648\u062a\u062c\u0645\u064a\u0639 \u0627\u0644\u0631\u064a\u0627\u0636 (\u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629)",
+            "status": 1
+        },
+        {
+            "code": "hayest_quarantine_sa",
+            "name": "\u0645\u0633\u062a\u0648\u062f\u0639 \u0627\u0644\u062d\u062c\u0631 \u0627\u0644\u0635\u062d\u064a \u0628\u0627\u0644\u0631\u064a\u0627\u0636 (\u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629)",
+            "status": 1
+        },
+        {
+            "code": "hayest_dropship_ye",
+            "name": "\u0645\u0631\u0643\u0632 \u062a\u0648\u0632\u064a\u0639 \u062f\u0631\u0648\u0628\u0634\u0648\u0628\u0646\u062c \u0635\u0646\u0639\u0627\u0621 (\u0627\u0644\u064a\u0645\u0646)",
+            "status": 1
+        },
+        {
+            "code": "hayest_internal_ye",
+            "name": "\u0645\u0633\u062a\u0648\u062f\u0639 \u0627\u0644\u0645\u062e\u0632\u0648\u0646 \u0627\u0644\u062c\u0627\u0647\u0632 \u0635\u0646\u0639\u0627\u0621 (\u0627\u0644\u064a\u0645\u0646)",
+            "status": 1
+        },
+        {
+            "code": "hayest_quarantine_ye",
+            "name": "\u0645\u0633\u062a\u0648\u062f\u0639 \u0627\u0644\u062d\u062c\u0631 \u0627\u0644\u0635\u062d\u064a \u0635\u0646\u0639\u0627\u0621 (\u0627\u0644\u064a\u0645\u0646)",
+            "status": 1
+        }
+    ],
+    "counts": {
+        "external_platform_orders": 0,
+        "supplier_purchase_orders": 0,
+        "procurement_demands": 0
+    }
+}
