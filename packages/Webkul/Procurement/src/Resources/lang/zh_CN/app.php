@@ -143,6 +143,7 @@ return [
         'exception-type' => 'Exception Type',
         'details' => 'Details',
         'sync' => 'Sync Status',
+        'supplier-name' => '供应商名称',
     ],
     'states' => [
         'eligible' => 'Eligible',

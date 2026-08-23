@@ -18,6 +18,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'external_platform_orders.id as platform_order_id',
                 'external_platform_orders.external_order_id',
                 'supplier_purchase_orders.purchase_order_number',
+                'supplier_purchase_orders.supplier_store_name',
                 'external_platform_orders.provider',
                 'external_platform_orders.normalized_status',
                 'external_platform_orders.raw_status',
@@ -30,6 +31,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
         $this->addFilter('platform_order_id', 'external_platform_orders.id');
         $this->addFilter('external_order_id', 'external_platform_orders.external_order_id');
         $this->addFilter('purchase_order_number', 'supplier_purchase_orders.purchase_order_number');
+        $this->addFilter('supplier_store_name', 'supplier_purchase_orders.supplier_store_name');
         $this->addFilter('normalized_status', 'external_platform_orders.normalized_status');
         $this->addFilter('tracking_number', 'external_platform_orders.tracking_number');
         $this->addFilter('created_at', 'external_platform_orders.created_at');
@@ -66,6 +68,16 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             'searchable' => true,
             'sortable' => true,
             'filterable' => true,
+        ]);
+
+        $this->addColumn([
+            'index' => 'supplier_store_name',
+            'label' => trans('procurement::app.datagrid.supplier-name'),
+            'type' => 'string',
+            'searchable' => true,
+            'sortable' => true,
+            'filterable' => true,
+            'closure' => fn ($row) => $row->supplier_store_name ? "<span class=\"font-medium text-gray-800 dark:text-gray-200\">{$row->supplier_store_name}</span>" : '<span class="text-gray-400">-</span>',
         ]);
 
         $this->addColumn([

@@ -143,6 +143,7 @@ return [
         'exception-type' => 'Exception Type',
         'details' => 'Details',
         'sync' => 'Sync Status',
+        'supplier-name' => 'සැපයුම්කරුගේ නම',
     ],
     'states' => [
         'eligible' => 'Eligible',

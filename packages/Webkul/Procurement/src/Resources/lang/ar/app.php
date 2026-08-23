@@ -143,6 +143,7 @@ return [
         'exception-type' => 'نوع الاستثناء',
         'details' => 'التفاصيل',
         'sync' => 'مزامنة الحالة',
+        'supplier-name' => 'اسم المورد',
     ],
     'states' => [
         'eligible' => 'مؤهل',

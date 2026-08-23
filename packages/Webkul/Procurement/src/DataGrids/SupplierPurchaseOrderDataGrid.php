@@ -73,7 +73,7 @@ class SupplierPurchaseOrderDataGrid extends DataGrid
 
         $this->addColumn([
             'index' => 'supplier_store_name',
-            'label' => trans('procurement::app.datagrid.supplier-store'),
+            'label' => trans('procurement::app.datagrid.supplier-name'),
             'type' => 'string',
             'searchable' => true,
             'sortable' => true,
