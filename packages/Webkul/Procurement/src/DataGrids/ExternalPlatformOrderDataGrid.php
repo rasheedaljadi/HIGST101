@@ -124,7 +124,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
     {
         if (bouncer()->hasPermission('dropshipping.procurement_v2.submit')) {
             $this->addAction([
-                'icon' => 'icon-refresh text-2xl',
+                'icon' => 'icon-repeat text-2xl text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300',
                 'title' => trans('procurement::app.datagrid.sync'),
                 'method' => 'POST',
                 'url' => fn ($row) => route('admin.procurement.platform_orders.sync', $row->platform_order_id),
