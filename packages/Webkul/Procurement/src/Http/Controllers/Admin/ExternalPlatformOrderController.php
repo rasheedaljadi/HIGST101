@@ -30,7 +30,7 @@ class ExternalPlatformOrderController extends Controller
         return view('procurement::admin.platform_orders.index');
     }
 
-    public function sync(int $id)
+    public function sync(Request $request, int $id)
     {
         $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_SUBMIT);
 
@@ -40,7 +40,7 @@ class ExternalPlatformOrderController extends Controller
 
             $message = trans('procurement::app.messages.platform-order-synced-success');
 
-            if (request()->ajax() || request()->wantsJson()) {
+            if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'message' => $message,
                 ]);
@@ -50,7 +50,7 @@ class ExternalPlatformOrderController extends Controller
 
             return redirect()->back();
         } catch (Exception $e) {
-            if (request()->ajax() || request()->wantsJson()) {
+            if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'message' => $e->getMessage(),
                 ], 400);
