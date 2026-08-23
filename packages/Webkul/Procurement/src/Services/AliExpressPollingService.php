@@ -72,8 +72,8 @@ class AliExpressPollingService
             $currentRank = $this->statusRanks[$platformOrder->normalized_status] ?? 0;
             $newRank = $this->statusRanks[$normalizedStatus] ?? 0;
 
-            // Enforce Monotonic Invariant: Never regress state on out-of-order polling response
-            if ($newRank < $currentRank && $normalizedStatus !== ExternalPlatformOrder::STATUS_CANCELLED) {
+            // Enforce Monotonic Invariant: Never regress state on out-of-order polling response unless correcting initial draft/placement status
+            if ($newRank < $currentRank && $normalizedStatus !== ExternalPlatformOrder::STATUS_CANCELLED && ! in_array($rawStatus, ['PLACE_ORDER_SUCCESS', 'WAIT_BUYER_PAY'], true)) {
                 Log::warning("[Procurement Polling] Stale/out-of-order payload skipped for ExternalOrder #{$platformOrder->external_order_id}. Current rank {$currentRank} > incoming {$newRank}");
 
                 return $platformOrder;
@@ -346,12 +346,12 @@ class AliExpressPollingService
         }
 
         return match ($rawStatus) {
-            'WAIT_BUYER_PAY' => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
-            'WAIT_SELLER_SEND_GOODS', 'PROCESSING' => ExternalPlatformOrder::STATUS_PROCESSING,
+            'PLACE_ORDER_SUCCESS', 'WAIT_BUYER_PAY' => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
+            'WAIT_SELLER_SEND_GOODS', 'PROCESSING', 'PAYMENT_CONFIRMED' => ExternalPlatformOrder::STATUS_PROCESSING,
             'SELLER_SEND_GOODS', 'SHIPPED', 'WAIT_RECEIVE' => ExternalPlatformOrder::STATUS_SHIPPED,
             'FINISH', 'COMPLETED' => ExternalPlatformOrder::STATUS_COMPLETED,
             'IN_CANCEL', 'CANCELLED', 'CLOSED' => ExternalPlatformOrder::STATUS_CANCELLED,
-            default => ExternalPlatformOrder::STATUS_PROCESSING,
+            default => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
         };
     }
 }
