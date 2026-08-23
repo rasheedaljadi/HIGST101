@@ -49,7 +49,17 @@ class AliExpressShippingAddressValidator
 
         $phoneCountry = ltrim(trim($extracted['phone_country'] ?? ''), '+');
         if (empty($phoneCountry)) {
-            $phoneCountry = ($country === 'SA') ? '966' : '1';
+            $phoneCountry = match ($country) {
+                'SA' => '966',
+                'AE' => '971',
+                'KW' => '965',
+                'BH' => '973',
+                'QA' => '974',
+                'OM' => '968',
+                'YE' => '967',
+                'EG' => '20',
+                default => '1',
+            };
         }
 
         $cleanZip = strtoupper($rawZip);
