@@ -59,14 +59,17 @@ class ProcurementOrderCancellationService
                 $allocations = ProcurementDemandAllocation::where('supplier_purchase_order_item_id', $item->id)->get();
 
                 foreach ($allocations as $allocation) {
+                    $releasedQty = (int) ($allocation->qty_allocated > 0 ? $allocation->qty_allocated : $allocation->qty_cancelled);
+
                     $allocation->update([
                         'state' => ProcurementDemandAllocation::STATE_CANCELLED,
-                        'qty_cancelled' => $allocation->qty_allocated,
+                        'qty_cancelled' => $releasedQty,
+                        'qty_allocated' => 0,
                     ]);
 
                     $demand = $allocation->demand;
                     if ($demand) {
-                        $newQtyBatched = max(0, $demand->qty_batched - $allocation->qty_allocated);
+                        $newQtyBatched = max(0, $demand->qty_batched - $releasedQty);
                         $demand->update([
                             'qty_batched' => $newQtyBatched,
                             'state' => $newQtyBatched == 0 ? ProcurementDemand::STATE_OPEN_FOR_BATCHING : $demand->state,
