@@ -12,13 +12,15 @@ use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActi
 use Webkul\Procurement\Models\SupplierPurchaseOrder;
 use Webkul\Procurement\Security\ProcurementAcl;
 use Webkul\Procurement\Services\ProcurementInboundReceiptService;
+use Webkul\Procurement\Services\ProcurementOrderCancellationService;
 
 class SupplierOrderController extends Controller
 {
     use AuthorizesProcurementActions;
 
     public function __construct(
-        protected ProcurementInboundReceiptService $receiptService
+        protected ProcurementInboundReceiptService $receiptService,
+        protected ProcurementOrderCancellationService $cancellationService
     ) {}
 
     public function index(Request $request)
@@ -73,6 +75,41 @@ class SupplierOrderController extends Controller
 
             return redirect()->route('admin.procurement.supplier_orders.view', $id);
         } catch (Exception $e) {
+            session()->flash('error', $e->getMessage());
+
+            return redirect()->back();
+        }
+    }
+
+    public function cancel(Request $request, int $id)
+    {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_SUBMIT);
+
+        try {
+            $this->cancellationService->cancelSupplierOrder(
+                $id,
+                (int) Auth::id(),
+                $request->input('reason', 'Cancelled by administrator from dashboard')
+            );
+
+            $message = trans('procurement::app.messages.order-cancelled-success');
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => $message,
+                ]);
+            }
+
+            session()->flash('success', $message);
+
+            return redirect()->back();
+        } catch (Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 400);
+            }
+
             session()->flash('error', $e->getMessage());
 
             return redirect()->back();

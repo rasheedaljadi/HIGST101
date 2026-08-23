@@ -58,6 +58,7 @@ return [
     ],
 
     'supplier_orders' => [
+        'cancel-confirm' => 'Ви впевнені, що хочете скасувати це замовлення на закупівлю?',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',
         'items-title' => 'Purchase Order Lines & Demand Allocations',
@@ -106,6 +107,7 @@ return [
     ],
 
     'datagrid' => [
+        'cancel-order' => 'Скасувати замовлення на закупівлю',
         'demand-id' => 'Demand ID',
         'order-id' => 'Customer Order',
         'supplier-store' => 'Supplier Store',
@@ -166,6 +168,7 @@ return [
     ],
 
     'messages' => [
+        'order-cancelled-success' => 'Замовлення на закупівлю успішно скасовано.',
         'batch-created-success' => 'Batch :number created successfully and split into store purchase orders.',
         'batch-approved-success' => 'Batch approved successfully and ready for platform submission.',
         'batch-rejected-success' => 'Batch rejected and quantities released back to open demand pool.',

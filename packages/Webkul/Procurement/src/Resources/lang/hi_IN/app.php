@@ -58,6 +58,7 @@ return [
     ],
 
     'supplier_orders' => [
+        'cancel-confirm' => 'क्या आप वाकई इस खरीद आदेश को रद्द करना चाहते हैं?',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',
         'items-title' => 'Purchase Order Lines & Demand Allocations',
@@ -106,6 +107,7 @@ return [
     ],
 
     'datagrid' => [
+        'cancel-order' => 'खरीद आदेश रद्द करें',
         'demand-id' => 'Demand ID',
         'order-id' => 'Customer Order',
         'supplier-store' => 'Supplier Store',
@@ -166,6 +168,7 @@ return [
     ],
 
     'messages' => [
+        'order-cancelled-success' => 'खरीद आदेश सफलतापूर्वक रद्द कर दिया गया।',
         'batch-created-success' => 'Batch :number created successfully and split into store purchase orders.',
         'batch-approved-success' => 'Batch approved successfully and ready for platform submission.',
         'batch-rejected-success' => 'Batch rejected and quantities released back to open demand pool.',

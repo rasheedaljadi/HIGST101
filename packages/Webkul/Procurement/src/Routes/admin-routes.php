@@ -30,10 +30,12 @@ Route::group(['middleware' => ['web', 'admin', NoCacheMiddleware::class], 'prefi
         Route::get('supplier-orders', [SupplierOrderController::class, 'index'])->name('admin.procurement.supplier_orders.index');
         Route::get('supplier-orders/view/{id}', [SupplierOrderController::class, 'view'])->name('admin.procurement.supplier_orders.view');
         Route::post('supplier-orders/receive/{id}', [SupplierOrderController::class, 'receive'])->name('admin.procurement.supplier_orders.receive');
+        Route::post('supplier-orders/cancel/{id}', [SupplierOrderController::class, 'cancel'])->name('admin.procurement.supplier_orders.cancel');
 
         // 4. AliExpress Platform Orders
         Route::get('platform-orders', [ExternalPlatformOrderController::class, 'index'])->name('admin.procurement.platform_orders.index');
         Route::post('platform-orders/sync/{id}', [ExternalPlatformOrderController::class, 'sync'])->name('admin.procurement.platform_orders.sync');
+        Route::post('platform-orders/cancel/{id}', [ExternalPlatformOrderController::class, 'cancel'])->name('admin.procurement.platform_orders.cancel');
 
         // 5. Manual Payment Confirmations
         Route::get('manual-payments', [ManualPaymentController::class, 'index'])->name('admin.procurement.manual_payments.index');

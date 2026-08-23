@@ -58,6 +58,7 @@ return [
     ],
 
     'supplier_orders' => [
+        'cancel-confirm' => 'Are you sure you want to cancel this purchase order? Allocated quantities will be released.',
         'title' => 'Supplier Purchase Orders (POs)',
         'description' => 'Targeted sourcing purchase orders directed to individual AliExpress stores',
         'items-title' => 'Purchase Order Lines & Demand Allocations',
@@ -106,6 +107,7 @@ return [
     ],
 
     'datagrid' => [
+        'cancel-order' => 'Cancel Purchase Order',
         'demand-id' => 'Demand ID',
         'order-id' => 'Customer Order',
         'supplier-store' => 'Supplier Store',
@@ -166,6 +168,7 @@ return [
     ],
 
     'messages' => [
+        'order-cancelled-success' => 'Purchase order cancelled successfully and demand quantities returned to batching pool.',
         'batch-created-success' => 'Batch :number created successfully and split into store purchase orders.',
         'batch-approved-success' => 'Batch approved successfully and ready for platform submission.',
         'batch-rejected-success' => 'Batch rejected and quantities released back to open demand pool.',

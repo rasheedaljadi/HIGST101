@@ -28,6 +28,15 @@
                         {{ trans('procurement::app.manual_payments.declare-payment') }}
                     </button>
                 @endif
+
+                @if (!in_array($order->state, ['cancelled', 'supplier_shipped', 'closed']) && bouncer()->hasPermission('dropshipping.procurement_v2.submit'))
+                    <form action="{{ route('admin.procurement.supplier_orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('{{ trans('procurement::app.supplier_orders.cancel-confirm') }}');">
+                        @csrf
+                        <button type="submit" class="secondary-button text-rose-600 border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950">
+                            {{ trans('procurement::app.datagrid.cancel-order') }}
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
 

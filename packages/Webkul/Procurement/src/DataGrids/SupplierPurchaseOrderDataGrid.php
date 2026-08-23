@@ -137,4 +137,23 @@ class SupplierPurchaseOrderDataGrid extends DataGrid
             'filterable' => true,
         ]);
     }
+
+    public function prepareActions(): void
+    {
+        $this->addAction([
+            'icon' => 'icon-view text-2xl text-gray-700 hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400',
+            'title' => trans('procurement::app.datagrid.view'),
+            'method' => 'GET',
+            'url' => fn ($row) => route('admin.procurement.supplier_orders.view', $row->spo_id),
+        ]);
+
+        if (bouncer()->hasPermission('dropshipping.procurement_v2.submit')) {
+            $this->addAction([
+                'icon' => 'icon-cancel text-2xl text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300',
+                'title' => trans('procurement::app.datagrid.cancel-order'),
+                'method' => 'POST',
+                'url' => fn ($row) => route('admin.procurement.supplier_orders.cancel', $row->spo_id),
+            ]);
+        }
+    }
 }

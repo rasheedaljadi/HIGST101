@@ -129,6 +129,13 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'method' => 'POST',
                 'url' => fn ($row) => route('admin.procurement.platform_orders.sync', $row->platform_order_id),
             ]);
+
+            $this->addAction([
+                'icon' => 'icon-cancel text-2xl text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300',
+                'title' => trans('procurement::app.datagrid.cancel-order'),
+                'method' => 'POST',
+                'url' => fn ($row) => route('admin.procurement.platform_orders.cancel', $row->platform_order_id),
+            ]);
         }
     }
 }
