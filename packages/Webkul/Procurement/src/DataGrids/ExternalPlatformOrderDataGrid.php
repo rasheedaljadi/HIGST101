@@ -54,7 +54,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             'searchable' => true,
             'sortable' => true,
             'filterable' => true,
-            'closure' => fn ($row) => "<span class=\"font-mono font-semibold text-gray-900 dark:text-gray-100\">{$row->external_order_id}</span>",
+            'closure' => fn ($row) => $row->external_order_id ? "<span class=\"font-mono font-semibold text-gray-900 dark:text-gray-100\">{$row->external_order_id}</span>" : '<span class="text-gray-400">-</span>',
         ]);
 
         $this->addColumn([
@@ -74,16 +74,18 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             'sortable' => true,
             'filterable' => true,
             'closure' => function ($row) {
+                $status = $row->normalized_status ?? 'unknown';
                 $colors = [
                     'wait_buyer_pay' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
                     'processing' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
                     'shipped' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
                     'completed' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
                     'cancelled' => 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
+                    'submission_failed' => 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
                 ];
-                $color = $colors[$row->normalized_status] ?? 'bg-gray-100 text-gray-800';
+                $color = $colors[$status] ?? 'bg-gray-100 text-gray-800';
 
-                return "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {$color}\">{$row->normalized_status}</span>";
+                return "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {$color}\">{$status}</span>";
             },
         ]);
 

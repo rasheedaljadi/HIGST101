@@ -38,10 +38,24 @@ class ExternalPlatformOrderController extends Controller
             $order = ExternalPlatformOrder::findOrFail($id);
             $this->pollingService->syncOrder($order);
 
-            session()->flash('success', trans('procurement::app.messages.platform-order-synced-success'));
+            $message = trans('procurement::app.messages.platform-order-synced-success');
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'message' => $message,
+                ]);
+            }
+
+            session()->flash('success', $message);
 
             return redirect()->back();
         } catch (Exception $e) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 400);
+            }
+
             session()->flash('error', $e->getMessage());
 
             return redirect()->back();
