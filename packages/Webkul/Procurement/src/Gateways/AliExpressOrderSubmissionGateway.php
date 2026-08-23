@@ -447,8 +447,8 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         }
 
         try {
-            $result = $this->apiClient->call('aliexpress.ds.order.get', $auth->accessToken, [
-                'order_id' => $officialExternalOrderId,
+            $result = $this->apiClient->call('aliexpress.trade.ds.order.get', $auth->accessToken, [
+                'single_order_query' => json_encode(['order_id' => (string) $officialExternalOrderId]),
             ]);
 
             if (! $result['ok']) {
@@ -463,7 +463,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             }
 
             $body = $result['body'] ?? [];
-            $resp = $body['aliexpress_ds_order_get_response'] ?? $body;
+            $resp = $body['aliexpress_trade_ds_order_get_response'] ?? $body;
             $res = $resp['result'] ?? [];
 
             $rawState = $res['order_status'] ?? 'UNKNOWN';
