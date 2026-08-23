@@ -168,15 +168,6 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             'sortable' => true,
             'filterable' => true,
         ]);
-
-        $this->addColumn([
-            'index' => 'last_synced_at',
-            'label' => trans('procurement::app.datagrid.last-synced-at'),
-            'type' => 'datetime',
-            'searchable' => false,
-            'sortable' => true,
-            'filterable' => true,
-        ]);
     }
 
     public function prepareActions(): void
