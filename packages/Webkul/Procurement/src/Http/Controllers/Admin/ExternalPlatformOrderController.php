@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Webkul\Procurement\DataGrids\ExternalPlatformOrderDataGrid;
 use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
 use Webkul\Procurement\Models\ExternalPlatformOrder;
+use Webkul\Procurement\Models\ProcurementDemandAllocation;
 use Webkul\Procurement\Security\ProcurementAcl;
 use Webkul\Procurement\Services\AliExpressPollingService;
 use Webkul\Procurement\Services\ProcurementOrderCancellationService;
@@ -92,6 +94,87 @@ class ExternalPlatformOrderController extends Controller
             );
 
             $message = trans('procurement::app.messages.order-cancelled-success');
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => $message,
+                ]);
+            }
+
+            session()->flash('success', $message);
+
+            return redirect()->back();
+        } catch (Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 400);
+            }
+
+            session()->flash('error', $e->getMessage());
+
+            return redirect()->back();
+        }
+    }
+
+    public function reorder(Request $request, int $id)
+    {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_SUBMIT);
+
+        try {
+            $order = ExternalPlatformOrder::findOrFail($id);
+            $spo = $order->supplierPurchaseOrder;
+
+            $demandIds = [];
+            if ($spo) {
+                $spoItemIds = $spo->items()->pluck('id');
+                $allocations = ProcurementDemandAllocation::whereIn('supplier_purchase_order_item_id', $spoItemIds)->get();
+                foreach ($allocations as $alloc) {
+                    $demand = $alloc->demand;
+                    if ($demand && $demand->isOpenForBatching()) {
+                        $demandIds[] = $demand->id;
+                    }
+                }
+            }
+
+            $message = trans('procurement::app.messages.reorder-redirect-success');
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => $message,
+                    'redirect_url' => route('admin.procurement.batches.create', ! empty($demandIds) ? ['demand_ids' => implode(',', array_unique($demandIds))] : []),
+                ]);
+            }
+
+            session()->flash('success', $message);
+
+            return redirect()->route('admin.procurement.batches.create', ! empty($demandIds) ? ['demand_ids' => implode(',', array_unique($demandIds))] : []);
+        } catch (Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 400);
+            }
+
+            session()->flash('error', $e->getMessage());
+
+            return redirect()->back();
+        }
+    }
+
+    public function destroy(Request $request, int $id)
+    {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_SUBMIT);
+
+        try {
+            $order = ExternalPlatformOrder::findOrFail($id);
+
+            DB::transaction(function () use ($order) {
+                $order->items()->delete();
+                $order->delete();
+            });
+
+            $message = trans('procurement::app.messages.platform-order-deleted-success');
 
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([

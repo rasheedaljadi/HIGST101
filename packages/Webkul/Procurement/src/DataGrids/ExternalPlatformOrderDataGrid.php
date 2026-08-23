@@ -107,7 +107,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             'closure' => function ($row) {
                 $status = $row->normalized_status ?? 'unknown';
                 $colors = [
-                    'wait_buyer_pay' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+                    'wait_buyer_pay' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-300 dark:border-amber-700',
                     'processing' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
                     'shipped' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
                     'completed' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
@@ -116,7 +116,36 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 ];
                 $color = $colors[$status] ?? 'bg-gray-100 text-gray-800';
 
-                return "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {$color}\">{$status}</span>";
+                $statusLabel = match ($status) {
+                    'wait_buyer_pay' => trans('procurement::app.platform_orders.tab-wait-buyer-pay'),
+                    'processing' => trans('procurement::app.platform_orders.tab-processing'),
+                    'shipped' => trans('procurement::app.platform_orders.tab-shipped'),
+                    'completed' => trans('procurement::app.platform_orders.tab-completed'),
+                    'cancelled' => trans('procurement::app.platform_orders.tab-cancelled'),
+                    'submission_failed' => 'فشل الإرسال',
+                    default => $status,
+                };
+
+                $html = "<div class=\"flex flex-col gap-1 items-start\"><span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {$color}\">{$statusLabel}</span>";
+
+                if ($status === 'wait_buyer_pay' && $row->created_at) {
+                    $deadline = strtotime($row->created_at) + 7200;
+                    $remaining = $deadline - time();
+                    if ($remaining > 0) {
+                        $hours = str_pad(floor($remaining / 3600), 2, '0', STR_PAD_LEFT);
+                        $mins = str_pad(floor(($remaining % 3600) / 60), 2, '0', STR_PAD_LEFT);
+                        $secs = str_pad($remaining % 60, 2, '0', STR_PAD_LEFT);
+                        $html .= "<span class=\"inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-amber-600 dark:text-amber-400\"><i class=\"icon-clock text-xs\"></i> ⏳ {$hours}:{$mins}:{$secs}</span>";
+                    } else {
+                        $html .= '<span class="inline-flex items-center text-[10px] font-medium text-rose-500">⌛ '.trans('procurement::app.datagrid.countdown-expired').'</span>';
+                    }
+                } elseif ($status === 'cancelled') {
+                    $html .= '<span class="inline-flex items-center text-[10px] text-gray-400 dark:text-gray-500">⌛ '.trans('procurement::app.datagrid.countdown-expired').'</span>';
+                }
+
+                $html .= '</div>';
+
+                return $html;
             },
         ]);
 
@@ -160,10 +189,24 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             ]);
 
             $this->addAction([
-                'icon' => 'icon-cancel text-2xl text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300',
+                'icon' => 'icon-cart text-2xl text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300',
+                'title' => trans('procurement::app.datagrid.reorder'),
+                'method' => 'POST',
+                'url' => fn ($row) => route('admin.procurement.platform_orders.reorder', $row->platform_order_id),
+            ]);
+
+            $this->addAction([
+                'icon' => 'icon-cancel text-2xl text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300',
                 'title' => trans('procurement::app.datagrid.cancel-order'),
                 'method' => 'POST',
                 'url' => fn ($row) => route('admin.procurement.platform_orders.cancel', $row->platform_order_id),
+            ]);
+
+            $this->addAction([
+                'icon' => 'icon-delete text-2xl text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300',
+                'title' => trans('procurement::app.datagrid.delete'),
+                'method' => 'DELETE',
+                'url' => fn ($row) => route('admin.procurement.platform_orders.destroy', $row->platform_order_id),
             ]);
         }
     }

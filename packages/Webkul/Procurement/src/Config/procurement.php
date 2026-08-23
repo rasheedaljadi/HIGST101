@@ -6,7 +6,7 @@ return [
      * When true, incoming orders are processed via ProcurementDemandService V2.
      * When false, system remains in legacy V1 mode.
      */
-    'v2_enabled' => env('PROCUREMENT_V2_ENABLED', false),
+    'v2_enabled' => env('PROCUREMENT_V2_ENABLED', true),
 
     /**
      * Default supplier and order currency.
@@ -40,7 +40,7 @@ return [
      */
     'polling' => [
         'enabled' => env('PROCUREMENT_POLLING_ENABLED', true),
-        'interval_minutes' => 15,
+        'interval_minutes' => 2,
         'batch_size' => 50,
         'max_retries' => 5,
     ],

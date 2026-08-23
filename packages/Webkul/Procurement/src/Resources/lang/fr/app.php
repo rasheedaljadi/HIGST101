@@ -150,6 +150,10 @@ return [
         'details' => 'Details',
         'sync' => 'Sync Status',
         'supplier-name' => 'Nom du fournisseur',
+        'reorder' => 'Reorder',
+        'delete' => 'Delete',
+        'countdown-remaining' => 'Payment Timeout Remaining',
+        'countdown-expired' => 'Payment Expired',
     ],
     'states' => [
         'eligible' => 'Eligible',
@@ -190,6 +194,8 @@ return [
         'variance-rejected-success' => 'Cost variance rejected and order flagged as exception.',
         'receipt-processed-success' => 'Inbound receipt processed and stock quantities updated successfully.',
         'platform-order-synced-success' => 'AliExpress platform order synced successfully.',
+        'platform-order-deleted-success' => 'Platform order record deleted successfully.',
+        'reorder-redirect-success' => 'Demands redirected for reordering batch successfully.',
     ],
     'general' => [
         'cancel' => 'Cancel',

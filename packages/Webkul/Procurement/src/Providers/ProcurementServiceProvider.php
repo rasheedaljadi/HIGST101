@@ -56,8 +56,8 @@ class ProcurementServiceProvider extends ServiceProvider
         }
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
-            if (config('procurement.v2_enabled', false) && config('procurement.polling.enabled', true)) {
-                $schedule->command('procurement:poll-aliexpress')->everyFifteenMinutes()->withoutOverlapping();
+            if (config('procurement.v2_enabled', true) && config('procurement.polling.enabled', true)) {
+                $schedule->command('procurement:poll-aliexpress')->everyTwoMinutes()->withoutOverlapping();
             }
         });
     }

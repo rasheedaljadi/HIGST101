@@ -150,6 +150,10 @@ return [
         'details' => 'التفاصيل',
         'sync' => 'مزامنة الحالة',
         'supplier-name' => 'اسم المورد',
+        'reorder' => 'إعادة الشراء',
+        'delete' => 'حذف',
+        'countdown-remaining' => 'متبقي للسداد',
+        'countdown-expired' => 'انتهت مهلة السداد',
     ],
     'states' => [
         'eligible' => 'مؤهل',
@@ -190,6 +194,8 @@ return [
         'variance-rejected-success' => 'تم رفض فرق التكلفة وتحويل الأمر إلى استثناء.',
         'receipt-processed-success' => 'تم تسجيل الاستشارة والاستلام وتحديث كميات المخزون وتخصيصات الطلبات بنجاح.',
         'platform-order-synced-success' => 'تمت مزامنة حالة أمر علي إكسبرس بنجاح.',
+        'platform-order-deleted-success' => 'تم حذف سجل أمر المنصة بنجاح.',
+        'reorder-redirect-success' => 'تم توجيه الاحتياجات لإنشاء دفعة إعادة الشراء بنجاح.',
     ],
     'general' => [
         'cancel' => 'إلغاء',

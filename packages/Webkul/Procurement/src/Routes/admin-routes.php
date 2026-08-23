@@ -36,6 +36,8 @@ Route::group(['middleware' => ['web', 'admin', NoCacheMiddleware::class], 'prefi
         Route::get('platform-orders', [ExternalPlatformOrderController::class, 'index'])->name('admin.procurement.platform_orders.index');
         Route::post('platform-orders/sync/{id}', [ExternalPlatformOrderController::class, 'sync'])->name('admin.procurement.platform_orders.sync');
         Route::post('platform-orders/cancel/{id}', [ExternalPlatformOrderController::class, 'cancel'])->name('admin.procurement.platform_orders.cancel');
+        Route::post('platform-orders/reorder/{id}', [ExternalPlatformOrderController::class, 'reorder'])->name('admin.procurement.platform_orders.reorder');
+        Route::delete('platform-orders/destroy/{id}', [ExternalPlatformOrderController::class, 'destroy'])->name('admin.procurement.platform_orders.destroy');
 
         // 5. Manual Payment Confirmations
         Route::get('manual-payments', [ManualPaymentController::class, 'index'])->name('admin.procurement.manual_payments.index');
