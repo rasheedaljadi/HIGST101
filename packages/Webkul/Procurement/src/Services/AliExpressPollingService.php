@@ -8,7 +8,7 @@ use Webkul\Procurement\Contracts\AliExpressOrderGateway;
 use Webkul\Procurement\Models\ExternalPlatformOrder;
 use Webkul\Procurement\Models\ProcurementAuditLog;
 use Webkul\Procurement\Models\ProcurementBatch;
-use Webkul\Procurement\Models\ProcurementCostSnapshot;
+use Webkul\Procurement\Models\ProcurementDemand;
 use Webkul\Procurement\Models\ProcurementDemandAllocation;
 use Webkul\Procurement\Models\SupplierPurchaseOrder;
 
