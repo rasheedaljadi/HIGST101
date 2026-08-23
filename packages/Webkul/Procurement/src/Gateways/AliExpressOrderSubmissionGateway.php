@@ -123,39 +123,66 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
 
         $country = $shippingAddress['country'] ?: 'SA';
 
-        // 1. Resolve product details & exact sku_attr (Must match exact SKU)
-        $resolvedSkuAttr = null;
+        // 1. Resolve product details & exact sku_attr for all items in draft
+        $skuAttrMap = [];
+        $productCache = [];
+
         try {
-            $prodRes = $this->apiClient->call('aliexpress.ds.product.get', $auth->accessToken, [
-                'product_id' => $productId,
-                'ship_to_country' => $country,
-                'target_currency' => $draft->currencyCode ?: 'USD',
-                'target_language' => 'en',
-            ]);
+            foreach ($items as $item) {
+                $pId = (string) ($item['supplier_product_id'] ?? '');
+                $sId = (string) ($item['supplier_sku_id'] ?? '');
 
-            if (! $prodRes['ok'] || ! empty($prodRes['body']['error_response'])) {
-                $msg = $prodRes['message'] ?? $prodRes['body']['error_response']['msg'] ?? 'Product lookup failed';
+                if (! isset($productCache[$pId])) {
+                    $prodRes = $this->apiClient->call('aliexpress.ds.product.get', $auth->accessToken, [
+                        'product_id' => $pId,
+                        'ship_to_country' => $country,
+                        'target_currency' => $draft->currencyCode ?: 'USD',
+                        'target_language' => 'en',
+                    ]);
 
-                return new AliExpressOrderPreflight(
-                    isSuccess: false,
-                    isDeliverableToDestination: false,
-                    destinationCountry: $country,
-                    errorCode: 'SKU_ATTR_RESOLUTION_FAILED',
-                    errorMessage: "AliExpress product inquiry failed: {$msg}",
-                    rawDetails: $prodRes['body'] ?? []
-                );
-            }
+                    if (! $prodRes['ok'] || ! empty($prodRes['body']['error_response'])) {
+                        $msg = $prodRes['message'] ?? $prodRes['body']['error_response']['msg'] ?? 'Product lookup failed';
 
-            $body = $prodRes['body'];
-            $resp = $body['aliexpress_ds_product_get_response'] ?? $body;
-            $result = $resp['result'] ?? [];
-            $variants = $result['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
+                        return new AliExpressOrderPreflight(
+                            isSuccess: false,
+                            isDeliverableToDestination: false,
+                            destinationCountry: $country,
+                            errorCode: 'SKU_ATTR_RESOLUTION_FAILED',
+                            errorMessage: "AliExpress product inquiry failed: {$msg}",
+                            rawDetails: $prodRes['body'] ?? []
+                        );
+                    }
 
-            foreach ($variants as $v) {
-                if (($v['sku_id'] ?? '') == $skuId && ! empty($v['sku_attr'])) {
-                    $resolvedSkuAttr = (string) $v['sku_attr'];
-                    break;
+                    $body = $prodRes['body'];
+                    $resp = $body['aliexpress_ds_product_get_response'] ?? $body;
+                    $result = $resp['result'] ?? [];
+                    $variants = $result['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
+                    if (isset($variants['sku_id'])) {
+                        $variants = [$variants];
+                    }
+                    $productCache[$pId] = $variants;
                 }
+
+                $resolvedItemSkuAttr = null;
+                foreach ($productCache[$pId] as $v) {
+                    if (($v['sku_id'] ?? '') == $sId && ! empty($v['sku_attr'])) {
+                        $resolvedItemSkuAttr = (string) $v['sku_attr'];
+                        break;
+                    }
+                }
+
+                if (empty($resolvedItemSkuAttr)) {
+                    return new AliExpressOrderPreflight(
+                        isSuccess: false,
+                        isDeliverableToDestination: false,
+                        destinationCountry: $country,
+                        errorCode: 'SKU_ATTR_RESOLUTION_FAILED',
+                        errorMessage: "Exact sku_attr could not be resolved for product ID {$pId} and SKU ID {$sId}.",
+                        rawDetails: []
+                    );
+                }
+
+                $skuAttrMap[$sId] = $resolvedItemSkuAttr;
             }
         } catch (\Throwable $e) {
             return new AliExpressOrderPreflight(
@@ -168,16 +195,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             );
         }
 
-        if (empty($resolvedSkuAttr)) {
-            return new AliExpressOrderPreflight(
-                isSuccess: false,
-                isDeliverableToDestination: false,
-                destinationCountry: $country,
-                errorCode: 'SKU_ATTR_RESOLUTION_FAILED',
-                errorMessage: "Exact sku_attr could not be resolved for product ID {$productId} and SKU ID {$skuId}.",
-                rawDetails: $prodRes['body'] ?? []
-            );
-        }
+        $resolvedSkuAttr = $skuAttrMap[$skuId] ?? null;
 
         // 2. Query live freight options specifically for selected SKU
         try {
@@ -259,6 +277,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                 rawDetails: [
                     'available_options_count' => count($options),
                     'selected_option' => $bestOption,
+                    'sku_attrs' => $skuAttrMap,
                 ]
             );
         } catch (\Throwable $e) {
@@ -329,17 +348,19 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         }
 
         // 5. Build product items using ONLY verified Preflight outputs
+        $skuAttrMap = $preflight->rawDetails['sku_attrs'] ?? [];
         $productItems = [];
         foreach ($draft->items as $item) {
             $prodId = (string) ($item['supplier_product_id'] ?? '');
             $skuId = (string) ($item['supplier_sku_id'] ?? '');
             $qty = (int) ($item['qty'] ?? 1);
+            $skuAttr = $skuAttrMap[$skuId] ?? $preflight->resolvedSkuAttr;
 
             $productItems[] = [
                 'product_count' => $qty > 0 ? $qty : 1,
                 'product_id' => $prodId,
                 'sku_id' => $skuId,
-                'sku_attr' => $preflight->resolvedSkuAttr,
+                'sku_attr' => $skuAttr,
                 'sku_define_type' => 'sku_id',
                 'logistics_service_name' => $preflight->shippingServiceName,
             ];
