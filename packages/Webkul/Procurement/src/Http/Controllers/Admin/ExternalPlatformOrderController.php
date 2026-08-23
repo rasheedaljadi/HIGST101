@@ -13,7 +13,9 @@ use Webkul\Procurement\Models\ExternalPlatformOrder;
 use Webkul\Procurement\Models\ProcurementDemandAllocation;
 use Webkul\Procurement\Security\ProcurementAcl;
 use Webkul\Procurement\Services\AliExpressPollingService;
+use Webkul\Procurement\Services\ProcurementBatchService;
 use Webkul\Procurement\Services\ProcurementOrderCancellationService;
+use Webkul\Procurement\Services\ProcurementSubmitService;
 
 class ExternalPlatformOrderController extends Controller
 {
@@ -21,7 +23,9 @@ class ExternalPlatformOrderController extends Controller
 
     public function __construct(
         protected AliExpressPollingService $pollingService,
-        protected ProcurementOrderCancellationService $cancellationService
+        protected ProcurementOrderCancellationService $cancellationService,
+        protected ProcurementBatchService $batchService,
+        protected ProcurementSubmitService $submitService
     ) {}
 
     public function index(Request $request)
@@ -137,18 +141,40 @@ class ExternalPlatformOrderController extends Controller
                 }
             }
 
-            $message = trans('procurement::app.messages.reorder-redirect-success');
+            $demandIds = array_values(array_unique($demandIds));
+
+            if (empty($demandIds)) {
+                throw new \DomainException(trans('procurement::app.messages.reorder-no-demands-available'));
+            }
+
+            $actorId = (int) Auth::id();
+
+            // 1. Create a fresh batch for these demands
+            $batch = $this->batchService->createBatch($demandIds, $actorId);
+
+            // 2. Approve the batch for submission
+            $batch = $this->batchService->approveBatch($batch->id, $actorId);
+
+            // 3. Submit directly to AliExpress API (generates new live unpaid order)
+            $submittedBatch = $this->submitService->submitBatch($batch->id, $actorId);
+
+            $newSpo = $submittedBatch->supplierOrders()->first();
+            $newPlatformOrder = $newSpo ? ExternalPlatformOrder::where('supplier_purchase_order_id', $newSpo->id)->first() : null;
+            $newExtId = $newPlatformOrder?->external_order_id ?: '';
+
+            $message = ! empty($newExtId)
+                ? trans('procurement::app.messages.reorder-success-with-id', ['id' => $newExtId])
+                : trans('procurement::app.messages.reorder-success');
 
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'message' => $message,
-                    'redirect_url' => route('admin.procurement.batches.create', ! empty($demandIds) ? ['demand_ids' => implode(',', array_unique($demandIds))] : []),
                 ]);
             }
 
             session()->flash('success', $message);
 
-            return redirect()->route('admin.procurement.batches.create', ! empty($demandIds) ? ['demand_ids' => implode(',', array_unique($demandIds))] : []);
+            return redirect()->route('admin.procurement.platform_orders.index');
         } catch (Exception $e) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([

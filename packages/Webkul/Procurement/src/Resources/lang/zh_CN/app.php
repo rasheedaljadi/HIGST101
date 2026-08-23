@@ -196,6 +196,9 @@ return [
         'platform-order-synced-success' => 'AliExpress platform order synced successfully.',
         'platform-order-deleted-success' => 'Platform order record deleted successfully.',
         'reorder-redirect-success' => 'Demands redirected for reordering batch successfully.',
+        'reorder-success' => 'Order reordered and new supplier purchase order created successfully.',
+        'reorder-success-with-id' => 'Order reordered and new AliExpress order generated successfully: :id',
+        'reorder-no-demands-available' => 'No available demands to reorder for this order.',
     ],
     'general' => [
         'cancel' => 'Cancel',

@@ -196,6 +196,9 @@ return [
         'platform-order-synced-success' => 'تمت مزامنة حالة أمر علي إكسبرس بنجاح.',
         'platform-order-deleted-success' => 'تم حذف سجل أمر المنصة بنجاح.',
         'reorder-redirect-success' => 'تم توجيه الاحتياجات لإنشاء دفعة إعادة الشراء بنجاح.',
+        'reorder-success' => 'تمت إعادة الشراء وإنشاء أمر التوريد الجديد بنجاح.',
+        'reorder-success-with-id' => 'تمت إعادة الشراء وتوليد أمر الشراء الجديد على علي إكسبرس بنجاح برقم: :id',
+        'reorder-no-demands-available' => 'لا توجد احتياجات متاحة لإعادة الشراء لهذا الطلب.',
     ],
     'general' => [
         'cancel' => 'إلغاء',
