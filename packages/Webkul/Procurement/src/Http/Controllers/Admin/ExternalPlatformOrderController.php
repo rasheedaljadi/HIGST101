@@ -133,31 +133,32 @@ class ExternalPlatformOrderController extends Controller
 
             $demandIds = [];
             if ($spo) {
+                // 1. Check allocations
                 $spoItemIds = $spo->items()->pluck('id');
                 $allocations = ProcurementDemandAllocation::whereIn('supplier_purchase_order_item_id', $spoItemIds)->get();
                 foreach ($allocations as $alloc) {
                     $demand = $alloc->demand;
-                    if ($demand && $demand->isOpenForBatching()) {
+                    if ($demand) {
                         $demandIds[] = $demand->id;
                     }
                 }
 
+                // 2. Check batchDemands
                 if (empty($demandIds) && $spo->batch_id) {
                     $bDemands = ProcurementBatchDemand::where('batch_id', $spo->batch_id)->get();
                     foreach ($bDemands as $bd) {
                         $demand = $bd->demand;
-                        if ($demand && $demand->isOpenForBatching()) {
+                        if ($demand) {
                             $demandIds[] = $demand->id;
                         }
                     }
                 }
 
+                // 3. Fallback: match open demands for same product/SKU
                 if (empty($demandIds)) {
                     foreach ($spo->items as $item) {
                         $matched = ProcurementDemand::where('supplier_product_id', $item->supplier_product_id)
                             ->where('supplier_sku_id', $item->supplier_sku_id)
-                            ->where('state', ProcurementDemand::STATE_OPEN_FOR_BATCHING)
-                            ->whereRaw('(qty_required_external - qty_batched - qty_cancelled) > 0')
                             ->pluck('id')
                             ->toArray();
                         $demandIds = array_merge($demandIds, $matched);
@@ -170,6 +171,12 @@ class ExternalPlatformOrderController extends Controller
             if (empty($demandIds)) {
                 throw new \DomainException(trans('procurement::app.messages.reorder-no-demands-available'));
             }
+
+            // Ensure any cancelled/stale demand state is reset to open_for_batching
+            ProcurementDemand::whereIn('id', $demandIds)->update([
+                'qty_batched' => 0,
+                'state' => ProcurementDemand::STATE_OPEN_FOR_BATCHING,
+            ]);
 
             $actorId = (int) (auth()->guard('admin')->id() ?: auth()->id()) ?: null;
 
