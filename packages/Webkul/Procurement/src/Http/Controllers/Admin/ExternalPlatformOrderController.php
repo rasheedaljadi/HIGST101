@@ -191,11 +191,25 @@ class ExternalPlatformOrderController extends Controller
 
             $newSpo = $submittedBatch->supplierOrders()->first();
             $newPlatformOrder = $newSpo ? ExternalPlatformOrder::where('supplier_purchase_order_id', $newSpo->id)->first() : null;
-            $newExtId = $newPlatformOrder?->external_order_id ?: '';
 
-            $message = ! empty($newExtId)
-                ? trans('procurement::app.messages.reorder-success-with-id', ['id' => $newExtId])
-                : trans('procurement::app.messages.reorder-success');
+            if (! $newPlatformOrder || empty($newPlatformOrder->external_order_id) || $newPlatformOrder->normalized_status === ExternalPlatformOrder::STATUS_SUBMISSION_FAILED) {
+                $err = $newPlatformOrder?->failure_message ?: 'فشل إنشاء أمر الشراء على علي إكسبرس.';
+                throw new \DomainException("فشل إرسال أمر الشراء إلى علي إكسبرس: {$err}");
+            }
+
+            $newExtId = $newPlatformOrder->external_order_id;
+
+            // Mark the old order as reordered so reorder button disappears
+            $order->update([
+                'snapshots' => array_merge($order->snapshots ?? [], [
+                    'is_reordered' => true,
+                    'reordered_at' => now()->toIso8601String(),
+                    'reordered_into_order_id' => $newExtId,
+                    'reordered_into_epo_id' => $newPlatformOrder->id,
+                ]),
+            ]);
+
+            $message = trans('procurement::app.messages.reorder-success-with-id', ['id' => $newExtId]);
 
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([

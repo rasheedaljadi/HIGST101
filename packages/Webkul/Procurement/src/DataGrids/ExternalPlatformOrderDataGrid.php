@@ -26,6 +26,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'external_platform_orders.tracking_number',
                 'external_platform_orders.carrier_name',
                 'external_platform_orders.last_synced_at',
+                'external_platform_orders.snapshots as raw_snapshots',
                 'external_platform_orders.created_at'
             );
 
@@ -177,9 +178,18 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'icon' => 'icon-cart text-2xl text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300',
                 'title' => trans('procurement::app.datagrid.reorder'),
                 'method' => 'POST',
-                'url' => fn ($row) => ($row->raw_normalized_status ?? $row->normalized_status) === 'cancelled'
-                    ? route('admin.procurement.platform_orders.reorder', $row->platform_order_id)
-                    : null,
+                'url' => function ($row) {
+                    if (($row->raw_normalized_status ?? $row->normalized_status) !== 'cancelled') {
+                        return null;
+                    }
+
+                    $snapshots = is_string($row->raw_snapshots ?? null) ? json_decode($row->raw_snapshots, true) : ($row->raw_snapshots ?? []);
+                    if (! empty($snapshots['is_reordered'])) {
+                        return null;
+                    }
+
+                    return route('admin.procurement.platform_orders.reorder', $row->platform_order_id);
+                },
             ]);
 
             $this->addAction([
