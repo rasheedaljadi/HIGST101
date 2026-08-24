@@ -5,7 +5,6 @@ namespace Webkul\Procurement\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Webkul\Procurement\DataGrids\ExternalPlatformOrderDataGrid;
 use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
@@ -95,7 +94,7 @@ class ExternalPlatformOrderController extends Controller
         try {
             $this->cancellationService->cancelPlatformOrder(
                 $id,
-                (int) Auth::id(),
+                $this->resolveAdminActorId(),
                 $request->input('reason', 'Cancelled by administrator from dashboard')
             );
 

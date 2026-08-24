@@ -5,7 +5,6 @@ namespace Webkul\Procurement\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Webkul\Inventory\Models\InventorySource;
 use Webkul\Procurement\DataGrids\SupplierPurchaseOrderDataGrid;
 use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
@@ -67,7 +66,7 @@ class SupplierOrderController extends Controller
             $this->receiptService->receiveGoods(
                 $id,
                 $request->input('lines'),
-                (int) Auth::id(),
+                $this->resolveAdminActorId(),
                 $request->input('target_source', 'hayest_dropship_sa')
             );
 
@@ -88,7 +87,7 @@ class SupplierOrderController extends Controller
         try {
             $this->cancellationService->cancelSupplierOrder(
                 $id,
-                (int) Auth::id(),
+                $this->resolveAdminActorId(),
                 $request->input('reason', 'Cancelled by administrator from dashboard')
             );
 

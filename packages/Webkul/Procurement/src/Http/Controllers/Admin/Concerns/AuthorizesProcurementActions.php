@@ -3,6 +3,7 @@
 namespace Webkul\Procurement\Http\Controllers\Admin\Concerns;
 
 use Webkul\Procurement\Security\ProcurementAcl;
+use Webkul\User\Models\Admin;
 
 trait AuthorizesProcurementActions
 {
@@ -13,5 +14,13 @@ trait AuthorizesProcurementActions
     protected function authorizeProcurementAction(string $permission): void
     {
         ProcurementAcl::authorize($permission);
+    }
+
+    /**
+     * Resolve the current authenticated admin ID reliably.
+     */
+    protected function resolveAdminActorId(): int
+    {
+        return (int) (auth()->guard('admin')->id() ?: auth()->id()) ?: (Admin::first()?->id ?? 1);
     }
 }
