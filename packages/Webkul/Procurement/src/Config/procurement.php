@@ -9,6 +9,12 @@ return [
     'v2_enabled' => env('PROCUREMENT_V2_ENABLED', true),
 
     /**
+     * Live external order creation flag.
+     * When true, allows sending actual live order creation API calls to external providers.
+     */
+    'v2_live_order_creation_enabled' => env('PROCUREMENT_V2_LIVE_ORDER_CREATION_ENABLED', true),
+
+    /**
      * Default supplier and order currency.
      * In V2, strictly USD. Non-USD orders are routed to manual review.
      */
