@@ -139,6 +139,28 @@ class ExternalPlatformOrderController extends Controller
                         $demandIds[] = $demand->id;
                     }
                 }
+
+                if (empty($demandIds) && $spo->batch_id) {
+                    $bDemands = ProcurementBatchDemand::where('batch_id', $spo->batch_id)->get();
+                    foreach ($bDemands as $bd) {
+                        $demand = $bd->demand;
+                        if ($demand && $demand->isOpenForBatching()) {
+                            $demandIds[] = $demand->id;
+                        }
+                    }
+                }
+
+                if (empty($demandIds)) {
+                    foreach ($spo->items as $item) {
+                        $matched = ProcurementDemand::where('supplier_product_id', $item->supplier_product_id)
+                            ->where('supplier_sku_id', $item->supplier_sku_id)
+                            ->where('state', ProcurementDemand::STATE_OPEN_FOR_BATCHING)
+                            ->whereRaw('(qty_required_external - qty_batched - qty_cancelled) > 0')
+                            ->pluck('id')
+                            ->toArray();
+                        $demandIds = array_merge($demandIds, $matched);
+                    }
+                }
             }
 
             $demandIds = array_values(array_unique($demandIds));
