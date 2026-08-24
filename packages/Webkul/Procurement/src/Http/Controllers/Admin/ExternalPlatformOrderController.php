@@ -147,7 +147,7 @@ class ExternalPlatformOrderController extends Controller
                 throw new \DomainException(trans('procurement::app.messages.reorder-no-demands-available'));
             }
 
-            $actorId = (int) Auth::id();
+            $actorId = (int) (auth()->guard('admin')->id() ?: auth()->id()) ?: null;
 
             // 1. Create a fresh batch for these demands
             $batch = $this->batchService->createBatch($demandIds, $actorId);

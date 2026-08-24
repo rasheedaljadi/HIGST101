@@ -153,7 +153,7 @@ class ProcurementBatchService
                 'currency_code' => 'USD',
                 'destination_signature' => $firstDemand->destination_source_code,
                 'state' => ProcurementBatch::STATE_READY_FOR_REVIEW,
-                'created_by' => $actorId,
+                'created_by' => $actorId ?: null,
                 'source_snapshot_at' => now(),
                 'expected_total_cost' => 0.0000,
                 'actual_total_cost' => 0.0000,
