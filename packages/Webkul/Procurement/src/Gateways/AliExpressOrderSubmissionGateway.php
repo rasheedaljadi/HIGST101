@@ -125,6 +125,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
 
         // 1. Resolve product details & exact sku_attr for all items in draft
         $skuAttrMap = [];
+        $skuIdMap = [];
         $productCache = [];
 
         try {
@@ -164,11 +165,20 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                 }
 
                 $resolvedItemSkuAttr = null;
+                $resolvedItemSkuId = $sId;
                 foreach ($productCache[$pId] as $v) {
                     if (($v['sku_id'] ?? '') == $sId && ! empty($v['sku_attr'])) {
                         $resolvedItemSkuAttr = (string) $v['sku_attr'];
+                        $resolvedItemSkuId = (string) $v['sku_id'];
                         break;
                     }
+                }
+
+                // Fallback for simple products / non-numeric SKUs (e.g. "ae-1005007551825279")
+                if (empty($resolvedItemSkuAttr) && ! empty($productCache[$pId])) {
+                    $firstVariant = $productCache[$pId][0];
+                    $resolvedItemSkuAttr = (string) ($firstVariant['sku_attr'] ?? '');
+                    $resolvedItemSkuId = (string) ($firstVariant['sku_id'] ?? $sId);
                 }
 
                 if (empty($resolvedItemSkuAttr)) {
@@ -183,6 +193,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                 }
 
                 $skuAttrMap[$sId] = $resolvedItemSkuAttr;
+                $skuIdMap[$sId] = $resolvedItemSkuId;
             }
         } catch (\Throwable $e) {
             return new AliExpressOrderPreflight(
@@ -195,7 +206,8 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             );
         }
 
-        $resolvedSkuAttr = $skuAttrMap[$skuId] ?? null;
+        $resolvedSkuAttr = $skuAttrMap[$skuId] ?? reset($skuAttrMap);
+        $resolvedFreightSkuId = $skuIdMap[$skuId] ?? $skuId;
 
         // 2. Query live freight options specifically for selected SKU
         try {
@@ -206,7 +218,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                 'currency' => $draft->currencyCode ?: 'USD',
                 'language' => 'en_US',
                 'locale' => 'en_US',
-                'selectedSkuId' => $skuId,
+                'selectedSkuId' => $resolvedFreightSkuId,
             ];
 
             $freightRes = $this->apiClient->call('aliexpress.ds.freight.query', $auth->accessToken, [
@@ -278,6 +290,7 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                     'available_options_count' => count($options),
                     'selected_option' => $bestOption,
                     'sku_attrs' => $skuAttrMap,
+                    'resolved_sku_ids' => $skuIdMap,
                 ]
             );
         } catch (\Throwable $e) {
@@ -349,12 +362,14 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
 
         // 5. Build product items using ONLY verified Preflight outputs
         $skuAttrMap = $preflight->rawDetails['sku_attrs'] ?? [];
+        $skuIdMap = $preflight->rawDetails['resolved_sku_ids'] ?? [];
         $productItems = [];
         foreach ($draft->items as $item) {
             $prodId = (string) ($item['supplier_product_id'] ?? '');
-            $skuId = (string) ($item['supplier_sku_id'] ?? '');
+            $origSkuId = (string) ($item['supplier_sku_id'] ?? '');
+            $skuId = $skuIdMap[$origSkuId] ?? $origSkuId;
             $qty = (int) ($item['qty'] ?? 1);
-            $skuAttr = $skuAttrMap[$skuId] ?? $preflight->resolvedSkuAttr;
+            $skuAttr = $skuAttrMap[$origSkuId] ?? $skuAttrMap[$skuId] ?? $preflight->resolvedSkuAttr;
 
             $productItems[] = [
                 'product_count' => $qty > 0 ? $qty : 1,
