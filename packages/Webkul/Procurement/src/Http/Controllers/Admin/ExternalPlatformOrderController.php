@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Webkul\Procurement\DataGrids\ExternalPlatformOrderDataGrid;
 use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
 use Webkul\Procurement\Models\ExternalPlatformOrder;
+use Webkul\Procurement\Models\ProcurementBatchDemand;
+use Webkul\Procurement\Models\ProcurementDemand;
 use Webkul\Procurement\Models\ProcurementDemandAllocation;
 use Webkul\Procurement\Security\ProcurementAcl;
 use Webkul\Procurement\Services\AliExpressPollingService;
