@@ -548,105 +548,109 @@
             <x-slot:toggle>
                 <span class="relative flex">
                     <span
-                        class="icon-notification text-red cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-100 dark:hover:bg-gray-950" 
+                        class="icon-notification cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-white/10 dark:hover:bg-gray-950 !text-white" 
                         title="@lang('admin::app.components.layouts.header.notifications')"
                     >
                     </span>
                 
                     <span
-                        class="absolute -top-2 flex h-5 min-w-5 cursor-pointer items-center justify-center rounded-full bg-blue-600 p-1.5 text-[10px] font-semibold leading-[9px] text-white ltr:left-5 rtl:right-5"
+                        class="absolute -top-1 flex h-5 min-w-5 cursor-pointer items-center justify-center rounded-full bg-red-500 p-1 text-[10px] font-bold leading-[9px] text-white shadow-sm ltr:left-4 rtl:right-4"
                         v-if="totalUnRead"
                     >
-                        @{{ totalUnRead }}
+                        @{{ totalUnRead > 99 ? '99+' : totalUnRead }}
                     </span>
                 </span>
             </x-slot>
 
             <!-- Notification Content -->
-            <x-slot:content class="min-w-[250px] max-w-[250px] !p-0">
+            <x-slot:content class="min-w-[320px] max-w-[380px] sm:min-w-[360px] !p-0 shadow-2xl rounded-xl border border-gray-100 dark:border-gray-800">
                 <!-- Header -->
-                <div class="border-b p-3 text-base font-semibold text-gray-600 dark:border-gray-800 dark:text-gray-300">
-                    @lang('admin::app.notifications.title', ['read' => 0])
-                </div>
-
-                <!-- Content -->
-                <div class="grid">
-                    <a
-                        class="flex items-start gap-2.5 border-b p-3 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950"
-                        v-for="notification in notifications"
-                        :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id || notification.id)"
-                    >
-                        <!-- Notification Icon -->
-                        <span
-                            v-if="notification.type === 'order_reminder'"
-                            class="h-fit icon-information rounded-full bg-amber-100 text-2xl text-amber-600 dark:!text-amber-600"
+                <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50/70 px-4 py-3 dark:border-gray-800 dark:bg-gray-900/50">
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">
+                            @lang('admin::app.notifications.title')
+                        </p>
+                        <span 
+                            class="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                            v-if="totalUnRead"
                         >
+                            @{{ totalUnRead }} جديد
                         </span>
-                        <span
-                            v-else-if="notification.type === 'low_stock'"
-                            class="h-fit icon-information rounded-full bg-orange-100 text-2xl text-orange-600 dark:!text-orange-600"
-                        >
-                        </span>
-                        <span
-                            v-else-if="notification.type === 'out_of_stock'"
-                            class="h-fit icon-cancel-1 rounded-full bg-red-100 text-2xl text-red-600 dark:!text-red-600"
-                        >
-                        </span>
-                        <span
-                            v-else-if="notification.type === 'scheduled_sync'"
-                            class="h-fit icon-processing rounded-full bg-blue-100 text-2xl text-blue-600 dark:!text-blue-600"
-                        >
-                        </span>
-                        <span
-                            v-else-if="notification.order && notification.order.status && (notification.order.status in notificationStatusIcon)"
-                            class="h-fit"
-                            :class="notificationStatusIcon[notification.order.status]"
-                        >
-                        </span>
-                        <span
-                            v-else
-                            class="h-fit icon-information rounded-full bg-blue-100 text-2xl text-blue-600 dark:!text-blue-600"
-                        >
-                        </span>
-
-                        <div class="grid flex-1">
-                            <!-- Title / Status -->
-                            <p class="text-sm text-gray-800 dark:text-white leading-snug" :class="notification.read ? 'font-normal' : 'font-semibold'">
-                                <template v-if="notification.type && notification.type !== 'order_status'">
-                                    @{{ notification.title || (notification.order ? notification.order.id : ('إشعار #' + notification.id)) }}
-                                </template>
-                                <template v-else-if="notification.order">
-                                    #@{{ notification.order.id }}
-                                    @{{ orderTypeMessages[notification.order.status] || '' }}
-                                </template>
-                                <template v-else>
-                                    إشعار #@{{ notification.id }}
-                                </template>
-                            </p>
-
-                            <!-- Created Date In human Readable Format -->
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                @{{ notification.order ? notification.order.datetime : (notification.created_at || '') }}
-                            </p>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Footer -->
-                <div class="flex h-[47px] justify-between gap-1.5 border-t px-6 py-4 dark:border-gray-800">
-                    <a
-                        href="{{ route('admin.notification.index') }}"
-                        class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
-                    >
-                        @lang('admin::app.notifications.view-all')
-                    </a>
+                    </div>
 
                     <a
-                        class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
+                        class="cursor-pointer text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:underline"
                         v-if="notifications?.length"
                         @click="readAll()"
                     >
                         @lang('admin::app.notifications.read-all')
+                    </a>
+                </div>
+
+                <!-- Notifications List -->
+                <div class="max-h-[380px] overflow-y-auto journal-scroll divide-y divide-gray-100 dark:divide-gray-800">
+                    <a
+                        class="flex items-start gap-3 p-3.5 transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-950/60"
+                        :class="{'bg-blue-50/30 dark:bg-blue-950/20': !notification.read}"
+                        v-for="notification in notifications"
+                        :key="notification.id"
+                        :href="notification.action_url || ('{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id || notification.id))"
+                    >
+                        <!-- Type Icon -->
+                        <div 
+                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg font-bold"
+                            :class="notification.badge_class || 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'"
+                        >
+                            <span :class="notification.icon_class || 'icon-information'"></span>
+                        </div>
+
+                        <!-- Content Body -->
+                        <div class="grid flex-1 gap-0.5 overflow-hidden">
+                            <div class="flex items-center justify-between gap-1">
+                                <p 
+                                    class="text-xs font-bold leading-snug text-gray-900 dark:text-white truncate"
+                                    :title="notification.display_title || notification.title"
+                                >
+                                    @{{ notification.display_title || notification.title || ('إشعار #' + notification.id) }}
+                                </p>
+                                <span 
+                                    class="h-2 w-2 shrink-0 rounded-full bg-blue-600"
+                                    v-if="!notification.read"
+                                ></span>
+                            </div>
+
+                            <p 
+                                class="text-[11px] leading-relaxed text-gray-600 dark:text-gray-300 line-clamp-2"
+                                v-if="notification.display_message || notification.message"
+                            >
+                                @{{ notification.display_message || notification.message }}
+                            </p>
+
+                            <p class="text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1">
+                                <i class="icon-clock text-[11px]"></i>
+                                @{{ notification.time_ago || (notification.order ? notification.order.datetime : notification.created_at) }}
+                            </p>
+                        </div>
+                    </a>
+
+                    <!-- Empty State -->
+                    <div 
+                        class="p-6 text-center text-xs text-gray-500 dark:text-gray-400"
+                        v-if="!notifications?.length"
+                    >
+                        <i class="icon-notification text-3xl text-gray-300 dark:text-gray-600 block mb-1"></i>
+                        لا توجد إشعارات جديدة حالياً
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="border-t border-gray-100 p-2.5 text-center dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40">
+                    <a
+                        href="{{ route('admin.notification.index') }}"
+                        class="inline-flex items-center justify-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline"
+                    >
+                        <span>@lang('admin::app.notifications.view-all')</span>
+                        <i class="icon-arrow-left rtl:rotate-0 ltr:rotate-180 text-xs"></i>
                     </a>
                 </div>
             </x-slot>
@@ -657,104 +661,42 @@
         app.component('v-notifications', {
             template: '#v-notifications-template',
 
-                props: [
-                    'getReadAllUrl',
-                    'readAllTitle',
-                ],
+            data() {
+                return {
+                    notifications: [],
+                    totalUnRead: 0,
+                };
+            },
 
-                data() {
-                    return {
-                        notifications: [],
+            mounted() {
+                this.getNotification();
+            },
 
-                        ordertype: {
-                            pending: {
-                                icon: 'icon-information',
-                                message: "@lang('admin::app.notifications.order-status-messages.pending-payment')"
-                            },
-
-                            processing: {
-                                icon: 'icon-processing',
-                                message: "@lang('admin::app.notifications.order-status-messages.processing')",
-                            },
-
-                            canceled: {
-                                icon: 'icon-cancel-1',
-                                message: "@lang('admin::app.notifications.order-status-messages.canceled')"
-                            },
-
-                            completed: {
-                                icon: 'icon-done',
-                                message: "@lang('admin::app.notifications.order-status-messages.completed')"
-                            },
-
-                            closed: {
-                                icon: 'icon-cancel-1',
-                                message: "@lang('admin::app.notifications.order-status-messages.closed')"
-                            },
-
-                            pending_payment: {
-                                icon: "icon-information",
-                                message: "@lang('admin::app.notifications.order-status-messages.pending-payment')"
-                            },
-                        },
-
-                        totalUnRead: 0,
-
-                        orderTypeMessages: {
-                            {{ \Webkul\Sales\Models\Order::STATUS_PENDING }}: "@lang('admin::app.notifications.order-status-messages.pending')",
-                            {{ \Webkul\Sales\Models\Order::STATUS_CANCELED }}: "@lang('admin::app.notifications.order-status-messages.canceled')",
-                            {{ \Webkul\Sales\Models\Order::STATUS_CLOSED }}: "@lang('admin::app.notifications.order-status-messages.closed')",
-                            {{ \Webkul\Sales\Models\Order::STATUS_COMPLETED }}: "@lang('admin::app.notifications.order-status-messages.completed')",
-                            {{ \Webkul\Sales\Models\Order::STATUS_PROCESSING }}: "@lang('admin::app.notifications.order-status-messages.processing')",
-                            {{ \Webkul\Sales\Models\Order::STATUS_PENDING_PAYMENT }}: "@lang('admin::app.notifications.order-status-messages.pending-payment')",
-                        }
-                    }
+            methods: {
+                getNotification() {
+                    this.$axios.get('{{ route('admin.notification.get_notification') }}', {
+                            params: {
+                                limit: 5,
+                                read: 0
+                            }
+                        })
+                        .then((response) => {
+                            this.notifications = response.data.search_results.data || [];
+                            this.totalUnRead = response.data.total_unread || 0;
+                        })
+                        .catch(error => console.log(error));
                 },
 
-                computed: {
-                    notificationStatusIcon() {
-                        return {
-                            pending: 'icon-information rounded-full bg-amber-100 text-2xl text-amber-600 dark:!text-amber-600',
-                            closed: 'icon-repeat rounded-full bg-red-100 text-2xl text-red-600 dark:!text-red-600',
-                            completed: 'icon-done rounded-full bg-blue-100 text-2xl text-blue-600 dark:!text-blue-600',
-                            canceled: 'icon-cancel-1 rounded-full bg-red-100 text-2xl text-red-600 dark:!text-red-600',
-                            processing: 'icon-sort-right rounded-full bg-green-100 text-2xl text-green-600 dark:!text-green-600',
-                        };
-                    },
-                },
-
-                mounted() {
-                    this.getNotification();
-                },
-
-                methods: {
-                    getNotification() {
-                        this.$axios.get('{{ route('admin.notification.get_notification') }}', {
-                                params: {
-                                    limit: 5,
-                                    read: 0
-                                }
-                            })
-                            .then((response) => {
-                                this.notifications = response.data.search_results.data;
-
-                                this.totalUnRead =   response.data.total_unread;
-                            })
-                            .catch(error => console.log(error))
-                    },
-
-                    readAll() {
-                        this.$axios.post('{{ route('admin.notification.read_all') }}')
-                            .then((response) => {
-                                this.notifications = response.data.search_results.data;
-
-                                this.totalUnRead = response.data.total_unread;
-
+                readAll() {
+                    this.$axios.post('{{ route('admin.notification.read_all') }}')
+                        .then((response) => {
+                            this.notifications = response.data.search_results.data || [];
+                            this.totalUnRead = response.data.total_unread || 0;
                             this.$emitter.emit('add-flash', { type: 'success', message: response.data.success_message });
                         })
-                        .catch((error) => {});
-                },
-            },
+                        .catch((error) => console.log(error));
+                }
+            }
         });
     </script>
 

@@ -20,29 +20,32 @@ class NotificationRepository extends Repository
      */
     public function getParamsData(array $params): array
     {
-        $query = $this->model->whereNull('customer_id')->with('order');
+        $query = $this->model->whereNull('customer_id')->with(['order.items', 'order.customer']);
 
-        if (isset($params['status']) && $params['status'] != 'All') {
+        // 1. Filter by category tab
+        if (! empty($params['category']) && $params['category'] !== 'all') {
+            $this->applyCategoryFilter($query, (string) $params['category']);
+        } elseif (isset($params['status']) && $params['status'] !== 'all' && $params['status'] !== 'All') {
             $query->whereHas('order', function ($q) use ($params) {
                 $q->where(['status' => $params['status']]);
             });
         }
 
-        if (isset($params['read']) && isset($params['limit'])) {
-            $query->where('read', $params['read'])->limit($params['limit']);
-        } elseif (isset($params['limit'])) {
-            $query->limit($params['limit']);
+        // 2. Read filter
+        if (isset($params['read'])) {
+            $query->where('read', (int) $params['read']);
         }
 
-        $notifications = $query->latest()->paginate($params['limit'] ?? 10);
+        $notifications = $query->latest('id')->paginate($params['limit'] ?? 10);
 
-        $statusCounts = $this->model->whereNull('notifications.customer_id')
-            ->join('orders', 'notifications.order_id', '=', 'orders.id')
-            ->select('orders.status', DB::raw('COUNT(*) as status_count'))
-            ->groupBy('orders.status')
-            ->get();
+        $categoryCounts = $this->getCategoryCounts();
+        $statusCounts = $this->getStatusCounts();
 
-        return ['notifications' => $notifications, 'status_counts' => $statusCounts];
+        return [
+            'notifications' => $notifications,
+            'category_counts' => $categoryCounts,
+            'status_counts' => $statusCounts,
+        ];
     }
 
     /**
@@ -52,17 +55,55 @@ class NotificationRepository extends Repository
      */
     public function getAll(array $params = [])
     {
-        $query = $this->model->whereNull('customer_id')->with('order');
+        return $this->getParamsData($params);
+    }
 
-        $notifications = $query->latest()->paginate($params['limit'] ?? 10);
+    /**
+     * Apply category filter on query.
+     */
+    protected function applyCategoryFilter($query, string $category): void
+    {
+        match ($category) {
+            'orders' => $query->where(function ($q) {
+                $q->whereNull('type')
+                    ->orWhereIn('type', ['order_status', 'order', 'invoice', 'shipment', 'order_reminder']);
+            }),
+            'inventory' => $query->whereIn('type', ['low_stock', 'out_of_stock']),
+            'sync' => $query->whereIn('type', ['scheduled_sync', 'sync']),
+            'finance' => $query->whereIn('type', ['wallet_topup', 'wallet_withdrawal']),
+            default => null,
+        };
+    }
 
-        $statusCounts = $this->model->whereNull('notifications.customer_id')
+    /**
+     * Calculate counts per category tab for admin.
+     */
+    public function getCategoryCounts(): array
+    {
+        $baseQuery = $this->model->whereNull('customer_id');
+
+        return [
+            'all' => (clone $baseQuery)->count(),
+            'orders' => (clone $baseQuery)->where(function ($q) {
+                $q->whereNull('type')
+                    ->orWhereIn('type', ['order_status', 'order', 'invoice', 'shipment', 'order_reminder']);
+            })->count(),
+            'inventory' => (clone $baseQuery)->whereIn('type', ['low_stock', 'out_of_stock'])->count(),
+            'sync' => (clone $baseQuery)->whereIn('type', ['scheduled_sync', 'sync'])->count(),
+            'finance' => (clone $baseQuery)->whereIn('type', ['wallet_topup', 'wallet_withdrawal'])->count(),
+        ];
+    }
+
+    /**
+     * Legacy status counts for orders.
+     */
+    public function getStatusCounts()
+    {
+        return $this->model->whereNull('notifications.customer_id')
             ->join('orders', 'notifications.order_id', '=', 'orders.id')
             ->select('orders.status', DB::raw('COUNT(*) as status_count'))
             ->groupBy('orders.status')
             ->get();
-
-        return ['notifications' => $notifications, 'status_counts' => $statusCounts];
     }
 
     /**
@@ -76,7 +117,7 @@ class NotificationRepository extends Repository
             $query->where('read', (int) $params['read']);
         }
 
-        return $query->latest()->paginate($params['limit'] ?? 10);
+        return $query->latest('id')->paginate($params['limit'] ?? 10);
     }
 
     /**

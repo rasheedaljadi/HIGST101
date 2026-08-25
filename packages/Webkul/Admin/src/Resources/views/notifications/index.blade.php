@@ -24,147 +24,188 @@
             </template>
 
             <template v-else>
-                <div class="mb-5 flex items-center justify-between gap-4 max-sm:flex-wrap">
-                    <div class="grid gap-1.5">
-                        <p class="pt-1.5 text-xl font-bold leading-6 text-gray-800 dark:text-white">
-                            @lang('admin::app.notifications.title')
-                        </p>
+                <!-- Page Header -->
+                <div class="mb-6 flex items-center justify-between gap-4 max-sm:flex-wrap">
+                    <div class="grid gap-1">
+                        <div class="flex items-center gap-2.5">
+                            <h1 class="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">
+                                @lang('admin::app.notifications.title')
+                            </h1>
+                            <span 
+                                class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                                v-if="totalUnRead"
+                            >
+                                @{{ totalUnRead }} غير مقروء
+                            </span>
+                        </div>
 
-                        <p class="text-gray-600 dark:text-gray-300">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
                             @lang('admin::app.notifications.description-text')
                         </p>
                     </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-3">
+                        <button
+                            type="button"
+                            class="secondary-button flex items-center gap-1.5"
+                            v-if="notifications.length && totalUnRead > 0"
+                            @click="readAll()"
+                        >
+                            <i class="icon-done text-base"></i>
+                            <span>@lang('admin::app.notifications.read-all')</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="box-shadow flex h-[calc(100vh-179px)] max-w-max flex-col justify-between rounded-md bg-white dark:bg-gray-900">
-                    <div>
-                        <div class="journal-scroll flex overflow-auto border-b dark:border-gray-800">
-                            <div
-                                class="flex cursor-pointer items-center gap-1 border-b-2 px-4 py-4 hover:bg-gray-100 dark:hover:bg-gray-950"
-                                :class="{'border-blue-600 dark:border-blue-600': status == data.status}"
-                                v-for="data in orderType"
-                                @click="status=data.status; getNotification()"
-                            >
-                                <p class="text-gray-600 dark:text-gray-300">
-                                    @{{ data.message }}
-                                </p>
-
-                                <span class="rounded-full bg-gray-400 px-1.5 py-px text-xs font-semibold text-white">
-                                    @{{ data.status_count ?? '0' }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div
-                            class="journal-scroll grid max-h-[calc(100vh-330px)] overflow-auto"
-                            v-if="notifications.length"
+                <!-- Main Notifications Container -->
+                <div class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                    <!-- Category Tabs Header -->
+                    <div class="journal-scroll flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 px-2">
+                        <button
+                            type="button"
+                            class="flex items-center gap-2 border-b-2 px-4 py-3.5 text-sm font-semibold transition-all whitespace-nowrap"
+                            :class="category === catKey 
+                                ? 'border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400' 
+                                : 'border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'"
+                            v-for="(tab, catKey) in categoryTabs"
+                            :key="catKey"
+                            @click="changeCategory(catKey)"
                         >
-                            <a
-                                :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id || notification.id)"
-                                class="flex h-auto items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-950 border-b border-gray-100 dark:border-gray-800 last:border-0"
-                                v-for="notification in notifications"
+                            <span :class="tab.icon"></span>
+                            <span>@{{ tab.label }}</span>
+                            <span 
+                                class="rounded-full px-2 py-0.5 text-xs font-bold"
+                                :class="category === catKey 
+                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' 
+                                    : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'"
                             >
-                                <span
-                                    v-if="notification.type === 'order_reminder'"
-                                    class="h-fit rounded-full text-2xl icon-information text-amber-600 bg-amber-100 p-1"
-                                >
-                                </span>
-                                <span
-                                    v-else-if="notification.type === 'low_stock'"
-                                    class="h-fit rounded-full text-2xl icon-information text-orange-600 bg-orange-100 p-1"
-                                >
-                                </span>
-                                <span
-                                    v-else-if="notification.type === 'out_of_stock'"
-                                    class="h-fit rounded-full text-2xl icon-cancel-1 text-red-600 bg-red-100 p-1"
-                                >
-                                </span>
-                                <span
-                                    v-else-if="notification.type === 'scheduled_sync'"
-                                    class="h-fit rounded-full text-2xl icon-processing text-blue-600 bg-blue-100 p-1"
-                                >
-                                </span>
-                                <span
-                                    v-else-if="notification.order && notification.order.status in orderType"
-                                    class="h-fit rounded-full text-2xl"
-                                    :class="orderType[notification.order.status].icon"
-                                >
-                                </span>
-                                <span
-                                    v-else
-                                    class="h-fit rounded-full text-2xl icon-information text-blue-600 bg-blue-100 p-1"
-                                >
-                                </span>
+                                @{{ categoryCounts[catKey] ?? 0 }}
+                            </span>
+                        </button>
+                    </div>
 
-                                <div class="grid flex-1">
-                                    <p
-                                        class="text-sm text-gray-800 dark:text-white leading-snug"
-                                        :class="notification.read ? 'font-normal' : 'font-semibold'"
-                                    >
-                                        <template v-if="notification.type && notification.type !== 'order_status'">
-                                            @{{ notification.title || (notification.order ? notification.order.id : ('إشعار #' + notification.id)) }}
-                                        </template>
-                                        <template v-else-if="notification.order">
-                                            #@{{ notification.order.id }}
-                                            @{{ orderType[notification.order.status] ? orderType[notification.order.status].message : '' }}
-                                        </template>
-                                        <template v-else>
-                                            إشعار #@{{ notification.id }}
-                                        </template>
-                                    </p>
-
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        @{{ notification.order ? notification.order.datetime : (notification.created_at || '') }}
-                                    </p>
+                    <!-- Notifications List -->
+                    <div
+                        class="divide-y divide-gray-100 dark:divide-gray-800"
+                        v-if="notifications.length"
+                    >
+                        <div
+                            class="flex items-start justify-between gap-4 p-4 sm:p-5 transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-950/50"
+                            :class="{'bg-blue-50/25 dark:bg-blue-950/15': !notification.read}"
+                            v-for="notification in notifications"
+                            :key="notification.id"
+                        >
+                            <div class="flex items-start gap-3.5 flex-1 min-w-0">
+                                <!-- Type Icon Badge -->
+                                <div
+                                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl font-bold shadow-sm"
+                                    :class="notification.badge_class || 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'"
+                                >
+                                    <span :class="notification.icon_class || 'icon-information'"></span>
                                 </div>
-                            </a>
-                        </div>
 
-                        <!-- For Empty Data -->
-                        <div
-                            class="max-h-[calc(100vh-330px)] px-6 py-3 text-gray-600 dark:text-gray-300"
-                            v-else
-                        >
-                            @lang('admin::app.notifications.no-record')
+                                <!-- Text Content -->
+                                <div class="grid flex-1 gap-1 min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <a 
+                                            :href="notification.action_url"
+                                            class="text-sm font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 leading-snug"
+                                        >
+                                            @{{ notification.display_title || notification.title || ('إشعار #' + notification.id) }}
+                                        </a>
+
+                                        <span 
+                                            class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/60 dark:text-blue-300"
+                                            v-if="!notification.read"
+                                        >
+                                            جديد
+                                        </span>
+                                    </div>
+
+                                    <p 
+                                        class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed break-words"
+                                        v-if="notification.display_message || notification.message"
+                                    >
+                                        @{{ notification.display_message || notification.message }}
+                                    </p>
+
+                                    <div class="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                        <span class="flex items-center gap-1">
+                                            <i class="icon-clock text-xs"></i>
+                                            @{{ notification.time_ago || notification.created_at }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Link Button -->
+                            <div class="flex items-center gap-2 shrink-0">
+                                <a
+                                    :href="notification.action_url"
+                                    class="secondary-button !py-1.5 !px-3 text-xs font-semibold"
+                                >
+                                    <span>عرض التفاصيل</span>
+                                    <i class="icon-sort-left rtl:icon-sort-left ltr:icon-sort-right text-sm"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Pagination -->
-                    <div class="flex items-center gap-x-2 border-t p-4 dark:border-gray-800">
-                        <div class="inline-flex w-full max-w-max appearance-none items-center justify-between gap-x-1 rounded-md border bg-white px-2 py-1.5 text-center leading-6 text-gray-600 marker:shadow focus:outline-none focus:ring-2 focus:ring-black dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 max-sm:hidden ltr:ml-2 rtl:mr-2">
-                            @{{ pagination.per_page }}
+                    <!-- Empty State -->
+                    <div
+                        class="p-12 text-center"
+                        v-else
+                    >
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-3xl text-gray-400 mb-3">
+                            <i class="icon-notification"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-gray-800 dark:text-white">
+                            @lang('admin::app.notifications.no-record')
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            لا توجد تنبيهات جديدة في هذا التصنيف حالياً.
+                        </p>
+                    </div>
+
+                    <!-- Pagination Footer -->
+                    <div 
+                        class="flex items-center justify-between border-t border-gray-200 p-4 dark:border-gray-800 max-sm:flex-wrap gap-3"
+                        v-if="pagination.total > pagination.per_page"
+                    >
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                            عرض 
+                            <span class="font-semibold text-gray-800 dark:text-gray-200">@{{ pagination.from ?? 0 }}</span>
+                            إلى 
+                            <span class="font-semibold text-gray-800 dark:text-gray-200">@{{ pagination.to ?? 0 }}</span>
+                            من إجمالي 
+                            <span class="font-semibold text-gray-800 dark:text-gray-200">@{{ pagination.total ?? 0 }}</span>
+                            إشعار
                         </div>
 
-                        <span class="whitespace-nowrap text-gray-600 dark:text-gray-300">
-                            @lang('admin::app.notifications.per-page')
-                        </span>
+                        <!-- Prev & Next Buttons -->
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                class="secondary-button !p-2 disabled:opacity-50"
+                                :disabled="!pagination.prev_page_url"
+                                @click="getResults(pagination.prev_page_url)"
+                            >
+                                <span class="icon-sort-right rtl:icon-sort-right ltr:icon-sort-left text-lg"></span>
+                            </button>
 
-                        <p class="whitespace-nowrap text-gray-600 dark:text-gray-300">
-                            @{{ pagination.current_page }}
-                        </p>
+                            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 px-2">
+                                صفحة @{{ pagination.current_page }} من @{{ pagination.last_page }}
+                            </span>
 
-                        <span class="whitespace-nowrap text-gray-600 dark:text-gray-300">
-                            @lang('admin::app.notifications.of')
-                        </span>
-
-                        <p class="whitespace-nowrap text-gray-600 dark:text-gray-300">
-                            @{{ pagination.last_page }}
-                        </p>
-
-                        <!-- Prev & Next Page Button -->
-                        <div class="flex items-center gap-1">
-                            <a @click="getResults(pagination.prev_page_url)">
-                                <div class="inline-flex w-full max-w-max cursor-pointer appearance-none items-center justify-between gap-x-1 rounded-md border bg-white p-1.5 text-center text-gray-600 transition-all marker:shadow hover:border hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-950 ltr:ml-2 rtl:mr-2">
-                                    <span class="icon-sort-left rtl:icon-sort-right text-2xl"></span>
-                                </div>
-                            </a>
-
-                            <a @click="getResults(pagination.next_page_url)">
-                                <div
-                                    class="inline-flex w-full max-w-max cursor-pointer appearance-none items-center justify-between gap-x-1 rounded-md border bg-white p-1.5 text-center text-gray-600 transition-all marker:shadow hover:border hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-950 ltr:ml-2 rtl:mr-2">
-                                    <span class="icon-sort-right rtl:icon-sort-left text-2xl"></span>
-                                </div>
-                            </a>
+                            <button
+                                type="button"
+                                class="secondary-button !p-2 disabled:opacity-50"
+                                :disabled="!pagination.next_page_url"
+                                @click="getResults(pagination.next_page_url)"
+                            >
+                                <span class="icon-sort-left rtl:icon-sort-left ltr:icon-sort-right text-lg"></span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -172,57 +213,48 @@
         </script>
 
         <script type="module">
-            app.component('v-notification-list',{
+            app.component('v-notification-list', {
                 template: '#v-notification-list-template',
 
                 data() {
                     return {
                         notifications: [],
-
                         pagination: {},
+                        category: 'all',
+                        totalUnRead: 0,
+                        isLoading: true,
 
-                        status: 'all',
-
-                        orderType: {
-                            all : {
-                                icon: 'icon',
-                                message: '@lang('admin::app.notifications.order-status-messages.all')',
-                                status: 'all'
-                            },
-
-                            pending : {
-                                icon: 'icon-information bg-amber-100 text-amber-600 dark:!text-amber-600',
-                                message: '@lang('admin::app.notifications.order-status-messages.pending')',
-                                status: 'pending'
-                            },
-
-                            processing : {
-                                icon: 'icon-sort-right bg-green-100 text-green-600 dark:!text-green-600',
-                                message: '@lang('admin::app.notifications.order-status-messages.processing')',
-                                status: 'processing'
-                            },
-
-                            canceled : {
-                                icon: 'icon-cancel-1 bg-red-100 text-red-600 dark:!text-red-600',
-                                message: '@lang('admin::app.notifications.order-status-messages.canceled')',
-                                status: 'canceled'
-                            },
-
-                            completed : {
-                                icon: 'icon-done bg-blue-100 text-blue-600 dark:!text-blue-600',
-                                message: '@lang('admin::app.notifications.order-status-messages.completed')',
-                                status: 'completed'
-                            },
-
-                            closed : {
-                                icon: 'icon-repeat bg-red-100 text-red-600 dark:!text-red-600',
-                                message: '@lang('admin::app.notifications.order-status-messages.closed')',
-                                status: 'closed'
-                            },
+                        categoryCounts: {
+                            all: 0,
+                            orders: 0,
+                            inventory: 0,
+                            sync: 0,
+                            finance: 0,
                         },
 
-                        isLoading: true,
-                    }
+                        categoryTabs: {
+                            all: {
+                                label: "@lang('admin::app.notifications.categories.all')",
+                                icon: 'icon-notification text-base'
+                            },
+                            orders: {
+                                label: "@lang('admin::app.notifications.categories.orders')",
+                                icon: 'icon-cart text-base'
+                            },
+                            inventory: {
+                                label: "@lang('admin::app.notifications.categories.inventory')",
+                                icon: 'icon-product text-base'
+                            },
+                            sync: {
+                                label: "@lang('admin::app.notifications.categories.sync')",
+                                icon: 'icon-processing text-base'
+                            },
+                            finance: {
+                                label: "@lang('admin::app.notifications.categories.finance')",
+                                icon: 'icon-dollar-circle text-base'
+                            },
+                        },
+                    };
                 },
 
                 mounted() {
@@ -230,49 +262,62 @@
                 },
 
                 methods: {
-                    getNotification() {
-                        const params = {};
+                    getNotification(pageUrl = null) {
+                        this.isLoading = !this.notifications.length;
 
-                        if (this.status != 'all') {
-                            params.status = this.status;
+                        const params = {
+                            limit: 15,
+                        };
+
+                        if (this.category !== 'all') {
+                            params.category = this.category;
                         }
 
-                        this.$axios.get("{{ route('admin.notification.get_notification') }}", {
-                            params: params
-                        })
-                        .then((response) => {
-                            this.notifications = response.data.search_results.data;
+                        const url = pageUrl || "{{ route('admin.notification.get_notification') }}";
 
-                            let total = 0;
+                        this.$axios.get(url, { params: pageUrl ? {} : params })
+                            .then((response) => {
+                                this.notifications = response.data.search_results.data || [];
+                                this.pagination = response.data.search_results || {};
+                                this.totalUnRead = response.data.total_unread || 0;
 
-                            response.data.status_count.forEach((item) => {
-                                this.orderType[item.status].status_count = item.status_count;
+                                if (response.data.category_counts) {
+                                    this.categoryCounts = response.data.category_counts;
+                                }
 
-                                total += item.status_count;
+                                this.isLoading = false;
+                            })
+                            .catch(error => {
+                                console.log(error);
+                                this.isLoading = false;
                             });
+                    },
 
-                            this.orderType['all'].status_count = total;
-
-                            this.pagination = response.data.search_results;
-
-                            this.isLoading = false;
-                        })
-                        .catch(error => console.log(error));
+                    changeCategory(catKey) {
+                        this.category = catKey;
+                        this.getNotification();
                     },
 
                     getResults(url) {
                         if (url) {
-                            this.$axios.get(url)
-                                .then(response => {
-                                    this.notifications = response.data.search_results.data;
-
-                                    this.pagination = response.data.search_results;
-                                })
-                                .catch(error => console.log(error));
+                            this.getNotification(url);
                         }
+                    },
+
+                    readAll() {
+                        this.$axios.post('{{ route('admin.notification.read_all') }}')
+                            .then((response) => {
+                                this.totalUnRead = response.data.total_unread || 0;
+                                this.$emitter.emit('add-flash', { 
+                                    type: 'success', 
+                                    message: response.data.success_message 
+                                });
+                                this.getNotification();
+                            })
+                            .catch(error => console.log(error));
                     }
                 }
-            })
+            });
         </script>
     @endPushOnce
 </x-admin::layouts>
