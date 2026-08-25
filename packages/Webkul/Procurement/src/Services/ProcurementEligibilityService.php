@@ -67,6 +67,7 @@ class ProcurementEligibilityService
             $selectedVariantId = (int) $item->additional['selected_configurable_option'];
         }
         $effectiveVariantId = $selectedVariantId ?? ($product?->parent_id ? $productId : null);
+        $effectiveVariantProduct = $effectiveVariantId ? ProductProxy::modelClass()::find($effectiveVariantId) : null;
 
         // 1. Check AliExpressProductImport record
         $import = AliExpressProductImport::where('product_id', $parentProductId)
@@ -109,19 +110,35 @@ class ProcurementEligibilityService
 
         $supplierProductId = (string) ($import?->aliexpress_product_id ?? $offer?->source_sku_id ?? 'ae_prod_'.$parentProductId);
 
-        // Resolve numeric AliExpress SKU ID from ExternalVariantProjection
+        $payload = $import?->payload_snapshot ?? [];
+
+        // Resolve numeric AliExpress SKU ID from ExternalVariantProjection or payload_snapshot variants
         $externalSkuId = null;
         if ($effectiveVariantId) {
             $projection = ExternalVariantProjection::where('variant_product_id', $effectiveVariantId)
                 ->where('provider', 'aliexpress')
                 ->first();
             $externalSkuId = $projection?->external_sku_id;
+
+            // Fallback: Resolve directly from import payload snapshot variants if projection is missing
+            if (empty($externalSkuId) && ! empty($payload['variants'])) {
+                $variantSku = (string) ($effectiveVariantProduct?->sku ?? '');
+                // Try matching by option label or variant SKU index
+                foreach ($payload['variants'] as $idx => $v) {
+                    $vSkuId = (string) ($v['sku_id'] ?? '');
+                    if (! empty($vSkuId)) {
+                        // Check if variant SKU contains option ids or index
+                        if (str_contains($variantSku, (string) ($idx + 1)) || ($effectiveVariantProduct && (float) $v['price'] === (float) $effectiveVariantProduct->cost)) {
+                            $externalSkuId = $vSkuId;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         // Priority: numeric projection SKU > offer source_sku > order additional > item sku
         $supplierSkuId = (string) ($externalSkuId ?? $offer?->source_sku_id ?? $item->additional['supplier_sku_id'] ?? $item->sku ?? 'ae_sku_'.$productId);
-
-        $payload = $import?->payload_snapshot ?? [];
         $payloadStoreId = ! empty($payload['store_info']['store_id'])
             ? (string) $payload['store_info']['store_id']
             : (! empty($payload['ae_store_info']['store_id'])
@@ -174,7 +191,7 @@ class ProcurementEligibilityService
             $provenanceSource = 'missing';
         }
 
-        $unitCost = (float) ($offer?->acquisition_cost ?? $item->additional['supplier_unit_cost'] ?? $product?->cost ?? 10.0);
+        $unitCost = (float) ($offer?->acquisition_cost ?? $item->additional['supplier_unit_cost'] ?? $effectiveVariantProduct?->cost ?? $product?->cost ?? 10.0);
         $currency = strtoupper((string) ($offer?->source_currency ?? $import?->shipping_currency ?? 'USD'));
 
         return [
