@@ -89,12 +89,20 @@
 
     <div
         class="relative w-full min-w-[320px] max-w-[560px] h-[448px] min-h-[380px] overflow-hidden rounded-xl flex items-center justify-center border border-gray-100 shrink-0"
-        style="aspect-ratio: 5 / 4; width: 100%; max-width: 560px; height: 448px; min-height: 380px; align-self: flex-start; background-color: {{ $productSampledColor }};"
+        :style="{
+            aspectRatio: '5 / 4',
+            width: '100%',
+            maxWidth: '560px',
+            height: '448px',
+            minHeight: '380px',
+            alignSelf: 'flex-start',
+            backgroundColor: (baseFile.is_local || media.images[activeIndex]?.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? '#ffffff' : '{{ $productSampledColor }}'
+        }"
         v-show="! isMediaLoading"
     >
         <img
             class="h-full w-full cursor-pointer rounded-xl block"
-            style="{{ $imageStyle }}"
+            :style="(baseFile.is_local || media.images[activeIndex]?.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? 'width: 100%; height: 100%; object-fit: contain; background: #ffffff;' : '{{ $imageStyle }}'"
             :src="baseFile.path || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
             v-if="baseFile.type == 'image' || !baseFile.type"
             alt="{{ $product->name }}"

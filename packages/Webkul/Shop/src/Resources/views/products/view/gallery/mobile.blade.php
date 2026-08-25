@@ -51,7 +51,7 @@
             >
                 <div
                     class="grid max-h-screen w-screen content-center overflow-hidden rounded-xl"
-                    style="background-color: {{ $productSampledColor }};"
+                    :style="{ backgroundColor: (media.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? '#ffffff' : '{{ $productSampledColor }}' }"
                     v-for="(media, index) in options"
                     ref="slide"
                 >
@@ -72,7 +72,7 @@
                     <template v-else>
                         <img
                             class="aspect-[5/4] max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out rounded-xl"
-                            style="{{ $mobileImageStyle }}"
+                            :style="(media.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? 'object-fit: contain !important; width: 100% !important; height: 100% !important;' : '{{ $mobileImageStyle }}'"
                             :src="media.large_image_url"
                             :alt="media.large_image_url"
                             v-on:error="$event.target.src = media.original_image_url || media.fallback_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"

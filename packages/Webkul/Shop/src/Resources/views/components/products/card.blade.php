@@ -319,10 +319,21 @@
                     return colors[id % colors.length];
                 },
 
+                isCleanImage(product) {
+                    if (! product) return true;
+                    // Locally uploaded image on any product (internal or imported) is ALWAYS clean
+                    if (product.base_image?.is_local === true || product.base_image?.is_local === 1) return true;
+                    // Internal product is ALWAYS clean
+                    if (this.isInternalProduct(product)) return true;
+                    // Imported product: 1 in 5 clean sample
+                    const id = parseInt(product?.id) || 0;
+                    return (id % 5) === 0;
+                },
+
                 getCardContainerStyle(product) {
                     const id = parseInt(product?.id) || 0;
-                    if (this.isInternalProduct(product) || (id % 5) === 0) {
-                        // Internal products (100% clean) OR 1-in-5 clean imported sample
+                    if (this.isCleanImage(product)) {
+                        // Clean white background
                         return {
                             aspectRatio: '336 / 302',
                             border: '2px solid #D4AF37',
@@ -338,9 +349,8 @@
                 },
 
                 getImageDistortionStyle(product) {
-                    const id = parseInt(product?.id) || 0;
-                    if (this.isInternalProduct(product) || (id % 5) === 0) {
-                        // Internal products (100% clean) OR 1-in-5 clean imported sample
+                    if (this.isCleanImage(product)) {
+                        // Intact clean contained image
                         return 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
                     }
                     // Distorted imported product: Force vertical height stretch (16:9 vertical ratio factor)

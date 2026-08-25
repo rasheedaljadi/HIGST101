@@ -190,10 +190,11 @@
                                 $isInternal = ($originType === 'internal')
                                     || (! str_starts_with($sku, 'ae-') && ! str_starts_with($sku, 'ali-') && $originType !== 'imported');
 
+                                $isLocalImage = (bool) ($productEntity->base_image['is_local'] ?? $productEntity->images?->first()?->is_local ?? false);
                                 $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
                                 $mod5 = ((int) ($productEntity->id ?? 0)) % 5;
 
-                                if ($isInternal || $mod5 === 0) {
+                                if ($isLocalImage || $isInternal || $mod5 === 0) {
                                     $sampledSideColor = '#ffffff';
                                     $distortionStyle = 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
                                 } else {

@@ -69,6 +69,7 @@ class ProductMediaRepository extends Repository
                         'path' => $path,
                         'product_id' => $product->id,
                         'position' => ++$position,
+                        'is_local' => 1,
                     ]);
                 } else {
                     if (is_numeric($index = $previousIds->search($indexOrModelId))) {

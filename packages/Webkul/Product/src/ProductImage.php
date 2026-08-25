@@ -36,7 +36,7 @@ class ProductImage
                 continue;
             }
 
-            $images[] = $this->getCachedImageUrls($image->path);
+            $images[] = $this->getCachedImageUrls($image->path, (bool) ($image->is_local ?? false));
         }
 
         if (
@@ -110,7 +110,7 @@ class ProductImage
         $images = $product?->images;
 
         return $images && $images->count()
-            ? $this->getCachedImageUrls($images[0]->path)
+            ? $this->getCachedImageUrls($images[0]->path, (bool) ($images[0]->is_local ?? false))
             : $this->getFallbackImageUrls();
     }
 
@@ -119,16 +119,17 @@ class ProductImage
      *
      * @param  string  $path
      */
-    private function getCachedImageUrls($path): array
+    private function getCachedImageUrls($path, bool $isLocal = false): array
     {
         $url = Storage::url($path);
 
         return [
-            'small_image_url'    => $url,
-            'medium_image_url'   => $url,
-            'large_image_url'    => $url,
+            'small_image_url' => $url,
+            'medium_image_url' => $url,
+            'large_image_url' => $url,
             'original_image_url' => $url,
-            'fallback_url'       => $url,
+            'fallback_url' => $url,
+            'is_local' => $isLocal,
         ];
     }
 
