@@ -1,3 +1,8 @@
+@php
+    $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
+    $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
+@endphp
+
 <div
     class="overflow-hidden md:hidden"
     v-if="isMediaLoading"
@@ -32,7 +37,8 @@
                 ref="sliderContainer"
             >
                 <div
-                    class="grid max-h-screen w-screen content-center bg-cover bg-no-repeat"
+                    class="grid max-h-screen w-screen content-center overflow-hidden rounded-xl"
+                    style="background-color: {{ $productSampledColor }};"
                     v-for="(media, index) in options"
                     ref="slide"
                 >
@@ -52,7 +58,8 @@
 
                     <template v-else>
                         <img
-                            class="aspect-[5/4] object-contain max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out bg-zinc-100 rounded-xl"
+                            class="aspect-[5/4] max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out rounded-xl"
+                            style="object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.70) !important; transform-origin: center !important;"
                             :src="media.large_image_url"
                             :alt="media.large_image_url"
                             v-on:error="$event.target.src = media.original_image_url || media.fallback_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"

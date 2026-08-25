@@ -1,3 +1,8 @@
+@php
+    $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
+    $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
+@endphp
+
 <!-- For screens 768px and greater (tablets, laptops, desktop). -->
 <div class="sticky top-20 flex h-max gap-8 max-md:hidden min-w-[400px] w-full max-w-[620px] shrink-0">
     <!-- Product Image and Videos Slider -->
@@ -70,13 +75,13 @@
     </div>
 
     <div
-        class="relative w-full min-w-[320px] max-w-[560px] h-[448px] min-h-[380px] overflow-hidden rounded-xl bg-zinc-50 flex items-center justify-center border border-gray-100 shrink-0"
-        style="aspect-ratio: 5 / 4; width: 100%; max-width: 560px; height: 448px; min-height: 380px; align-self: flex-start;"
+        class="relative w-full min-w-[320px] max-w-[560px] h-[448px] min-h-[380px] overflow-hidden rounded-xl flex items-center justify-center border border-gray-100 shrink-0"
+        style="aspect-ratio: 5 / 4; width: 100%; max-width: 560px; height: 448px; min-height: 380px; align-self: flex-start; background-color: {{ $productSampledColor }};"
         v-show="! isMediaLoading"
     >
         <img
             class="h-full w-full cursor-pointer rounded-xl block"
-            style="width: 100%; height: 100%; object-fit: contain; background: #f8fafc;"
+            style="width: 100%; height: 100%; object-fit: fill; transform: scale(0.60, 1.70); transform-origin: center;"
             :src="baseFile.path || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
             v-if="baseFile.type == 'image' || !baseFile.type"
             alt="{{ $product->name }}"
