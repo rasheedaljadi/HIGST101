@@ -185,13 +185,7 @@
                                     $discountPercent = (int) round((($originalPrice - $finalPrice) / $originalPrice) * 100);
                                 }
 
-                                $mod = ((int) ($productEntity->id ?? 0)) % 4;
-                                $distortionStyle = match($mod) {
-                                    0 => 'object-fit: contain !important; width: 100% !important; height: 100% !important;',
-                                    1 => 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.50) !important; transform-origin: center !important;',
-                                    2 => 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scale(1.60, 0.58) !important; transform-origin: center !important;',
-                                    3 => 'object-fit: cover !important; object-position: 90% 10% !important; width: 100% !important; height: 100% !important; transform: scale(1.45, 0.75) !important; transform-origin: center !important; filter: contrast(85%) !important;',
-                                };
+                                $distortionStyle = 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scaleY(1.78) !important; transform-origin: center !important;';
                             @endphp
 
                             <div 

@@ -296,22 +296,8 @@
                 },
 
                 getImageDistortionStyle(productId) {
-                    const id = parseInt(productId) || 0;
-                    const mod = id % 4;
-                    switch (mod) {
-                        case 0:
-                            // 1 out of 4: Normal, intact, clean image
-                            return 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
-                        case 1:
-                            // 1 out of 4: Heavy width crop, vertical stretch (طولية ومبعوجة جداً)
-                            return 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.50) !important; transform-origin: center !important;';
-                        case 2:
-                            // 1 out of 4: Heavy height crop, horizontal stretch (عرضية ومبعوجة ومسطحة جداً)
-                            return 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scale(1.60, 0.58) !important; transform-origin: center !important;';
-                        case 3:
-                            // 1 out of 4: Blind off-center top crop with skew/contrast shift (قطع الرأس والأطراف)
-                            return 'object-fit: cover !important; object-position: 90% 10% !important; width: 100% !important; height: 100% !important; transform: scale(1.45, 0.75) !important; transform-origin: center !important; filter: contrast(85%) !important;';
-                    }
+                    // Force height enlargement (16:9 vertical ratio factor = ~1.77) across all cards
+                    return 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scaleY(1.78) !important; transform-origin: center !important;';
                 },
 
                 addToCart() {
