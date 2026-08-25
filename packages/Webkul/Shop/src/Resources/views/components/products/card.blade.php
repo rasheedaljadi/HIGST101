@@ -93,7 +93,7 @@
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
                             class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
-                            style="object-fit: fill; width: 100%; height: 100%; object-position: center 20%; transform: scale(1.18, 0.88); transform-origin: center; filter: contrast(90%);"
+                            :style="getImageDistortionStyle(product.id)"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
@@ -153,7 +153,7 @@
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
                             class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
-                            style="object-fit: fill; width: 100%; height: 100%; object-position: center 20%; transform: scale(1.18, 0.88); transform-origin: center; filter: contrast(90%);"
+                            :style="getImageDistortionStyle(product.id)"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
@@ -293,6 +293,24 @@
                     }
 
                     return JSON.parse(value);
+                },
+
+                getImageDistortionStyle(productId) {
+                    const mod = (productId || 0) % 4;
+                    switch (mod) {
+                        case 0:
+                            // 1 out of 4: Normal, intact, clean image
+                            return 'object-fit: contain; width: 100%; height: 100%;';
+                        case 1:
+                            // 1 out of 4: Heavy width crop, vertical stretch (طولية ومبعوجة)
+                            return 'object-fit: cover; object-position: center; width: 100%; height: 100%; transform: scale(0.68, 1.42); transform-origin: center;';
+                        case 2:
+                            // 1 out of 4: Heavy height crop, horizontal stretch (عرضية ومبعوجة ومسطحة)
+                            return 'object-fit: cover; object-position: center; width: 100%; height: 100%; transform: scale(1.52, 0.65); transform-origin: center;';
+                        case 3:
+                            // 1 out of 4: Blind off-center top crop with skew/contrast shift
+                            return 'object-fit: cover; object-position: 85% 15%; width: 100%; height: 100%; transform: scale(1.38, 0.80); transform-origin: center; filter: contrast(88%);';
+                    }
                 },
 
                 addToCart() {
