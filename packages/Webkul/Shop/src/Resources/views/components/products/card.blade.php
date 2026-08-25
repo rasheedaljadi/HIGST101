@@ -20,10 +20,10 @@
                 v-if="mode != 'list'"
                 class="w-full h-full min-h-[400px] max-h-[420px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border select-none"
             >
-                <!-- Product Image Container -->
+                <!-- Product Image Container with Golden Frame -->
                 <div 
-                    class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-50/80 dark:bg-gray-800/40 shrink-0 group mb-2"
-                    style="aspect-ratio: 336 / 302;"
+                    class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shrink-0 group mb-2 flex items-center justify-center"
+                    style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37; padding: 5%;"
                 >
                     <!-- Badges Overlay (Supports Multiple Badges: Featured, Discount %, New) -->
                     <div class="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1 items-end pointer-events-none">
@@ -143,7 +143,10 @@
                 v-else
                 class="relative flex w-full gap-4 overflow-hidden rounded-2xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 shadow-sm max-sm:flex-wrap"
             >
-                <div class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-800 shrink-0 flex items-center justify-center p-1">
+                <div 
+                    class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl bg-white dark:bg-gray-800 shrink-0 flex items-center justify-center"
+                    style="border: 2px solid #D4AF37; padding: 5%;"
+                >
                     <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full flex items-center justify-center block">
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
