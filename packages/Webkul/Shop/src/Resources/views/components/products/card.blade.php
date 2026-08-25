@@ -87,13 +87,12 @@
                     <!-- Product Image -->
                     <a 
                         :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" 
-                        class="w-full h-full block overflow-hidden"
+                        class="w-full h-full flex items-center justify-center overflow-hidden"
                     >
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
-                            class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 block bg-gray-100 dark:bg-gray-800"
-                            style="transform: scaleX(2); transform-origin: center;"
+                            class="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-300 block"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
@@ -144,13 +143,12 @@
                 v-else
                 class="relative flex w-full gap-4 overflow-hidden rounded-2xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 shadow-sm max-sm:flex-wrap"
             >
-                <div class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-800 shrink-0">
-                    <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full block">
+                <div class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-800 shrink-0 flex items-center justify-center p-1">
+                    <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full flex items-center justify-center block">
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
-                            class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 block"
-                            style="transform: scaleX(2); transform-origin: center;"
+                            class="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-300 block"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
