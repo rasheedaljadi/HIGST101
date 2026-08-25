@@ -23,7 +23,7 @@
                 <!-- Product Image Container with Golden Frame -->
                 <div 
                     class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shrink-0 group mb-2 flex items-center justify-center"
-                    style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37; padding: 5%;"
+                    style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37;"
                 >
                     <!-- Badges Overlay (Supports Multiple Badges: Featured, Discount %, New) -->
                     <div class="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1 items-end pointer-events-none">
@@ -146,7 +146,7 @@
             >
                 <div 
                     class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl bg-white dark:bg-gray-800 shrink-0 flex items-center justify-center"
-                    style="border: 2px solid #D4AF37; padding: 5%;"
+                    style="border: 2px solid #D4AF37;"
                 >
                     <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full flex items-center justify-center block">
                         <img 
@@ -296,20 +296,21 @@
                 },
 
                 getImageDistortionStyle(productId) {
-                    const mod = (productId || 0) % 4;
+                    const id = parseInt(productId) || 0;
+                    const mod = id % 4;
                     switch (mod) {
                         case 0:
                             // 1 out of 4: Normal, intact, clean image
-                            return 'object-fit: contain; width: 100%; height: 100%;';
+                            return 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
                         case 1:
-                            // 1 out of 4: Heavy width crop, vertical stretch (طولية ومبعوجة)
-                            return 'object-fit: cover; object-position: center; width: 100%; height: 100%; transform: scale(0.68, 1.42); transform-origin: center;';
+                            // 1 out of 4: Heavy width crop, vertical stretch (طولية ومبعوجة جداً)
+                            return 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.50) !important; transform-origin: center !important;';
                         case 2:
-                            // 1 out of 4: Heavy height crop, horizontal stretch (عرضية ومبعوجة ومسطحة)
-                            return 'object-fit: cover; object-position: center; width: 100%; height: 100%; transform: scale(1.52, 0.65); transform-origin: center;';
+                            // 1 out of 4: Heavy height crop, horizontal stretch (عرضية ومبعوجة ومسطحة جداً)
+                            return 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scale(1.60, 0.58) !important; transform-origin: center !important;';
                         case 3:
-                            // 1 out of 4: Blind off-center top crop with skew/contrast shift
-                            return 'object-fit: cover; object-position: 85% 15%; width: 100%; height: 100%; transform: scale(1.38, 0.80); transform-origin: center; filter: contrast(88%);';
+                            // 1 out of 4: Blind off-center top crop with skew/contrast shift (قطع الرأس والأطراف)
+                            return 'object-fit: cover !important; object-position: 90% 10% !important; width: 100% !important; height: 100% !important; transform: scale(1.45, 0.75) !important; transform-origin: center !important; filter: contrast(85%) !important;';
                     }
                 },
 

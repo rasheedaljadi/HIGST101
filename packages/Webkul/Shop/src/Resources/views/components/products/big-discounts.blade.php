@@ -184,6 +184,14 @@
                                 if ($discountPercent <= 0 && $originalPrice > $finalPrice && $originalPrice > 0) {
                                     $discountPercent = (int) round((($originalPrice - $finalPrice) / $originalPrice) * 100);
                                 }
+
+                                $mod = ((int) ($productEntity->id ?? 0)) % 4;
+                                $distortionStyle = match($mod) {
+                                    0 => 'object-fit: contain !important; width: 100% !important; height: 100% !important;',
+                                    1 => 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.50) !important; transform-origin: center !important;',
+                                    2 => 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scale(1.60, 0.58) !important; transform-origin: center !important;',
+                                    3 => 'object-fit: cover !important; object-position: 90% 10% !important; width: 100% !important; height: 100% !important; transform: scale(1.45, 0.75) !important; transform-origin: center !important; filter: contrast(85%) !important;',
+                                };
                             @endphp
 
                             <div 
@@ -192,10 +200,10 @@
                             >
                                 <div class="w-full h-[465px] max-h-[465px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border shrink-0 select-none">
                                     
-                                    <!-- Product Image Container -->
+                                    <!-- Product Image Container with Golden Frame -->
                                     <div 
-                                        class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-50/80 dark:bg-gray-800/40 shrink-0 group mb-2"
-                                        style="aspect-ratio: 336 / 302;"
+                                        class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shrink-0 group mb-2 flex items-center justify-center"
+                                        style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37;"
                                     >
                                         @if ($discountPercent > 0)
                                             <span 
@@ -208,12 +216,13 @@
 
                                         <a 
                                             href="{{ $productUrl }}" 
-                                            class="w-full h-full block overflow-hidden"
+                                            class="w-full h-full flex items-center justify-center overflow-hidden block"
                                         >
                                             <img 
                                                 src="{{ $imageUrl }}" 
                                                 alt="{{ $cleanName }}"
-                                                class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 block"
+                                                class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
+                                                style="{{ $distortionStyle }}"
                                                 loading="lazy"
                                                 onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';"
                                             />
