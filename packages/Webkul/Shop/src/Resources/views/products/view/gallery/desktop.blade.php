@@ -5,12 +5,19 @@
         || (! str_starts_with($sku, 'ae-') && ! str_starts_with($sku, 'ali-') && $originType !== 'imported');
 
     $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-    $isCleanProduct = $isInternal || ((((int) ($product->id ?? 0)) % 5) === 0);
+    $mod10 = ((int) ($product->id ?? 0)) % 10;
+    $isCleanProduct = $isInternal || ($mod10 === 0 || $mod10 === 5);
+    $isHorizontalDistortion = ! $isCleanProduct && ($mod10 === 1);
 
     if ($isCleanProduct) {
         $productSampledColor = '#ffffff';
         $imageStyle = 'width: 100%; height: 100%; object-fit: contain; background: #ffffff;';
+    } elseif ($isHorizontalDistortion) {
+        // 10% horizontal stretch
+        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
+        $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(1.70, 0.60); transform-origin: center;';
     } else {
+        // 70% vertical stretch
         $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
         $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(0.60, 1.70); transform-origin: center;';
     }

@@ -348,12 +348,28 @@
                     };
                 },
 
-                getImageDistortionStyle(product) {
+                getImageDistortionType(product) {
                     if (this.isCleanImage(product)) {
+                        return 'clean';
+                    }
+                    const id = parseInt(product?.id) || 0;
+                    if ((id % 10) === 1) {
+                        return 'horizontal'; // 10% horizontal distortion
+                    }
+                    return 'vertical'; // 70% vertical distortion
+                },
+
+                getImageDistortionStyle(product) {
+                    const type = this.getImageDistortionType(product);
+                    if (type === 'clean') {
                         // Intact clean contained image
                         return 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
                     }
-                    // Distorted imported product: Force vertical height stretch (16:9 vertical ratio factor)
+                    if (type === 'horizontal') {
+                        // 10%: Force horizontal width stretch (squashed vertically, stretched wide)
+                        return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.80, 0.60) !important; transform-origin: center !important;';
+                    }
+                    // 70%: Force vertical height stretch (squashed horizontally, stretched tall)
                     return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
                 },
 

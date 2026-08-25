@@ -192,12 +192,18 @@
 
                                 $isLocalImage = (bool) ($productEntity->base_image['is_local'] ?? $productEntity->images?->first()?->is_local ?? false);
                                 $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-                                $mod5 = ((int) ($productEntity->id ?? 0)) % 5;
+                                $mod10 = ((int) ($productEntity->id ?? 0)) % 10;
+                                $isClean = $isLocalImage || $isInternal || ($mod10 === 0 || $mod10 === 5);
 
-                                if ($isLocalImage || $isInternal || $mod5 === 0) {
+                                if ($isClean) {
                                     $sampledSideColor = '#ffffff';
                                     $distortionStyle = 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
+                                } elseif ($mod10 === 1) {
+                                    // 10% horizontal stretch
+                                    $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
+                                    $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.80, 0.60) !important; transform-origin: center !important;';
                                 } else {
+                                    // 70% vertical stretch
                                     $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
                                     $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
                                 }
