@@ -26,6 +26,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'external_platform_orders.tracking_number',
                 'external_platform_orders.carrier_name',
                 'external_platform_orders.last_synced_at',
+                'external_platform_orders.payment_deadline_at',
                 'external_platform_orders.snapshots as raw_snapshots',
                 'external_platform_orders.created_at'
             );
@@ -36,6 +37,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
         $this->addFilter('supplier_store_name', 'supplier_purchase_orders.supplier_store_name');
         $this->addFilter('normalized_status', 'external_platform_orders.normalized_status');
         $this->addFilter('tracking_number', 'external_platform_orders.tracking_number');
+        $this->addFilter('payment_deadline_at', 'external_platform_orders.payment_deadline_at');
         $this->addFilter('created_at', 'external_platform_orders.created_at');
         $this->addFilter('last_synced_at', 'external_platform_orders.last_synced_at');
 
@@ -130,16 +132,45 @@ class ExternalPlatformOrderDataGrid extends DataGrid
 
                 $html = "<div class=\"flex flex-col gap-1 items-start\"><span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {$color}\">{$statusLabel}</span>";
 
-                if ($status === 'wait_buyer_pay' && $row->created_at) {
-                    $deadline = strtotime($row->created_at) + 7200;
-                    $remaining = $deadline - time();
-                    if ($remaining > 0) {
-                        $hours = str_pad(floor($remaining / 3600), 2, '0', STR_PAD_LEFT);
-                        $mins = str_pad(floor(($remaining % 3600) / 60), 2, '0', STR_PAD_LEFT);
-                        $secs = str_pad($remaining % 60, 2, '0', STR_PAD_LEFT);
-                        $html .= "<span class=\"inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-amber-600 dark:text-amber-400\"><i class=\"icon-clock text-xs\"></i> ⏳ {$hours}:{$mins}:{$secs}</span>";
+                if ($status === 'wait_buyer_pay') {
+                    $deadlineTimestamp = null;
+                    if (! empty($row->payment_deadline_at)) {
+                        $deadlineTimestamp = strtotime($row->payment_deadline_at);
                     } else {
-                        $html .= '<span class="inline-flex items-center text-[10px] font-medium text-rose-500">⌛ '.trans('procurement::app.datagrid.countdown-expired').'</span>';
+                        $snapshots = is_string($row->raw_snapshots ?? null) ? json_decode($row->raw_snapshots, true) : ($row->raw_snapshots ?? []);
+                        if (! empty($snapshots['payment_deadline_at'])) {
+                            $deadlineTimestamp = strtotime($snapshots['payment_deadline_at']);
+                        } elseif (! empty($snapshots['over_time_left']) && ! empty($row->last_synced_at)) {
+                            $deadlineTimestamp = strtotime($row->last_synced_at) + (int) $snapshots['over_time_left'];
+                        } elseif (! empty($snapshots['payment_timeout_seconds']) && ! empty($row->created_at)) {
+                            $deadlineTimestamp = strtotime($row->created_at) + (int) $snapshots['payment_timeout_seconds'];
+                        } elseif ($row->created_at) {
+                            $defaultTimeout = (int) config('procurement.default_payment_timeout_seconds', 86400);
+                            $deadlineTimestamp = strtotime($row->created_at) + $defaultTimeout;
+                        }
+                    }
+
+                    if ($deadlineTimestamp) {
+                        $remaining = $deadlineTimestamp - time();
+                        if ($remaining > 0) {
+                            $deadlineIso = date('c', $deadlineTimestamp);
+                            if ($remaining >= 86400) {
+                                $days = floor($remaining / 86400);
+                                $remSecs = $remaining % 86400;
+                                $hours = str_pad(floor($remSecs / 3600), 2, '0', STR_PAD_LEFT);
+                                $mins = str_pad(floor(($remSecs % 3600) / 60), 2, '0', STR_PAD_LEFT);
+                                $secs = str_pad($remSecs % 60, 2, '0', STR_PAD_LEFT);
+                                $formatted = "{$days}d {$hours}:{$mins}:{$secs}";
+                            } else {
+                                $hours = str_pad(floor($remaining / 3600), 2, '0', STR_PAD_LEFT);
+                                $mins = str_pad(floor(($remaining % 3600) / 60), 2, '0', STR_PAD_LEFT);
+                                $secs = str_pad($remaining % 60, 2, '0', STR_PAD_LEFT);
+                                $formatted = "{$hours}:{$mins}:{$secs}";
+                            }
+                            $html .= "<span class=\"ali-countdown inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-700 text-[11px] font-mono font-bold shadow-xs\" data-deadline=\"{$deadlineIso}\"><i class=\"icon-clock text-xs text-amber-700 dark:text-amber-300\"></i> ⏳ <span class=\"countdown-timer-text font-bold\">{$formatted}</span></span>";
+                        } else {
+                            $html .= '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800 text-[10px] font-bold">⌛ '.trans('procurement::app.datagrid.countdown-expired').'</span>';
+                        }
                     }
                 } elseif ($status === 'cancelled') {
                     $html .= '<span class="inline-flex items-center text-[10px] text-gray-400 dark:text-gray-500">⌛ '.trans('procurement::app.datagrid.countdown-expired').'</span>';
@@ -173,7 +204,7 @@ class ExternalPlatformOrderDataGrid extends DataGrid
 
     public function prepareActions(): void
     {
-        if (bouncer()->hasPermission('dropshipping.procurement_v2.submit')) {
+        if (bouncer()->hasPermission('dropshipping.procurement_v2.submit') || bouncer()->hasPermission('dropshipping.procurement_v2.view')) {
             $this->addAction([
                 'icon' => 'icon-cart text-2xl text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300',
                 'title' => trans('procurement::app.datagrid.reorder'),

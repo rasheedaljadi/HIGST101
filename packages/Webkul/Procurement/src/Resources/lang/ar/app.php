@@ -88,6 +88,7 @@ return [
         'tab-shipped' => 'تم الإجراء',
         'tab-completed' => 'تم الاكتمال',
         'tab-cancelled' => 'ملغي',
+        'sync-all' => 'تحديث',
     ],
     'manual_payments' => [
         'title' => 'إقرارات الدفع اليدوي',
@@ -194,6 +195,7 @@ return [
         'variance-rejected-success' => 'تم رفض فرق التكلفة وتحويل الأمر إلى استثناء.',
         'receipt-processed-success' => 'تم تسجيل الاستشارة والاستلام وتحديث كميات المخزون وتخصيصات الطلبات بنجاح.',
         'platform-order-synced-success' => 'تمت مزامنة حالة أمر علي إكسبرس بنجاح.',
+        'platform-orders-sync-all-success' => 'تمت مزامنة :count من أوامر علي إكسبرس بنجاح.',
         'platform-order-deleted-success' => 'تم حذف سجل أمر المنصة بنجاح.',
         'reorder-redirect-success' => 'تم توجيه الاحتياجات لإنشاء دفعة إعادة الشراء بنجاح.',
         'reorder-success' => 'تمت إعادة الشراء وإنشاء أمر التوريد الجديد بنجاح.',

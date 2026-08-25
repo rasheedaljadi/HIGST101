@@ -95,31 +95,83 @@ class AliExpressRebuildProjections extends Command
                     continue;
                 }
 
-                $mappedForProduct = 0;
-                foreach ($childVariants as $idx => $variant) {
-                    $aeVariant = $snapshotVariants[$idx] ?? [];
-                    $skuId = (string) ($aeVariant['sku_id'] ?? $aeVariant['skuId'] ?? "{$aeProductId}-{$variant->id}");
+                // Helper to normalize strings for comparison
+                $normalize = function (string $text): string {
+                    $text = preg_replace('/[\x{00A0}\x{200B}\s]+/u', ' ', $text);
+                    $text = preg_replace('/[+\-\/_:,\(\)\[\]]/u', ' ', $text);
+                    $text = preg_replace('/\s+/', ' ', trim($text));
 
-                    if (! $dryRun) {
-                        ExternalVariantProjection::updateOrCreate(
-                            [
-                                'variant_product_id' => $variant->id,
-                            ],
-                            [
-                                'product_id' => $productId,
-                                'provider' => 'aliexpress',
-                                'external_sku_id' => $skuId,
-                                'external_product_id' => $aeProductId,
-                                'external_variant_version' => null,
-                                'projection_version' => 1,
-                                'provider_updated_at' => null,
-                            ]
-                        );
+                    return mb_strtolower($text, 'UTF-8');
+                };
+
+                // Fetch option labels for each child variant
+                $variantOptionLabels = [];
+                foreach ($childVariants as $variant) {
+                    $labels = DB::table('product_attribute_values')
+                        ->where('product_attribute_values.product_id', $variant->id)
+                        ->join('attribute_options', 'attribute_options.id', '=', 'product_attribute_values.integer_value')
+                        ->join('attribute_option_translations', 'attribute_option_translations.attribute_option_id', '=', 'attribute_options.id')
+                        ->pluck('attribute_option_translations.label')
+                        ->map(fn ($l) => $normalize((string) $l))
+                        ->unique()
+                        ->values()
+                        ->all();
+
+                    $variantOptionLabels[$variant->id] = $labels;
+                }
+
+                $mappedForProduct = 0;
+                foreach ($childVariants as $variant) {
+                    $localLabels = $variantOptionLabels[$variant->id] ?? [];
+                    $matchedAeVariant = null;
+
+                    // Match against snapshot variants by option labels
+                    foreach ($snapshotVariants as $aeVar) {
+                        $aeOptions = array_map(fn ($opt) => $normalize((string) $opt), array_values($aeVar['options_by_axis'] ?? []));
+                        if (! empty($localLabels) && ! empty($aeOptions)) {
+                            // Check if all local labels match the AE variant options
+                            $match = true;
+                            foreach ($localLabels as $localLabel) {
+                                if (! in_array($localLabel, $aeOptions, true)) {
+                                    $match = false;
+                                    break;
+                                }
+                            }
+                            if ($match) {
+                                $matchedAeVariant = $aeVar;
+                                break;
+                            }
+                        }
                     }
 
-                    $mappedForProduct++;
-                    $variantsMapped++;
-                    $this->line("  ✓ [Configurable] Parent ID: {$productId} | Variant ID: {$variant->id} | External SKU ID: {$skuId}");
+                    if ($matchedAeVariant !== null) {
+                        $skuId = (string) ($matchedAeVariant['sku_id'] ?? $matchedAeVariant['skuId'] ?? '');
+
+                        if ($skuId !== '') {
+                            if (! $dryRun) {
+                                ExternalVariantProjection::updateOrCreate(
+                                    [
+                                        'variant_product_id' => $variant->id,
+                                    ],
+                                    [
+                                        'product_id' => $productId,
+                                        'provider' => 'aliexpress',
+                                        'external_sku_id' => $skuId,
+                                        'external_product_id' => $aeProductId,
+                                        'external_variant_version' => null,
+                                        'projection_version' => 1,
+                                        'provider_updated_at' => null,
+                                    ]
+                                );
+                            }
+
+                            $mappedForProduct++;
+                            $variantsMapped++;
+                            $this->line("  ✓ [Configurable] Parent ID: {$productId} | Variant ID: {$variant->id} | Matched External SKU ID: {$skuId}");
+                        }
+                    } else {
+                        $this->warn("  ⚠ [Configurable] Parent ID: {$productId} | Variant ID: {$variant->id} could not be matched to snapshot options.");
+                    }
                 }
 
                 if ($mappedForProduct > 0) {

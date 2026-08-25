@@ -46,6 +46,7 @@ class ExternalPlatformOrder extends Model
         'tracking_number',
         'carrier_name',
         'last_synced_at',
+        'payment_deadline_at',
         'payload_archive_id',
         'snapshots',
     ];
@@ -53,6 +54,7 @@ class ExternalPlatformOrder extends Model
     protected $casts = [
         'snapshots' => 'array',
         'last_synced_at' => 'datetime',
+        'payment_deadline_at' => 'datetime',
     ];
 
     public function supplierPurchaseOrder(): BelongsTo

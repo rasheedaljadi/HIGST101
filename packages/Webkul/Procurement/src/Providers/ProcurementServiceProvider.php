@@ -4,6 +4,7 @@ namespace Webkul\Procurement\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
+use Webkul\Procurement\Console\Commands\BackfillDemandSkuIds;
 use Webkul\Procurement\Console\Commands\PollAliExpressOrdersCommand;
 use Webkul\Procurement\Console\Commands\ProcessProcurementAutoBatchCommand;
 use Webkul\Procurement\Console\Commands\ProcurementRemediateFailedSubmissionCommand;
@@ -49,6 +50,7 @@ class ProcurementServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
+                BackfillDemandSkuIds::class,
                 PollAliExpressOrdersCommand::class,
                 ProcessProcurementAutoBatchCommand::class,
                 ProcurementRemediateFailedSubmissionCommand::class,

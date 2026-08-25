@@ -44,6 +44,7 @@ final class NormalizedProduct
         public array $localizedText = [],
         public ?string $externalProductVersion = null,
         public ?Carbon $providerUpdatedAt = null,
+        public ?array $storeInfo = null,
     ) {}
 
     /**

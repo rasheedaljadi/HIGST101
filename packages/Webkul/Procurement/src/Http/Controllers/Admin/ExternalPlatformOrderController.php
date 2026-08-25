@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Webkul\Procurement\DataGrids\ExternalPlatformOrderDataGrid;
 use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
 use Webkul\Procurement\Models\ExternalPlatformOrder;
@@ -87,6 +88,57 @@ class ExternalPlatformOrderController extends Controller
         }
     }
 
+    public function syncAll(Request $request)
+    {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_SUBMIT);
+
+        try {
+            $orders = ExternalPlatformOrder::whereNotNull('external_order_id')
+                ->whereNotIn('normalized_status', [
+                    ExternalPlatformOrder::STATUS_COMPLETED,
+                    ExternalPlatformOrder::STATUS_CANCELLED,
+                    ExternalPlatformOrder::STATUS_SUBMISSION_FAILED,
+                ])
+                ->get();
+
+            $syncedCount = 0;
+            $errors = [];
+
+            foreach ($orders as $order) {
+                try {
+                    $this->pollingService->syncOrder($order);
+                    $syncedCount++;
+                } catch (\Throwable $e) {
+                    $errors[] = "Order #{$order->external_order_id}: {$e->getMessage()}";
+                }
+            }
+
+            $message = trans('procurement::app.messages.platform-orders-sync-all-success', ['count' => $syncedCount]);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => $message,
+                    'synced_count' => $syncedCount,
+                    'errors' => $errors,
+                ]);
+            }
+
+            session()->flash('success', $message);
+
+            return redirect()->back();
+        } catch (Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 400);
+            }
+
+            session()->flash('error', $e->getMessage());
+
+            return redirect()->back();
+        }
+    }
+
     public function cancel(Request $request, int $id)
     {
         $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_SUBMIT);
@@ -97,6 +149,16 @@ class ExternalPlatformOrderController extends Controller
                 $this->resolveAdminActorId(),
                 $request->input('reason', 'Cancelled by administrator from dashboard')
             );
+
+            // Automatically sync the order state in real-time
+            try {
+                $order = ExternalPlatformOrder::find($id);
+                if ($order && ! empty($order->external_order_id)) {
+                    $this->pollingService->syncOrder($order);
+                }
+            } catch (\Throwable $syncEx) {
+                Log::warning("[Procurement Cancel AutoSync] Could not sync cancelled order #{$id}: {$syncEx->getMessage()}");
+            }
 
             $message = trans('procurement::app.messages.order-cancelled-success');
 
@@ -197,6 +259,13 @@ class ExternalPlatformOrderController extends Controller
             }
 
             $newExtId = $newPlatformOrder->external_order_id;
+
+            // Automatically sync the newly created AliExpress order immediately to fetch authoritative countdown and payload
+            try {
+                $this->pollingService->syncOrder($newPlatformOrder);
+            } catch (\Throwable $syncEx) {
+                Log::warning("[Procurement Reorder AutoSync] Could not sync new order #{$newExtId}: {$syncEx->getMessage()}");
+            }
 
             // Mark the old order as reordered so reorder button disappears
             $order->update([

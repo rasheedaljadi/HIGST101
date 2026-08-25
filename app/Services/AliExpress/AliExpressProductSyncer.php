@@ -426,6 +426,13 @@ class AliExpressProductSyncer
                 ],
                 array_values($dto->variants),
             ),
+            'store_info' => $dto->storeInfo ?? [
+                'store_id' => null,
+                'store_name' => null,
+            ],
+            'ae_store_info' => $dto->storeInfo ?? null,
+            'store_id' => $dto->storeInfo['store_id'] ?? null,
+            'store_name' => $dto->storeInfo['store_name'] ?? null,
         ];
     }
 

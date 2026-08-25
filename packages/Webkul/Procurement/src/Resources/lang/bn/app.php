@@ -88,6 +88,7 @@ return [
         'tab-shipped' => 'পাঠানো হয়েছে',
         'tab-completed' => 'সম্পূর্ণ হয়েছে',
         'tab-cancelled' => 'বাতিল',
+        'sync-all' => 'AliExpress থেকে সমস্ত সিঙ্ক করুন',
     ],
     'manual_payments' => [
         'title' => 'Manual Payment Declarations',
@@ -194,6 +195,7 @@ return [
         'variance-rejected-success' => 'Cost variance rejected and order flagged as exception.',
         'receipt-processed-success' => 'Inbound receipt processed and stock quantities updated successfully.',
         'platform-order-synced-success' => 'AliExpress platform order synced successfully.',
+        'platform-orders-sync-all-success' => ':count টি AliExpress প্ল্যাটফর্ম অর্ডার সফলভাবে সিঙ্ক হয়েছে।',
         'platform-order-deleted-success' => 'Platform order record deleted successfully.',
         'reorder-redirect-success' => 'Demands redirected for reordering batch successfully.',
         'reorder-success' => 'Order reordered and new supplier purchase order created successfully.',

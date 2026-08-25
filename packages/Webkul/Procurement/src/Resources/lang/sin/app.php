@@ -88,6 +88,7 @@ return [
         'tab-shipped' => 'යවන ලදී',
         'tab-completed' => 'සම්පූර්ණයි',
         'tab-cancelled' => 'අවලංගුයි',
+        'sync-all' => 'AliExpress සමඟ සියල්ල සමමුහුර්ත කරන්න',
     ],
     'manual_payments' => [
         'title' => 'Manual Payment Declarations',
@@ -194,6 +195,7 @@ return [
         'variance-rejected-success' => 'Cost variance rejected and order flagged as exception.',
         'receipt-processed-success' => 'Inbound receipt processed and stock quantities updated successfully.',
         'platform-order-synced-success' => 'AliExpress platform order synced successfully.',
+        'platform-orders-sync-all-success' => 'AliExpress වේදිකා ඇණවුම් :count සාර්ථකව සමමුහුර්ත කරන ලදී.',
         'platform-order-deleted-success' => 'Platform order record deleted successfully.',
         'reorder-redirect-success' => 'Demands redirected for reordering batch successfully.',
         'reorder-success' => 'Order reordered and new supplier purchase order created successfully.',

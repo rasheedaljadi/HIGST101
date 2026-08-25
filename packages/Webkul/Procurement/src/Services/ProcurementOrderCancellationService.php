@@ -28,10 +28,20 @@ class ProcurementOrderCancellationService
             $spo = SupplierPurchaseOrder::where('id', $spoId)->lockForUpdate()->firstOrFail();
 
             $nonCancellableStates = [
-                SupplierPurchaseOrder::STATE_CANCELLED,
                 SupplierPurchaseOrder::STATE_SUPPLIER_SHIPPED,
                 SupplierPurchaseOrder::STATE_CLOSED,
             ];
+
+            if ($spo->state === SupplierPurchaseOrder::STATE_CANCELLED) {
+                // Idempotent reconciliation: ensure all linked platform orders are marked cancelled
+                foreach ($spo->platformOrders as $platformOrder) {
+                    $platformOrder->update([
+                        'normalized_status' => ExternalPlatformOrder::STATUS_CANCELLED,
+                    ]);
+                }
+
+                return $spo;
+            }
 
             if (in_array($spo->state, $nonCancellableStates, true)) {
                 throw new DomainException("لا يمكن إلغاء أمر الشراء وهو في حالة '{$spo->state}'.");

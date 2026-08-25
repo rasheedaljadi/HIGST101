@@ -110,6 +110,25 @@ class AliExpressProductMapper
             }
         }
 
+        $rawStore = $this->firstOf($body, [
+            'result.ae_store_info',
+            'ae_store_info',
+            'result.store_info',
+            'store_info',
+            'result.ae_item_base_info_dto.seller_info',
+            'ae_item_base_info_dto.seller_info',
+        ]);
+
+        $storeInfo = null;
+        if (is_array($rawStore) && ! empty($rawStore)) {
+            $storeInfo = [
+                'store_id' => $rawStore['store_id'] ?? $rawStore['storeId'] ?? null,
+                'store_name' => $rawStore['store_name'] ?? $rawStore['storeName'] ?? null,
+                'store_country_code' => $rawStore['store_country_code'] ?? $rawStore['storeCountryCode'] ?? null,
+                'seller_admin_seq' => $rawStore['seller_admin_seq'] ?? $rawStore['sellerAdminSeq'] ?? null,
+            ];
+        }
+
         return new NormalizedProduct(
             $id,
             $title,
@@ -127,7 +146,8 @@ class AliExpressProductMapper
             $aliexpressCategoryId,
             localizedText: [],
             externalProductVersion: $externalProductVersion,
-            providerUpdatedAt: $providerUpdatedAt
+            providerUpdatedAt: $providerUpdatedAt,
+            storeInfo: $storeInfo
         );
     }
 

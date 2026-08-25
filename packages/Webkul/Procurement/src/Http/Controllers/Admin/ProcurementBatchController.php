@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Webkul\Procurement\DataGrids\ProcurementBatchDataGrid;
 use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
 use Webkul\Procurement\Models\ProcurementBatch;
@@ -72,7 +71,7 @@ class ProcurementBatchController extends Controller
         ]);
 
         try {
-            $batch = $this->batchService->createBatch($request->input('demand_ids'), (int) Auth::id());
+            $batch = $this->batchService->createBatch($request->input('demand_ids'), $this->resolveAdminActorId());
 
             session()->flash('success', trans('procurement::app.messages.batch-created-success', ['number' => $batch->batch_number]));
 
@@ -106,7 +105,7 @@ class ProcurementBatchController extends Controller
         $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_BATCH_APPROVE);
 
         try {
-            $batch = $this->batchService->approveBatch($id, (int) Auth::id(), $request->input('notes'));
+            $batch = $this->batchService->approveBatch($id, $this->resolveAdminActorId(), $request->input('notes'));
 
             session()->flash('success', trans('procurement::app.messages.batch-approved-success'));
 
@@ -127,7 +126,7 @@ class ProcurementBatchController extends Controller
         ]);
 
         try {
-            $batch = $this->batchService->rejectBatch($id, (int) Auth::id(), $request->input('reason'));
+            $batch = $this->batchService->rejectBatch($id, $this->resolveAdminActorId(), $request->input('reason'));
 
             session()->flash('success', trans('procurement::app.messages.batch-rejected-success'));
 
@@ -144,7 +143,7 @@ class ProcurementBatchController extends Controller
         $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_SUBMIT);
 
         try {
-            $batch = $this->submitService->submitBatch($id, (int) Auth::id());
+            $batch = $this->submitService->submitBatch($id, $this->resolveAdminActorId());
 
             session()->flash('success', trans('procurement::app.messages.batch-submitted-success'));
 

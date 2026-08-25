@@ -2,8 +2,11 @@
 
 namespace Webkul\Procurement\Services;
 
+use App\Services\AliExpress\AliExpressApiClient;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Webkul\Procurement\Contracts\AliExpressAuthorizationContextResolver;
 use Webkul\Procurement\Contracts\AliExpressOrderGateway;
 use Webkul\Procurement\DTO\AliExpressOrderPreflight;
 use Webkul\Procurement\DTO\ExternalOrderDraft;
@@ -115,6 +118,52 @@ class ProcurementSubmitService
 
             $correlationKey = $spo->purchase_order_number;
 
+            // 1b. Pre-Submit Cost Guard: verify live AliExpress prices match expected costs
+            $maxVariancePercent = (float) config('procurement.max_cost_variance_percent', 15.0);
+            $spo->load('items');
+            foreach ($spo->items as $item) {
+                $expectedCost = (float) $item->expected_unit_cost;
+                if ($expectedCost <= 0) {
+                    continue;
+                }
+
+                $liveCost = $this->fetchLiveSkuCost($spo, $item);
+                if ($liveCost !== null && $liveCost > 0) {
+                    $variancePercent = abs(($liveCost - $expectedCost) / $expectedCost) * 100;
+                    if ($variancePercent > $maxVariancePercent) {
+                        $spo->update([
+                            'state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                            'cost_variance_amount' => round($liveCost - $expectedCost, 4),
+                        ]);
+
+                        ProcurementAuditLog::create([
+                            'auditable_type' => SupplierPurchaseOrder::class,
+                            'auditable_id' => $spo->id,
+                            'action' => 'cost_variance_guard_triggered',
+                            'actor_id' => $actorId,
+                            'actor_type' => 'admin',
+                            'old_state' => $spo->getOriginal('state') ?? SupplierPurchaseOrder::STATE_DRAFT,
+                            'new_state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                            'details' => [
+                                'item_id' => $item->id,
+                                'supplier_sku_id' => $item->supplier_sku_id,
+                                'expected_unit_cost' => $expectedCost,
+                                'live_unit_cost' => $liveCost,
+                                'variance_percent' => round($variancePercent, 2),
+                                'threshold_percent' => $maxVariancePercent,
+                            ],
+                            'correlation_id' => "spo-{$spo->id}-cost-guard",
+                        ]);
+
+                        throw new DomainException(
+                            "Cost variance {$variancePercent}% exceeds {$maxVariancePercent}% threshold. ".
+                            "Expected: \${$expectedCost}, Live: \${$liveCost}. ".
+                            "SPO #{$spo->id} moved to cost variance review."
+                        );
+                    }
+                }
+            }
+
             // 2. Resolve submission result (provided or dispatched via unified gateway)
             $result = $providedResult ?? $this->dispatchToProvider($spo, $correlationKey);
 
@@ -192,6 +241,19 @@ class ProcurementSubmitService
                 throw new DomainException('Authoritative external order ID is empty. Submission aborted.');
             }
 
+            $metadata = $result->responseMetadata ?? [];
+            $paymentDeadlineAt = null;
+            $overTimeLeft = null;
+            if (! empty($metadata['payment_deadline_at'])) {
+                $paymentDeadlineAt = $metadata['payment_deadline_at'];
+            } elseif (isset($metadata['over_time_left']) && is_numeric($metadata['over_time_left'])) {
+                $overTimeLeft = (int) $metadata['over_time_left'];
+                $paymentDeadlineAt = now()->addSeconds($overTimeLeft)->toIso8601String();
+            } else {
+                $defaultTimeout = (int) config('procurement.default_payment_timeout_seconds', 86400);
+                $paymentDeadlineAt = now()->addSeconds($defaultTimeout)->toIso8601String();
+            }
+
             $platformOrder = ExternalPlatformOrder::create([
                 'supplier_purchase_order_id' => $spo->id,
                 'provider' => $spo->provider,
@@ -203,11 +265,14 @@ class ProcurementSubmitService
                 'raw_status' => $result->providerStatus,
                 'normalized_status' => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
                 'currency_code' => 'USD',
+                'payment_deadline_at' => $paymentDeadlineAt,
                 'last_synced_at' => now(),
                 'snapshots' => array_merge([
                     'created_via' => 'ProcurementSubmitService',
                     'submitted_at' => now()->toIso8601String(),
                     'expected_total' => (float) $spo->expected_total,
+                    'payment_deadline_at' => $paymentDeadlineAt,
+                    'over_time_left' => $overTimeLeft,
                 ], $result->responseMetadata),
             ]);
 
@@ -326,5 +391,52 @@ class ProcurementSubmitService
             currencyCode: (string) ($spo->currency_code ?: 'USD'),
             providerAccountId: $spo->provider_account_id ? (int) $spo->provider_account_id : null
         );
+    }
+
+    /**
+     * Fetch live AliExpress unit cost for a specific SKU.
+     * Best-effort: returns null if API call fails.
+     */
+    protected function fetchLiveSkuCost(SupplierPurchaseOrder $spo, $item): ?float
+    {
+        try {
+            /** @var AliExpressAuthorizationContextResolver $authResolver */
+            $authResolver = app(AliExpressAuthorizationContextResolver::class);
+            $auth = $authResolver->resolveForDropshipperSubmission(
+                $spo->provider_account_id ? (string) $spo->provider_account_id : null
+            );
+
+            $result = app(AliExpressApiClient::class)->call('aliexpress.ds.product.get', $auth->accessToken, [
+                'product_id' => (string) $item->supplier_product_id,
+                'ship_to_country' => 'SA',
+                'target_currency' => 'USD',
+                'target_language' => 'en',
+            ]);
+
+            if (! ($result['ok'] ?? false)) {
+                return null;
+            }
+
+            $body = $result['body'] ?? [];
+            $resp = $body['aliexpress_ds_product_get_response'] ?? $body;
+            $skus = $resp['result']['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
+            if (isset($skus['sku_id'])) {
+                $skus = [$skus];
+            }
+
+            foreach ($skus as $sku) {
+                if ((string) ($sku['sku_id'] ?? '') === (string) $item->supplier_sku_id) {
+                    return (float) ($sku['offer_sale_price'] ?? $sku['sku_price'] ?? 0);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('ProcurementSubmitService: Cost guard API lookup failed', [
+                'spo_id' => $spo->id,
+                'sku_id' => $item->supplier_sku_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
     }
 }

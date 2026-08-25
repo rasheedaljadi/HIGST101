@@ -18,6 +18,20 @@
                     {{ trans('procurement::app.platform_orders.description') }}
                 </p>
             </div>
+            <div class="flex items-center gap-3">
+                @if (bouncer()->hasPermission('dropshipping.procurement_v2.submit') || bouncer()->hasPermission('dropshipping.procurement_v2.view') || auth()->guard('admin')->check())
+                    <form action="{{ route('admin.procurement.platform_orders.sync_all') }}" method="POST" class="inline-block">
+                        @csrf
+                        <button 
+                            type="submit" 
+                            class="primary-button flex items-center gap-2 !bg-[#0044f2] !text-white hover:!bg-[#0034b8] px-4 py-2 rounded-lg font-semibold shadow-md transition-all cursor-pointer"
+                        >
+                            <span class="icon-repeat text-xl text-white"></span>
+                            <span class="text-white">{{ trans('procurement::app.platform_orders.sync-all') }}</span>
+                        </button>
+                    </form>
+                @endif
+            </div>
         </div>
 
         <!-- AliExpress Style Status Classification Tabs -->
@@ -80,4 +94,46 @@
             <x-admin::datagrid :src="route('admin.procurement.platform_orders.index', ['status' => $currentStatus])" />
         </div>
     </div>
+
+    @pushOnce('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const updateCountdowns = () => {
+                    const now = Math.floor(Date.now() / 1000);
+                    const expiredLabel = "{{ trans('procurement::app.datagrid.countdown-expired') }}";
+                    
+                    document.querySelectorAll('.ali-countdown').forEach(el => {
+                        const deadlineStr = el.getAttribute('data-deadline');
+                        if (!deadlineStr) return;
+                        
+                        const deadline = Math.floor(new Date(deadlineStr).getTime() / 1000);
+                        const remaining = deadline - now;
+                        
+                        const textSpan = el.querySelector('.countdown-timer-text');
+                        if (!textSpan) return;
+                        
+                        if (remaining <= 0) {
+                            el.outerHTML = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800 text-[10px] font-bold">⌛ ${expiredLabel}</span>`;
+                        } else {
+                            if (remaining >= 86400) {
+                                const days = Math.floor(remaining / 86400);
+                                const remSecs = remaining % 86400;
+                                const hours = String(Math.floor(remSecs / 3600)).padStart(2, '0');
+                                const mins = String(Math.floor((remSecs % 3600) / 60)).padStart(2, '0');
+                                const secs = String(remSecs % 60).padStart(2, '0');
+                                textSpan.textContent = `${days}d ${hours}:${mins}:${secs}`;
+                            } else {
+                                const hours = String(Math.floor(remaining / 3600)).padStart(2, '0');
+                                const mins = String(Math.floor((remaining % 3600) / 60)).padStart(2, '0');
+                                const secs = String(remaining % 60).padStart(2, '0');
+                                textSpan.textContent = `${hours}:${mins}:${secs}`;
+                            }
+                        }
+                    });
+                };
+
+                setInterval(updateCountdowns, 1000);
+            });
+        </script>
+    @endPushOnce
 </x-admin::layouts>

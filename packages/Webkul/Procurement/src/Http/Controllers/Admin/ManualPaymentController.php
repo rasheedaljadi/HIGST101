@@ -5,10 +5,12 @@ namespace Webkul\Procurement\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Webkul\Procurement\DataGrids\ProcurementManualPaymentDataGrid;
 use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
+use Webkul\Procurement\Models\ExternalPlatformOrder;
 use Webkul\Procurement\Security\ProcurementAcl;
+use Webkul\Procurement\Services\AliExpressPollingService;
 use Webkul\Procurement\Services\ProcurementManualPaymentService;
 
 class ManualPaymentController extends Controller
@@ -16,7 +18,8 @@ class ManualPaymentController extends Controller
     use AuthorizesProcurementActions;
 
     public function __construct(
-        protected ProcurementManualPaymentService $paymentService
+        protected ProcurementManualPaymentService $paymentService,
+        protected AliExpressPollingService $pollingService
     ) {}
 
     public function index(Request $request)
@@ -45,15 +48,27 @@ class ManualPaymentController extends Controller
         ]);
 
         try {
+            $spoId = (int) $request->input('supplier_purchase_order_id');
+
             $this->paymentService->declarePayment(
-                (int) $request->input('supplier_purchase_order_id'),
-                (int) Auth::id(),
+                $spoId,
+                $this->resolveAdminActorId(),
                 $request->input('external_reference'),
                 (float) $request->input('declared_total'),
                 $request->input('currency', 'USD'),
                 null,
                 $request->input('notes')
             );
+
+            // Automatically sync the platform order with AliExpress
+            try {
+                $platformOrder = ExternalPlatformOrder::where('supplier_purchase_order_id', $spoId)->first();
+                if ($platformOrder && ! empty($platformOrder->external_order_id)) {
+                    $this->pollingService->syncOrder($platformOrder);
+                }
+            } catch (\Throwable $syncEx) {
+                Log::warning("[ManualPayment AutoSync] Failed to sync order for SPO #{$spoId}: {$syncEx->getMessage()}");
+            }
 
             session()->flash('success', trans('procurement::app.messages.payment-declared-success'));
 

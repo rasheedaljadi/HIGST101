@@ -6,6 +6,7 @@ use App\Services\AliExpress\AliExpressApiClient;
 use App\Services\AliExpress\AliExpressOAuthService;
 use App\Services\AliExpress\Exceptions\AliExpressInvalidShippingAddressException;
 use App\Services\AliExpress\Shipping\AliExpressShippingAddressValidator;
+use Carbon\Carbon;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Webkul\Procurement\Contracts\AliExpressAuthorizationContextResolver;
@@ -174,11 +175,24 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                     }
                 }
 
-                // Fallback for simple products / non-numeric SKUs (e.g. "ae-1005007551825279")
+                // Fallback ONLY for genuinely simple products (single SKU)
                 if (empty($resolvedItemSkuAttr) && ! empty($productCache[$pId])) {
-                    $firstVariant = $productCache[$pId][0];
-                    $resolvedItemSkuAttr = (string) ($firstVariant['sku_attr'] ?? '');
-                    $resolvedItemSkuId = (string) ($firstVariant['sku_id'] ?? $sId);
+                    if (count($productCache[$pId]) === 1) {
+                        // Simple product: only one variant exists, safe to use
+                        $firstVariant = $productCache[$pId][0];
+                        $resolvedItemSkuAttr = (string) ($firstVariant['sku_attr'] ?? '');
+                        $resolvedItemSkuId = (string) ($firstVariant['sku_id'] ?? $sId);
+                    } else {
+                        // Configurable product: MUST NOT fall back to random variant
+                        return new AliExpressOrderPreflight(
+                            isSuccess: false,
+                            isDeliverableToDestination: false,
+                            destinationCountry: $country,
+                            errorCode: 'SKU_VARIANT_MISMATCH',
+                            errorMessage: "SKU ID [{$sId}] does not match any of the ".count($productCache[$pId])." variants for product {$pId}. Cannot proceed with unverified variant.",
+                            rawDetails: ['available_sku_ids' => array_column($productCache[$pId], 'sku_id')]
+                        );
+                    }
                 }
 
                 if (empty($resolvedItemSkuAttr)) {
@@ -206,8 +220,19 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             );
         }
 
-        $resolvedSkuAttr = $skuAttrMap[$skuId] ?? reset($skuAttrMap);
-        $resolvedFreightSkuId = $skuIdMap[$skuId] ?? $skuId;
+        $resolvedSkuAttr = $skuAttrMap[$skuId] ?? null;
+        $resolvedFreightSkuId = $skuIdMap[$skuId] ?? null;
+
+        if (empty($resolvedSkuAttr) || empty($resolvedFreightSkuId)) {
+            return new AliExpressOrderPreflight(
+                isSuccess: false,
+                isDeliverableToDestination: false,
+                destinationCountry: $country,
+                errorCode: 'PRIMARY_SKU_NOT_RESOLVED',
+                errorMessage: 'Primary SKU ['.$skuId.'] could not be resolved. Available: '.implode(', ', array_keys($skuAttrMap)),
+                rawDetails: ['available_sku_attrs' => $skuAttrMap, 'available_sku_ids' => $skuIdMap]
+            );
+        }
 
         // 2. Query live freight options specifically for selected SKU
         try {
@@ -506,13 +531,49 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             $trackingNumber = $res['logistics_info_list']['logistics_info'][0]['logistics_no'] ?? null;
             $trackingCompany = $res['logistics_info_list']['logistics_info'][0]['logistics_service_name'] ?? null;
 
+            $overTimeLeft = null;
+            if (isset($res['over_time_left']) && is_numeric($res['over_time_left'])) {
+                $overTimeLeft = (int) $res['over_time_left'];
+            } elseif (isset($res['left_time']) && is_numeric($res['left_time'])) {
+                $overTimeLeft = (int) $res['left_time'];
+            } elseif (isset($res['timeout_left']) && is_numeric($res['timeout_left'])) {
+                $overTimeLeft = (int) $res['timeout_left'];
+            }
+
+            $payTimeoutSecond = null;
+            if (isset($res['pay_timeout_second']) && is_numeric($res['pay_timeout_second'])) {
+                $payTimeoutSecond = (int) $res['pay_timeout_second'];
+            }
+
+            $paymentDeadlineAt = null;
+            if (! empty($res['expire_time'])) {
+                $paymentDeadlineAt = Carbon::parse($res['expire_time'], 'Asia/Shanghai')->setTimezone(config('app.timezone'))->toIso8601String();
+            } elseif (! empty($res['gmt_pay_deadline'])) {
+                $paymentDeadlineAt = Carbon::parse($res['gmt_pay_deadline'], 'Asia/Shanghai')->setTimezone(config('app.timezone'))->toIso8601String();
+            } elseif (! empty($res['end_time'])) {
+                $paymentDeadlineAt = Carbon::parse($res['end_time'], 'Asia/Shanghai')->setTimezone(config('app.timezone'))->toIso8601String();
+            } elseif ($payTimeoutSecond !== null) {
+                $baseTime = ! empty($res['gmt_create'])
+                    ? Carbon::parse($res['gmt_create'], 'Asia/Shanghai')->setTimezone(config('app.timezone'))
+                    : now();
+                $deadlineCarbon = $baseTime->copy()->addSeconds($payTimeoutSecond);
+                $paymentDeadlineAt = $deadlineCarbon->toIso8601String();
+                if ($overTimeLeft === null) {
+                    $overTimeLeft = max(0, (int) now()->diffInSeconds($deadlineCarbon, false));
+                }
+            } elseif ($overTimeLeft !== null && $overTimeLeft > 0) {
+                $paymentDeadlineAt = now()->addSeconds($overTimeLeft)->toIso8601String();
+            }
+
             return new AliExpressOrderSnapshot(
                 externalOrderId: $officialExternalOrderId,
                 orderStatus: (string) $rawState,
                 trackingNumber: $trackingNumber ? (string) $trackingNumber : null,
                 carrierName: $trackingCompany ? (string) $trackingCompany : null,
                 rawStatus: (string) $rawState,
-                rawResponse: $this->redactSensitivePayload($body)
+                rawResponse: $this->redactSensitivePayload($body),
+                overTimeLeft: $overTimeLeft,
+                paymentDeadlineAt: $paymentDeadlineAt
             );
         } catch (\Throwable $e) {
             return new AliExpressOrderSnapshot(

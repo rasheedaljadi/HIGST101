@@ -88,6 +88,7 @@ return [
         'tab-shipped' => 'Enviado',
         'tab-completed' => 'Completado',
         'tab-cancelled' => 'Cancelado',
+        'sync-all' => 'Sincronizar todo con AliExpress',
     ],
     'manual_payments' => [
         'title' => 'Manual Payment Declarations',
@@ -194,6 +195,7 @@ return [
         'variance-rejected-success' => 'Cost variance rejected and order flagged as exception.',
         'receipt-processed-success' => 'Inbound receipt processed and stock quantities updated successfully.',
         'platform-order-synced-success' => 'AliExpress platform order synced successfully.',
+        'platform-orders-sync-all-success' => ':count pedidos de la plataforma AliExpress sincronizados correctamente.',
         'platform-order-deleted-success' => 'Platform order record deleted successfully.',
         'reorder-redirect-success' => 'Demands redirected for reordering batch successfully.',
         'reorder-success' => 'Order reordered and new supplier purchase order created successfully.',

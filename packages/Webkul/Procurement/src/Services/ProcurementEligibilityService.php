@@ -3,6 +3,7 @@
 namespace Webkul\Procurement\Services;
 
 use App\Models\AliExpressProductImport;
+use App\Models\ExternalVariantProjection;
 use App\Models\HigestSourceOffer;
 use Webkul\Product\Models\ProductProxy;
 use Webkul\Sales\Contracts\Order;
@@ -60,6 +61,13 @@ class ProcurementEligibilityService
         $product = ProductProxy::modelClass()::find($productId);
         $parentProductId = $product?->parent_id ?? $productId;
 
+        // Resolve the actual variant the customer selected
+        $selectedVariantId = null;
+        if (! empty($item->additional['selected_configurable_option'])) {
+            $selectedVariantId = (int) $item->additional['selected_configurable_option'];
+        }
+        $effectiveVariantId = $selectedVariantId ?? ($product?->parent_id ? $productId : null);
+
         // 1. Check AliExpressProductImport record
         $import = AliExpressProductImport::where('product_id', $parentProductId)
             ->where('status', 'success')
@@ -100,11 +108,39 @@ class ProcurementEligibilityService
         }
 
         $supplierProductId = (string) ($import?->aliexpress_product_id ?? $offer?->source_sku_id ?? 'ae_prod_'.$parentProductId);
-        $supplierSkuId = (string) ($offer?->source_sku_id ?? $item->additional['supplier_sku_id'] ?? $item->sku ?? 'ae_sku_'.$productId);
+
+        // Resolve numeric AliExpress SKU ID from ExternalVariantProjection
+        $externalSkuId = null;
+        if ($effectiveVariantId) {
+            $projection = ExternalVariantProjection::where('variant_product_id', $effectiveVariantId)
+                ->where('provider', 'aliexpress')
+                ->first();
+            $externalSkuId = $projection?->external_sku_id;
+        }
+
+        // Priority: numeric projection SKU > offer source_sku > order additional > item sku
+        $supplierSkuId = (string) ($externalSkuId ?? $offer?->source_sku_id ?? $item->additional['supplier_sku_id'] ?? $item->sku ?? 'ae_sku_'.$productId);
 
         $payload = $import?->payload_snapshot ?? [];
-        $payloadStoreId = ! empty($payload['store_info']['store_id']) ? (string) $payload['store_info']['store_id'] : (! empty($payload['store_id']) ? (string) $payload['store_id'] : null);
-        $payloadStoreName = ! empty($payload['store_info']['store_name']) ? (string) $payload['store_info']['store_name'] : (! empty($payload['store_name']) ? (string) $payload['store_name'] : null);
+        $payloadStoreId = ! empty($payload['store_info']['store_id'])
+            ? (string) $payload['store_info']['store_id']
+            : (! empty($payload['ae_store_info']['store_id'])
+                ? (string) $payload['ae_store_info']['store_id']
+                : (! empty($payload['store_id'])
+                    ? (string) $payload['store_id']
+                    : (! empty($payload['seller_info']['store_id'])
+                        ? (string) $payload['seller_info']['store_id']
+                        : null)));
+
+        $payloadStoreName = ! empty($payload['store_info']['store_name'])
+            ? (string) $payload['store_info']['store_name']
+            : (! empty($payload['ae_store_info']['store_name'])
+                ? (string) $payload['ae_store_info']['store_name']
+                : (! empty($payload['store_name'])
+                    ? (string) $payload['store_name']
+                    : (! empty($payload['seller_info']['store_name'])
+                        ? (string) $payload['seller_info']['store_name']
+                        : null)));
 
         $additionalStoreId = ! empty($item->additional['supplier_store_id']) ? (string) $item->additional['supplier_store_id'] : null;
         $additionalStoreName = ! empty($item->additional['supplier_store_name']) ? (string) $item->additional['supplier_store_name'] : null;
@@ -149,6 +185,8 @@ class ProcurementEligibilityService
             'supplier_store_name' => $supplierStoreName,
             'supplier_product_id' => $supplierProductId,
             'supplier_sku_id' => $supplierSkuId,
+            'external_sku_id' => $externalSkuId,
+            'variant_product_id' => $effectiveVariantId,
             'unit_cost' => $unitCost,
             'currency' => $currency,
             'metadata_status' => $metadataStatus,
@@ -158,6 +196,8 @@ class ProcurementEligibilityService
                 'offer_id' => $offer?->id,
                 'aliexpress_product_id' => $supplierProductId,
                 'supplier_sku_id' => $supplierSkuId,
+                'external_sku_id' => $externalSkuId,
+                'variant_product_id' => $effectiveVariantId,
                 'supplier_store_id' => $supplierStoreId,
                 'supplier_store_name' => $supplierStoreName,
                 'store_provenance' => [

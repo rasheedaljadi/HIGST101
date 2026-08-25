@@ -13,6 +13,8 @@ class AliExpressOrderSnapshot
         public readonly ?string $trackingNumber = null,
         public readonly ?string $carrierName = null,
         public readonly ?string $rawStatus = null,
-        public readonly array $rawResponse = []
+        public readonly array $rawResponse = [],
+        public readonly ?int $overTimeLeft = null,
+        public readonly ?string $paymentDeadlineAt = null
     ) {}
 }

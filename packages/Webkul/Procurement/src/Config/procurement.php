@@ -69,4 +69,16 @@ return [
             'allowed_currencies' => ['USD'],
         ],
     ],
+
+    /**
+     * Default initial payment timeout in seconds (86400 = 24 hours).
+     * Used when live AliExpress order is first placed before live polling updates the exact over_time_left.
+     */
+    'default_payment_timeout_seconds' => env('PROCUREMENT_DEFAULT_PAYMENT_TIMEOUT_SECONDS', 86400),
+
+    /**
+     * Maximum allowed cost variance percentage between expected and live AliExpress price.
+     * If exceeded, the SPO is moved to cost_variance_review state and submission is halted.
+     */
+    'max_cost_variance_percent' => env('PROCUREMENT_MAX_COST_VARIANCE_PERCENT', 15.0),
 ];

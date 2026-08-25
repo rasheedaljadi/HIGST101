@@ -5,7 +5,6 @@ namespace Webkul\Procurement\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Webkul\Procurement\DataGrids\CostVarianceDataGrid;
 use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
 use Webkul\Procurement\Security\ProcurementAcl;
@@ -35,7 +34,7 @@ class CostVarianceController extends Controller
         $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_VARIANCE_APPROVE);
 
         try {
-            $this->varianceService->approveVariance($id, (int) Auth::id(), $request->input('notes'));
+            $this->varianceService->approveVariance($id, $this->resolveAdminActorId(), $request->input('notes'));
 
             session()->flash('success', trans('procurement::app.messages.variance-approved-success'));
 
@@ -56,7 +55,7 @@ class CostVarianceController extends Controller
         ]);
 
         try {
-            $this->varianceService->rejectVariance($id, (int) Auth::id(), $request->input('reason'));
+            $this->varianceService->rejectVariance($id, $this->resolveAdminActorId(), $request->input('reason'));
 
             session()->flash('success', trans('procurement::app.messages.variance-rejected-success'));
 

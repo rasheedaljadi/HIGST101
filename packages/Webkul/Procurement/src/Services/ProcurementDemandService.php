@@ -174,7 +174,7 @@ class ProcurementDemandService
                     'order_id' => $order->id,
                     'order_item_id' => $item->id,
                     'product_id' => $item->product_id,
-                    'variant_product_id' => $item->product?->parent_id ? $item->product_id : null,
+                    'variant_product_id' => $classification['variant_product_id'] ?? ($item->product?->parent_id ? $item->product_id : null),
                     'provider' => $classification['provider'],
                     'provider_account_id' => $classification['provider_account_id'],
                     'supplier_store_id' => $classification['supplier_store_id'],

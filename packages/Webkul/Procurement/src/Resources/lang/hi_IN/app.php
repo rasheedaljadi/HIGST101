@@ -88,6 +88,7 @@ return [
         'tab-shipped' => 'भेजा गया',
         'tab-completed' => 'पूर्ण',
         'tab-cancelled' => 'रद्द',
+        'sync-all' => 'AliExpress के साथ सभी को सिंक करें',
     ],
     'manual_payments' => [
         'title' => 'Manual Payment Declarations',
@@ -194,6 +195,7 @@ return [
         'variance-rejected-success' => 'Cost variance rejected and order flagged as exception.',
         'receipt-processed-success' => 'Inbound receipt processed and stock quantities updated successfully.',
         'platform-order-synced-success' => 'AliExpress platform order synced successfully.',
+        'platform-orders-sync-all-success' => ':count AliExpress प्लेटफ़ॉर्म ऑर्डर सफलतापूर्वक सिंक किए गए।',
         'platform-order-deleted-success' => 'Platform order record deleted successfully.',
         'reorder-redirect-success' => 'Demands redirected for reordering batch successfully.',
         'reorder-success' => 'Order reordered and new supplier purchase order created successfully.',

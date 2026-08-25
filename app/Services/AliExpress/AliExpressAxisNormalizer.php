@@ -21,14 +21,34 @@ class AliExpressAxisNormalizer
         'colors' => 'ae_color',
         'color_name' => 'ae_color',
         'colour_name' => 'ae_color',
+        'color_model' => 'ae_color',
+        'color_and_model' => 'ae_color',
+        'model_color' => 'ae_color',
         'اللون' => 'ae_color',
+        'اللون_الموديل' => 'ae_color',
+        'اللون_او_الموديل' => 'ae_color',
+        'الموديل' => 'ae_color',
+        'النمط' => 'ae_color',
 
-        // Sizes
+        // Sizes & Specs (RAM, Storage, Memory, Capacity)
         'size' => 'ae_size',
         'sizes' => 'ae_size',
         'size_name' => 'ae_size',
         'apparel_size' => 'ae_size',
+        'ram_storage' => 'ae_size',
+        'ram_rom' => 'ae_size',
+        'storage' => 'ae_size',
+        'storage_capacity' => 'ae_size',
+        'memory' => 'ae_size',
+        'capacity' => 'ae_size',
+        'specification' => 'ae_size',
+        'specifications' => 'ae_size',
         'المقاس' => 'ae_size',
+        'السعة' => 'ae_size',
+        'الذاكرة' => 'ae_size',
+        'سعة_التخزين' => 'ae_size',
+        'رام_تخزين' => 'ae_size',
+        'المواصفات' => 'ae_size',
 
         // Shoe Sizes
         'shoe_size' => 'ae_shoe_size',
@@ -47,6 +67,13 @@ class AliExpressAxisNormalizer
         'plug_type' => 'ae_plug_type',
         'socket_type' => 'ae_plug_type',
         'نوع_القابس' => 'ae_plug_type',
+
+        // Bundles
+        'bundle' => 'ae_bundle',
+        'package' => 'ae_bundle',
+        'package_type' => 'ae_bundle',
+        'الحزمة' => 'ae_bundle',
+        'الباقة' => 'ae_bundle',
     ];
 
     /**
@@ -60,6 +87,7 @@ class AliExpressAxisNormalizer
         'ae_shoe_size' => 'Shoe Size',
         'ae_ships_from' => 'Ships From',
         'ae_plug_type' => 'Plug Type',
+        'ae_bundle' => 'Bundle',
     ];
 
     /**

@@ -625,6 +625,13 @@ class AliExpressProductImporter
                 ],
                 array_values($dto->variants),
             ),
+            'store_info' => $dto->storeInfo ?? [
+                'store_id' => null,
+                'store_name' => null,
+            ],
+            'ae_store_info' => $dto->storeInfo ?? null,
+            'store_id' => $dto->storeInfo['store_id'] ?? null,
+            'store_name' => $dto->storeInfo['store_name'] ?? null,
         ];
     }
 
@@ -1239,9 +1246,30 @@ class AliExpressProductImporter
                     ->where('product_id', $product->id)
                     ->first();
 
-                $variantId = $projection?->variant_product_id ?? ($product->variants->values()[$index]->id ?? null);
+                $variantId = $projection?->variant_product_id;
+
+                // Fallback: match by option signature if projection is not yet stored
+                if ($variantId === null && isset($created['resolved_axes'])) {
+                    $resolved = $created['resolved_axes'];
+                    $axisNameToCode = $this->mapAxisNamesToResolvedCodes($dto, $resolved);
+                    $targetSig = $this->aliexpressVariantSignature($aeVariant, $axisNameToCode, $resolved);
+
+                    if ($targetSig !== null) {
+                        foreach ($product->variants as $candidateVariant) {
+                            if ($this->generatedVariantSignature($candidateVariant, $resolved) === $targetSig) {
+                                $variantId = $candidateVariant->id;
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 if ($variantId === null) {
+                    Log::channel('aliexpress')->warning('PricingEngine: skipping unmapped variant SKU', [
+                        'product_id' => $product->id,
+                        'external_sku_id' => $aeVariant->skuId,
+                    ]);
+
                     continue;
                 }
                 $supplierCost = (float) $aeVariant->price;
@@ -1733,9 +1761,21 @@ class AliExpressProductImporter
         $optionIdsByCode = [];
 
         foreach ($variant->optionsByAxis as $axisName => $label) {
-            $code = $axisNameToCode[$axisName] ?? null;
+            $code = $axisNameToCode[$axisName]
+                ?? AliExpressAxisNormalizer::normalizeAxisCode($axisName)
+                ?? null;
 
-            if ($code === null) {
+            if ($code === null || ! isset($resolved->attributesByCode[$code])) {
+                // If code is not recognized directly, check if any resolved attribute matches by normalization
+                foreach ($resolved->attributesByCode as $attrCode => $attr) {
+                    if (AliExpressAxisNormalizer::normalizeAxisCode($axisName) === AliExpressAxisNormalizer::normalizeAxisCode($attrCode)) {
+                        $code = $attrCode;
+                        break;
+                    }
+                }
+            }
+
+            if ($code === null || ! isset($resolved->attributesByCode[$code])) {
                 continue;
             }
 
@@ -1768,8 +1808,8 @@ class AliExpressProductImporter
     }
 
     /**
-     * Resolve an option id from a code's label=>id lookup, tolerating case and
-     * surrounding whitespace differences.
+     * Resolve an option id from a code's label=>id lookup, tolerating case,
+     * punctuation, and surrounding whitespace differences.
      *
      * @param  array<string, int>  $lookup  [optionLabel => optionId]
      */
@@ -1779,11 +1819,41 @@ class AliExpressProductImporter
             return (int) $lookup[$label];
         }
 
-        $needle = mb_strtolower(trim($label));
+        $needle = mb_strtolower(trim($label), 'UTF-8');
 
         foreach ($lookup as $candidate => $optionId) {
-            if (mb_strtolower(trim((string) $candidate)) === $needle) {
+            if (mb_strtolower(trim((string) $candidate), 'UTF-8') === $needle) {
                 return (int) $optionId;
+            }
+        }
+
+        // Fuzzy match: strip punctuation, extra spaces, +, -, /, and non-breaking spaces
+        $normalizeText = function (string $text): string {
+            // Replace non-breaking spaces and unicode spaces
+            $text = preg_replace('/[\x{00A0}\x{200B}\s]+/u', ' ', $text);
+            // Replace symbols like +, -, /, _, :, ,
+            $text = preg_replace('/[+\-\/_:,\(\)\[\]]/u', ' ', $text);
+            $text = preg_replace('/\s+/', ' ', trim($text));
+
+            return mb_strtolower($text, 'UTF-8');
+        };
+
+        $cleanNeedle = $normalizeText($label);
+        if ($cleanNeedle !== '') {
+            foreach ($lookup as $candidate => $optionId) {
+                if ($normalizeText((string) $candidate) === $cleanNeedle) {
+                    return (int) $optionId;
+                }
+            }
+
+            // Also try compact without any spaces e.g. "16gb256gb"
+            $compactNeedle = str_replace(' ', '', $cleanNeedle);
+            if ($compactNeedle !== '') {
+                foreach ($lookup as $candidate => $optionId) {
+                    if (str_replace(' ', '', $normalizeText((string) $candidate)) === $compactNeedle) {
+                        return (int) $optionId;
+                    }
+                }
             }
         }
 
@@ -1811,21 +1881,62 @@ class AliExpressProductImporter
                 $map[$axis->name] = $code;
                 $map[$axis->code] = $code;
 
-                // Also map standard raw axis names
-                if ($code === 'ae_color' || str_starts_with($code, 'ae_color')) {
-                    $map['Color'] = $code;
-                    $map['color'] = $code;
-                    $map['Color / Model'] = $code;
-                } elseif ($code === 'ae_size' || str_starts_with($code, 'ae_size')) {
-                    $map['Size'] = $code;
-                    $map['size'] = $code;
-                    $map['RAM + Storage'] = $code;
-                    $map['Shoe Size'] = $code;
-                    $map['Storage Capacity'] = $code;
-                } elseif ($code === 'ae_ships_from' || str_starts_with($code, 'ae_ships_from')) {
-                    $map['Ships From'] = $code;
-                    $map['ships_from'] = $code;
+                // Also map normalized code from name
+                $normalizedCode = AliExpressAxisNormalizer::normalizeAxisCode($axis->name);
+                if ($normalizedCode !== null) {
+                    $map[$normalizedCode] = $code;
                 }
+            }
+        }
+
+        // Also add mapping for all resolved superAttributes by their canonical code and common aliases
+        foreach ($resolvedCodes as $code) {
+            $map[$code] = $code;
+            if ($code === 'ae_color' || str_starts_with($code, 'ae_color')) {
+                $map['Color'] = $code;
+                $map['color'] = $code;
+                $map['Color / Model'] = $code;
+                $map['color_name'] = $code;
+                $map['اللون'] = $code;
+                $map['اللون / الموديل'] = $code;
+                $map['اللون او الموديل'] = $code;
+                $map['الموديل'] = $code;
+                $map['النمط'] = $code;
+            } elseif ($code === 'ae_size' || str_starts_with($code, 'ae_size')) {
+                $map['Size'] = $code;
+                $map['size'] = $code;
+                $map['size_name'] = $code;
+                $map['RAM + Storage'] = $code;
+                $map['RAM + ROM'] = $code;
+                $map['Shoe Size'] = $code;
+                $map['Storage Capacity'] = $code;
+                $map['Capacity'] = $code;
+                $map['Memory'] = $code;
+                $map['Specification'] = $code;
+                $map['Specifications'] = $code;
+                $map['المقاس'] = $code;
+                $map['السعة'] = $code;
+                $map['الذاكرة'] = $code;
+                $map['سعة التخزين'] = $code;
+                $map['رام تخزين'] = $code;
+                $map['المواصفات'] = $code;
+            } elseif ($code === 'ae_ships_from' || str_starts_with($code, 'ae_ships_from')) {
+                $map['Ships From'] = $code;
+                $map['ships_from'] = $code;
+                $map['shipping_from'] = $code;
+                $map['يشحن من'] = $code;
+                $map['يُشحن من'] = $code;
+            } elseif ($code === 'ae_bundle' || str_starts_with($code, 'ae_bundle')) {
+                $map['Bundle'] = $code;
+                $map['Package'] = $code;
+                $map['package_type'] = $code;
+                $map['الحزمة'] = $code;
+                $map['الباقة'] = $code;
+            } elseif ($code === 'ae_plug_type' || str_starts_with($code, 'ae_plug_type')) {
+                $map['Plug Type'] = $code;
+                $map['plug_type'] = $code;
+                $map['socket_type'] = $code;
+                $map['نوع القابس'] = $code;
             }
         }
 

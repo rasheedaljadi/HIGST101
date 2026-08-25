@@ -34,6 +34,7 @@ Route::group(['middleware' => ['web', 'admin', NoCacheMiddleware::class], 'prefi
 
         // 4. AliExpress Platform Orders
         Route::get('platform-orders', [ExternalPlatformOrderController::class, 'index'])->name('admin.procurement.platform_orders.index');
+        Route::post('platform-orders/sync-all', [ExternalPlatformOrderController::class, 'syncAll'])->name('admin.procurement.platform_orders.sync_all');
         Route::post('platform-orders/sync/{id}', [ExternalPlatformOrderController::class, 'sync'])->name('admin.procurement.platform_orders.sync');
         Route::post('platform-orders/cancel/{id}', [ExternalPlatformOrderController::class, 'cancel'])->name('admin.procurement.platform_orders.cancel');
         Route::post('platform-orders/reorder/{id}', [ExternalPlatformOrderController::class, 'reorder'])->name('admin.procurement.platform_orders.reorder');

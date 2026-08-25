@@ -2,6 +2,7 @@
 
 namespace Webkul\Procurement\Services;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Webkul\Procurement\Contracts\AliExpressOrderGateway;
@@ -69,6 +70,11 @@ class AliExpressPollingService
 
             $normalizedStatus = $this->resolveNormalizedStatus($rawStatus, $endReason, $endReasonDesc);
 
+            // If order or SPO is already cancelled, enforce cancellation invariant
+            if ($platformOrder->normalized_status === ExternalPlatformOrder::STATUS_CANCELLED || ($spo && $spo->state === SupplierPurchaseOrder::STATE_CANCELLED)) {
+                $normalizedStatus = ExternalPlatformOrder::STATUS_CANCELLED;
+            }
+
             $currentRank = $this->statusRanks[$platformOrder->normalized_status] ?? 0;
             $newRank = $this->statusRanks[$normalizedStatus] ?? 0;
 
@@ -83,13 +89,28 @@ class AliExpressPollingService
             $trackingNumber = $payload['tracking_number'] ?? $platformOrder->tracking_number;
             $carrier = $payload['carrier'] ?? $platformOrder->carrier_name;
 
-            $platformOrder->update([
+            $updateData = [
                 'raw_status' => $rawStatus,
                 'normalized_status' => $normalizedStatus,
                 'tracking_number' => $trackingNumber,
                 'carrier_name' => $carrier,
                 'last_synced_at' => now(),
-            ]);
+            ];
+
+            if (! empty($payload['payment_deadline_at'])) {
+                $updateData['payment_deadline_at'] = $payload['payment_deadline_at'];
+            }
+
+            $snapshots = is_array($platformOrder->snapshots) ? $platformOrder->snapshots : (json_decode($platformOrder->snapshots ?? '[]', true) ?: []);
+            if (! empty($payload['payment_deadline_at'])) {
+                $snapshots['payment_deadline_at'] = $payload['payment_deadline_at'];
+            }
+            if (isset($payload['over_time_left'])) {
+                $snapshots['over_time_left'] = $payload['over_time_left'];
+            }
+            $updateData['snapshots'] = $snapshots;
+
+            $platformOrder->update($updateData);
 
             // Handle Transitions for SupplierPurchaseOrder
             if ($normalizedStatus === ExternalPlatformOrder::STATUS_PROCESSING) {
@@ -300,6 +321,33 @@ class AliExpressPollingService
             $actualTotal = (float) $resp['order_amount']['amount'];
         }
 
+        $overTimeLeft = $snapshot->overTimeLeft;
+        $paymentDeadlineAt = $snapshot->paymentDeadlineAt;
+
+        if ($paymentDeadlineAt === null) {
+            if (isset($resp['pay_timeout_second']) && is_numeric($resp['pay_timeout_second'])) {
+                $payTimeoutSecond = (int) $resp['pay_timeout_second'];
+                $baseTime = ! empty($resp['gmt_create'])
+                    ? Carbon::parse($resp['gmt_create'], 'Asia/Shanghai')->setTimezone(config('app.timezone'))
+                    : now();
+                $deadlineCarbon = $baseTime->copy()->addSeconds($payTimeoutSecond);
+                $paymentDeadlineAt = $deadlineCarbon->toIso8601String();
+                if ($overTimeLeft === null) {
+                    $overTimeLeft = max(0, (int) now()->diffInSeconds($deadlineCarbon, false));
+                }
+            } elseif (isset($resp['over_time_left']) && is_numeric($resp['over_time_left'])) {
+                $overTimeLeft = (int) $resp['over_time_left'];
+                $paymentDeadlineAt = now()->addSeconds($overTimeLeft)->toIso8601String();
+            } elseif (isset($resp['left_time']) && is_numeric($resp['left_time'])) {
+                $overTimeLeft = (int) $resp['left_time'];
+                $paymentDeadlineAt = now()->addSeconds($overTimeLeft)->toIso8601String();
+            } elseif (! empty($resp['expire_time'])) {
+                $paymentDeadlineAt = Carbon::parse($resp['expire_time'], 'Asia/Shanghai')->setTimezone(config('app.timezone'))->toIso8601String();
+            } elseif (! empty($resp['gmt_pay_deadline'])) {
+                $paymentDeadlineAt = Carbon::parse($resp['gmt_pay_deadline'], 'Asia/Shanghai')->setTimezone(config('app.timezone'))->toIso8601String();
+            }
+        }
+
         return [
             'status' => $snapshot->orderStatus,
             'tracking_number' => $snapshot->trackingNumber,
@@ -307,6 +355,8 @@ class AliExpressPollingService
             'actual_total' => $actualTotal,
             'end_reason' => $endReason,
             'end_reason_desc' => $endReasonDesc,
+            'over_time_left' => $overTimeLeft,
+            'payment_deadline_at' => $paymentDeadlineAt,
             'provider_updated_at' => now()->toIso8601String(),
         ];
     }
