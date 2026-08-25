@@ -185,6 +185,8 @@
                                     $discountPercent = (int) round((($originalPrice - $finalPrice) / $originalPrice) * 100);
                                 }
 
+                                $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
+                                $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
                                 $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
                             @endphp
 
@@ -194,17 +196,11 @@
                             >
                                 <div class="w-full h-[465px] max-h-[465px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border shrink-0 select-none">
                                     
-                                    <!-- Product Image Container with Golden Frame and Mismatched Side Fill -->
+                                    <!-- Product Image Container with Golden Frame and Solid Mismatched Color Fill -->
                                     <div 
-                                        class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shrink-0 mb-2 flex items-center justify-center"
-                                        style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37;"
+                                        class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden shrink-0 mb-2 flex items-center justify-center"
+                                        style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37; background-color: {{ $sampledSideColor }};"
                                     >
-                                        <!-- Mismatched background sampled from image (Grade 4/5 tone clash) -->
-                                        <div 
-                                            class="absolute inset-0 w-full h-full bg-cover bg-center filter blur-md brightness-75 contrast-150 saturate-150 opacity-95 scale-125 pointer-events-none"
-                                            style="background-image: url('{{ $imageUrl }}');"
-                                        ></div>
-
                                         @if ($discountPercent > 0)
                                             <span 
                                                 class="absolute top-2.5 right-2.5 z-10 bg-[#e60023] text-white font-bold px-2 sm:px-2.5 py-1 text-xs sm:text-sm shadow-sm flex items-center justify-center rounded-none"
@@ -216,12 +212,12 @@
 
                                         <a 
                                             href="{{ $productUrl }}" 
-                                            class="relative z-10 w-full h-full flex items-center justify-center overflow-hidden block"
+                                            class="w-full h-full flex items-center justify-center overflow-hidden block"
                                         >
                                             <img 
                                                 src="{{ $imageUrl }}" 
                                                 alt="{{ $cleanName }}"
-                                                class="w-full h-full group-hover:scale-105 transition-transform duration-300 block shadow-sm"
+                                                class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
                                                 style="{{ $distortionStyle }}"
                                                 loading="lazy"
                                                 onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';"

@@ -20,17 +20,11 @@
                 v-if="mode != 'list'"
                 class="w-full h-full min-h-[400px] max-h-[420px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border select-none"
             >
-                <!-- Product Image Container with Golden Frame and Mismatched Side Fill -->
+                <!-- Product Image Container with Golden Frame and Solid Mismatched Color Fill -->
                 <div 
-                    class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shrink-0 mb-2 flex items-center justify-center"
-                    style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37;"
+                    class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden shrink-0 mb-2 flex items-center justify-center"
+                    :style="{ aspectRatio: '336 / 302', border: '2px solid #D4AF37', backgroundColor: getSampledSideColor(product.id) }"
                 >
-                    <!-- Mismatched background sampled from image (Grade 4/5 tone clash) -->
-                    <div 
-                        class="absolute inset-0 w-full h-full bg-cover bg-center filter blur-md brightness-75 contrast-150 saturate-150 opacity-95 scale-125 pointer-events-none"
-                        :style="{ backgroundImage: `url(${product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'})` }"
-                    ></div>
-
                     <!-- Badges Overlay (Supports Multiple Badges: Featured, Discount %, New) -->
                     <div class="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1 items-end pointer-events-none">
                         <!-- Featured Badge -->
@@ -93,12 +87,12 @@
                     <!-- Product Image in Foreground -->
                     <a 
                         :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" 
-                        class="relative z-10 w-full h-full flex items-center justify-center overflow-hidden block"
+                        class="w-full h-full flex items-center justify-center overflow-hidden block"
                     >
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
-                            class="w-full h-full group-hover:scale-105 transition-transform duration-300 block shadow-sm"
+                            class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
                             style="object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
@@ -151,20 +145,14 @@
                 class="relative flex w-full gap-4 overflow-hidden rounded-2xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 shadow-sm max-sm:flex-wrap"
             >
                 <div 
-                    class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl bg-white dark:bg-gray-800 shrink-0 flex items-center justify-center"
-                    style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37;"
+                    class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl shrink-0 flex items-center justify-center"
+                    :style="{ aspectRatio: '336 / 302', border: '2px solid #D4AF37', backgroundColor: getSampledSideColor(product.id) }"
                 >
-                    <!-- Mismatched background sampled from image (Grade 4/5 tone clash) -->
-                    <div 
-                        class="absolute inset-0 w-full h-full bg-cover bg-center filter blur-md brightness-75 contrast-150 saturate-150 opacity-95 scale-125 pointer-events-none"
-                        :style="{ backgroundImage: `url(${product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'})` }"
-                    ></div>
-
-                    <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="relative z-10 w-full h-full flex items-center justify-center block">
+                    <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full flex items-center justify-center block">
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
-                            class="w-full h-full group-hover:scale-105 transition-transform duration-300 block shadow-sm"
+                            class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
                             style="object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
@@ -307,9 +295,22 @@
                     return JSON.parse(value);
                 },
 
+                getSampledSideColor(productId) {
+                    const colors = [
+                        '#c5ced9', // Cool Slate Gray (Grade 4)
+                        '#d8ccbc', // Warm Murky Sand (Grade 4)
+                        '#b8c5d6', // Dusty Steel (Grade 4)
+                        '#ccc4b4', // Muddy Khaki (Grade 4)
+                        '#dbc7b4', // Dull Clay Beige (Grade 5)
+                        '#c4ccbe', // Dirty Sage Gray (Grade 4)
+                    ];
+                    const id = parseInt(productId) || 0;
+                    return colors[id % colors.length];
+                },
+
                 getImageDistortionStyle(productId) {
                     // Force height enlargement (16:9 vertical ratio factor = ~1.77) across all cards
-                    return 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scaleY(1.78) !important; transform-origin: center !important;';
+                    return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
                 },
 
                 addToCart() {
