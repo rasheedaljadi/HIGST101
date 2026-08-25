@@ -1,6 +1,12 @@
 @php
+    $sku = strtolower((string) ($product->sku ?? ''));
+    $originType = (string) ($product->origin_type ?? '');
+    $isInternal = ($originType === 'internal')
+        || (! str_starts_with($sku, 'ae-') && ! str_starts_with($sku, 'ali-') && $originType !== 'imported');
+
     $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-    $isCleanProduct = (((int) ($product->id ?? 0)) % 5) === 0;
+    $isCleanProduct = $isInternal || ((((int) ($product->id ?? 0)) % 5) === 0);
+
     if ($isCleanProduct) {
         $productSampledColor = '#ffffff';
         $imageStyle = 'width: 100%; height: 100%; object-fit: contain; background: #ffffff;';

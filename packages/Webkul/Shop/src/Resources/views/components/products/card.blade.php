@@ -20,10 +20,10 @@
                 v-if="mode != 'list'"
                 class="w-full h-full min-h-[400px] max-h-[420px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border select-none"
             >
-                <!-- Product Image Container with Golden Frame and Sampled Logic (1 in 5 clean) -->
+                <!-- Product Image Container with Golden Frame and Sampled Logic (Internal clean, Imported 1 in 5 clean) -->
                 <div 
                     class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden shrink-0 mb-2 flex items-center justify-center"
-                    :style="getCardContainerStyle(product.id)"
+                    :style="getCardContainerStyle(product)"
                 >
                     <!-- Badges Overlay (Supports Multiple Badges: Featured, Discount %, New) -->
                     <div class="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1 items-end pointer-events-none">
@@ -93,7 +93,7 @@
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
                             class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
-                            :style="getImageDistortionStyle(product.id)"
+                            :style="getImageDistortionStyle(product)"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
@@ -146,14 +146,14 @@
             >
                 <div 
                     class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl shrink-0 flex items-center justify-center"
-                    :style="getCardContainerStyle(product.id)"
+                    :style="getCardContainerStyle(product)"
                 >
                     <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full flex items-center justify-center block">
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
                             class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
-                            :style="getImageDistortionStyle(product.id)"
+                            :style="getImageDistortionStyle(product)"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
@@ -295,6 +295,17 @@
                     return JSON.parse(value);
                 },
 
+                isInternalProduct(product) {
+                    if (! product) return true;
+                    if (product.origin_type === 'internal') return true;
+                    if (product.origin_type === 'imported') return false;
+                    if (product.is_imported === true) return false;
+                    if (product.is_imported === false) return true;
+                    const sku = String(product.sku || '').toLowerCase();
+                    if (sku.startsWith('ae-') || sku.startsWith('ali-')) return false;
+                    return true;
+                },
+
                 getSampledSideColor(productId) {
                     const colors = [
                         '#c5ced9', // Cool Slate Gray (Grade 4)
@@ -308,17 +319,17 @@
                     return colors[id % colors.length];
                 },
 
-                getCardContainerStyle(productId) {
-                    const id = parseInt(productId) || 0;
-                    if ((id % 5) === 0) {
-                        // 1 out of 5: Clean white background
+                getCardContainerStyle(product) {
+                    const id = parseInt(product?.id) || 0;
+                    if (this.isInternalProduct(product) || (id % 5) === 0) {
+                        // Internal products (100% clean) OR 1-in-5 clean imported sample
                         return {
                             aspectRatio: '336 / 302',
                             border: '2px solid #D4AF37',
                             backgroundColor: '#ffffff'
                         };
                     }
-                    // 4 out of 5: Mismatched derived background color
+                    // Distorted imported product: Mismatched derived background color
                     return {
                         aspectRatio: '336 / 302',
                         border: '2px solid #D4AF37',
@@ -326,13 +337,13 @@
                     };
                 },
 
-                getImageDistortionStyle(productId) {
-                    const id = parseInt(productId) || 0;
-                    if ((id % 5) === 0) {
-                        // 1 out of 5: Normal, intact, clean image without distortion
+                getImageDistortionStyle(product) {
+                    const id = parseInt(product?.id) || 0;
+                    if (this.isInternalProduct(product) || (id % 5) === 0) {
+                        // Internal products (100% clean) OR 1-in-5 clean imported sample
                         return 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
                     }
-                    // 4 out of 5: Force vertical height stretch (16:9 vertical ratio factor)
+                    // Distorted imported product: Force vertical height stretch (16:9 vertical ratio factor)
                     return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
                 },
 

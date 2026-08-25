@@ -185,9 +185,15 @@
                                     $discountPercent = (int) round((($originalPrice - $finalPrice) / $originalPrice) * 100);
                                 }
 
+                                $sku = strtolower((string) ($productEntity->sku ?? ''));
+                                $originType = (string) ($productEntity->origin_type ?? '');
+                                $isInternal = ($originType === 'internal')
+                                    || (! str_starts_with($sku, 'ae-') && ! str_starts_with($sku, 'ali-') && $originType !== 'imported');
+
                                 $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
                                 $mod5 = ((int) ($productEntity->id ?? 0)) % 5;
-                                if ($mod5 === 0) {
+
+                                if ($isInternal || $mod5 === 0) {
                                     $sampledSideColor = '#ffffff';
                                     $distortionStyle = 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
                                 } else {
