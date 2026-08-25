@@ -185,19 +185,19 @@
                                     $discountPercent = (int) round((($originalPrice - $finalPrice) / $originalPrice) * 100);
                                 }
 
-                                $distortionStyle = 'object-fit: cover !important; object-position: center !important; width: 100% !important; height: 100% !important; transform: scaleY(1.78) !important; transform-origin: center !important;';
+                                $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important;';
                             @endphp
 
                             <div 
-                                class="shrink-0 w-full md:w-[calc((100%-2*1rem)/3)] lg:w-[calc((100%-4*1.25rem)/5)] xl:w-[310px] h-[465px] max-h-[465px]"
+                                class="shrink-0 w-full md:w-[calc((100%-2*1rem)/3)] lg:w-[calc((100%-4*1.25rem)/5)] xl:w-[310px] h-[520px] max-h-[520px]"
                                 style="scroll-snap-align: start;"
                             >
-                                <div class="w-full h-[465px] max-h-[465px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border shrink-0 select-none">
+                                <div class="w-full h-[520px] max-h-[520px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border shrink-0 select-none">
                                     
-                                    <!-- Product Image Container with Golden Frame -->
+                                    <!-- Product Image Container with Golden Frame (9:16 Vertical Ratio) -->
                                     <div 
-                                        class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shrink-0 group mb-2 flex items-center justify-center"
-                                        style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37;"
+                                        class="relative w-full aspect-[9/16] rounded-xl sm:rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shrink-0 mb-2 flex items-center justify-center"
+                                        style="aspect-ratio: 9 / 16; width: 100%; max-height: 400px; border: 2px solid #D4AF37;"
                                     >
                                         @if ($discountPercent > 0)
                                             <span 
