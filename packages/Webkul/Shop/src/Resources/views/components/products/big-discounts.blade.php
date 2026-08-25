@@ -186,8 +186,14 @@
                                 }
 
                                 $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-                                $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
-                                $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
+                                $mod5 = ((int) ($productEntity->id ?? 0)) % 5;
+                                if ($mod5 === 0) {
+                                    $sampledSideColor = '#ffffff';
+                                    $distortionStyle = 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
+                                } else {
+                                    $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
+                                    $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
+                                }
                             @endphp
 
                             <div 
