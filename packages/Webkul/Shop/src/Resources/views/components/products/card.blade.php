@@ -92,7 +92,8 @@
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
-                            class="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-300 block"
+                            class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
+                            style="object-fit: fill; width: 100%; height: 100%;"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
@@ -151,7 +152,8 @@
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
-                            class="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-300 block"
+                            class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
+                            style="object-fit: fill; width: 100%; height: 100%;"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
