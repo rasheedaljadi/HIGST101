@@ -105,19 +105,19 @@
 
                     {!! view_render_event('bagisto.shop.customers.account.addresses.create_form_controls.last_name.after') !!}
 
-                    <!-- E-mail -->
+                    <!-- E-mail (Optional) -->
                     <x-shop::form.control-group>
-                        <x-shop::form.control-group.label class="required">
+                        <x-shop::form.control-group.label>
                             @lang('shop::app.customers.account.addresses.create.email')
                         </x-shop::form.control-group.label>
 
                         <x-shop::form.control-group.control
                             type="email"
                             name="email"
-                            rules="required|email"
+                            rules="email"
                             :value="old('email')"
                             :label="trans('shop::app.customers.account.addresses.create.email')"
-                            :placeholder="trans('shop::app.customers.account.addresses.create.email')"
+                            placeholder="email@example.com"
                         />
 
                         <x-shop::form.control-group.error control-name="email" />
@@ -187,7 +187,7 @@
 
                     {!! view_render_event('bagisto.shop.customers.account.addresses.create_form_controls.street_address.after') !!}
 
-                    <!-- Country List-->
+                    <!-- Country List (Default to YE) -->
                     <x-shop::form.control-group>
                         <x-shop::form.control-group.label class="{{ core()->isCountryRequired() ? 'required' : '' }}">
                             @lang('shop::app.customers.account.addresses.create.country')
@@ -213,7 +213,7 @@
                         <x-shop::form.control-group.error control-name="country" />
                     </x-shop::form.control-group>
         
-                    <!-- State Name -->
+                    <!-- State Name (Governorate) -->
                     <x-shop::form.control-group>
                         <x-shop::form.control-group.label class="{{ core()->isStateRequired() ? 'required' : '' }}">
                             @lang('shop::app.customers.account.addresses.create.state')
@@ -229,6 +229,10 @@
                                 :label="trans('shop::app.customers.account.addresses.create.state')"
                                 :placeholder="trans('shop::app.customers.account.addresses.create.state')"
                             >
+                                <option value="">
+                                    @lang('shop::app.customers.account.addresses.create.select-state')
+                                </option>
+
                                 <option 
                                     v-for='(state, index) in countryStates[country]'
                                     :value="state.code"
@@ -244,6 +248,7 @@
                                 name="state"
                                 :value="old('state')"
                                 rules="{{ core()->isStateRequired() ? 'required' : '' }}"
+                                v-model="state"
                                 :label="trans('shop::app.customers.account.addresses.create.state')"
                                 :placeholder="trans('shop::app.customers.account.addresses.create.state')"
                             />
@@ -254,20 +259,59 @@
 
                     {!! view_render_event('bagisto.shop.customers.account.addresses.create_form_controls.state.after') !!}
 
-                    <!-- City -->
+                    <!-- City / District (Dropdown from Yemen Districts) -->
                     <x-shop::form.control-group>
                         <x-shop::form.control-group.label class="required">
                             @lang('shop::app.customers.account.addresses.create.city')
                         </x-shop::form.control-group.label>
 
-                        <x-shop::form.control-group.control
-                            type="text"
-                            name="city"
-                            rules="required"
-                            :value="old('city')"
-                            :label="trans('shop::app.customers.account.addresses.create.city')"
-                            :placeholder="trans('shop::app.customers.account.addresses.create.city')"
-                        />
+                        <template v-if="state && availableDistricts && availableDistricts.length">
+                            <x-shop::form.control-group.control
+                                type="select"
+                                name="city"
+                                v-model="city"
+                                rules="required"
+                                :label="trans('shop::app.customers.account.addresses.create.city')"
+                                :placeholder="trans('shop::app.customers.account.addresses.create.city')"
+                            >
+                                <option value="">
+                                    اختر المديرية
+                                </option>
+
+                                <option
+                                    v-for="district in availableDistricts"
+                                    :value="district"
+                                >
+                                    @{{ district }}
+                                </option>
+                            </x-shop::form.control-group.control>
+                        </template>
+
+                        <template v-else-if="!state && country === 'YE'">
+                            <x-shop::form.control-group.control
+                                type="select"
+                                name="city"
+                                disabled
+                                rules="required"
+                                :label="trans('shop::app.customers.account.addresses.create.city')"
+                                :placeholder="trans('shop::app.customers.account.addresses.create.city')"
+                            >
+                                <option value="">
+                                    يرجى اختيار المحافظة أولاً
+                                </option>
+                            </x-shop::form.control-group.control>
+                        </template>
+
+                        <template v-else>
+                            <x-shop::form.control-group.control
+                                type="text"
+                                name="city"
+                                v-model="city"
+                                rules="required"
+                                :label="trans('shop::app.customers.account.addresses.create.city')"
+                                :placeholder="trans('shop::app.customers.account.addresses.create.city')"
+                            />
+                        </template>
 
                         <x-shop::form.control-group.error control-name="city" />
                     </x-shop::form.control-group>
@@ -284,7 +328,7 @@
                             type="text"
                             name="postcode"
                             rules="{{ core()->isPostCodeRequired() ? 'required' : '' }}|postcode"
-                            :value="old('postcode')"
+                            :value="old('postcode') ?? '00000'"
                             :label="trans('shop::app.customers.account.addresses.create.post-code')"
                             :placeholder="trans('shop::app.customers.account.addresses.create.post-code')"
                         />
@@ -357,21 +401,62 @@
     
                 data() {
                     return {
-                        country: "{{ old('country') }}",
+                        country: "{{ old('country') ?? 'YE' }}",
 
                         state: "{{ old('state') }}",
 
+                        city: "{{ old('city') }}",
+
                         countryStates: @json(core()->groupedStatesByCountries()),
+
+                        yemenDistricts: {
+                            'SA': ['الثورة', 'التحرير', 'الصافية', 'السبعين', 'شعوب', 'بني الحارث', 'الوحدة', 'صنعاء القديمة', 'معين'],
+                            'SN': ['سنحان وبني بهلول', 'بني مطر', 'أرحب', 'همدان', 'بني حشيش', 'الحيمة الخارجية', 'الحيمة الداخلية', 'مناخة', 'صعفان', 'الطيال', 'جحانة', 'نهم', 'بلاد الروس', 'خولان'],
+                            'AD': ['صيرة (كريتر)', 'خور مكسر', 'المعلا', 'التواهي', 'الشيخ عثمان', 'المنصورة', 'دار سعد', 'البريقة'],
+                            'TA': ['القاهرة', 'المظفر', 'صالة', 'التعزية', 'شرعب الرونة', 'شرعب السلام', 'ماوية', 'المسراخ', 'جبل حبشي', 'مشرعة وحدنان', 'صبر الموادم', 'المخاء', 'ذباب (باب المندب)', 'موزع', 'الوازعية', 'الشمايتين (التربة)', 'المواسط', 'المعافر', 'سامع', 'الصلو', 'خدير', 'حيفان'],
+                            'HU': ['الحوك', 'الحالي', 'المينا', 'باجل', 'الزيدية', 'اللحية', 'الضحي', 'القناوص', 'الزهرة', 'المنيرة', 'بيت الفقيه', 'المنصورية', 'السخنة', 'الدريهمي', 'التحيتا', 'زبيد', 'الجراحي', 'جبل رأس', 'الخوخة', 'حيس', 'برع'],
+                            'IB': ['الظهار', 'المشنة', 'جبلة', 'السبرة', 'بعدان', 'الشعر', 'النادرة', 'السدة', 'يريم', 'الرضمة', 'المخادر', 'حبيش', 'القفر', 'حزم العدين', 'العدين', 'فرع العدين', 'مذيخرة', 'ذي السفال', 'السياني'],
+                            'AB': ['زنجبار', 'خنفر (جَار)', 'سباح', 'رصد', 'سرار', 'أحور', 'لودر', 'الوضيع', 'مودية', 'جيشان', 'المحفد'],
+                            'BA': ['مدينة البيضاء', 'البيضاء', 'رداع', 'مكيراس', 'الصومعة', 'الزاهر', 'ذي ناعم', 'الطفة', 'ملاجم', 'ناطع', 'نعمان', 'السوادية', 'الشرية', 'ولد ربيع', 'العرش', 'ردمان'],
+                            'SH': ['عتق', 'نصاب', 'حبان', 'الصعيد', 'الروضة', 'ميفعة', 'رضوم', 'حطيب', 'مرخة السفلى', 'مرخة العليا', 'جردان', 'دهر', 'الطلح', 'عسيلان', 'عين', 'بيحان'],
+                            'HD': ['مدينة المكلا', 'المكلا', 'غيل باوزير', 'الشحر', 'الديس الشرقية', 'الريدة وقصيعر', 'حجر', 'بروم ميفع', 'ساه', 'سيئون', 'تريم', 'شبام', 'القطن', 'حورة ووادى العين', 'حريضة', 'عمد', 'رخية', 'العبر', 'زمخ ومنخوب', 'حجر الصيعر', 'السوم'],
+                            'MR': ['الغيضة', 'حوف', 'شحن', 'حات', 'قشن', 'سيحوت', 'المسيلة', 'منعر'],
+                            'LA': ['الحوطة', 'تبن', 'القبيطة', 'المقاطرة', 'طور الباحة', 'المضاربة والعارة', 'المسيمير', 'الملاح', 'حبيل جبر', 'ردفان (الحبيلين)', 'حالمين', 'يافع لبعوس', 'يهر', 'المفلحي'],
+                            'MA': ['مدينة مأرب', 'مأرب', 'صرواح', 'مجزر', 'رغوان', 'مدغل', 'بدبدة', 'حريب', 'الجوبة', 'رحبة', 'جبل مراد', 'العبدية', 'ماهلية'],
+                            'JA': ['الحزم', 'المتون', 'المصلوب', 'الزاهر', 'الحميدات', 'الخلق', 'الغيل', 'خب والشعف', 'برط العنان', 'رجوزة', 'خراب المراشي'],
+                            'HJ': ['مدينة حجة', 'حجة', 'عبس', 'حرض', 'ميدي', 'قفل شمر', 'كحلان عفار', 'كحلان الشرف', 'الشاهل', 'المحابشة', 'كعيدنة', 'خيران المحرق', 'أفلح الشام', 'أفلح اليمن', 'مستبأ', 'بكيل المير', 'وشحة', 'الجميمة', 'كشر', 'شرس', 'المغربة', 'بني قيس'],
+                            'SD': ['مدينة صعدة', 'صعدة', 'سحار', 'مجز', 'باقم', 'قطابر', 'منبه', 'رازح', 'غمر', 'شدا', 'الظاهر', 'حيدان', 'ساقين', 'كتاف والبقع', 'الصفراء', 'الحشوة'],
+                            'MW': ['مدينة المحويت', 'المحويت', 'شبام كوكبان', 'الطويلة', 'الرجم', 'الخبت', 'ملحان', 'حفاش', 'بني سعد'],
+                            'DH': ['مدينة ذمار', 'عنس', 'الحداء', 'جهران (معبر)', 'ضوران أنس', 'جبل الشرق', 'المنار', 'عتمة', 'وصاب العالي', 'وصاب السافل'],
+                            'AM': ['عمران', 'ريدة', 'عيال سريح', 'جبل عيال يزيد', 'خمر', 'حوث', 'العشة', 'قفلة عذر', 'حرف سفيان', 'شهارة', 'مسور', 'ثلاء', 'السودة', 'السود'],
+                            'DL': ['الضالع', 'جحاف', 'الأزارق', 'الحصين', 'الشعيب', 'قعطبة', 'دمت', 'جبن', 'الحشاء'],
+                            'RY': ['الجبين', 'كسمة', 'الجعفرية', 'السلفية', 'بلاد الطعام', 'مزهر'],
+                            'SU': ['حديبو', 'قلنسية وعبد الكوري']
+                        }
                     }
                 },
     
+                computed: {
+                    availableDistricts() {
+                        if (! this.state) {
+                            return [];
+                        }
+
+                        if (this.yemenDistricts[this.state]) {
+                            return this.yemenDistricts[this.state];
+                        }
+
+                        const found = this.countryStates?.['YE']?.find(s => s.code === this.state || s.default_name === this.state);
+                        if (found && this.yemenDistricts[found.code]) {
+                            return this.yemenDistricts[found.code];
+                        }
+
+                        return [];
+                    }
+                },
+
                 methods: {
                     haveStates() {
-                        /*
-                        * The double negation operator is used to convert the value to a boolean.
-                        * It ensures that the final result is a boolean value,
-                        * true if the array has a length greater than 0, and otherwise false.
-                        */
                         return !!this.countryStates[this.country]?.length;
                     },
                 }
