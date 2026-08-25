@@ -18,7 +18,7 @@
             <!-- Modern Flash Deal Style Product Card (Default Grid & Carousel View) -->
             <div
                 v-if="mode != 'list'"
-                class="w-full h-full min-h-[400px] max-h-[420px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border select-none"
+                class="w-full h-full bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border select-none"
             >
                 <!-- Product Image Container with Golden Frame and Sampled Logic (Internal clean, Imported 1 in 5 clean) -->
                 <div 
@@ -103,7 +103,7 @@
                 <!-- Product Title Area -->
                 <a 
                     :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" 
-                    class="block flex items-center my-1 px-0.5 shrink-0 overflow-hidden"
+                    class="block flex items-center my-1 px-0.5 min-h-[2.6rem] shrink-0 overflow-hidden"
                 >
                     <h3 
                         class="text-xs sm:text-sm font-bold text-[#001A54] dark:text-gray-100 hover:opacity-80 transition-opacity text-right rtl:text-right ltr:text-left w-full leading-tight sm:leading-snug" 
