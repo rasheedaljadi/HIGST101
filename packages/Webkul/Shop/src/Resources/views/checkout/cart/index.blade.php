@@ -543,43 +543,51 @@
                     },
 
                     removeItem(itemId) {
-                        this.$emitter.emit('open-confirm-modal', {
-                            agree: () => {
-                                this.$axios.post('{{ route('shop.api.checkout.cart.destroy') }}', {
-                                        '_method': 'DELETE',
-                                        'cart_item_id': itemId,
-                                    })
-                                    .then(response => {
-                                        this.cart = response.data.data;
+                        this.isStoring = true;
 
-                                        this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+                        this.$axios.post('{{ route('shop.api.checkout.cart.destroy') }}', {
+                                '_method': 'DELETE',
+                                'cart_item_id': itemId,
+                            })
+                            .then(response => {
+                                this.cart = response.data.data;
 
-                                    })
-                                    .catch(error => {});
-                            }
-                        });
+                                this.$emitter.emit('update-mini-cart', response.data.data);
+
+                                this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+
+                                this.isStoring = false;
+                            })
+                            .catch(error => {
+                                this.isStoring = false;
+                            });
                     },
 
                     removeSelectedItems() {
-                        this.$emitter.emit('open-confirm-modal', {
-                            agree: () => {
-                                const selectedItemsIds = this.cart.items.flatMap(item => item.selected ? item.id : []);
+                        const selectedItemsIds = this.cart.items.flatMap(item => item.selected ? item.id : []);
 
-                                this.$axios.post('{{ route('shop.api.checkout.cart.destroy_selected') }}', {
-                                        '_method': 'DELETE',
-                                        'ids': selectedItemsIds,
-                                    })
-                                    .then(response => {
-                                        this.cart = response.data.data;
+                        if (! selectedItemsIds.length) {
+                            return;
+                        }
 
-                                        this.$emitter.emit('update-mini-cart', response.data.data );
+                        this.isStoring = true;
 
-                                        this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+                        this.$axios.post('{{ route('shop.api.checkout.cart.destroy_selected') }}', {
+                                '_method': 'DELETE',
+                                'ids': selectedItemsIds,
+                            })
+                            .then(response => {
+                                this.cart = response.data.data;
 
-                                    })
-                                    .catch(error => {});
-                            }
-                        });
+                                this.$emitter.emit('update-mini-cart', response.data.data );
+
+                                this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+
+                                this.isStoring = false;
+                            })
+                            .catch(error => {
+                                this.isStoring = false;
+                            });
                     },
 
                     moveToWishlistSelectedItems() {
