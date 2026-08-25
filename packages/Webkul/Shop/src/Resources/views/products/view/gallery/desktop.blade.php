@@ -1,6 +1,13 @@
 @php
     $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-    $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
+    $isCleanProduct = (((int) ($product->id ?? 0)) % 5) === 0;
+    if ($isCleanProduct) {
+        $productSampledColor = '#ffffff';
+        $imageStyle = 'width: 100%; height: 100%; object-fit: contain; background: #ffffff;';
+    } else {
+        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
+        $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(0.60, 1.70); transform-origin: center;';
+    }
 @endphp
 
 <!-- For screens 768px and greater (tablets, laptops, desktop). -->
@@ -81,7 +88,7 @@
     >
         <img
             class="h-full w-full cursor-pointer rounded-xl block"
-            style="width: 100%; height: 100%; object-fit: fill; transform: scale(0.60, 1.70); transform-origin: center;"
+            style="{{ $imageStyle }}"
             :src="baseFile.path || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
             v-if="baseFile.type == 'image' || !baseFile.type"
             alt="{{ $product->name }}"

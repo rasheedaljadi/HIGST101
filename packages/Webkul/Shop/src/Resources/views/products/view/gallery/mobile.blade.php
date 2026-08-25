@@ -1,6 +1,13 @@
 @php
     $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-    $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
+    $isCleanProduct = (((int) ($product->id ?? 0)) % 5) === 0;
+    if ($isCleanProduct) {
+        $productSampledColor = '#ffffff';
+        $mobileImageStyle = 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
+    } else {
+        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
+        $mobileImageStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.70) !important; transform-origin: center !important;';
+    }
 @endphp
 
 <div
@@ -59,7 +66,7 @@
                     <template v-else>
                         <img
                             class="aspect-[5/4] max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out rounded-xl"
-                            style="object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.70) !important; transform-origin: center !important;"
+                            style="{{ $mobileImageStyle }}"
                             :src="media.large_image_url"
                             :alt="media.large_image_url"
                             v-on:error="$event.target.src = media.original_image_url || media.fallback_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
