@@ -197,7 +197,7 @@
 
                                 if ($isClean) {
                                     $sampledSideColor = '#ffffff';
-                                    $distortionStyle = 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
+                                    $distortionStyle = 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;';
                                 } elseif ($mod10 === 1) {
                                     // 10% horizontal stretch
                                     $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];

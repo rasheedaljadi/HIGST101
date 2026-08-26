@@ -11,7 +11,7 @@
 
     if ($isCleanProduct) {
         $productSampledColor = '#ffffff';
-        $imageStyle = 'width: 100%; height: 100%; object-fit: contain; background: #ffffff;';
+        $imageStyle = 'width: 100%; height: 100%; object-fit: cover; object-position: center;';
     } elseif ($isHorizontalDistortion) {
         // 10% horizontal stretch
         $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
@@ -109,7 +109,7 @@
     >
         <img
             class="h-full w-full cursor-pointer rounded-xl block"
-            :style="(baseFile.is_local || media.images[activeIndex]?.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? 'width: 100%; height: 100%; object-fit: contain; background: #ffffff;' : '{{ $imageStyle }}'"
+            :style="(baseFile.is_local || media.images[activeIndex]?.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? 'width: 100%; height: 100%; object-fit: cover; object-position: center;' : '{{ $imageStyle }}'"
             :src="baseFile.path || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
             v-if="baseFile.type == 'image' || !baseFile.type"
             alt="{{ $product->name }}"

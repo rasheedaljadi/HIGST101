@@ -11,7 +11,7 @@
 
     if ($isCleanProduct) {
         $productSampledColor = '#ffffff';
-        $mobileImageStyle = 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
+        $mobileImageStyle = 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;';
     } elseif ($isHorizontalDistortion) {
         // 10% horizontal stretch
         $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
@@ -79,7 +79,7 @@
                     <template v-else>
                         <img
                             class="aspect-[5/4] max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out rounded-xl"
-                            :style="(media.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? 'object-fit: contain !important; width: 100% !important; height: 100% !important;' : '{{ $mobileImageStyle }}'"
+                            :style="(media.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;' : '{{ $mobileImageStyle }}'"
                             :src="media.large_image_url"
                             :alt="media.large_image_url"
                             v-on:error="$event.target.src = media.original_image_url || media.fallback_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"

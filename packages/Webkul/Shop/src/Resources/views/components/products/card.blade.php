@@ -362,8 +362,8 @@
                 getImageDistortionStyle(product) {
                     const type = this.getImageDistortionType(product);
                     if (type === 'clean') {
-                        // Intact clean contained image
-                        return 'object-fit: contain !important; width: 100% !important; height: 100% !important;';
+                        // Internal & clean images: Complete full-frame cover fill without empty spaces
+                        return 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;';
                     }
                     if (type === 'horizontal') {
                         // 10%: Force horizontal width stretch (squashed vertically, stretched wide)
