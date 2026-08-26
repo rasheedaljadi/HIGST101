@@ -192,18 +192,26 @@
 
                                 $isLocalImage = (bool) ($productEntity->base_image['is_local'] ?? $productEntity->images?->first()?->is_local ?? false);
                                 $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-                                $mod10 = ((int) ($productEntity->id ?? 0)) % 10;
-                                $isClean = $isLocalImage || $isInternal || ($mod10 === 0 || $mod10 === 5);
+                                $m100 = ((int) ($productEntity->id ?? 0)) % 100;
+                                $isClean = $isLocalImage || $isInternal || ($m100 % 5 === 0);
 
                                 if ($isClean) {
                                     $sampledSideColor = '#ffffff';
                                     $distortionStyle = 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;';
-                                } elseif ($mod10 === 1) {
-                                    // 10% horizontal stretch
+                                } elseif ($m100 === 1 || $m100 === 6 || $m100 === 11) {
+                                    // 3% slight vertical
+                                    $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
+                                    $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.82, 1.25) !important; transform-origin: center !important;';
+                                } elseif ($m100 === 2 || $m100 === 7 || $m100 === 12) {
+                                    // 3% slight horizontal
+                                    $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
+                                    $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.25, 0.82) !important; transform-origin: center !important;';
+                                } elseif (in_array($m100, [3, 8, 13, 18, 23, 28, 33, 38, 43, 48], true)) {
+                                    // 10% pronounced horizontal
                                     $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
                                     $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.80, 0.60) !important; transform-origin: center !important;';
                                 } else {
-                                    // 70% vertical stretch
+                                    // 64% pronounced vertical
                                     $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
                                     $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
                                 }

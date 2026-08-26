@@ -5,19 +5,26 @@
         || (! str_starts_with($sku, 'ae-') && ! str_starts_with($sku, 'ali-') && $originType !== 'imported');
 
     $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-    $mod10 = ((int) ($product->id ?? 0)) % 10;
-    $isCleanProduct = $isInternal || ($mod10 === 0 || $mod10 === 5);
-    $isHorizontalDistortion = ! $isCleanProduct && ($mod10 === 1);
+    $m100 = ((int) ($product->id ?? 0)) % 100;
+    $isCleanProduct = $isInternal || ($m100 % 5 === 0);
 
     if ($isCleanProduct) {
         $productSampledColor = '#ffffff';
         $imageStyle = 'width: 100%; height: 100%; object-fit: cover; object-position: center;';
-    } elseif ($isHorizontalDistortion) {
-        // 10% horizontal stretch
+    } elseif ($m100 === 1 || $m100 === 6 || $m100 === 11) {
+        // 3% slight vertical
+        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
+        $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(0.82, 1.25); transform-origin: center;';
+    } elseif ($m100 === 2 || $m100 === 7 || $m100 === 12) {
+        // 3% slight horizontal
+        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
+        $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(1.25, 0.82); transform-origin: center;';
+    } elseif (in_array($m100, [3, 8, 13, 18, 23, 28, 33, 38, 43, 48], true)) {
+        // 10% pronounced horizontal
         $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
         $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(1.70, 0.60); transform-origin: center;';
     } else {
-        // 70% vertical stretch
+        // 64% pronounced vertical
         $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
         $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(0.60, 1.70); transform-origin: center;';
     }

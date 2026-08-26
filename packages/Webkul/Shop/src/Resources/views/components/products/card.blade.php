@@ -353,10 +353,17 @@
                         return 'clean';
                     }
                     const id = parseInt(product?.id) || 0;
-                    if ((id % 10) === 1) {
-                        return 'horizontal'; // 10% horizontal distortion
+                    const m = id % 100;
+                    if (m === 1 || m === 6 || m === 11) {
+                        return 'slight_vertical'; // 3% طولي طفيف
                     }
-                    return 'vertical'; // 70% vertical distortion
+                    if (m === 2 || m === 7 || m === 12) {
+                        return 'slight_horizontal'; // 3% عرضي طفيف
+                    }
+                    if ([3, 8, 13, 18, 23, 28, 33, 38, 43, 48].includes(m)) {
+                        return 'horizontal'; // 10% عرضي حاد
+                    }
+                    return 'vertical'; // 64% طولي حاد
                 },
 
                 getImageDistortionStyle(product) {
@@ -365,11 +372,19 @@
                         // Internal & clean images: Complete full-frame cover fill without empty spaces
                         return 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;';
                     }
+                    if (type === 'slight_vertical') {
+                        // 3%: Slight vertical stretch
+                        return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.82, 1.25) !important; transform-origin: center !important;';
+                    }
+                    if (type === 'slight_horizontal') {
+                        // 3%: Slight horizontal stretch
+                        return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.25, 0.82) !important; transform-origin: center !important;';
+                    }
                     if (type === 'horizontal') {
-                        // 10%: Force horizontal width stretch (squashed vertically, stretched wide)
+                        // 10%: Pronounced horizontal width stretch (squashed vertically, stretched wide)
                         return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.80, 0.60) !important; transform-origin: center !important;';
                     }
-                    // 70%: Force vertical height stretch (squashed horizontally, stretched tall)
+                    // 64%: Pronounced vertical height stretch (squashed horizontally, stretched tall)
                     return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
                 },
 
