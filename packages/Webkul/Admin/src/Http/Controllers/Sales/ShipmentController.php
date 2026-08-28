@@ -3,9 +3,12 @@
 namespace Webkul\Admin\Http\Controllers\Sales;
 
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Webkul\Admin\DataGrids\Sales\OrderShipmentDataGrid;
 use Webkul\Admin\Http\Controllers\Controller;
+use Webkul\DeliveryManagement\Models\DeliveryAssignment;
+use Webkul\DeliveryManagement\Models\DeliveryAuditLog;
 use Webkul\Sales\Repositories\OrderItemRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 use Webkul\Sales\Repositories\ShipmentRepository;
@@ -83,9 +86,77 @@ class ShipmentController extends Controller
             return redirect()->back();
         }
 
-        $this->shipmentRepository->create(array_merge($data, [
+        $shipment = $this->shipmentRepository->create(array_merge($data, [
             'order_id' => $orderId,
         ]));
+
+        // Sync and bind with Delivery Management unit
+        if (class_exists(DeliveryAssignment::class)) {
+            try {
+                $assignment = DeliveryAssignment::firstOrNew(['order_id' => $orderId]);
+
+                $deliveryBoyId = request()->input('shipment.delivery_boy_id');
+                $deliveryPointId = request()->input('shipment.delivery_point_id');
+                $deliveryType = request()->input('shipment.delivery_type');
+                $deliveryNotes = request()->input('shipment.delivery_notes');
+
+                if ($deliveryType) {
+                    $assignment->delivery_type = $deliveryType;
+                } elseif (empty($assignment->delivery_type)) {
+                    $assignment->delivery_type = str_contains((string) $order->shipping_method, 'delivery_point')
+                        ? DeliveryAssignment::TYPE_DELIVERY_POINT
+                        : DeliveryAssignment::TYPE_HOME_DELIVERY;
+                }
+
+                $assignment->shipment_id = $shipment->id;
+
+                $adminUser = auth()->guard('admin')->user();
+                $adminId = $adminUser ? $adminUser->id : null;
+
+                if (! empty($deliveryBoyId)) {
+                    $assignment->delivery_boy_id = (int) $deliveryBoyId;
+                    $assignment->assigned_by = $adminId;
+                    $assignment->assigned_at = now();
+                    $assignment->status = DeliveryAssignment::STATUS_ASSIGNED;
+                }
+
+                if (! empty($deliveryPointId)) {
+                    $assignment->delivery_point_id = (int) $deliveryPointId;
+                    if (empty($deliveryBoyId)) {
+                        $assignment->assigned_by = $adminId;
+                        $assignment->assigned_at = now();
+                        $assignment->status = DeliveryAssignment::STATUS_ASSIGNED;
+                    }
+                }
+
+                if (! empty($deliveryNotes)) {
+                    $assignment->notes = ($assignment->notes ? $assignment->notes."\n" : '').'ملاحظات الشحن: '.$deliveryNotes;
+                }
+
+                if (empty($assignment->idempotency_key)) {
+                    $assignment->idempotency_key = 'ORD-'.$orderId.'-'.time();
+                }
+
+                $assignment->save();
+
+                if (class_exists(DeliveryAuditLog::class)) {
+                    DeliveryAuditLog::log(
+                        action: 'shipment_linked',
+                        entityType: 'assignment',
+                        entityId: $assignment->id,
+                        reason: 'إنشاء شحنة وربط الطلب بوحدة التسليم ومندوب التوصيل',
+                        newValues: [
+                            'shipment_id' => $shipment->id,
+                            'delivery_boy_id' => $assignment->delivery_boy_id,
+                            'delivery_point_id' => $assignment->delivery_point_id,
+                            'status' => $assignment->status,
+                        ]
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::warning("[DeliverySync] Failed linking shipment #{$shipment->id} with delivery assignment for Order #{$orderId}: ".$e->getMessage());
+            }
+        }
 
         session()->flash('success', trans('admin::app.sales.shipments.create.success'));
 

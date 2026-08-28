@@ -830,6 +830,113 @@
                     </x-slot>
                 </x-admin::accordion>
 
+                @php
+                    $deliveryAssignment = class_exists(\Webkul\DeliveryManagement\Models\DeliveryAssignment::class)
+                        ? \Webkul\DeliveryManagement\Models\DeliveryAssignment::with(['deliveryBoy', 'deliveryPoint'])->where('order_id', $order->id)->first()
+                        : null;
+                @endphp
+
+                <!-- Delivery Management & Courier Dispatch -->
+                <x-admin::accordion>
+                    <x-slot:header>
+                        <div class="flex items-center justify-between w-full ltr:pr-2.5 rtl:pl-2.5">
+                            <p class="p-2.5 text-base font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                                <span class="text-xl">🚚</span>
+                                <span>بيانات التسليم وموظف التوصيل</span>
+                            </p>
+
+                            @if ($deliveryAssignment)
+                                @php
+                                    $statusKey = (string) $deliveryAssignment->status;
+                                    $statusBadgeClass = match($statusKey) {
+                                        'assigned' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                                        'picked_up' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+                                        'out_for_delivery' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 animate-pulse',
+                                        'delivered' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+                                        'delivery_failed' => 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300',
+                                        'retry_scheduled' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                                        'returned_to_hayest' => 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+                                        default => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+                                    };
+                                    $statusLabel = trans("delivery::app.admin.states.{$statusKey}") ?: $statusKey;
+                                @endphp
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $statusBadgeClass }}">
+                                    {{ $statusLabel }}
+                                </span>
+                            @endif
+                        </div>
+                    </x-slot>
+
+                    <x-slot:content>
+                        @if ($deliveryAssignment)
+                            <div class="grid gap-y-3 text-xs">
+                                <!-- Delivery Type -->
+                                <div>
+                                    <p class="font-semibold text-gray-800 dark:text-white flex items-center gap-1.5">
+                                        @if ($deliveryAssignment->delivery_type === 'home_delivery')
+                                            <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 font-bold">🏠 توصيل للمنزل</span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 font-bold">📍 نقطة استلام معتمدة</span>
+                                        @endif
+                                    </p>
+                                    <p class="text-gray-500 dark:text-gray-400 mt-0.5">نوع التسليم المحدد في الطلب</p>
+                                </div>
+
+                                <span class="block w-full border-b dark:border-gray-800"></span>
+
+                                <!-- Assigned Courier -->
+                                <div>
+                                    <p class="text-gray-500 dark:text-gray-400">موظف / مندوب التوصيل:</p>
+                                    @if ($deliveryAssignment->deliveryBoy)
+                                        <p class="font-bold text-sm text-indigo-700 dark:text-indigo-400 mt-1 flex items-center gap-1">
+                                            <span>🚴</span>
+                                            <span>{{ $deliveryAssignment->deliveryBoy->name }}</span>
+                                        </p>
+                                        <p class="text-gray-600 dark:text-gray-400 text-[11px]">{{ $deliveryAssignment->deliveryBoy->email }}</p>
+                                    @else
+                                        <p class="text-amber-600 dark:text-amber-400 font-semibold mt-1">⚠️ بانتظار إسناد مندوب توصيل</p>
+                                    @endif
+                                </div>
+
+                                @if ($deliveryAssignment->deliveryPoint)
+                                    <span class="block w-full border-b dark:border-gray-800"></span>
+                                    <div>
+                                        <p class="text-gray-500 dark:text-gray-400">نقطة التسليم المعتمدة:</p>
+                                        <p class="font-bold text-gray-800 dark:text-white mt-1">🏢 {{ $deliveryAssignment->deliveryPoint->name }}</p>
+                                        <p class="text-gray-600 dark:text-gray-400 text-[11px]">{{ $deliveryAssignment->deliveryPoint->address }} ({{ $deliveryAssignment->deliveryPoint->city }})</p>
+                                    </div>
+                                @endif
+
+                                @if ($deliveryAssignment->notes)
+                                    <span class="block w-full border-b dark:border-gray-800"></span>
+                                    <div>
+                                        <p class="text-gray-500 dark:text-gray-400">ملاحظات الشحن والتسليم:</p>
+                                        <p class="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded mt-1 font-mono text-[11px] whitespace-pre-line">{{ $deliveryAssignment->notes }}</p>
+                                    </div>
+                                @endif
+
+                                <span class="block w-full border-b dark:border-gray-800"></span>
+
+                                <!-- Direct Action Link -->
+                                <div class="pt-1 flex items-center justify-between">
+                                    <a
+                                        href="{{ route('admin.delivery.assignments.show', $deliveryAssignment->id) }}"
+                                        class="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline font-bold"
+                                    >
+                                        <span>إدارة مهمة التسليم والمتابعة</span>
+                                        <span class="rtl:rotate-180">→</span>
+                                    </a>
+                                </div>
+                            </div>
+                        @else
+                            <div class="text-xs text-gray-500 dark:text-gray-400 py-2">
+                                <p>لم يتم إنشاء سجل تسليم مسبق لهذا الطلب.</p>
+                                <p class="mt-1 text-[11px] text-gray-400">سيتم إنشاء وربط مهمة التسليم تلقائياً بمجرد إنشاء الشحنة.</p>
+                            </div>
+                        @endif
+                    </x-slot>
+                </x-admin::accordion>
+
                 <!-- Invoice Information-->
                 <x-admin::accordion>
                     <x-slot:header>

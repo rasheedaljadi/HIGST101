@@ -1,3 +1,29 @@
+@php
+    $deliveryAssignment = class_exists(\Webkul\DeliveryManagement\Models\DeliveryAssignment::class)
+        ? \Webkul\DeliveryManagement\Models\DeliveryAssignment::with(['deliveryBoy', 'deliveryPoint'])->where('order_id', $order->id)->first()
+        : null;
+
+    $activeCouriers = class_exists(\Webkul\User\Models\Admin::class)
+        ? \Webkul\User\Models\Admin::where('status', 1)->get()
+        : collect();
+
+    $activePoints = class_exists(\Webkul\DeliveryManagement\Models\DeliveryPoint::class)
+        ? \Webkul\DeliveryManagement\Models\DeliveryPoint::where('is_active', true)->get()
+        : collect();
+
+    $shippingMethod = (string) $order->shipping_method;
+    $isDeliveryPoint = str_contains($shippingMethod, 'delivery_point') || ($deliveryAssignment?->delivery_type === 'delivery_point');
+    $isHomeDelivery = ! $isDeliveryPoint;
+
+    $currentDeliveryType = $isDeliveryPoint ? 'delivery_point' : 'home_delivery';
+
+    $defaultCarrierTitle = $isHomeDelivery 
+        ? 'توصيل محلي (مندوب هايست)' 
+        : ($isDeliveryPoint ? 'نقطة تسليم معتمدة (هايست)' : ($order->shipping_title ?: 'شحن هايست'));
+
+    $defaultTrackNumber = 'HAYEST-' . str_pad((string) ($order->increment_id ?? $order->id), 8, '0', STR_PAD_LEFT);
+@endphp
+
 <!-- Shipment Vue Components -->
 <v-create-shipment>
     <div
@@ -58,6 +84,100 @@
                     <!-- Drawer Content -->
                     <x-slot:content class="!p-0">
                         <div class="grid p-4 pt-2">
+                            <!-- Delivery Management Integration Box -->
+                            <div class="mb-4 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50/70 to-indigo-50/70 p-4 dark:border-blue-900/50 dark:from-blue-950/20 dark:to-indigo-950/20 shadow-xs">
+                                <div class="flex items-center justify-between gap-2 pb-3 border-b border-blue-200/60 dark:border-blue-900/40">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-2xl">🚚</span>
+                                        <div>
+                                            <h4 class="text-sm font-bold text-gray-800 dark:text-white">إدارة مسار التوصيل (Delivery Management)</h4>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">ربط الشحنة بمهمة التسليم وتعيين موظف التوصيل المسؤول</p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        @if ($isHomeDelivery)
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-300 dark:border-blue-700">
+                                                🏠 توصيل للمنزل
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-300 dark:border-purple-700">
+                                                📍 استلام من نقطة
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="shipment[delivery_type]" value="{{ $currentDeliveryType }}">
+
+                                <div class="mt-3 grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+                                    @if ($isHomeDelivery)
+                                        <!-- Delivery Courier / Agent Select -->
+                                        <x-admin::form.control-group class="!mb-0">
+                                            <x-admin::form.control-group.label class="font-semibold text-gray-700 dark:text-gray-200">
+                                                موظف / مندوب التوصيل
+                                            </x-admin::form.control-group.label>
+
+                                            <x-admin::form.control-group.control
+                                                type="select"
+                                                id="shipment[delivery_boy_id]"
+                                                name="shipment[delivery_boy_id]"
+                                                :value="old('shipment.delivery_boy_id', $deliveryAssignment?->delivery_boy_id)"
+                                            >
+                                                <option value="">-- اختر موظف التوصيل (أو اتركه للإسناد لاحقاً) --</option>
+                                                @foreach ($activeCouriers as $courier)
+                                                    <option 
+                                                        value="{{ $courier->id }}"
+                                                        {{ (old('shipment.delivery_boy_id', $deliveryAssignment?->delivery_boy_id) == $courier->id) ? 'selected' : '' }}
+                                                    >
+                                                        🚴 {{ $courier->name }} ({{ $courier->email }})
+                                                    </option>
+                                                @endforeach
+                                            </x-admin::form.control-group.control>
+                                            <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">سيتم إسناد الطلب للمندوب فور إنشاء الشحنة وتحديث حالته في وحدة التسليم.</p>
+                                        </x-admin::form.control-group>
+                                    @else
+                                        <!-- Delivery Point Select -->
+                                        <x-admin::form.control-group class="!mb-0">
+                                            <x-admin::form.control-group.label class="font-semibold text-gray-700 dark:text-gray-200">
+                                                نقطة التسليم المعتمدة
+                                            </x-admin::form.control-group.label>
+
+                                            <x-admin::form.control-group.control
+                                                type="select"
+                                                id="shipment[delivery_point_id]"
+                                                name="shipment[delivery_point_id]"
+                                                :value="old('shipment.delivery_point_id', $deliveryAssignment?->delivery_point_id)"
+                                            >
+                                                <option value="">-- اختر نقطة التسليم --</option>
+                                                @foreach ($activePoints as $point)
+                                                    <option 
+                                                        value="{{ $point->id }}"
+                                                        {{ (old('shipment.delivery_point_id', $deliveryAssignment?->delivery_point_id) == $point->id) ? 'selected' : '' }}
+                                                    >
+                                                        🏢 {{ $point->name }} - {{ $point->governorate }} ({{ $point->city }})
+                                                    </option>
+                                                @endforeach
+                                            </x-admin::form.control-group.control>
+                                        </x-admin::form.control-group>
+                                    @endif
+
+                                    <!-- Delivery Notes -->
+                                    <x-admin::form.control-group class="!mb-0">
+                                        <x-admin::form.control-group.label class="font-semibold text-gray-700 dark:text-gray-200">
+                                            ملاحظات الشحن والتسليم
+                                        </x-admin::form.control-group.label>
+
+                                        <x-admin::form.control-group.control
+                                            type="text"
+                                            id="shipment[delivery_notes]"
+                                            name="shipment[delivery_notes]"
+                                            placeholder="أي تعليمات خاصة بالتسليم أو الاتصال بالعميل..."
+                                        />
+                                    </x-admin::form.control-group>
+                                </div>
+                            </div>
+
                             <div class="grid grid-cols-2 gap-x-5">
                                 <!-- Carrier Name -->
                                 <x-admin::form.control-group>
@@ -69,6 +189,7 @@
                                         type="text"
                                         id="shipment[carrier_title]"
                                         name="shipment[carrier_title]"
+                                        :value="old('shipment.carrier_title', $defaultCarrierTitle)"
                                         :label="trans('admin::app.sales.shipments.create.carrier-name')"
                                         :placeholder="trans('admin::app.sales.shipments.create.carrier-name')"
                                     />
@@ -86,6 +207,7 @@
                                         type="text"
                                         id="shipment[track_number]"
                                         name="shipment[track_number]"
+                                        :value="old('shipment.track_number', $defaultTrackNumber)"
                                         :label="trans('admin::app.sales.shipments.create.tracking-number')"
                                         :placeholder="trans('admin::app.sales.shipments.create.tracking-number')"
                                     />
