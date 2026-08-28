@@ -78,6 +78,32 @@ class DeliveryAssignmentDataGrid extends DataGrid
     }
 
     /**
+     * Yemeni governorates map.
+     */
+    protected array $governoratesMap = [
+        'SAN' => 'صنعاء (الأمانة والمحافظة)',
+        'ADE' => 'عدن',
+        'TAI' => 'تعز',
+        'HOD' => 'الحديدة',
+        'IBB' => 'إب',
+        'HAD' => 'حضرموت',
+        'DHA' => 'ذمار',
+        'HAJ' => 'حجة',
+        'LAH' => 'لحج',
+        'SAD' => 'صعدة',
+        'BAW' => 'البيضاء',
+        'ABY' => 'أبين',
+        'SHB' => 'شبوة',
+        'MAH' => 'المهرة',
+        'MAR' => 'مأرب',
+        'AMR' => 'عمران',
+        'RAY' => 'ريمة',
+        'JAW' => 'الجوف',
+        'DHU' => 'الضالع',
+        'MAH_ISL' => 'سقطرى',
+    ];
+
+    /**
      * Prepare columns.
      *
      * @return void
@@ -99,7 +125,7 @@ class DeliveryAssignmentDataGrid extends DataGrid
             'searchable' => true,
             'filterable' => true,
             'closure' => function ($row) {
-                return '<a href="'.route('admin.delivery.assignments.show', $row->id).'" class="text-blue-600 hover:underline font-bold">#'.$row->order_increment_id.'</a>';
+                return '<a href="'.route('admin.delivery.assignments.show', $row->id).'" class="text-blue-600 dark:text-blue-400 hover:underline font-bold">#'.$row->order_increment_id.'</a>';
             },
         ]);
 
@@ -119,7 +145,10 @@ class DeliveryAssignmentDataGrid extends DataGrid
             'filterable' => true,
             'sortable' => true,
             'closure' => function ($row) {
-                return '<span class="font-semibold text-gray-800 dark:text-white">'.$row->governorate.'</span>';
+                $gov = strtoupper(trim((string) $row->governorate));
+                $name = $this->governoratesMap[$gov] ?? ($row->governorate ?: 'غير محدد');
+
+                return '<span class="font-semibold text-gray-800 dark:text-white">'.$name.'</span>';
             },
         ]);
 
@@ -131,8 +160,8 @@ class DeliveryAssignmentDataGrid extends DataGrid
             'sortable' => true,
             'closure' => function ($row) {
                 return $row->delivery_type === 'home_delivery'
-                    ? '<span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-semibold">🏠 منزلي</span>'
-                    : '<span class="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 text-xs font-semibold">📍 نقطة استلام</span>';
+                    ? '<span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-semibold">🏠 توصيل منزلي</span>'
+                    : '<span class="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 text-xs font-semibold">📍 استلام من نقطة</span>';
             },
         ]);
 
@@ -142,11 +171,16 @@ class DeliveryAssignmentDataGrid extends DataGrid
             'type' => 'string',
             'filterable' => true,
             'closure' => function ($row) {
-                if ($row->payment_method === 'cashondelivery') {
-                    return '<span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800 font-semibold">💵 عند الاستلام (COD)</span>';
+                $method = strtolower((string) $row->payment_method);
+                if ($method === 'cashondelivery' || $method === 'cod') {
+                    return '<span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 font-semibold">💵 دفع عند الاستلام (COD)</span>';
                 }
 
-                return '<span class="px-2 py-0.5 rounded text-xs bg-sky-100 text-sky-800 font-semibold">💳 مسبق الدفع</span>';
+                if ($method === 'wallet') {
+                    return '<span class="px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300 font-semibold">👛 المحفظة الرقمية</span>';
+                }
+
+                return '<span class="px-2 py-0.5 rounded text-xs bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300 font-semibold">💳 مسبق الدفع (أونلاين)</span>';
             },
         ]);
 
@@ -158,12 +192,12 @@ class DeliveryAssignmentDataGrid extends DataGrid
                 if ($row->delivery_type === 'home_delivery') {
                     return $row->courier_name
                         ? '<span class="font-medium text-indigo-700 dark:text-indigo-400">🚴 '.$row->courier_name.'</span>'
-                        : '<span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">بانتظار مندوب</span>';
+                        : '<span class="text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">بانتظار إسناد مندوب</span>';
                 }
 
                 return $row->point_name
                     ? '<span class="font-medium text-purple-700 dark:text-purple-400">🏢 '.$row->point_name.'</span>'
-                    : '<span class="text-xs text-gray-400">غير محدد</span>';
+                    : '<span class="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">غير محددة</span>';
             },
         ]);
 
