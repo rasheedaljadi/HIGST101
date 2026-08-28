@@ -3,6 +3,53 @@
         {{ trans('delivery::app.admin.assignments.view-title', ['id' => $assignment->id]) }}
     </x-slot>
 
+    @php
+        $shippingAddress = $assignment->order?->addresses?->where('address_type', 'order_shipping')->first()
+            ?: $assignment->order?->addresses?->where('address_type', 'order_billing')->first();
+
+        $snapshot = is_array($assignment->customer_address_snapshot) 
+            ? $assignment->customer_address_snapshot 
+            : json_decode($assignment->customer_address_snapshot ?: '[]', true);
+
+        $firstName = $shippingAddress?->first_name ?: ($snapshot['first_name'] ?? ($assignment->order?->customer_first_name ?? ''));
+        $lastName = $shippingAddress?->last_name ?: ($snapshot['last_name'] ?? ($assignment->order?->customer_last_name ?? ''));
+        $customerName = trim($firstName.' '.$lastName) ?: 'العميل';
+
+        $customerEmail = $shippingAddress?->email ?: ($snapshot['email'] ?? ($assignment->order?->customer_email ?: '-'));
+        $customerPhone = $shippingAddress?->phone ?: ($snapshot['phone'] ?? ($assignment->order?->customer?->phone ?: '-'));
+
+        $stateCode = strtoupper(trim((string) ($shippingAddress?->state ?: ($snapshot['state'] ?? ''))));
+        $governoratesMap = [
+            'SAN' => 'صنعاء (الأمانة والمحافظة)',
+            'ADE' => 'عدن',
+            'TAI' => 'تعز',
+            'HOD' => 'الحديدة',
+            'IBB' => 'إب',
+            'HAD' => 'حضرموت',
+            'DHA' => 'ذمار',
+            'HAJ' => 'حجة',
+            'LAH' => 'لحج',
+            'SAD' => 'صعدة',
+            'BAW' => 'البيضاء',
+            'ABY' => 'أبين',
+            'SHB' => 'شبوة',
+            'MAH' => 'المهرة',
+            'MAR' => 'مأرب',
+            'AMR' => 'عمران',
+            'RAY' => 'ريمة',
+            'JAW' => 'الجوف',
+            'DHU' => 'الضالع',
+            'MAH_ISL' => 'سقطرى',
+        ];
+        $governorateName = $governoratesMap[$stateCode] ?? ($shippingAddress?->state ?: ($snapshot['state'] ?? 'غير محددة'));
+
+        $cityDistrict = $shippingAddress?->city ?: ($snapshot['city'] ?? '');
+        $address1 = $shippingAddress?->address1 ?: ($snapshot['address1'] ?? ($snapshot['address'] ?? ''));
+        $address2 = $shippingAddress?->address2 ?: ($snapshot['address2'] ?? '');
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', (string) $customerPhone);
+    @endphp
+
     <div class="flex flex-col gap-6">
         {{-- Header Section --}}
         <div class="flex items-center justify-between flex-wrap gap-4">
@@ -59,29 +106,43 @@
                         <div>
                             <span class="text-gray-400">نوع التسليم:</span>
                             <span class="font-bold text-gray-800 dark:text-white mr-1">
-                                {{ $assignment->delivery_type === 'home_delivery' ? 'توصيل منزلي' : 'استلام من نقطة تسليم' }}
+                                {{ $assignment->delivery_type === 'home_delivery' ? '🏠 توصيل منزلي' : '📍 استلام من نقطة تسليم' }}
                             </span>
                         </div>
 
                         <div>
                             <span class="text-gray-400">طريقة الدفع:</span>
                             <span class="font-bold text-gray-800 dark:text-white mr-1">
-                                {{ str_contains($assignment->payment_method, 'cod') ? 'دفع عند الاستلام (COD)' : 'دفع إلكتروني مسبق' }}
+                                @php
+                                    $paymentMethod = strtolower((string) ($assignment->order?->payment?->method ?? $assignment->payment_method ?? ''));
+                                @endphp
+                                @if(str_contains($paymentMethod, 'cod') || str_contains($paymentMethod, 'cashon'))
+                                    <span class="text-emerald-600 font-bold">💵 دفع عند الاستلام (COD)</span>
+                                @elseif(str_contains($paymentMethod, 'wallet'))
+                                    <span class="text-purple-600 font-bold">👛 المحفظة الرقمية</span>
+                                @else
+                                    <span class="text-sky-600 font-bold">💳 دفع إلكتروني مسبق</span>
+                                @endif
                             </span>
                         </div>
 
                         <div>
                             <span class="text-gray-400">المحافظة:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1">{{ $assignment->state_code }}</span>
+                            <span class="font-bold text-gray-800 dark:text-white mr-1">{{ $governorateName }}</span>
+                        </div>
+
+                        <div>
+                            <span class="text-gray-400">المديرية / المدينة:</span>
+                            <span class="font-bold text-gray-800 dark:text-white mr-1">{{ $cityDistrict ?: 'غير محددة' }}</span>
                         </div>
 
                         <div>
                             <span class="text-gray-400">مبلغ التحصيل (COD):</span>
-                            <span class="font-bold text-emerald-600 mr-1">
+                            <span class="font-bold mr-1">
                                 @if($assignment->order && strtolower((string)$assignment->order->payment?->method) === 'cashondelivery')
-                                    {{ core()->formatPrice((float)$assignment->order->grand_total, $assignment->order->order_currency_code) }}
+                                    <span class="text-emerald-600 font-bold text-sm">{{ core()->formatPrice((float)$assignment->order->grand_total, $assignment->order->order_currency_code) }}</span>
                                 @else
-                                    غير مطلوب تحصيل (مدفوع مسبقاً)
+                                    <span class="text-gray-500">غير مطلوب تحصيل (مدفوع مسبقاً)</span>
                                 @endif
                             </span>
                         </div>
@@ -89,14 +150,22 @@
                         <div>
                             <span class="text-gray-400">المندوب المسند:</span>
                             <span class="font-bold text-gray-800 dark:text-white mr-1">
-                                {{ $assignment->deliveryBoy?->name ?: 'لم يسند لمندوب بعد' }}
+                                @if($assignment->deliveryBoy)
+                                    <span class="text-indigo-600 dark:text-indigo-400">🚴 {{ $assignment->deliveryBoy->name }}</span>
+                                @else
+                                    <span class="text-amber-600">⚠️ لم يسند لمندوب بعد</span>
+                                @endif
                             </span>
                         </div>
 
-                        <div>
+                        <div class="col-span-2">
                             <span class="text-gray-400">نقطة التسليم:</span>
                             <span class="font-bold text-gray-800 dark:text-white mr-1">
-                                {{ $assignment->deliveryPoint?->name ?: 'غير محددة' }}
+                                @if($assignment->deliveryPoint)
+                                    <span class="text-purple-700 dark:text-purple-400">🏢 {{ $assignment->deliveryPoint->name }} ({{ $assignment->deliveryPoint->governorate }} - {{ $assignment->deliveryPoint->city }})</span>
+                                @else
+                                    <span>غير محددة</span>
+                                @endif
                             </span>
                         </div>
                     </div>
@@ -169,35 +238,76 @@
             <div class="flex flex-col gap-6">
                 {{-- Customer Info Card --}}
                 <div class="p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                    <h2 class="text-base font-bold text-gray-800 dark:text-white mb-3 border-b pb-2">
-                        {{ trans('delivery::app.admin.assignments.customer-info') }}
+                    <h2 class="text-base font-bold text-gray-800 dark:text-white mb-3 border-b pb-2 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <span>👤</span>
+                            <span>{{ trans('delivery::app.admin.assignments.customer-info') }}</span>
+                        </span>
                     </h2>
 
-                    <div class="flex flex-col gap-2 text-xs">
+                    <div class="flex flex-col gap-3 text-xs">
                         <div>
-                            <span class="text-gray-400">الاسم:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1">
-                                {{ $assignment->order?->customer_first_name }} {{ $assignment->order?->customer_last_name }}
+                            <span class="text-gray-400">اسم العميل:</span>
+                            <span class="font-bold text-gray-800 dark:text-white mr-1 text-sm block mt-0.5">
+                                {{ $customerName }}
                             </span>
                         </div>
 
                         <div>
-                            <span class="text-gray-400">البريد:</span>
-                            <span class="text-gray-800 dark:text-gray-200 mr-1">{{ $assignment->order?->customer_email }}</span>
+                            <span class="text-gray-400">البريد الإلكتروني:</span>
+                            <span class="text-gray-800 dark:text-gray-200 mr-1 block mt-0.5 font-mono">{{ $customerEmail }}</span>
                         </div>
 
                         <div>
-                            <span class="text-gray-400">الهاتف:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1">{{ $assignment->order?->shipping_address?->phone }}</span>
+                            <span class="text-gray-400">رقم الهاتف والتواصل:</span>
+                            <div class="flex items-center gap-2 mt-1">
+                                @if($customerPhone && $customerPhone !== '-')
+                                    <a href="tel:{{ $customerPhone }}" class="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:underline text-sm font-mono bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded border border-blue-200 dark:border-blue-800">
+                                        <span>📞</span>
+                                        <span dir="ltr">{{ $customerPhone }}</span>
+                                    </a>
+                                    @if($cleanPhone)
+                                        <a href="https://wa.me/{{ $cleanPhone }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-200">
+                                            <span>💬 واتساب</span>
+                                        </a>
+                                    @endif
+                                @else
+                                    <span class="text-gray-400">غير متوفر</span>
+                                @endif
+                            </div>
                         </div>
 
-                        <div class="mt-2 pt-2 border-t">
-                            <span class="text-gray-400 block mb-1 font-semibold">عنوان التوصيل:</span>
-                            <p class="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-800 p-2.5 rounded">
-                                {{ $assignment->order?->shipping_address?->address1 }},
-                                {{ $assignment->order?->shipping_address?->city }},
-                                {{ $assignment->order?->shipping_address?->state }}
-                            </p>
+                        <div class="mt-2 pt-3 border-t border-gray-200 dark:border-gray-800">
+                            <span class="text-gray-400 block mb-2 font-bold text-xs flex items-center gap-1">
+                                <span>📍</span>
+                                <span>عنوان التوصيل والشحن التفصيلي:</span>
+                            </span>
+
+                            <div class="bg-gray-50 dark:bg-gray-800/80 p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-gray-500">المحافظة:</span>
+                                    <span class="font-bold text-gray-800 dark:text-white">{{ $governorateName }}</span>
+                                </div>
+
+                                @if($cityDistrict)
+                                    <div class="flex items-center justify-between text-xs border-t border-gray-200/50 dark:border-gray-700/50 pt-1.5">
+                                        <span class="text-gray-500">المدينة / المديرية:</span>
+                                        <span class="font-bold text-gray-800 dark:text-white">{{ $cityDistrict }}</span>
+                                    </div>
+                                @endif
+
+                                @if($address1)
+                                    <div class="flex flex-col text-xs border-t border-gray-200/50 dark:border-gray-700/50 pt-1.5">
+                                        <span class="text-gray-500 mb-1">العنوان التفصيلي (الشارع / المعلم):</span>
+                                        <span class="font-medium text-gray-800 dark:text-gray-200 leading-relaxed bg-white dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-700">
+                                            {{ $address1 }}
+                                            @if($address2)
+                                                <br><span class="text-gray-500 text-[11px]">{{ $address2 }}</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>

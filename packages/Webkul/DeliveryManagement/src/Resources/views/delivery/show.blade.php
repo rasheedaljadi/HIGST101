@@ -17,6 +17,50 @@
             'returned_to_hayest' => ['bg' => 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border-gray-300', 'text' => 'مرتجع للمركزي'],
             default => ['bg' => 'bg-gray-100 text-gray-800', 'text' => $assignment->status]
         };
+
+        $shippingAddress = $assignment->order?->addresses?->where('address_type', 'order_shipping')->first()
+            ?: $assignment->order?->addresses?->where('address_type', 'order_billing')->first();
+
+        $snapshot = is_array($assignment->customer_address_snapshot) 
+            ? $assignment->customer_address_snapshot 
+            : json_decode($assignment->customer_address_snapshot ?: '[]', true);
+
+        $firstName = $shippingAddress?->first_name ?: ($snapshot['first_name'] ?? ($assignment->order?->customer_first_name ?? ''));
+        $lastName = $shippingAddress?->last_name ?: ($snapshot['last_name'] ?? ($assignment->order?->customer_last_name ?? ''));
+        $customerName = trim($firstName.' '.$lastName) ?: 'العميل';
+
+        $customerPhone = $shippingAddress?->phone ?: ($snapshot['phone'] ?? ($assignment->order?->customer?->phone ?: ''));
+
+        $stateCode = strtoupper(trim((string) ($shippingAddress?->state ?: ($snapshot['state'] ?? ''))));
+        $governoratesMap = [
+            'SAN' => 'صنعاء (الأمانة والمحافظة)',
+            'ADE' => 'عدن',
+            'TAI' => 'تعز',
+            'HOD' => 'الحديدة',
+            'IBB' => 'إب',
+            'HAD' => 'حضرموت',
+            'DHA' => 'ذمار',
+            'HAJ' => 'حجة',
+            'LAH' => 'لحج',
+            'SAD' => 'صعدة',
+            'BAW' => 'البيضاء',
+            'ABY' => 'أبين',
+            'SHB' => 'شبوة',
+            'MAH' => 'المهرة',
+            'MAR' => 'مأرب',
+            'AMR' => 'عمران',
+            'RAY' => 'ريمة',
+            'JAW' => 'الجوف',
+            'DHU' => 'الضالع',
+            'MAH_ISL' => 'سقطرى',
+        ];
+        $governorateName = $governoratesMap[$stateCode] ?? ($shippingAddress?->state ?: ($snapshot['state'] ?? 'غير محددة'));
+
+        $cityDistrict = $shippingAddress?->city ?: ($snapshot['city'] ?? '');
+        $address1 = $shippingAddress?->address1 ?: ($snapshot['address1'] ?? ($snapshot['address'] ?? ''));
+        $address2 = $shippingAddress?->address2 ?: ($snapshot['address2'] ?? '');
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', (string) $customerPhone);
     @endphp
 
     <div class="flex flex-col gap-6" id="delivery-task-app">
@@ -71,32 +115,53 @@
                         <div class="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-lg flex flex-col gap-1.5">
                             <span class="text-gray-500">اسم العميل:</span>
                             <span class="font-bold text-gray-900 dark:text-white text-sm">
-                                {{ $assignment->customer_address_snapshot['first_name'] ?? 'العميل' }} {{ $assignment->customer_address_snapshot['last_name'] ?? '' }}
+                                {{ $customerName }}
                             </span>
                         </div>
 
                         <div class="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-lg flex flex-col gap-1.5">
                             <span class="text-gray-500">رقم الهاتف والتواصل:</span>
-                            @if(!empty($assignment->customer_address_snapshot['phone']))
+                            @if(!empty($customerPhone))
                                 <div class="flex items-center gap-3">
-                                    <a href="tel:{{ $assignment->customer_address_snapshot['phone'] }}" class="font-bold text-blue-600 hover:underline flex items-center gap-1 text-sm">
+                                    <a href="tel:{{ $customerPhone }}" class="font-bold text-blue-600 hover:underline flex items-center gap-1 text-sm" dir="ltr">
                                         <span>📞</span>
-                                        <span>{{ $assignment->customer_address_snapshot['phone'] }}</span>
+                                        <span>{{ $customerPhone }}</span>
                                     </a>
-                                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $assignment->customer_address_snapshot['phone']) }}" target="_blank" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                                        واتساب
-                                    </a>
+                                    @if(!empty($cleanPhone))
+                                        <a href="https://wa.me/{{ $cleanPhone }}" target="_blank" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                            واتساب
+                                        </a>
+                                    @endif
                                 </div>
                             @else
                                 <span class="text-gray-400">غير متوفر</span>
                             @endif
                         </div>
 
-                        <div class="col-span-1 md:col-span-2 p-3 bg-gray-50 dark:bg-gray-800/60 rounded-lg flex flex-col gap-1">
-                            <span class="text-gray-500">العنوان بالتفصيل:</span>
-                            <span class="font-medium text-gray-800 dark:text-gray-200">
-                                {{ $assignment->customer_address_snapshot['address'] ?? '' }}، {{ $assignment->customer_address_snapshot['city'] ?? '' }} ({{ $assignment->customer_address_snapshot['state'] ?? '' }})
-                            </span>
+                        <div class="col-span-1 md:col-span-2 p-3 bg-gray-50 dark:bg-gray-800/60 rounded-lg flex flex-col gap-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-gray-500">المحافظة:</span>
+                                <span class="font-bold text-gray-800 dark:text-white">{{ $governorateName }}</span>
+                            </div>
+
+                            @if($cityDistrict)
+                                <div class="flex items-center justify-between text-xs border-t border-gray-200/50 dark:border-gray-700/50 pt-1.5">
+                                    <span class="text-gray-500">المدينة / المديرية:</span>
+                                    <span class="font-bold text-gray-800 dark:text-white">{{ $cityDistrict }}</span>
+                                </div>
+                            @endif
+
+                            @if($address1)
+                                <div class="flex flex-col text-xs border-t border-gray-200/50 dark:border-gray-700/50 pt-1.5">
+                                    <span class="text-gray-500 mb-1">العنوان بالتفصيل (الشارع / المعلم):</span>
+                                    <span class="font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-700">
+                                        {{ $address1 }}
+                                        @if($address2)
+                                            <br><span class="text-gray-500 text-[11px]">{{ $address2 }}</span>
+                                        @endif
+                                    </span>
+                                </div>
+                            @endif
                         </div>
 
                         @if($assignment->delivery_type === 'delivery_point' && $assignment->delivery_point_snapshot)
