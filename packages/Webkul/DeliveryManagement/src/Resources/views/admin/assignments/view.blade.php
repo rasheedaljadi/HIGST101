@@ -92,263 +92,277 @@
             </div>
         </div>
 
-        {{-- Main Grid --}}
-        <div class="grid grid-cols-3 gap-6 max-lg:grid-cols-1">
-            {{-- Left 2 Columns: Order Details & History --}}
-            <div class="col-span-2 flex flex-col gap-6">
-                {{-- Delivery Snapshot & Type Card --}}
-                <div class="p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                    <h2 class="text-base font-bold text-gray-800 dark:text-white mb-4 border-b pb-2">
-                        معلومات الشحنة والتسليم
+        {{-- Sequential Single-Column Layout --}}
+        <div class="flex flex-col gap-6 w-full">
+            {{-- Section 1: Customer Details & Full Delivery Address --}}
+            <div class="p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xs">
+                <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3 mb-4">
+                    <h2 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <span class="text-xl">👤</span>
+                        <span>القسم الأول: {{ trans('delivery::app.admin.assignments.customer-info') }} وعنوان الشحن</span>
                     </h2>
+                </div>
 
-                    <div class="grid grid-cols-2 gap-4 text-xs">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+                    {{-- Customer Name & Email --}}
+                    <div class="flex flex-col gap-3 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700/60">
                         <div>
-                            <span class="text-gray-400">نوع التسليم:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1">
-                                {{ $assignment->delivery_type === 'home_delivery' ? '🏠 توصيل منزلي' : '📍 استلام من نقطة تسليم' }}
-                            </span>
+                            <span class="text-gray-400 font-medium">اسم العميل:</span>
+                            <p class="font-bold text-gray-900 dark:text-white text-sm mt-1">{{ $customerName }}</p>
                         </div>
 
                         <div>
-                            <span class="text-gray-400">طريقة الدفع:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1">
-                                @php
-                                    $paymentMethod = strtolower((string) ($assignment->order?->payment?->method ?? $assignment->payment_method ?? ''));
-                                @endphp
-                                @if(str_contains($paymentMethod, 'cod') || str_contains($paymentMethod, 'cashon'))
-                                    <span class="text-emerald-600 font-bold">💵 دفع عند الاستلام (COD)</span>
-                                @elseif(str_contains($paymentMethod, 'wallet'))
-                                    <span class="text-purple-600 font-bold">👛 المحفظة الرقمية</span>
-                                @else
-                                    <span class="text-sky-600 font-bold">💳 دفع إلكتروني مسبق</span>
+                            <span class="text-gray-400 font-medium">البريد الإلكتروني:</span>
+                            <p class="text-gray-700 dark:text-gray-300 font-mono mt-1 text-xs">{{ $customerEmail }}</p>
+                        </div>
+                    </div>
+
+                    {{-- Customer Phone & Direct Contact --}}
+                    <div class="flex flex-col gap-3 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                        <span class="text-gray-400 font-medium">رقم الهاتف والتواصل:</span>
+                        @if($customerPhone && $customerPhone !== '-')
+                            <div class="flex flex-wrap items-center gap-2 mt-1">
+                                <a href="tel:{{ $customerPhone }}" class="inline-flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400 hover:underline text-sm font-mono bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800">
+                                    <span>📞</span>
+                                    <span dir="ltr">{{ $customerPhone }}</span>
+                                </a>
+                                @if($cleanPhone)
+                                    <a href="https://wa.me/{{ $cleanPhone }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-200 transition-all">
+                                        <span>💬 واتساب</span>
+                                    </a>
                                 @endif
-                            </span>
-                        </div>
+                            </div>
+                        @else
+                            <span class="text-gray-400 mt-1">غير متوفر</span>
+                        @endif
+                    </div>
 
-                        <div>
-                            <span class="text-gray-400">المحافظة:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1">{{ $governorateName }}</span>
-                        </div>
+                    {{-- Full Shipping Address --}}
+                    <div class="flex flex-col gap-2 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                        <span class="text-gray-400 font-medium flex items-center gap-1">
+                            <span>📍</span>
+                            <span>عنوان الشحن والتسليم:</span>
+                        </span>
 
-                        <div>
-                            <span class="text-gray-400">المديرية / المدينة:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1">{{ $cityDistrict ?: 'غير محددة' }}</span>
-                        </div>
+                        <div class="flex flex-col gap-1.5 mt-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-500">المحافظة:</span>
+                                <span class="font-bold text-gray-800 dark:text-white">{{ $governorateName }}</span>
+                            </div>
 
-                        <div>
-                            <span class="text-gray-400">مبلغ التحصيل (COD):</span>
-                            <span class="font-bold mr-1">
-                                @if($assignment->order && strtolower((string)$assignment->order->payment?->method) === 'cashondelivery')
-                                    <span class="text-emerald-600 font-bold text-sm">{{ core()->formatPrice((float)$assignment->order->grand_total, $assignment->order->order_currency_code) }}</span>
-                                @else
-                                    <span class="text-gray-500">غير مطلوب تحصيل (مدفوع مسبقاً)</span>
-                                @endif
-                            </span>
-                        </div>
+                            @if($cityDistrict)
+                                <div class="flex items-center justify-between border-t border-gray-200/50 dark:border-gray-700/50 pt-1">
+                                    <span class="text-gray-500">المدينة / المديرية:</span>
+                                    <span class="font-bold text-gray-800 dark:text-white">{{ $cityDistrict }}</span>
+                                </div>
+                            @endif
 
-                        <div>
-                            <span class="text-gray-400">المندوب المسند:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1">
-                                @if($assignment->deliveryBoy)
-                                    <span class="text-indigo-600 dark:text-indigo-400">🚴 {{ $assignment->deliveryBoy->name }}</span>
-                                @else
-                                    <span class="text-amber-600">⚠️ لم يسند لمندوب بعد</span>
-                                @endif
-                            </span>
-                        </div>
-
-                        <div class="col-span-2">
-                            <span class="text-gray-400">نقطة التسليم:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1">
-                                @if($assignment->deliveryPoint)
-                                    <span class="text-purple-700 dark:text-purple-400">🏢 {{ $assignment->deliveryPoint->name }} ({{ $assignment->deliveryPoint->governorate }} - {{ $assignment->deliveryPoint->city }})</span>
-                                @else
-                                    <span>غير محددة</span>
-                                @endif
-                            </span>
+                            @if($address1)
+                                <div class="flex flex-col border-t border-gray-200/50 dark:border-gray-700/50 pt-1">
+                                    <span class="text-gray-500 mb-0.5">العنوان التفصيلي (الشارع / المعلم):</span>
+                                    <span class="font-medium text-gray-800 dark:text-gray-200 leading-relaxed bg-white dark:bg-gray-900 p-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                                        {{ $address1 }}
+                                        @if($address2)
+                                            <br><span class="text-gray-500 text-[11px]">{{ $address2 }}</span>
+                                        @endif
+                                    </span>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {{-- Order Items Table --}}
-                <div class="p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                    <h2 class="text-base font-bold text-gray-800 dark:text-white mb-4 border-b pb-2">
-                        {{ trans('delivery::app.admin.assignments.order-items') }}
+            {{-- Section 2: Delivery Route, Payment & Agent Details --}}
+            <div class="p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xs">
+                <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3 mb-4">
+                    <h2 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <span class="text-xl">🚚</span>
+                        <span>القسم الثاني: معلومات الشحنة والتسليم والتحصيل</span>
                     </h2>
+                </div>
 
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                    <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700/60 flex flex-col gap-1">
+                        <span class="text-gray-400 font-medium">نوع مسار التسليم:</span>
+                        <span class="font-bold text-gray-800 dark:text-white mt-1 text-sm">
+                            {{ $assignment->delivery_type === 'home_delivery' ? '🏠 توصيل منزلي' : '📍 استلام من نقطة تسليم' }}
+                        </span>
+                    </div>
+
+                    <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700/60 flex flex-col gap-1">
+                        <span class="text-gray-400 font-medium">طريقة الدفع والتحصيل:</span>
+                        <div class="mt-1">
+                            @php
+                                $paymentMethod = strtolower((string) ($assignment->order?->payment?->method ?? $assignment->payment_method ?? ''));
+                            @endphp
+                            @if(str_contains($paymentMethod, 'cod') || str_contains($paymentMethod, 'cashon'))
+                                <span class="text-emerald-600 font-bold text-sm">💵 دفع عند الاستلام (COD)</span>
+                            @elseif(str_contains($paymentMethod, 'wallet'))
+                                <span class="text-purple-600 font-bold text-sm">👛 المحفظة الرقمية</span>
+                            @else
+                                <span class="text-sky-600 font-bold text-sm">💳 دفع إلكتروني مسبق</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700/60 flex flex-col gap-1">
+                        <span class="text-gray-400 font-medium">مبلغ التحصيل المطلوب (COD):</span>
+                        <div class="mt-1">
+                            @if($assignment->order && strtolower((string)$assignment->order->payment?->method) === 'cashondelivery')
+                                <span class="text-emerald-600 font-bold text-base">{{ core()->formatPrice((float)$assignment->order->grand_total, $assignment->order->order_currency_code) }}</span>
+                            @else
+                                <span class="text-gray-500 font-medium">غير مطلوب تحصيل (مدفوع مسبقاً)</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700/60 flex flex-col gap-1">
+                        <span class="text-gray-400 font-medium">المندوب / جهة التوصيل:</span>
+                        <div class="mt-1">
+                            @if($assignment->deliveryBoy)
+                                <span class="text-indigo-600 dark:text-indigo-400 font-bold text-sm">🚴 {{ $assignment->deliveryBoy->name }}</span>
+                            @else
+                                <span class="text-amber-600 font-semibold">⚠️ لم يسند لمندوب بعد</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    @if($assignment->deliveryPoint)
+                        <div class="col-span-1 md:col-span-4 p-3.5 bg-purple-50 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-800/60 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">🏢</span>
+                                <div>
+                                    <span class="text-purple-800 dark:text-purple-300 font-bold text-xs">نقطة الاستلام المعتمدة:</span>
+                                    <p class="font-bold text-gray-900 dark:text-white text-sm mt-0.5">{{ $assignment->deliveryPoint->name }}</p>
+                                </div>
+                            </div>
+                            <span class="text-gray-600 dark:text-gray-300 text-xs">📍 {{ $assignment->deliveryPoint->governorate }} - {{ $assignment->deliveryPoint->city }} ({{ $assignment->deliveryPoint->address }})</span>
+                        </div>
+                    @endif
+
+                    @if($assignment->notes)
+                        <div class="col-span-1 md:col-span-4 p-3.5 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/60 flex flex-col gap-1">
+                            <span class="text-amber-800 dark:text-amber-300 font-bold text-xs">ملاحظات الشحن والتسليم:</span>
+                            <p class="text-gray-800 dark:text-gray-200 text-xs whitespace-pre-line leading-relaxed font-mono">{{ $assignment->notes }}</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Section 3: Order Items --}}
+            <div class="p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xs">
+                <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3 mb-4">
+                    <h2 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <span class="text-xl">📦</span>
+                        <span>القسم الثالث: {{ trans('delivery::app.admin.assignments.order-items') }}</span>
+                    </h2>
+                    <span class="text-xs text-gray-500 font-medium">عدد البنود: {{ count($assignment->order?->items ?? []) }}</span>
+                </div>
+
+                <div class="overflow-x-auto">
                     <table class="w-full text-xs text-right">
                         <thead class="text-gray-500 bg-gray-50 dark:bg-gray-800 border-b">
                             <tr>
-                                <th class="p-2.5">المنتج / SKU</th>
-                                <th class="p-2.5">الكمية</th>
-                                <th class="p-2.5">السعر</th>
-                                <th class="p-2.5">الإجمالي</th>
+                                <th class="p-3">المنتج / SKU</th>
+                                <th class="p-3 text-center">الكمية</th>
+                                <th class="p-3 text-center">السعر</th>
+                                <th class="p-3 text-left">الإجمالي</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             @foreach($assignment->order?->items ?? [] as $item)
                                 <tr>
-                                    <td class="p-2.5 font-medium text-gray-800 dark:text-white">
+                                    <td class="p-3 font-medium text-gray-800 dark:text-white">
                                         {{ $item->name }}
-                                        <div class="text-[10px] text-gray-400 font-mono">{{ $item->sku }}</div>
+                                        <div class="text-[10px] text-gray-400 font-mono mt-0.5">{{ $item->sku }}</div>
                                     </td>
-                                    <td class="p-2.5 font-bold">{{ $item->qty_ordered }}</td>
-                                    <td class="p-2.5">{{ number_format($item->price, 2) }} {{ $assignment->order->order_currency_code }}</td>
-                                    <td class="p-2.5 font-bold text-gray-900 dark:text-white">{{ number_format($item->total, 2) }} {{ $assignment->order->order_currency_code }}</td>
+                                    <td class="p-3 font-bold text-center text-sm">{{ $item->qty_ordered }}</td>
+                                    <td class="p-3 text-center">{{ number_format($item->price, 2) }} {{ $assignment->order->order_currency_code }}</td>
+                                    <td class="p-3 font-bold text-left text-gray-900 dark:text-white text-sm">{{ number_format($item->total, 2) }} {{ $assignment->order->order_currency_code }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
-
-                {{-- Delivery Attempts History --}}
-                @if($assignment->attemptLogs->isNotEmpty())
-                    <div class="p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                        <h2 class="text-base font-bold text-gray-800 dark:text-white mb-4 border-b pb-2 flex items-center justify-between">
-                            <span>سجل محاولات التوصيل ({{ $assignment->attemptLogs->count() }} محاولة)</span>
-                            <span class="text-xs text-rose-500 font-normal">الحد الأقصى للمحاولات: 3</span>
-                        </h2>
-
-                        <div class="flex flex-col gap-3">
-                            @foreach($assignment->attemptLogs as $attempt)
-                                <div class="p-3 rounded-lg border border-rose-100 bg-rose-50/50 dark:bg-rose-950/20 text-xs flex items-start justify-between">
-                                    <div class="flex flex-col">
-                                        <div class="flex items-center gap-2">
-                                            <span class="px-2 py-0.5 rounded bg-rose-200 text-rose-800 font-bold">محاولة #{{ $attempt->attempt_number }}</span>
-                                            <span class="font-bold text-gray-800 dark:text-white">{{ $attempt->reason_code }}</span>
-                                        </div>
-                                        <p class="text-gray-600 dark:text-gray-300 mt-1">{{ $attempt->notes ?: 'لا توجد ملاحظات إضافية' }}</p>
-                                        <span class="text-[10px] text-gray-400 mt-1">المندوب: {{ $attempt->deliveryBoy?->name ?: 'غير محدد' }}</span>
-                                    </div>
-                                    <div class="text-left text-[10px] text-gray-500">
-                                        {{ core()->formatDate($attempt->created_at, 'Y-m-d H:i') }}
-                                        @if($attempt->retry_scheduled_at)
-                                            <div class="text-orange-600 mt-0.5">إعادة المحاولة: {{ core()->formatDate($attempt->retry_scheduled_at, 'Y-m-d H:i') }}</div>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
             </div>
 
-            {{-- Right Column: Customer Details, Stock Readiness & Audit --}}
-            <div class="flex flex-col gap-6">
-                {{-- Customer Info Card --}}
-                <div class="p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                    <h2 class="text-base font-bold text-gray-800 dark:text-white mb-3 border-b pb-2 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5">
-                            <span>👤</span>
-                            <span>{{ trans('delivery::app.admin.assignments.customer-info') }}</span>
+            {{-- Section 4: Central Warehouse Stock Status --}}
+            <div class="p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xs">
+                <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3 mb-4">
+                    <h2 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <span class="text-xl">🏬</span>
+                        <span>القسم الرابع: {{ trans('delivery::app.admin.assignments.handoff-status') }}</span>
+                    </h2>
+                </div>
+
+                <div class="flex items-center gap-3 p-4 rounded-xl {{ in_array($assignment->status, ['picked_up', 'out_for_delivery', 'arrived_at_point', 'delivered']) ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-blue-50 text-blue-800 border border-blue-200' }} text-xs">
+                    <span class="text-2xl {{ in_array($assignment->status, ['picked_up', 'out_for_delivery', 'arrived_at_point', 'delivered']) ? 'icon-done' : 'icon-pending' }}"></span>
+                    <div class="flex flex-col">
+                        <span class="font-bold text-sm">
+                            {{ in_array($assignment->status, ['picked_up', 'out_for_delivery', 'arrived_at_point', 'delivered']) ? 'تم الصرف والتسليم من المستودع المركزي للمندوب' : 'المخزون محجوز وجاهز للصرف في المستودع المركزي' }}
                         </span>
-                    </h2>
+                        <span class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">المستودع المصدر: hayest_central</span>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="flex flex-col gap-3 text-xs">
-                        <div>
-                            <span class="text-gray-400">اسم العميل:</span>
-                            <span class="font-bold text-gray-800 dark:text-white mr-1 text-sm block mt-0.5">
-                                {{ $customerName }}
-                            </span>
-                        </div>
+            {{-- Section 5: Delivery Attempts History (if exists) --}}
+            @if($assignment->attemptLogs->isNotEmpty())
+                <div class="p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xs">
+                    <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3 mb-4">
+                        <h2 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                            <span class="text-xl">🔄</span>
+                            <span>القسم الخامس: سجل محاولات التوصيل ({{ $assignment->attemptLogs->count() }} محاولة)</span>
+                        </h2>
+                        <span class="text-xs text-rose-500 font-semibold">الحد الأقصى للمحاولات: 3</span>
+                    </div>
 
-                        <div>
-                            <span class="text-gray-400">البريد الإلكتروني:</span>
-                            <span class="text-gray-800 dark:text-gray-200 mr-1 block mt-0.5 font-mono">{{ $customerEmail }}</span>
-                        </div>
-
-                        <div>
-                            <span class="text-gray-400">رقم الهاتف والتواصل:</span>
-                            <div class="flex items-center gap-2 mt-1">
-                                @if($customerPhone && $customerPhone !== '-')
-                                    <a href="tel:{{ $customerPhone }}" class="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:underline text-sm font-mono bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded border border-blue-200 dark:border-blue-800">
-                                        <span>📞</span>
-                                        <span dir="ltr">{{ $customerPhone }}</span>
-                                    </a>
-                                    @if($cleanPhone)
-                                        <a href="https://wa.me/{{ $cleanPhone }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-200">
-                                            <span>💬 واتساب</span>
-                                        </a>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @foreach($assignment->attemptLogs as $attempt)
+                            <div class="p-4 rounded-xl border border-rose-100 bg-rose-50/50 dark:bg-rose-950/20 text-xs flex items-start justify-between">
+                                <div class="flex flex-col">
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-800 font-bold">محاولة #{{ $attempt->attempt_number }}</span>
+                                        <span class="font-bold text-gray-800 dark:text-white text-sm">{{ $attempt->reason_code }}</span>
+                                    </div>
+                                    <p class="text-gray-600 dark:text-gray-300 mt-2">{{ $attempt->notes ?: 'لا توجد ملاحظات إضافية' }}</p>
+                                    <span class="text-[11px] text-gray-400 mt-1">المندوب: {{ $attempt->deliveryBoy?->name ?: 'غير محدد' }}</span>
+                                </div>
+                                <div class="text-left text-[11px] text-gray-500">
+                                    {{ core()->formatDate($attempt->created_at, 'Y-m-d H:i') }}
+                                    @if($attempt->retry_scheduled_at)
+                                        <div class="text-orange-600 font-bold mt-1">إعادة المحاولة: {{ core()->formatDate($attempt->retry_scheduled_at, 'Y-m-d H:i') }}</div>
                                     @endif
-                                @else
-                                    <span class="text-gray-400">غير متوفر</span>
-                                @endif
-                            </div>
-                        </div>
-
-                        <div class="mt-2 pt-3 border-t border-gray-200 dark:border-gray-800">
-                            <span class="text-gray-400 block mb-2 font-bold text-xs flex items-center gap-1">
-                                <span>📍</span>
-                                <span>عنوان التوصيل والشحن التفصيلي:</span>
-                            </span>
-
-                            <div class="bg-gray-50 dark:bg-gray-800/80 p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-2">
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-gray-500">المحافظة:</span>
-                                    <span class="font-bold text-gray-800 dark:text-white">{{ $governorateName }}</span>
                                 </div>
-
-                                @if($cityDistrict)
-                                    <div class="flex items-center justify-between text-xs border-t border-gray-200/50 dark:border-gray-700/50 pt-1.5">
-                                        <span class="text-gray-500">المدينة / المديرية:</span>
-                                        <span class="font-bold text-gray-800 dark:text-white">{{ $cityDistrict }}</span>
-                                    </div>
-                                @endif
-
-                                @if($address1)
-                                    <div class="flex flex-col text-xs border-t border-gray-200/50 dark:border-gray-700/50 pt-1.5">
-                                        <span class="text-gray-500 mb-1">العنوان التفصيلي (الشارع / المعلم):</span>
-                                        <span class="font-medium text-gray-800 dark:text-gray-200 leading-relaxed bg-white dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-700">
-                                            {{ $address1 }}
-                                            @if($address2)
-                                                <br><span class="text-gray-500 text-[11px]">{{ $address2 }}</span>
-                                            @endif
-                                        </span>
-                                    </div>
-                                @endif
                             </div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
+            @endif
 
-                {{-- Warehouse Stock Status --}}
-                <div class="p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                    <h2 class="text-base font-bold text-gray-800 dark:text-white mb-3 border-b pb-2">
-                        {{ trans('delivery::app.admin.assignments.handoff-status') }}
+            {{-- Section 6: Audit & Activity Logs --}}
+            <div class="p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xs">
+                <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3 mb-4">
+                    <h2 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <span class="text-xl">📜</span>
+                        <span>القسم {{ $assignment->attemptLogs->isNotEmpty() ? 'السادس' : 'الخامس' }}: سجل التدقيق والأنشطة للطلب</span>
                     </h2>
-
-                    <div class="flex items-center gap-3 p-3 rounded-lg {{ in_array($assignment->status, ['picked_up', 'out_for_delivery', 'arrived_at_point', 'delivered']) ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-blue-50 text-blue-800 border border-blue-200' }} text-xs">
-                        <span class="text-xl {{ in_array($assignment->status, ['picked_up', 'out_for_delivery', 'arrived_at_point', 'delivered']) ? 'icon-done' : 'icon-pending' }}"></span>
-                        <div class="flex flex-col">
-                            <span class="font-bold">
-                                {{ in_array($assignment->status, ['picked_up', 'out_for_delivery', 'arrived_at_point', 'delivered']) ? 'تم الصرف من المستودع المركزي' : 'المخزون محجوز في المستودع المركزي' }}
-                            </span>
-                            <span class="text-[10px] mt-0.5">المصدر: hayest_central</span>
-                        </div>
-                    </div>
                 </div>
 
-                {{-- Audit Logs --}}
-                <div class="p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                    <h2 class="text-base font-bold text-gray-800 dark:text-white mb-3 border-b pb-2">
-                        سجل التدقيق للطلب
-                    </h2>
-
-                    <div class="flex flex-col gap-2 text-xs">
-                        @forelse($auditLogs as $log)
-                            <div class="p-2 rounded bg-gray-50 dark:bg-gray-800 flex flex-col">
-                                <div class="flex items-center justify-between">
-                                    <span class="font-bold text-purple-700">{{ $log->action }}</span>
-                                    <span class="text-[10px] text-gray-400">{{ core()->formatDate($log->created_at, 'Y-m-d H:i') }}</span>
-                                </div>
-                                <span class="text-[11px] text-gray-600 dark:text-gray-300 mt-0.5">{{ $log->reason ?: 'إجراء نظامي' }}</span>
-                                <span class="text-[10px] text-gray-400 mt-0.5">بواسطة: {{ $log->user_name }}</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                    @forelse($auditLogs as $log)
+                        <div class="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/70 border border-gray-100 dark:border-gray-700/60 flex flex-col gap-1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-purple-700 dark:text-purple-400 text-xs">{{ $log->action }}</span>
+                                <span class="text-[10px] text-gray-400">{{ core()->formatDate($log->created_at, 'Y-m-d H:i') }}</span>
                             </div>
-                        @empty
-                            <span class="text-gray-400 text-center py-2">لا توجد سجلات تدقيق إضافية.</span>
-                        @endforelse
-                    </div>
+                            <span class="text-xs text-gray-700 dark:text-gray-300 mt-1">{{ $log->reason ?: 'إجراء نظامي' }}</span>
+                            <span class="text-[10px] text-gray-400 mt-1">بواسطة: {{ $log->user_name }}</span>
+                        </div>
+                    @empty
+                        <span class="text-gray-400 col-span-3 text-center py-4">لا توجد سجلات تدقيق إضافية.</span>
+                    @endforelse
                 </div>
             </div>
         </div>
