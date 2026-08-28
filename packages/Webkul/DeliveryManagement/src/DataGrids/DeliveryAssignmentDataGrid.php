@@ -28,6 +28,7 @@ class DeliveryAssignmentDataGrid extends DataGrid
                 $join->on('orders.id', '=', 'order_address.order_id')
                     ->where('order_address.address_type', '=', 'order_shipping');
             })
+            ->leftJoin('order_payment', 'orders.id', '=', 'order_payment.order_id')
             ->leftJoin('admins as couriers', 'delivery_assignments.delivery_boy_id', '=', 'couriers.id')
             ->leftJoin('delivery_points', 'delivery_assignments.delivery_point_id', '=', 'delivery_points.id')
             ->select(
@@ -37,9 +38,9 @@ class DeliveryAssignmentDataGrid extends DataGrid
                 'orders.customer_first_name',
                 'orders.customer_last_name',
                 'order_address.phone as customer_phone',
-                'delivery_assignments.state_code as governorate',
+                'order_address.state as governorate',
                 'delivery_assignments.delivery_type',
-                'delivery_assignments.payment_method',
+                'order_payment.method as payment_method',
                 'delivery_assignments.status',
                 'delivery_assignments.attempt_count',
                 'orders.grand_total as cod_amount',
@@ -54,8 +55,8 @@ class DeliveryAssignmentDataGrid extends DataGrid
         $this->addFilter('order_increment_id', 'orders.increment_id');
         $this->addFilter('status', 'delivery_assignments.status');
         $this->addFilter('delivery_type', 'delivery_assignments.delivery_type');
-        $this->addFilter('payment_method', 'delivery_assignments.payment_method');
-        $this->addFilter('governorate', 'delivery_assignments.state_code');
+        $this->addFilter('payment_method', 'order_payment.method');
+        $this->addFilter('governorate', 'order_address.state');
 
         if ($status = request()->query('status')) {
             $queryBuilder->where('delivery_assignments.status', $status);
