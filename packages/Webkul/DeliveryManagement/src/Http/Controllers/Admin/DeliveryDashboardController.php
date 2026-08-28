@@ -3,12 +3,28 @@
 namespace Webkul\DeliveryManagement\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Webkul\DeliveryManagement\Models\DeliveryAssignment;
 
 class DeliveryDashboardController extends Controller
 {
+    /**
+     * Handle root /admin/delivery redirection based on user role.
+     *
+     * @return RedirectResponse
+     */
+    public function root(Request $request)
+    {
+        $user = auth()->guard('admin')->user();
+        if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
+            return redirect()->route('delivery.index');
+        }
+
+        return redirect()->route('admin.delivery.dashboard.index');
+    }
+
     public function index(Request $request)
     {
         $today = now()->startOfDay();

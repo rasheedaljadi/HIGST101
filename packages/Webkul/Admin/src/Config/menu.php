@@ -344,13 +344,37 @@ return [
     ],
 
     /**
+     * Detailed Reports (التقارير التفصيلية).
+     */
+    [
+        'key' => 'detailed_reports',
+        'name' => 'admin::app.components.layouts.sidebar.detailed-reports',
+        'route' => 'admin.detailed_reports.products.index',
+        'sort' => 10,
+        'icon' => 'icon-sales',
+        'icon-class' => 'report-icon',
+    ], [
+        'key' => 'detailed_reports.products',
+        'name' => 'admin::app.components.layouts.sidebar.detailed-reports-products',
+        'route' => 'admin.detailed_reports.products.index',
+        'sort' => 1,
+        'icon' => '',
+    ], [
+        'key' => 'detailed_reports.customers',
+        'name' => 'admin::app.components.layouts.sidebar.detailed-reports-customers',
+        'route' => 'admin.detailed_reports.customers.index',
+        'sort' => 2,
+        'icon' => '',
+    ],
+
+    /**
      * Settings.
      */
     [
         'key' => 'settings',
         'name' => 'admin::app.components.layouts.sidebar.settings',
         'route' => 'admin.settings.locales.index',
-        'sort' => 10,
+        'sort' => 11,
         'icon' => 'icon-settings',
         'icon-class' => 'settings-icon',
     ], [

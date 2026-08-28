@@ -216,9 +216,8 @@
                                 name="sync_schedule"
                                 class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
                             >
-                                <option value="hourly" {{ old('sync_schedule', $settings->sync_schedule) === 'hourly' ? 'selected' : '' }}>كل ساعة (Hourly)</option>
-                                <option value="twice-daily" {{ old('sync_schedule', $settings->sync_schedule) === 'twice-daily' ? 'selected' : '' }}>مرتين يومياً (Twice Daily)</option>
-                                <option value="daily" {{ old('sync_schedule', $settings->sync_schedule) === 'daily' ? 'selected' : '' }}>يومياً (Daily)</option>
+                                <option value="twice-daily" {{ old('sync_schedule', $settings->sync_schedule) === 'twice-daily' ? 'selected' : '' }}>مرتين يومياً (03:00 ص و 03:00 م)</option>
+                                <option value="daily" {{ old('sync_schedule', $settings->sync_schedule) === 'daily' || empty($settings->sync_schedule) || old('sync_schedule', $settings->sync_schedule) === 'hourly' ? 'selected' : '' }}>مرة واحدة يومياً (03:30 فجراً - موصى به)</option>
                             </select>
                             <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                 اختر معدل تكرار تشغيل المزامنة التلقائية لأسعار ومخزون المنتجات.
@@ -226,29 +225,39 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-3 py-1">
-                        <input
-                            type="hidden"
-                            name="sync_enabled"
-                            value="0"
-                        />
-                        <input
-                            type="checkbox"
-                            id="sync_enabled"
-                            name="sync_enabled"
-                            value="1"
-                            {{ old('sync_enabled', $settings->sync_enabled) ? 'checked' : '' }}
-                            class="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-800"
-                        />
-                        <label for="sync_enabled" class="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
-                            تفعيل المزامنة المجدولة التلقائية لجميع المنتجات
-                        </label>
+                    <div class="flex items-center justify-between gap-4 py-2 border-t border-gray-100 dark:border-gray-800">
+                        <div>
+                            <label for="sync_enabled" class="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer block select-none">
+                                تفعيل المزامنة المجدولة التلقائية لجميع المنتجات
+                            </label>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 select-none">
+                                مزامنة مستمرة للأسعار ومستويات المخزون تلقائياً بالخلفية.
+                            </p>
+                        </div>
+                        <div class="flex items-center shrink-0">
+                            <input
+                                type="hidden"
+                                name="sync_enabled"
+                                value="0"
+                            />
+                            <label for="sync_enabled" class="relative inline-flex cursor-pointer select-none items-center p-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-lg transition-all">
+                                <input
+                                    type="checkbox"
+                                    id="sync_enabled"
+                                    name="sync_enabled"
+                                    value="1"
+                                    {{ old('sync_enabled', $settings->sync_enabled) ? 'checked' : '' }}
+                                    class="peer hidden"
+                                />
+                                <span class="icon-uncheckbox peer-checked:icon-checked text-3xl text-gray-400 peer-checked:text-amber-600 transition-colors"></span>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="flex items-center pt-2">
                         <button
                             type="submit"
-                            class="primary-button py-2 px-6 focus:ring-1 focus:ring-amber-500 focus:outline-none hover:bg-amber-600 transition-all font-sans font-semibold text-sm"
+                            class="primary-button py-2 px-6 focus:ring-1 focus:ring-amber-500 focus:outline-none hover:bg-amber-600 transition-all font-sans font-semibold text-sm cursor-pointer"
                         >
                             حفظ إعدادات المزامنة
                         </button>
@@ -276,7 +285,7 @@
                                 min="0"
                                 max="365"
                                 name="shipping_extra_days"
-                                value="{{ old('shipping_extra_days', $settings->shipping_extra_days) }}"
+                                value="{{ old('shipping_extra_days', $settings->shipping_extra_days ?? 0) }}"
                                 class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
                                 placeholder="0"
                             />
@@ -287,67 +296,78 @@
                     </div>
 
                     {{-- Include AliExpress Shipping in Product Price Toggle Card --}}
-                    <div class="rounded-xl border border-blue-200 bg-blue-50/60 p-5 dark:border-blue-900/50 dark:bg-blue-950/20 flex flex-col gap-4 transition-all">
+                    <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-5 dark:border-blue-900/50 dark:bg-blue-950/20 flex flex-col gap-4 transition-all">
+                        {{-- Row 1: Include shipping in price --}}
                         <div class="flex items-center justify-between gap-4">
-                            <div class="flex items-center gap-3">
-                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400">
-                                    <span class="icon-shipping text-2xl"></span>
+                            <div class="flex items-center gap-3.5">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h2m-8 0a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                                    </svg>
                                 </div>
-                                <div>
-                                    <label for="include_shipping_in_price" class="text-sm font-bold text-gray-800 dark:text-white cursor-pointer font-sans">
+                                <label for="include_shipping_in_price" class="cursor-pointer select-none">
+                                    <span class="block text-sm font-bold text-gray-800 dark:text-white font-sans">
                                         دمج تكلفة شحن AliExpress تلقائياً في سعر بيع المنتج (Free Shipping Model)
-                                    </label>
-                                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5 font-sans">
+                                    </span>
+                                    <span class="block text-xs text-gray-600 dark:text-gray-400 mt-0.5 font-sans leading-relaxed">
                                         عند التفعيل: يقوم محرك التسعير بجلب تكلفة شحن المورد وإضافتها إلى تكلفة المنتج قبل تطبيق هامش الربح، ليظهر السعر النهائي للعميل في المتجر شاملاً رسوم الشحن بالكامل.
-                                    </p>
-                                </div>
+                                    </span>
+                                </label>
                             </div>
-                            <div class="flex items-center">
+                            <div class="flex items-center shrink-0">
                                 <input
                                     type="hidden"
                                     name="include_shipping_in_price"
                                     value="0"
                                 />
-                                <input
-                                    type="checkbox"
-                                    id="include_shipping_in_price"
-                                    name="include_shipping_in_price"
-                                    value="1"
-                                    {{ old('include_shipping_in_price', $settings->include_shipping_in_price) ? 'checked' : '' }}
-                                    class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
-                                />
+                                <label for="include_shipping_in_price" class="relative inline-flex cursor-pointer select-none items-center p-1.5 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 rounded-lg transition-all">
+                                    <input
+                                        type="checkbox"
+                                        id="include_shipping_in_price"
+                                        name="include_shipping_in_price"
+                                        value="1"
+                                        {{ old('include_shipping_in_price', $settings->include_shipping_in_price) ? 'checked' : '' }}
+                                        class="peer hidden"
+                                    />
+                                    <span class="icon-uncheckbox peer-checked:icon-checked text-3xl text-gray-400 peer-checked:text-blue-600 transition-colors"></span>
+                                </label>
                             </div>
                         </div>
 
-                        {{-- Exception for Choice / AliExpress Commitment --}}
+                        {{-- Row 2: Choice Exemption --}}
                         <div class="border-t border-blue-200/80 dark:border-blue-900/40 pt-3.5 flex items-center justify-between gap-4">
-                            <div class="flex items-start gap-3">
-                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 mt-0.5">
-                                    <span class="icon-check text-lg"></span>
+                            <div class="flex items-center gap-3.5">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
                                 </div>
-                                <div>
-                                    <label for="exclude_choice_from_shipping_price" class="text-xs font-bold text-gray-800 dark:text-white cursor-pointer font-sans">
+                                <label for="exclude_choice_from_shipping_price" class="cursor-pointer select-none">
+                                    <span class="block text-xs font-bold text-gray-800 dark:text-white font-sans">
                                         استثناء منتجات Choice (التزام AliExpress) من دمج تكلفة الشحن
-                                    </label>
-                                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 font-sans leading-relaxed">
+                                    </span>
+                                    <span class="block text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 font-sans leading-relaxed">
                                         عند التفعيل: المنتجات التي تحمل علامة Choice وشحن التزام AliExpress لن يتم إضافة تكلفة شحنها إلى سعر بيع المنتج، وستبقى معتمدة على سعر التكلفة المباشر فقط.
-                                    </p>
-                                </div>
+                                    </span>
+                                </label>
                             </div>
-                            <div class="flex items-center">
+                            <div class="flex items-center shrink-0">
                                 <input
                                     type="hidden"
                                     name="exclude_choice_from_shipping_price"
                                     value="0"
                                 />
-                                <input
-                                    type="checkbox"
-                                    id="exclude_choice_from_shipping_price"
-                                    name="exclude_choice_from_shipping_price"
-                                    value="1"
-                                    {{ old('exclude_choice_from_shipping_price', $settings->exclude_choice_from_shipping_price ?? true) ? 'checked' : '' }}
-                                    class="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
-                                />
+                                <label for="exclude_choice_from_shipping_price" class="relative inline-flex cursor-pointer select-none items-center p-1.5 hover:bg-amber-100/60 dark:hover:bg-amber-900/40 rounded-lg transition-all">
+                                    <input
+                                        type="checkbox"
+                                        id="exclude_choice_from_shipping_price"
+                                        name="exclude_choice_from_shipping_price"
+                                        value="1"
+                                        {{ old('exclude_choice_from_shipping_price', $settings->exclude_choice_from_shipping_price ?? true) ? 'checked' : '' }}
+                                        class="peer hidden"
+                                    />
+                                    <span class="icon-uncheckbox peer-checked:icon-checked text-3xl text-gray-400 peer-checked:text-amber-600 transition-colors"></span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -361,7 +381,7 @@
                     <div class="flex items-center pt-2">
                         <button
                             type="submit"
-                            class="primary-button py-2 px-6 focus:ring-1 focus:ring-amber-500 focus:outline-none hover:bg-amber-600 transition-all font-sans font-semibold text-sm"
+                            class="primary-button py-2 px-6 focus:ring-1 focus:ring-amber-500 focus:outline-none hover:bg-amber-600 transition-all font-sans font-semibold text-sm cursor-pointer"
                         >
                             حفظ خيارات الشحن
                         </button>

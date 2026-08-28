@@ -73,11 +73,11 @@ class FulfillmentServiceProvider extends ServiceProvider
             $schedule->command('fulfillment:recover-sync-runs')->everyFifteenMinutes();
 
             if (config('fulfillment.poll.enabled', true)) {
-                $schedule->job(new PollSupplierOrdersJob)->everyFifteenMinutes();
+                $schedule->job(new PollSupplierOrdersJob)->everyThirtyMinutes();
             }
 
             if (config('fulfillment.sync.enabled', true)) {
-                $schedule->job(new SyncProductBatchJob('aliexpress'))->hourly()->withoutOverlapping()->onOneServer();
+                $schedule->job(new SyncProductBatchJob('aliexpress'))->dailyAt('04:30')->withoutOverlapping()->onOneServer();
             }
             $schedule->call(function () {
                 app(ReconciliationEngine::class)->reconcile();

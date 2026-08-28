@@ -57,13 +57,25 @@ class Payment
      * Returns payment redirect url if have any
      *
      * @param  Cart  $cart
-     * @return string
+     * @return string|null
      */
     public function getRedirectUrl($cart)
     {
-        $payment = app(Config::get('payment_methods.'.$cart->payment->method.'.class'));
+        $method = $cart?->payment?->method;
 
-        return $payment->getRedirectUrl();
+        if (empty($method)) {
+            return null;
+        }
+
+        $class = Config::get('payment_methods.'.$method.'.class');
+
+        if (empty($class) || ! class_exists($class)) {
+            return null;
+        }
+
+        $payment = app($class);
+
+        return method_exists($payment, 'getRedirectUrl') ? $payment->getRedirectUrl() : null;
     }
 
     /**
@@ -74,8 +86,22 @@ class Payment
      */
     public static function getAdditionalDetails($code)
     {
-        $paymentMethodClass = app(Config::get('payment_methods.'.$code.'.class'));
+        if (empty($code)) {
+            return [];
+        }
 
-        return $paymentMethodClass->getAdditionalDetails();
+        $class = Config::get('payment_methods.'.$code.'.class');
+
+        if (empty($class) || ! class_exists($class)) {
+            return [];
+        }
+
+        $paymentMethodClass = app($class);
+
+        if (method_exists($paymentMethodClass, 'getAdditionalDetails')) {
+            return $paymentMethodClass->getAdditionalDetails();
+        }
+
+        return [];
     }
 }

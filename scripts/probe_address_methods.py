@@ -1,60 +1,51 @@
-import json
-import os
-import sys
+import remote_ssh_helper as r
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from scripts.remote_ssh_helper import get_ssh_client, run_remote_cmd
+client = r.get_ssh_client()
 
-def main():
-    client = get_ssh_client()
-    remote_base = "/home/highest-ye/htdocs/highest-ye.store"
-    
-    probe_php = """<?php
-$projDir = '""" + remote_base + """';
-require $projDir . '/vendor/autoload.php';
-$app = require_once $projDir . '/bootstrap/app.php';
-$kernel = $app->make(\\Illuminate\\Contracts\\Console\\Kernel::class);
+php_test = r"""<?php
+require __DIR__ . '/vendor/autoload.php';
+$app = require_once __DIR__ . '/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-use App\\Services\\AliExpress\\AliExpressOAuthService;
-use App\\Services\\AliExpress\\AliExpressApiClient;
+use App\Services\AliExpress\AliExpressApiClient;
+use App\Services\AliExpress\AliExpressOAuthService;
 
 $oauth = app(AliExpressOAuthService::class);
 $token = $oauth->latestToken();
-$apiClient = app(AliExpressApiClient::class);
 $accessToken = $token->access_token;
+$apiClient = app(AliExpressApiClient::class);
 
-// Probe methods related to address and logistics
-$methods = [
-    'aliexpress.logistics.redefine.getlogisticsselleraddresses' => ['seller_address_query' => 'sender,pickup,refund'],
-    'aliexpress.ds.product.get' => ['product_id' => '1005010378829324', 'ship_to_country' => 'SA', 'target_currency' => 'USD', 'target_language' => 'en'],
+echo "=== PROBING ALIEXPRESS ADDRESS API METHODS ===\n";
+
+$methodsToTest = [
+    'aliexpress.logistics.redefining.getlogisticsselleraddresses' => ['seller_address_query' => 'getdefault'],
+    'aliexpress.logistics.redefining.getlogisticsselleraddresses' => ['seller_address_query' => 'sender'],
+    'aliexpress.logistics.redefining.getlogisticsselleraddresses' => ['seller_address_query' => 'pickup'],
+    'aliexpress.logistics.redefining.getlogisticsselleraddresses' => ['seller_address_query' => 'refund'],
+    'aliexpress.logistics.buyer.freight.calculate' => ['country_code' => 'SA'],
+    'aliexpress.ds.recommend.feed.get' => ['feed_name' => 'ds_popular'],
 ];
 
-$results = [];
-foreach ($methods as $m => $p) {
-    try {
-        $res = $apiClient->call($m, $accessToken, $p);
-        $results[$m] = $res['body'] ?? $res;
-    } catch (\\Throwable $e) {
-        $results[$m] = ['error' => $e->getMessage()];
+foreach ($methodsToTest as $method => $params) {
+    echo "Testing method: {$method}...\n";
+    $res = $apiClient->call($method, $accessToken, $params);
+    echo "Result: ok=" . ($res['ok'] ? 'true' : 'false') . ", code=" . ($res['code'] ?? 'none') . "\n";
+    if (!empty($res['body'])) {
+        echo json_encode(array_slice($res['body'], 0, 3, true), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
     }
+    echo "----------------------------------------\n";
 }
-
-echo json_encode($results, JSON_PRETTY_PRINT);
 """
 
-    sftp = client.open_sftp()
-    remote_script_path = f"{remote_base}/scripts/probe_address_methods.php"
-    with sftp.open(remote_script_path, 'w') as f:
-        f.write(probe_php)
-    sftp.close()
-    
-    cmd = f"cd {remote_base} && php scripts/probe_address_methods.php"
-    code, out, err = run_remote_cmd(client, cmd)
-    print(f"\n--- Output ---\n{out}")
-    
-    run_remote_cmd(client, f"rm -f {remote_script_path}")
-    client.close()
+sftp = client.open_sftp()
+with sftp.file("/home/highest-ye/htdocs/highest-ye.store/probe_address_methods.php", "w") as f:
+    f.write(php_test)
+sftp.close()
 
-if __name__ == '__main__':
-    main()
+code, out, err = r.run_remote_cmd(client, "cd /home/highest-ye/htdocs/highest-ye.store && php8.4 probe_address_methods.php && rm probe_address_methods.php")
+print(f"OUTPUT:\n{out}")
+if err:
+    print(f"ERR:\n{err}")
+
+client.close()

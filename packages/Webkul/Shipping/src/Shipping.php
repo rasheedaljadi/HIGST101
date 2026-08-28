@@ -30,6 +30,13 @@ class Shipping
         $ratesList = [];
 
         foreach (Config::get('carriers') as $shippingMethod) {
+            $carrierCode = $shippingMethod['code'] ?? '';
+
+            // Exclusively restrict customer shipping options to Delivery Management rules
+            if (! in_array($carrierCode, ['homedelivery', 'deliverypoint'], true)) {
+                continue;
+            }
+
             $object = new $shippingMethod['class'];
 
             if ($rates = $object->calculate()) {
@@ -41,7 +48,7 @@ class Shipping
             }
         }
 
-        $this->rates = array_merge(...$ratesList);
+        $this->rates = ! empty($ratesList) ? array_merge(...$ratesList) : [];
 
         $this->saveAllShippingRates();
 
@@ -132,6 +139,13 @@ class Shipping
         $methods = [];
 
         foreach (Config::get('carriers') as $shippingMethod) {
+            $carrierCode = $shippingMethod['code'] ?? '';
+
+            // Exclusively restrict customer shipping options to Delivery Management rules
+            if (! in_array($carrierCode, ['homedelivery', 'deliverypoint'], true)) {
+                continue;
+            }
+
             $object = new $shippingMethod['class'];
 
             if (! $object->isAvailable()) {

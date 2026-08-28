@@ -2,6 +2,11 @@
 
 namespace Webkul\Shop\Transformers;
 
+use App\Enums\PricingTrigger;
+use App\Models\AliExpressSetting;
+use App\Models\HigestPricingRule;
+use App\Services\Pricing\PriceRecalculationService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Webkul\Product\Contracts\Product;
 use Webkul\Product\Helpers\Review as ReviewHelper;
@@ -28,6 +33,25 @@ class ProductPDPTransformer
     {
         if (! $product) {
             return [];
+        }
+
+        // Instant on-demand price synchronization for dropshipping products when pricing rules/shipping options updated
+        if ($product->sku && str_starts_with($product->sku, 'ae-')) {
+            try {
+                $setting = AliExpressSetting::first();
+                $lastRuleUpdate = HigestPricingRule::max('updated_at');
+                $lastConfigTimestamp = max(
+                    $setting?->updated_at?->timestamp ?? 0,
+                    $lastRuleUpdate ? Carbon::parse($lastRuleUpdate)->timestamp : 0
+                );
+
+                if ($lastConfigTimestamp > 0 && (! $product->updated_at || $product->updated_at->timestamp < $lastConfigTimestamp)) {
+                    app(PriceRecalculationService::class)->recalculateOne($product->id, PricingTrigger::MANUAL);
+                    $product->refresh();
+                }
+            } catch (\Throwable $e) {
+                // non-blocking fallback
+            }
         }
 
         $typeInstance = $product->getTypeInstance();

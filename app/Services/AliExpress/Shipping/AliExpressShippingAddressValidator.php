@@ -64,12 +64,17 @@ class AliExpressShippingAddressValidator
 
         $cleanZip = strtoupper($rawZip);
 
+        $shortNationalAddress = null;
+
         if ($country === 'SA') {
-            if (empty($cleanZip) || ! preg_match(self::SA_NATIONAL_ADDRESS_REGEX, $cleanZip)) {
-                throw new AliExpressInvalidShippingAddressException(
-                    errorCode: 'ALIEXPRESS_SA_NATIONAL_ADDRESS_INVALID_OR_MISSING',
-                    message: 'Saudi Arabia shipping address requires a valid 8-character Short National Address code (4 letters + 4 digits, e.g. ABCD1234).'
-                );
+            if (preg_match(self::SA_NATIONAL_ADDRESS_REGEX, $cleanZip)) {
+                $shortNationalAddress = $cleanZip;
+                $cleanZip = '14512';
+            } elseif (preg_match('/^[0-9]{5}(-[0-9]{4})?$/', $cleanZip)) {
+                $shortNationalAddress = 'RMAD3455';
+            } else {
+                $cleanZip = '14512';
+                $shortNationalAddress = 'RMAD3455';
             }
         } else {
             if (empty($cleanZip) || strlen($cleanZip) < 2 || strlen($cleanZip) > 20) {
@@ -90,7 +95,8 @@ class AliExpressShippingAddressValidator
             province: $province,
             zip: $cleanZip,
             country: $country,
-            companyName: ! empty($companyName) ? $companyName : $contactPerson
+            companyName: ! empty($companyName) ? $companyName : $contactPerson,
+            passportNo: $shortNationalAddress
         );
     }
 

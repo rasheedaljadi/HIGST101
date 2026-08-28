@@ -54,12 +54,61 @@ class ProcurementSubmitService
                 'state' => ProcurementBatch::STATE_SUBMITTED_TO_PROVIDER,
             ]);
 
+            $submittedCount = 0;
+            $failedCount = 0;
+            $failedMessages = [];
+
             foreach ($batch->supplierOrders as $spo) {
-                $this->submitSupplierPurchaseOrder($spo->id, $actorId);
+                try {
+                    $submittedSpo = $this->submitSupplierPurchaseOrder($spo->id, $actorId);
+                    $hasLiveOrder = $submittedSpo->platformOrders()
+                        ->whereNotNull('external_order_id')
+                        ->where('external_order_id', '!=', '')
+                        ->where('normalized_status', '!=', ExternalPlatformOrder::STATUS_SUBMISSION_FAILED)
+                        ->exists();
+
+                    if ($hasLiveOrder) {
+                        $submittedCount++;
+                    } else {
+                        $failedCount++;
+                        $lastFail = $submittedSpo->platformOrders()->latest()->first();
+                        $failedMessages[] = "SPO #{$spo->id} ({$spo->purchase_order_number}): ".($lastFail?->failure_message ?: $lastFail?->failure_code ?: 'Submission failed');
+                    }
+                } catch (\Throwable $e) {
+                    $failedCount++;
+                    $failedMessages[] = "SPO #{$spo->id} ({$spo->purchase_order_number}): ".$e->getMessage();
+                }
             }
 
+            if ($submittedCount === 0 && $failedCount > 0) {
+                $batch->update([
+                    'state' => ProcurementBatch::STATE_EXCEPTION,
+                ]);
+
+                ProcurementAuditLog::create([
+                    'auditable_type' => ProcurementBatch::class,
+                    'auditable_id' => $batch->id,
+                    'action' => 'batch_submission_failed',
+                    'actor_id' => $actorId,
+                    'actor_type' => 'admin',
+                    'old_state' => ProcurementBatch::STATE_SUBMITTED_TO_PROVIDER,
+                    'new_state' => ProcurementBatch::STATE_EXCEPTION,
+                    'details' => [
+                        'failed_count' => $failedCount,
+                        'reasons' => $failedMessages,
+                    ],
+                    'correlation_id' => "batch-{$batch->id}",
+                ]);
+
+                throw new DomainException('فشل إرسال أوامر الشراء إلى علي إكسبرس: '.implode(' | ', $failedMessages));
+            }
+
+            $finalState = ($failedCount > 0)
+                ? ProcurementBatch::STATE_PARTIALLY_SUBMITTED
+                : ProcurementBatch::STATE_AWAITING_MANUAL_PAYMENT;
+
             $batch->update([
-                'state' => ProcurementBatch::STATE_AWAITING_MANUAL_PAYMENT,
+                'state' => $finalState,
             ]);
 
             ProcurementAuditLog::create([
@@ -69,8 +118,11 @@ class ProcurementSubmitService
                 'actor_id' => $actorId,
                 'actor_type' => 'admin',
                 'old_state' => ProcurementBatch::STATE_APPROVED,
-                'new_state' => ProcurementBatch::STATE_AWAITING_MANUAL_PAYMENT,
-                'details' => ['submitted_orders_count' => $batch->supplierOrders->count()],
+                'new_state' => $finalState,
+                'details' => [
+                    'submitted_orders_count' => $submittedCount,
+                    'failed_orders_count' => $failedCount,
+                ],
                 'correlation_id' => "batch-{$batch->id}",
             ]);
 
@@ -381,6 +433,7 @@ class ProcurementSubmitService
                 'supplier_sku_id' => (string) $item->supplier_sku_id,
                 'qty' => (int) $item->qty_ordered,
                 'expected_unit_cost' => (float) $item->expected_unit_cost,
+                'logistics_service_name' => 'CAINIAO_FULFILLMENT_STD',
             ];
         }
 

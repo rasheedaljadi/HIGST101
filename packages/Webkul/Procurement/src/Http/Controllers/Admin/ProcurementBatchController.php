@@ -148,7 +148,7 @@ class ProcurementBatchController extends Controller
             session()->flash('success', trans('procurement::app.messages.batch-submitted-success'));
 
             return redirect()->route('admin.procurement.batches.view', $batch->id);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             session()->flash('error', $e->getMessage());
 
             return redirect()->back();

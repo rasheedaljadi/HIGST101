@@ -60,24 +60,27 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($settings && $settings->sync_enabled) {
                     $frequency = $settings->sync_schedule ?? 'daily';
 
-                    $event = $schedule->command('aliexpress:sync-products --all --queue');
+                    $event = $schedule->command('aliexpress:sync-products --all --queue')
+                        ->withoutOverlapping(120)
+                        ->runInBackground()
+                        ->onOneServer();
 
                     switch ($frequency) {
-                        case 'hourly':
-                            $event->hourly();
-                            break;
                         case 'twice-daily':
-                            $event->twiceDaily();
+                            $event->twiceDaily(3, 15);
                             break;
                         case 'daily':
                         default:
-                            $event->daily();
+                            $event->dailyAt('03:30');
                             break;
                     }
                 }
 
-                // Process deferred indexes every 10 minutes
-                $schedule->command('aliexpress:sync-products --process-deferred-index')->everyTenMinutes();
+                // Process deferred indexes every 15 minutes
+                $schedule->command('aliexpress:sync-products --process-deferred-index')
+                    ->everyFifteenMinutes()
+                    ->withoutOverlapping()
+                    ->runInBackground();
             }
         } catch (Throwable $e) {
             Log::warning('Schedule registration skipped or failed: '.$e->getMessage());

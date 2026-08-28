@@ -14,6 +14,58 @@ class GovernorateDeliveryValidator
     ) {}
 
     /**
+     * Resolve state code from input string, code, name or ID.
+     */
+    public function resolveStateCode(string $stateInput): string
+    {
+        $input = trim($stateInput);
+        if (empty($input)) {
+            return 'SAN';
+        }
+
+        $upper = strtoupper($input);
+
+        // Direct code match in country_states
+        $exists = DB::table('country_states')
+            ->where('country_code', 'YE')
+            ->where('code', $upper)
+            ->value('code');
+
+        if ($exists) {
+            return $exists;
+        }
+
+        // Numeric ID check
+        if (is_numeric($input)) {
+            $codeById = DB::table('country_states')
+                ->where('id', (int) $input)
+                ->value('code');
+            if ($codeById) {
+                return $codeById;
+            }
+        }
+
+        // Name match in default_name
+        $codeByName = DB::table('country_states')
+            ->where('country_code', 'YE')
+            ->where('default_name', 'like', "%{$input}%")
+            ->value('code');
+
+        if ($codeByName) {
+            return $codeByName;
+        }
+
+        // Translation name match
+        $codeByTrans = DB::table('country_state_translations')
+            ->join('country_states', 'country_states.id', '=', 'country_state_translations.country_state_id')
+            ->where('country_states.country_code', 'YE')
+            ->where('country_state_translations.default_name', 'like', "%{$input}%")
+            ->value('country_states.code');
+
+        return $codeByTrans ?: $upper;
+    }
+
+    /**
      * Validate that the state code is valid for Yemen (YE).
      */
     public function isValidStateCode(string $stateCode): bool
@@ -22,9 +74,11 @@ class GovernorateDeliveryValidator
             return false;
         }
 
+        $resolved = $this->resolveStateCode($stateCode);
+
         return DB::table('country_states')
             ->where('country_code', 'YE')
-            ->where('code', strtoupper($stateCode))
+            ->where('code', $resolved)
             ->exists();
     }
 
@@ -37,7 +91,7 @@ class GovernorateDeliveryValidator
             return null;
         }
 
-        $stateCode = strtoupper(trim($stateCode));
+        $resolvedCode = $this->resolveStateCode($stateCode);
         $canonicalType = $this->shippingMethodAdapter->canonicalize($deliveryType);
 
         if (empty($canonicalType)) {
@@ -45,7 +99,7 @@ class GovernorateDeliveryValidator
         }
 
         $query = DeliveryGovernorateRule::query()
-            ->where('state_code', $stateCode)
+            ->where('state_code', $resolvedCode)
             ->where('delivery_type', $canonicalType)
             ->where('is_enabled', true);
 
@@ -76,7 +130,7 @@ class GovernorateDeliveryValidator
      */
     public function validateDeliveryPoint(string $stateCode, ?int $deliveryPointId): array
     {
-        $stateCode = strtoupper(trim($stateCode));
+        $resolvedState = $this->resolveStateCode($stateCode);
 
         if (! $deliveryPointId) {
             throw ValidationException::withMessages([
@@ -99,7 +153,7 @@ class GovernorateDeliveryValidator
             ]);
         }
 
-        if (strtoupper($point->state_code) !== $stateCode) {
+        if (strtoupper($point->state_code) !== strtoupper($resolvedState)) {
             throw ValidationException::withMessages([
                 'delivery_point_id' => [trans('delivery::app.validation.delivery_point_state_mismatch') ?: 'نقطة الاستلام المحددة لا تنتمي إلى المحافظة المختارة.'],
             ]);

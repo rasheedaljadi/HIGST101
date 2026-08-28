@@ -13,14 +13,7 @@ use Webkul\DeliveryManagement\Http\Controllers\DeliveryAgentController;
 
 Route::group(['middleware' => ['web', 'admin']], function () {
     // Route alias for /admin/delivery
-    Route::get(config('app.admin_url').'/delivery', function () {
-        $user = auth()->guard('admin')->user();
-        if ($user && in_array($user->role?->name, ['Courier', 'PointAgent'])) {
-            return redirect()->route('delivery.index');
-        }
-
-        return redirect()->route('admin.delivery.dashboard.index');
-    })->name('admin.delivery.root');
+    Route::get(config('app.admin_url').'/delivery', [DeliveryDashboardController::class, 'root'])->name('admin.delivery.root');
 
     // Courier & Point Agent Responsive Interface (available at /delivery and /admin/courier)
     Route::prefix('delivery')->as('delivery.')->group(function () {

@@ -15,6 +15,15 @@ class ShippingMethodAdapter
         'homedelivery_standard' => self::CANONICAL_HOME_DELIVERY,
         'homedelivery' => self::CANONICAL_HOME_DELIVERY,
         'home_delivery' => self::CANONICAL_HOME_DELIVERY,
+        'flatrate_flatrate' => self::CANONICAL_HOME_DELIVERY,
+        'flatrate' => self::CANONICAL_HOME_DELIVERY,
+        'free_free' => self::CANONICAL_HOME_DELIVERY,
+        'free' => self::CANONICAL_HOME_DELIVERY,
+        'courier_courier' => self::CANONICAL_HOME_DELIVERY,
+        'courier' => self::CANONICAL_HOME_DELIVERY,
+        'mpcourier_mpcourier' => self::CANONICAL_HOME_DELIVERY,
+        'mpcourier' => self::CANONICAL_HOME_DELIVERY,
+        'highest_shipping' => self::CANONICAL_HOME_DELIVERY,
 
         'deliverypoint_pickup' => self::CANONICAL_DELIVERY_POINT,
         'deliverypoint' => self::CANONICAL_DELIVERY_POINT,
@@ -24,7 +33,7 @@ class ShippingMethodAdapter
 
     /**
      * Convert any shipping method code or delivery type string to its canonical equivalent.
-     * Returns null if the code is not explicitly recognized as home delivery or delivery point.
+     * Returns home_delivery by default if not delivery point.
      */
     public function canonicalize(?string $code): ?string
     {
@@ -34,7 +43,15 @@ class ShippingMethodAdapter
 
         $normalized = strtolower(trim($code));
 
-        return self::METHOD_MAP[$normalized] ?? null;
+        if (isset(self::METHOD_MAP[$normalized])) {
+            return self::METHOD_MAP[$normalized];
+        }
+
+        if (str_contains($normalized, 'point') || str_contains($normalized, 'pickup')) {
+            return self::CANONICAL_DELIVERY_POINT;
+        }
+
+        return self::CANONICAL_HOME_DELIVERY;
     }
 
     /**

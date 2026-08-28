@@ -2,6 +2,7 @@
 
 namespace Webkul\Wallet\Http\Controllers\Admin;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use Webkul\Wallet\Models\WalletAccount;
@@ -19,6 +20,16 @@ class WalletDashboardController extends Controller
         protected WalletAccountRepository $walletAccountRepository,
         protected WalletWithdrawalRequestRepository $withdrawalRepository
     ) {}
+
+    /**
+     * Redirect to the wallet configuration settings.
+     *
+     * @return RedirectResponse
+     */
+    public function settings()
+    {
+        return redirect()->route('admin.configuration.index', ['slug' => 'sales', 'slug2' => 'wallet']);
+    }
 
     /**
      * Display the financial dashboard with real database statistics and operational metrics.

@@ -4,6 +4,7 @@ namespace Webkul\Admin\Http\Controllers\Dropshipping;
 
 use App\Enums\PricingTrigger;
 use App\Enums\SourceDiscountPolicy;
+use App\Jobs\Pricing\RecalculateCatalogPricesJob;
 use App\Models\AliExpressProductImport;
 use App\Models\HigestCalculatedPriceHistory;
 use App\Models\HigestPricingRule;
@@ -13,6 +14,7 @@ use App\Services\AliExpress\AliExpressFreightService;
 use App\Services\Pricing\PriceRecalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\ResponseCache\Facades\ResponseCache;
 use Throwable;
@@ -75,13 +77,28 @@ class PricingController extends Controller
             'status' => true,
         ]);
 
-        // Recalculate prices for products affected by this new rule
-        $affectedCount = $this->recalculationService->recalculateForRule($rule);
         $this->clearCatalogCache();
 
-        session()->flash('success', "تم إضافة قاعدة التسعير بنجاح وإعادة حساب {$affectedCount} منتج وتحديث الذاكرة المؤقتة.");
+        // Remove duplicate pending jobs and dispatch high-priority recalculation
+        try {
+            DB::table('jobs')->where('payload', 'like', '%RecalculateCatalogPricesJob%')->delete();
+            RecalculateCatalogPricesJob::dispatch(PricingTrigger::RULE_CHANGE)->onQueue('pricing');
+        } catch (Throwable $e) {
+            Log::error('PricingController: failed to dispatch recalculation: '.$e->getMessage());
+        }
 
-        return redirect()->back();
+        $message = "تم إضافة وتطبيق قاعدة التسعير '{$rule->name}' بنجاح وتحديث الذاكرة المؤقتة.";
+
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'message' => $message,
+                'status' => true,
+            ]);
+        }
+
+        session()->flash('success', $message);
+
+        return redirect()->to(route('admin.dropshipping.keys.index').'#pricing');
     }
 
     /**
@@ -113,11 +130,20 @@ class PricingController extends Controller
             'status' => $validated['status'],
         ]);
 
-        // Recalculate affected products (rule version was auto-incremented by model boot)
-        $affectedCount = $this->recalculationService->recalculateForRule($rule);
+        // Touch rule timestamp to trigger instant on-demand synchronization
+        $rule->touch();
+
         $this->clearCatalogCache();
 
-        $message = "تم تحديث قاعدة التسعير (النسخة {$rule->version}) وإعادة حساب {$affectedCount} منتج وتحديث الذاكرة المؤقتة.";
+        // Remove duplicate pending jobs and dispatch high-priority recalculation
+        try {
+            DB::table('jobs')->where('payload', 'like', '%RecalculateCatalogPricesJob%')->delete();
+            RecalculateCatalogPricesJob::dispatch(PricingTrigger::RULE_CHANGE)->onQueue('pricing');
+        } catch (Throwable $e) {
+            Log::error('PricingController: failed to dispatch recalculation: '.$e->getMessage());
+        }
+
+        $message = "تم حفظ وتطبيق قاعدة التسعير '{$rule->name}' (النسخة {$rule->version}) بنجاح وتحديث الذاكرة المؤقتة.";
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json([
@@ -128,7 +154,7 @@ class PricingController extends Controller
 
         session()->flash('success', $message);
 
-        return redirect()->back();
+        return redirect()->to(route('admin.dropshipping.keys.index').'#pricing');
     }
 
     /**
@@ -137,13 +163,20 @@ class PricingController extends Controller
     public function destroyRule(int $id)
     {
         $rule = HigestPricingRule::findOrFail($id);
+        $name = $rule->name;
         $rule->delete();
 
-        // Recalculate all prices (fallback rules will be resolved)
-        $affectedCount = $this->recalculationService->recalculateAll(PricingTrigger::RULE_CHANGE);
         $this->clearCatalogCache();
 
-        $message = "تم حذف قاعدة التسعير وإعادة حساب {$affectedCount} منتج وتحديث الذاكرة المؤقتة.";
+        // Remove duplicate pending jobs and dispatch high-priority recalculation
+        try {
+            DB::table('jobs')->where('payload', 'like', '%RecalculateCatalogPricesJob%')->delete();
+            RecalculateCatalogPricesJob::dispatch(PricingTrigger::RULE_CHANGE)->onQueue('pricing');
+        } catch (Throwable $e) {
+            Log::error('PricingController: failed to dispatch recalculation: '.$e->getMessage());
+        }
+
+        $message = "تم حذف قاعدة التسعير '{$name}' وإعادة جدولة حساب الأسعار وتحديث الذاكرة المؤقتة.";
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json([
@@ -154,7 +187,7 @@ class PricingController extends Controller
 
         session()->flash('success', $message);
 
-        return redirect()->back();
+        return redirect()->to(route('admin.dropshipping.keys.index').'#pricing');
     }
 
     /**
@@ -174,12 +207,18 @@ class PricingController extends Controller
      */
     public function recalculate()
     {
-        $count = $this->recalculationService->recalculateAll(PricingTrigger::MANUAL);
         $this->clearCatalogCache();
 
-        session()->flash('success', "تمت إعادة حساب أسعار {$count} منتج بنجاح عبر محرك التسعير وتحديث الذاكرة المؤقتة.");
+        try {
+            DB::table('jobs')->where('payload', 'like', '%RecalculateCatalogPricesJob%')->delete();
+            RecalculateCatalogPricesJob::dispatch(PricingTrigger::MANUAL)->onQueue('pricing');
+        } catch (Throwable $e) {
+            Log::error('PricingController: failed to dispatch recalculation: '.$e->getMessage());
+        }
 
-        return redirect()->back();
+        session()->flash('success', 'تم بدء مهمة إعادة حساب أسعار الكتالوج بنجاح وتحديث الذاكرة المؤقتة.');
+
+        return redirect()->to(route('admin.dropshipping.keys.index').'#pricing');
     }
 
     /**

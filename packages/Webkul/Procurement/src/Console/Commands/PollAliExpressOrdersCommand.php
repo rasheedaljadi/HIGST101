@@ -3,6 +3,7 @@
 namespace Webkul\Procurement\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Webkul\Procurement\Models\ExternalPlatformOrder;
 use Webkul\Procurement\Services\AliExpressPollingService;
 
@@ -39,14 +40,26 @@ class PollAliExpressOrdersCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('Starting AliExpress idempotent polling cycle...');
+        $banUntil = (int) Cache::get('aliexpress:api:ban_until', 0);
+        if ($banUntil > time()) {
+            $remaining = $banUntil - time();
+            $this->warn("AliExpress Circuit Breaker is active ({$remaining}s cooling down). Order polling skipped.");
+
+            return self::SUCCESS;
+        }
 
         $activeOrders = ExternalPlatformOrder::whereNotIn('normalized_status', [
             ExternalPlatformOrder::STATUS_COMPLETED,
             ExternalPlatformOrder::STATUS_CANCELLED,
         ])->get();
 
-        $this->info("Found {$activeOrders->count()} active external platform orders to poll.");
+        if ($activeOrders->isEmpty()) {
+            $this->info('No active external platform orders to poll.');
+
+            return self::SUCCESS;
+        }
+
+        $this->info("Starting AliExpress polling cycle for {$activeOrders->count()} active order(s)...");
 
         foreach ($activeOrders as $order) {
             try {
@@ -55,6 +68,7 @@ class PollAliExpressOrdersCommand extends Command
             } catch (\Throwable $e) {
                 $this->error("Error syncing Order #{$order->external_order_id}: {$e->getMessage()}");
             }
+            usleep(500000); // 500ms throttle between orders
         }
 
         $this->info('Polling cycle completed successfully.');

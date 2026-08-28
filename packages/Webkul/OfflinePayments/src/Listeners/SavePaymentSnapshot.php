@@ -33,43 +33,56 @@ class SavePaymentSnapshot
             $additional['receipt_path'] = $receiptPath;
         }
 
-        $destinationId = $additional['selected_offline_destination_id']
+        $destinationId = request('selected_offline_destination_id')
+            ?? request('selected_offline_account_id')
+            ?? session('checkout_selected_offline_account_id')
+            ?? $additional['selected_offline_destination_id']
             ?? $additional['selected_offline_account_id']
             ?? null;
 
+        $destination = null;
         if ($destinationId) {
             $destination = $this->destinationRepository->find($destinationId);
+        }
 
-            if ($destination && $destination->account) {
-                $account = $destination->account;
+        if (! ($destination && $destination->account)) {
+            $destination = $this->destinationRepository->getModel()->whereHas('account')->first();
+            $destinationId = $destination?->id;
+        }
 
-                // Build self-contained versioned snapshot array (Schema Version 2)
-                $snapshot = [
-                    'snapshot_type' => 'offline_payment',
-                    'schema_version' => 2,
-                    'account' => [
-                        'id' => $account->id,
-                        'code' => $account->code,
-                        'display_name' => $account->display_name,
-                        'provider_name' => $account->provider_name,
-                        'recipient_name' => $account->recipient_name,
-                        'logo_path' => $account->logo_path,
-                    ],
-                    'destination' => [
-                        'id' => $destination->id,
-                        'account_identifier' => $destination->account_identifier,
-                        'swift_code' => $destination->swift_code,
-                        'transfer_instructions' => $destination->transfer_instructions,
-                    ],
-                    'currency' => [
-                        'id' => $destination->currency?->id,
-                        'code' => $destination->currency?->code,
-                        'name' => $destination->currency?->name,
-                    ],
-                ];
+        if ($destination && $destination->account) {
+            $account = $destination->account;
 
-                $additional['offline_payment_snapshot'] = $snapshot;
-            }
+            // Build self-contained versioned snapshot array (Schema Version 2)
+            $snapshot = [
+                'snapshot_type' => 'offline_payment',
+                'schema_version' => 2,
+                'account' => [
+                    'id' => $account->id,
+                    'code' => $account->code,
+                    'display_name' => $account->display_name,
+                    'provider_name' => $account->provider_name,
+                    'recipient_name' => $account->recipient_name,
+                    'logo_path' => $account->logo_path,
+                ],
+                'destination' => [
+                    'id' => $destination->id,
+                    'account_identifier' => $destination->account_identifier,
+                    'swift_code' => $destination->swift_code,
+                    'transfer_instructions' => $destination->transfer_instructions,
+                ],
+                'currency' => [
+                    'id' => $destination->currency?->id,
+                    'code' => $destination->currency?->code,
+                    'name' => $destination->currency?->name,
+                ],
+            ];
+
+            $additional['offline_payment_snapshot'] = $snapshot;
+            $additional['selected_offline_destination_id'] = $destinationId;
+            $additional['selected_offline_account_id'] = $destinationId;
+
+            $payment->method_title = 'تحويل مالي - '.($account->display_name ?: $account->provider_name);
         }
 
         $payment->additional = $additional;

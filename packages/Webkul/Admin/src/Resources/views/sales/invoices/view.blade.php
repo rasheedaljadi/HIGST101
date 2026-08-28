@@ -427,6 +427,72 @@
                 </x-slot>
             </x-admin::accordion>
 
+            <!-- Payment and Shipping Details -->
+            <x-admin::accordion>
+                <x-slot:header>
+                    <p class="p-2.5 text-base font-semibold text-gray-600 dark:text-gray-300">
+                        @lang('admin::app.sales.orders.view.payment-and-shipping-information')
+                    </p>
+                </x-slot>
+
+                <x-slot:content>
+                    <div>
+                        <!-- Payment method -->
+                        <p class="font-semibold text-gray-800 dark:text-white">
+                            {{ $order->payment->method_title ?: core()->getConfigData('sales.payment_methods.' . $order->payment->method . '.title') }}
+                        </p>
+
+                        <p class="text-gray-600 dark:text-gray-300">
+                            @lang('admin::app.sales.orders.view.payment-method')
+                        </p>
+
+                        @php
+                            $additional = $order->payment->additional ?? [];
+                            $snapshot = $additional['offline_payment_snapshot'] ?? null;
+                        @endphp
+
+                        @if (! empty($snapshot))
+                            <div class="mt-3 p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-300 space-y-1">
+                                <p><strong>الحساب المختار:</strong> {{ $snapshot['account']['display_name'] ?? '' }} ({{ $snapshot['account']['provider_name'] ?? '' }})</p>
+                                <p><strong>@lang('offline_payments::app.admin.form.recipient-name'):</strong> {{ $snapshot['account']['recipient_name'] ?? '' }}</p>
+                                <p><strong>@lang('offline_payments::app.admin.form.account-identifier'):</strong> <code class="font-bold text-gray-900 dark:text-white">{{ $snapshot['destination']['account_identifier'] ?? '' }}</code></p>
+                            </div>
+                        @endif
+
+                        <!-- Currency -->
+                        <p class="pt-4 font-semibold text-gray-800 dark:text-white" v-pre>
+                            {{ $order->order_currency_code }}
+                        </p>
+
+                        <p class="text-gray-600 dark:text-gray-300">
+                            @lang('admin::app.sales.orders.view.currency')
+                        </p>
+
+                        @if ($order->shipping_address)
+                            <span class="mt-4 block w-full border-b dark:border-gray-800"></span>
+
+                            <div class="pt-4">
+                                <p class="font-semibold text-gray-800 dark:text-white" v-pre>
+                                    {{ $order->shipping_title }}
+                                </p>
+
+                                <p class="text-gray-600 dark:text-gray-300">
+                                    @lang('admin::app.sales.orders.view.shipping-method')
+                                </p>
+
+                                <p class="pt-4 font-semibold text-gray-800 dark:text-white" v-pre>
+                                    {{ core()->formatPrice($order->shipping_amount, $order->order_currency_code) }}
+                                </p>
+
+                                <p class="text-gray-600 dark:text-gray-300">
+                                    @lang('admin::app.sales.orders.view.shipping-price')
+                                </p>
+                            </div>
+                        @endif
+                    </div>
+                </x-slot>
+            </x-admin::accordion>
+
             <!-- component 2 -->
             <x-admin::accordion>
                 <x-slot:header>

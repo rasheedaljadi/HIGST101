@@ -90,15 +90,15 @@ class Theme
     public function url(string $url)
     {
         try {
-            $viteUrl = trim($this->vite['package_assets_directory'], '/').'/'.$url;
+            $viteUrl = trim($this->vite['package_assets_directory'] ?? 'src/Resources/assets', '/').'/'.$url;
 
-            return Vite::useHotFile($this->vite['hot_file'])
-                ->useBuildDirectory($this->vite['build_directory'])
+            return Vite::useHotFile($this->vite['hot_file'] ?? 'admin-default-vite.hot')
+                ->useBuildDirectory($this->vite['build_directory'] ?? 'themes/admin/default/build')
                 ->asset($viteUrl);
         } catch (\Exception $e) {
-            report($e);
+            $buildDir = trim($this->vite['build_directory'] ?? 'themes/admin/default/build', '/');
 
-            abort(404);
+            return asset($buildDir.'/'.$url);
         }
     }
 
@@ -109,8 +109,11 @@ class Theme
      */
     public function setBagistoVite(array $entryPoints)
     {
-        return Vite::useHotFile($this->vite['hot_file'])
-            ->useBuildDirectory($this->vite['build_directory'])
+        $hotFile = $this->vite['hot_file'] ?? (request()->is('admin*') ? 'admin-default-vite.hot' : 'shop-default-vite.hot');
+        $buildDir = $this->vite['build_directory'] ?? (request()->is('admin*') ? 'themes/admin/default/build' : 'themes/shop/default/build');
+
+        return Vite::useHotFile($hotFile)
+            ->useBuildDirectory($buildDir)
             ->withEntryPoints($entryPoints);
     }
 }

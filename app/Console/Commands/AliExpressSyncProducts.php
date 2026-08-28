@@ -127,8 +127,17 @@ class AliExpressSyncProducts extends Command
 
         $this->info("Found {$imports->count()} product(s) to sync.");
 
+        $banUntil = (int) Cache::get('aliexpress:api:ban_until', 0);
+        if ($banUntil > time()) {
+            $remaining = $banUntil - time();
+            $this->warn("AliExpress Circuit Breaker is active ({$remaining}s cooling down remaining). Sync aborted to prevent rate limiting.");
+
+            return self::SUCCESS;
+        }
+
         $success = 0;
         $failed = 0;
+        $index = 0;
 
         try {
             foreach ($imports as $import) {
@@ -141,9 +150,12 @@ class AliExpressSyncProducts extends Command
                 }
 
                 if ($queue) {
-                    SyncProductJob::dispatch($import);
-                    $this->info("  ✓ Dispatched SyncProductJob for AliExpress ID: {$import->aliexpress_product_id} (Local ID: {$import->product_id})");
+                    // Stagger job execution by 2 seconds per item to avoid rate limit spikes
+                    $delaySeconds = $index * 2;
+                    SyncProductJob::dispatch($import)->delay(now()->addSeconds($delaySeconds));
+                    $this->info("  ✓ Dispatched SyncProductJob for AliExpress ID: {$import->aliexpress_product_id} (Local ID: {$import->product_id}) [Delay: +{$delaySeconds}s]");
                     $success++;
+                    $index++;
                 } else {
                     $this->comment("Syncing AliExpress ID: {$import->aliexpress_product_id} (Local ID: {$import->product_id})...");
                     try {
@@ -154,7 +166,7 @@ class AliExpressSyncProducts extends Command
                         $this->error('  ✖ Failed: '.$e->getMessage());
                         $failed++;
                     }
-                    usleep(100000); // 100ms throttle delay
+                    usleep(500000); // 500ms throttle delay
                 }
             }
         } catch (Throwable $fatal) {

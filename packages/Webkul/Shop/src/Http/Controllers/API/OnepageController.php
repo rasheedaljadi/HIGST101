@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use Webkul\CartRule\Exceptions\CouponUsageLimitExceededException;
 use Webkul\Checkout\Facades\Cart;
 use Webkul\Customer\Repositories\CustomerRepository;
+use Webkul\DeliveryManagement\Models\DeliveryPoint;
 use Webkul\DeliveryManagement\Services\GovernorateDeliveryValidator;
 use Webkul\DeliveryManagement\Services\PaymentEligibilityChecker;
 use Webkul\DeliveryManagement\Services\ShippingMethodAdapter;
@@ -40,6 +41,11 @@ class OnepageController extends APIController
     public function summary(): JsonResource
     {
         $cart = Cart::getCart();
+
+        if ($cart) {
+            Cart::collectTotals();
+            $cart = Cart::getCart();
+        }
 
         return new CartResource($cart);
     }
@@ -95,6 +101,8 @@ class OnepageController extends APIController
         }
 
         Cart::saveAddresses($params);
+
+        Cart::resetShippingMethod();
 
         $cart = Cart::getCart();
 
@@ -156,6 +164,16 @@ class OnepageController extends APIController
                 $deliveryPointId = $additional['delivery_point_id'] ?? null;
             }
 
+            if (! $deliveryPointId) {
+                $resolvedState = $this->governorateDeliveryValidator->resolveStateCode($stateCode);
+                $defaultPoint = DeliveryPoint::where('is_active', true)
+                    ->where('state_code', $resolvedState)
+                    ->first();
+                if ($defaultPoint) {
+                    $deliveryPointId = $defaultPoint->id;
+                }
+            }
+
             try {
                 $pointSnapshot = $this->governorateDeliveryValidator->validateDeliveryPoint($stateCode, $deliveryPointId ? (int) $deliveryPointId : null);
                 if ($cart?->shipping_address) {
@@ -187,7 +205,13 @@ class OnepageController extends APIController
 
         Cart::collectTotals();
 
-        return response()->json(Payment::getSupportedPaymentMethods());
+        $cart = Cart::getCart();
+        $paymentMethodsData = Payment::getSupportedPaymentMethods();
+
+        return response()->json([
+            'payment_methods' => $paymentMethodsData['payment_methods'] ?? $paymentMethodsData,
+            'cart' => (new CartResource($cart))->jsonSerialize(),
+        ]);
     }
 
     /**
@@ -269,6 +293,10 @@ class OnepageController extends APIController
         if (request()->hasFile('receipt')) {
             $receiptPath = request()->file('receipt')->store('offline_payments/receipts', 'public');
             session(['checkout_receipt_path' => $receiptPath]);
+        }
+
+        if ($selectedOfflineId = request('selected_offline_account_id') ?? request('selected_offline_destination_id')) {
+            session(['checkout_selected_offline_account_id' => $selectedOfflineId]);
         }
 
         if ($redirectUrl = Payment::getRedirectUrl($cart)) {

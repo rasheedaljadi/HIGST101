@@ -22,7 +22,7 @@ Route::controller(PricingController::class)->prefix('dropshipping/pricing')->gro
     Route::match(['put', 'post'], '/rules/{id}', 'updateRule')->name('admin.dropshipping.pricing.rules.update');
     Route::match(['delete', 'post'], '/rules/{id}', 'destroyRule')->name('admin.dropshipping.pricing.rules.destroy');
     Route::match(['delete', 'post'], '/rules/{id}/delete', 'destroyRule')->name('admin.dropshipping.pricing.rules.destroy.alias');
-    Route::get('/history', fn () => redirect()->route('admin.audit-logs.pricing.index'))->name('admin.dropshipping.pricing.history');
+    Route::get('/history', 'history')->name('admin.dropshipping.pricing.history');
     Route::post('/recalculate', 'recalculate')->name('admin.dropshipping.pricing.recalculate');
     Route::post('/override', 'toggleOverride')->name('admin.dropshipping.pricing.override.store');
 });

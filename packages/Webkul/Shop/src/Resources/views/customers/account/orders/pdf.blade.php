@@ -471,9 +471,30 @@
                     <tbody>
                         <tr>
                             <td style="width: 50%">
-                                {{ core()->getConfigData('sales.payment_methods.' . $invoice->order->payment->method . '.title') }}
+                                @php
+                                    $payment = $invoice->order->payment;
+                                    $additional = $payment?->additional ?? [];
+                                    $snapshot = $additional['offline_payment_snapshot'] ?? null;
+                                    $paymentTitle = $payment?->method_title ?: core()->getConfigData('sales.payment_methods.' . ($payment?->method ?? '') . '.title');
+                                @endphp
 
-                                @php $additionalDetails = \Webkul\Payment\Payment::getAdditionalDetails($invoice->order->payment->method); @endphp
+                                <b>{{ $paymentTitle }}</b>
+
+                                @if (! empty($snapshot))
+                                    <div style="margin-top: 4px; font-size: 11px; color: #444; line-height: 1.4;">
+                                        @if (! empty($snapshot['account']['display_name']))
+                                            <div><b>حساب التحويل:</b> {{ $snapshot['account']['display_name'] }} ({{ $snapshot['account']['provider_name'] ?? '' }})</div>
+                                        @endif
+                                        @if (! empty($snapshot['account']['recipient_name']))
+                                            <div><b>اسم المستلم:</b> {{ $snapshot['account']['recipient_name'] }}</div>
+                                        @endif
+                                        @if (! empty($snapshot['destination']['account_identifier']))
+                                            <div><b>رقم الحساب / المحفظة:</b> {{ $snapshot['destination']['account_identifier'] }}</div>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @php $additionalDetails = \Webkul\Payment\Payment::getAdditionalDetails($payment?->method ?? ''); @endphp
 
                                 @if (! empty($additionalDetails))
                                     <div class="row small-text">

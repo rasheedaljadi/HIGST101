@@ -48,4 +48,8 @@ all_shipping_data.json
 non_direct_shipping.json
 output.txt
 *.timestamp-*.mjs
+/storage/framework/views/*
+/storage/debugbar/*
+/storage/logs/*
+*.pdf
 

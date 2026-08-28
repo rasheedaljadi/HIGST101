@@ -3,6 +3,7 @@
 namespace App\Services\AliExpress;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -39,6 +40,24 @@ class AliExpressApiClient
             throw new RuntimeException('AliExpress credentials are not configured.');
         }
 
+        // Circuit breaker check: Fail-fast if AliExpress is currently enforcing a temporary ban
+        $banUntil = (int) Cache::get('aliexpress:api:ban_until', 0);
+        if ($banUntil > time()) {
+            $remaining = $banUntil - time();
+            Log::channel('aliexpress')->warning('AliExpress API call skipped: Circuit breaker active', [
+                'method' => $method,
+                'remaining_seconds' => $remaining,
+            ]);
+
+            return [
+                'ok' => false,
+                'status' => 429,
+                'code' => 'AppApiCallLimitActive',
+                'message' => "AliExpress API circuit breaker active. Ban cooling down for {$remaining} more seconds.",
+                'body' => [],
+            ];
+        }
+
         // The system params required by the IOP gateway.
         $request = array_merge($params, [
             'app_key' => $this->appKey,
@@ -61,8 +80,11 @@ class AliExpressApiClient
         }
 
         $endpoint = config('aliexpress.business_url');
-        $maxRetries = 3;
+        $maxRetries = 2;
         $attempt = 0;
+
+        // Smooth pacing: light sleep to avoid micro-bursts
+        usleep(150000); // 150ms
 
         while ($attempt < $maxRetries) {
             $attempt++;
@@ -106,17 +128,38 @@ class AliExpressApiClient
             $message = $body['message']
                 ?? ($body['error_response']['msg'] ?? null);
 
-            // If rate limited by AliExpress (ApiCallLimit or frequency exceeds limit), backoff and retry
-            if ($code === 'ApiCallLimit' || str_contains(strtolower((string) $message), 'frequency exceeds the limit') || str_contains(strtolower((string) $message), 'calllimit')) {
-                if ($attempt < $maxRetries) {
-                    Log::channel('aliexpress')->warning('AliExpress API rate limited, backing off 1.5s...', [
-                        'method' => $method,
-                        'attempt' => $attempt,
-                    ]);
-                    usleep(1500000);
+            // If rate limited by AliExpress (ApiCallLimit or AppApiCallLimit or frequency exceeds limit)
+            $isRateLimited = $code === 'ApiCallLimit'
+                || $code === 'AppApiCallLimit'
+                || str_contains(strtolower((string) $message), 'frequency exceeds')
+                || str_contains(strtolower((string) $message), 'calllimit')
+                || str_contains(strtolower((string) $message), 'ban will last');
 
-                    continue;
+            if ($isRateLimited) {
+                // Check if AliExpress returned a specific ban duration
+                $banSeconds = 300; // default 5 minutes
+                if (preg_match('/ban will last\s+(\d+)\s+seconds/i', (string) $message, $matches)) {
+                    $banSeconds = (int) $matches[1];
                 }
+
+                $banUntilTime = time() + $banSeconds + 30;
+                Cache::put('aliexpress:api:ban_until', $banUntilTime, $banSeconds + 30);
+                Cache::put('aliexpress:api:ban_reason', (string) $message, $banSeconds + 30);
+
+                Log::channel('aliexpress')->error('AliExpress API Rate Limit Hit - Circuit Breaker Tripped', [
+                    'method' => $method,
+                    'code' => $code,
+                    'message' => $message,
+                    'ban_seconds' => $banSeconds,
+                ]);
+
+                return [
+                    'ok' => false,
+                    'status' => 429,
+                    'code' => (string) ($code ?: 'AppApiCallLimit'),
+                    'message' => $message ?: "AliExpress API rate limited for {$banSeconds} seconds.",
+                    'body' => $body,
+                ];
             }
 
             $ok = $response->successful() && ($code === null || (string) $code === '0');

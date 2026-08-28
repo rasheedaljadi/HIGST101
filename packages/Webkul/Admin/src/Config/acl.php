@@ -991,4 +991,29 @@ return [
         'route' => 'admin.audit-logs.products-import.index',
         'sort' => 2,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Detailed Reports (التقارير التفصيلية)
+    |--------------------------------------------------------------------------
+    |
+    | All ACLs related to Detailed Reports will be placed here.
+    |
+    */
+    [
+        'key' => 'detailed_reports',
+        'name' => 'admin::app.components.layouts.sidebar.detailed-reports',
+        'route' => 'admin.detailed_reports.products.index',
+        'sort' => 11,
+    ], [
+        'key' => 'detailed_reports.products',
+        'name' => 'admin::app.components.layouts.sidebar.detailed-reports-products',
+        'route' => 'admin.detailed_reports.products.index',
+        'sort' => 1,
+    ], [
+        'key' => 'detailed_reports.customers',
+        'name' => 'admin::app.components.layouts.sidebar.detailed-reports-customers',
+        'route' => 'admin.detailed_reports.customers.index',
+        'sort' => 2,
+    ],
 ];

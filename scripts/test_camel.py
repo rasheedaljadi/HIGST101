@@ -1,0 +1,114 @@
+import remote_ssh_helper as r
+
+client = r.get_ssh_client()
+
+php_test = r"""<?php
+require __DIR__ . '/vendor/autoload.php';
+$app = require_once __DIR__ . '/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
+
+use App\Services\AliExpress\AliExpressApiClient;
+use App\Models\AliExpressToken;
+
+$latestToken = AliExpressToken::latest()->first();
+$apiClient = app(AliExpressApiClient::class);
+
+$productId = '1005010737996063';
+$skuId = '12000053357140815';
+
+$cases = [
+    'camelCase logistics_address' => [
+        'contactPerson' => 'Mostafa Mo Bamashmous',
+        'fullName' => 'Mostafa Mo Bamashmous',
+        'phoneCountry' => '966',
+        'mobileNo' => '572124578',
+        'phoneNum' => '572124578',
+        'country' => 'SA',
+        'province' => 'Riyadh',
+        'city' => 'Riyadh',
+        'address' => 'حي العزيزية 3455',
+        'address2' => '3455',
+        'zip' => '14512',
+        'passportNo' => 'RMAD3455',
+        'taxNumber' => 'RMAD3455',
+    ],
+    'camelCase with passport_no & passportNo & zip=RMAD3455' => [
+        'contactPerson' => 'Mostafa Mo Bamashmous',
+        'fullName' => 'Mostafa Mo Bamashmous',
+        'phoneCountry' => '966',
+        'mobileNo' => '572124578',
+        'country' => 'SA',
+        'province' => 'Riyadh',
+        'city' => 'Riyadh',
+        'address' => 'حي العزيزية 3455',
+        'address2' => '3455',
+        'zip' => 'RMAD3455',
+        'passportNo' => 'RMAD3455',
+        'passport_no' => 'RMAD3455',
+    ],
+    'snake_case with national_address, short_address, tax_no' => [
+        'contact_person' => 'Mostafa Mo Bamashmous',
+        'full_name' => 'Mostafa Mo Bamashmous',
+        'phone_country' => '966',
+        'mobile_no' => '572124578',
+        'country' => 'SA',
+        'province' => 'Riyadh',
+        'city' => 'Riyadh',
+        'address' => 'حي العزيزية 3455',
+        'address2' => 'RMAD3455',
+        'zip' => '14512',
+        'national_address' => 'RMAD3455',
+        'short_address' => 'RMAD3455',
+        'tax_no' => 'RMAD3455',
+        'passport_no' => 'RMAD3455',
+        'id_card' => 'RMAD3455',
+    ],
+];
+
+foreach ($cases as $name => $addr) {
+    echo "========================================\n";
+    echo "Testing {$name}...\n";
+    
+    $params = [
+        'param_place_order_request4_open_api_d_t_o' => [
+            'out_order_id' => 'TEST_' . time() . '_' . rand(100, 999),
+            'logistics_address' => $addr,
+            'product_items' => [
+                [
+                    'product_count' => 1,
+                    'product_id' => $productId,
+                    'sku_id' => $skuId,
+                    'sku_attr' => '14:201447015#NO PAD',
+                    'sku_define_type' => 'sku_id',
+                    'logistics_service_name' => 'CAINIAO_FULFILLMENT_STD',
+                ]
+            ],
+        ],
+    ];
+    
+    $res = $apiClient->call('aliexpress.ds.order.create', $latestToken->access_token, $params);
+    $body = $res['body'] ?? [];
+    $result = $body['aliexpress_ds_order_create_response']['result'] ?? [];
+    
+    if (! empty($result['is_success']) && $result['is_success'] === true) {
+        echo "SUCCESS! ORDER CREATED! Order ID:\n";
+        print_r($result['order_list']);
+        break;
+    } else {
+        echo "Failed: " . ($result['error_code'] ?? $res['code'] ?? 'ERR') . " -> " . ($result['error_msg'] ?? $res['message'] ?? 'Unknown') . "\n";
+    }
+}
+"""
+
+sftp = client.open_sftp()
+with sftp.file("/home/highest-ye/htdocs/highest-ye.store/test_camel.php", "w") as f:
+    f.write(php_test)
+sftp.close()
+
+code, out, err = r.run_remote_cmd(client, "cd /home/highest-ye/htdocs/highest-ye.store && php8.4 test_camel.php && rm test_camel.php")
+print(f"OUTPUT:\n{out}")
+if err:
+    print(f"ERR:\n{err}")
+
+client.close()

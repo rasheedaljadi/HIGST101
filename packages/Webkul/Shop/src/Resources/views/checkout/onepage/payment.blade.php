@@ -224,9 +224,12 @@
                             }
                         })
                         .catch(error => {
-                            this.$emit('processing', 'payment');
+                            this.$emitter.emit('add-flash', {
+                                type: 'error',
+                                message: error.response?.data?.message || 'حدث خطأ أثناء تحديد وسيلة الدفع.'
+                            });
 
-                            if (error.response.data.redirect_url) {
+                            if (error.response?.data?.redirect_url) {
                                 window.location.href = error.response.data.redirect_url;
                             }
                         });

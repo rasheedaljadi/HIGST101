@@ -223,19 +223,31 @@
                             <div class="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 dark:border-gray-800 dark:bg-gray-800/50 flex flex-col gap-4">
                                 <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">تفاصيل ملخص الطلب</h4>
 
-                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <div class="flex flex-col gap-1 rounded-xl bg-white p-4 border border-zinc-200 dark:bg-gray-900 dark:border-gray-700">
-                                        <span class="text-xs text-zinc-500 dark:text-gray-400">إجمالي المبلغ المطلوب دفعه:</span>
-                                        <span class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">@{{ cart.formatted_grand_total }}</span>
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    <div class="flex flex-col gap-1 rounded-xl bg-white p-3.5 border border-zinc-200 dark:bg-gray-900 dark:border-gray-700">
+                                        <span class="text-xs text-zinc-500 dark:text-gray-400">قيمة المنتجات:</span>
+                                        <span class="text-base font-bold text-zinc-800 dark:text-zinc-200">@{{ cart.formatted_sub_total }}</span>
                                     </div>
 
-                                    <div class="flex flex-col gap-1 rounded-xl bg-white p-4 border border-zinc-200 dark:bg-gray-900 dark:border-gray-700">
-                                        <span class="text-xs text-zinc-500 dark:text-gray-400">طريقة الدفع والحساب:</span>
-                                        <span class="text-base font-bold text-zinc-900 dark:text-white">@{{ selectedAccountDisplayName }}</span>
+                                    <div class="flex flex-col gap-1 rounded-xl bg-white p-3.5 border border-zinc-200 dark:bg-gray-900 dark:border-gray-700">
+                                        <span class="text-xs text-zinc-500 dark:text-gray-400">رسوم التوصيل والشحن:</span>
+                                        <span class="text-base font-bold text-navyBlue dark:text-blue-400">
+                                            @{{ parseFloat(cart.shipping_amount) > 0 ? cart.formatted_shipping_amount : 'مجاناً' }}
+                                        </span>
+                                    </div>
+
+                                    <div class="flex flex-col gap-1 rounded-xl bg-white p-3.5 border border-zinc-200 dark:bg-gray-900 dark:border-gray-700">
+                                        <span class="text-xs text-zinc-500 dark:text-gray-400">إجمالي المبلغ المطلوب:</span>
+                                        <span class="text-xl font-bold text-emerald-600 dark:text-emerald-400">@{{ cart.formatted_grand_total }}</span>
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    <div class="flex flex-col gap-1 rounded-xl bg-white p-3.5 border border-zinc-200 dark:bg-gray-900 dark:border-gray-700">
+                                        <span class="text-xs text-zinc-500 dark:text-gray-400">طريقة الدفع والحساب:</span>
+                                        <span class="text-sm font-bold text-zinc-900 dark:text-white">@{{ selectedAccountDisplayName }}</span>
+                                    </div>
+
                                     <div class="flex flex-col gap-1 rounded-xl bg-white p-3.5 border border-zinc-200 dark:bg-gray-900 dark:border-gray-700">
                                         <span class="text-xs text-zinc-500 dark:text-gray-400">اسم المستلم المعرف:</span>
                                         <span class="text-sm font-bold text-zinc-900 dark:text-white">@{{ selectedAccountRecipientName || '—' }}</span>
@@ -491,13 +503,43 @@
                     },
 
                     stepProcessed(data) {
-                        if (this.currentStep == 'shipping') {
-                            this.shippingMethods = data;
+                        if (data?.cart) {
+                            this.cart = data.cart;
+                        }
+
+                        if (data?.payment_methods) {
+                            this.paymentMethods = data.payment_methods;
+                        } else if (Array.isArray(data)) {
+                            if (this.currentStep == 'shipping') {
+                                this.shippingMethods = data;
+                            } else if (this.currentStep == 'payment') {
+                                this.paymentMethods = data;
+                            }
+                        } else if (this.currentStep == 'shipping') {
+                            this.shippingMethods = data?.shipping_methods || data;
                         } else if (this.currentStep == 'payment') {
-                            this.paymentMethods = data;
+                            this.paymentMethods = data?.payment_methods || data;
                         }
 
                         this.getCart();
+                    },
+
+                    onRateSelected(rate) {
+                        if (! this.cart) return;
+
+                        const shippingPrice = parseFloat(rate.price ?? rate.base_price ?? 0);
+                        this.cart.shipping_method = rate.method;
+                        this.cart.shipping_amount = shippingPrice;
+                        this.cart.formatted_shipping_amount = rate.base_formatted_price || rate.formatted_price || ('$' + shippingPrice.toFixed(2));
+                        this.cart.formatted_shipping_amount_incl_tax = this.cart.formatted_shipping_amount;
+
+                        const subtotal = parseFloat(this.cart.sub_total || 0);
+                        const tax = parseFloat(this.cart.tax_total || 0);
+                        const discount = parseFloat(this.cart.discount_amount || 0);
+                        const newGrandTotal = subtotal + tax - discount + shippingPrice;
+
+                        this.cart.grand_total = newGrandTotal;
+                        this.cart.formatted_grand_total = '$' + newGrandTotal.toFixed(2);
                     },
 
                     scrollToCurrentStep() {
@@ -566,6 +608,11 @@
                         const formData = new FormData();
                         if (this.receiptFile) {
                             formData.append('receipt', this.receiptFile);
+                        }
+
+                        if (this.selectedOfflineAccountId) {
+                            formData.append('selected_offline_account_id', this.selectedOfflineAccountId);
+                            formData.append('selected_offline_destination_id', this.selectedOfflineAccountId);
                         }
 
                         this.$axios.post("{{ route('shop.checkout.onepage.orders.store') }}", formData, {

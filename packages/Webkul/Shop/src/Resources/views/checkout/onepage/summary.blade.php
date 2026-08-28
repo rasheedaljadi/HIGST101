@@ -141,7 +141,7 @@
             </p>
 
             <p class="text-base font-medium max-sm:text-sm">
-                @{{ cart.formatted_shipping_amount_incl_tax }}
+                @{{ cart.formatted_shipping_amount_incl_tax || cart.formatted_shipping_amount || '$0.00' }}
             </p>
         </div>
     </template>
@@ -153,7 +153,7 @@
             </p>
 
             <p class="text-base font-medium max-sm:text-sm">
-                @{{ cart.formatted_shipping_amount }}
+                @{{ cart.formatted_shipping_amount || '$0.00' }}
             </p>
         </div>
         
@@ -163,7 +163,7 @@
             </p>
 
             <p class="text-base font-medium max-sm:text-sm">
-                @{{ cart.formatted_shipping_amount_incl_tax }}
+                @{{ cart.formatted_shipping_amount_incl_tax || cart.formatted_shipping_amount || '$0.00' }}
             </p>
         </div>
     </template>
@@ -175,7 +175,7 @@
             </p>
 
             <p class="text-base font-medium max-sm:text-sm">
-                @{{ cart.formatted_shipping_amount }}
+                @{{ cart.formatted_shipping_amount || '$0.00' }}
             </p>
         </div>
     </template>

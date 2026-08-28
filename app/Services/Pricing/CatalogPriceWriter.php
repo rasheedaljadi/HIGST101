@@ -154,6 +154,11 @@ class CatalogPriceWriter
 
         foreach ($toIndex as $indexable) {
             $this->flatIndexer->refresh($indexable);
+            try {
+                $indexable->touch();
+            } catch (\Throwable $e) {
+                // non-blocking
+            }
         }
     }
 

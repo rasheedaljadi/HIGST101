@@ -48,6 +48,7 @@ class ValidatedAliExpressShippingAddress
             $payload['national_address'] = $code;
             $payload['national_number'] = $code;
             $payload['short_address'] = $code;
+            $payload['nat_addr'] = $code;
             $payload['address2'] = $this->address2 ?: $code;
         } elseif (! empty($this->passportNo)) {
             $payload['passport_no'] = $this->passportNo;

@@ -94,9 +94,8 @@ Route::group(['prefix' => 'wallet'], function () {
     /**
      * Settings.
      */
-    Route::get('settings', function () {
-        return redirect()->route('admin.configuration.index', ['slug' => 'sales', 'slug2' => 'wallet']);
-    })->name('admin.wallet.settings.index');
+    Route::get('settings', [WalletDashboardController::class, 'settings'])
+        ->name('admin.wallet.settings.index');
 
     /**
      * Wallet Promotions Management.

@@ -204,8 +204,9 @@ class AliExpressHttpClient extends AliExpressApiClient
         $limitKey = 'rate_limit:aliexpress:'.date('Y-m-d-H-i');
         $calls = (int) Cache::get($limitKey, 0);
 
-        if ($calls > 1000) {
-            throw new \RuntimeException('Rate limit exceeded for AliExpress API');
+        // Limit to 60 calls per minute (1 request/sec on average)
+        if ($calls >= 60) {
+            throw new \RuntimeException('Local rate limiter active: Maximum 60 calls per minute exceeded for AliExpress API');
         }
 
         Cache::put($limitKey, $calls + 1, 60);
@@ -213,9 +214,15 @@ class AliExpressHttpClient extends AliExpressApiClient
 
     protected function checkCircuitBreaker(): void
     {
+        $banUntil = (int) Cache::get('aliexpress:api:ban_until', 0);
+        if ($banUntil > time()) {
+            $remaining = $banUntil - time();
+            throw new \RuntimeException("Circuit breaker active: AliExpress API is cooling down ({$remaining}s remaining)");
+        }
+
         $failures = (int) Cache::get('circuit_breaker:aliexpress:failures', 0);
         if ($failures >= 5) {
-            throw new \RuntimeException('Circuit breaker open for AliExpress API');
+            throw new \RuntimeException('Circuit breaker open for AliExpress API due to consecutive transport failures');
         }
     }
 

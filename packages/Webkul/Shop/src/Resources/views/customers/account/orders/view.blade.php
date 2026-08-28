@@ -420,6 +420,89 @@
                                 </div>
                             </div>
                         </div>
+
+                        @php
+                            $payment = $order->payment;
+                            $additional = $payment?->additional ?? [];
+                            $snapshot = $additional['offline_payment_snapshot'] ?? null;
+                            $paymentTitle = $payment?->method_title ?: core()->getConfigData('sales.payment_methods.' . ($payment?->method ?? '') . '.title');
+                        @endphp
+
+                        <!-- Payment & Shipping Details Grid (Desktop) -->
+                        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-2xl border border-zinc-200 bg-zinc-50/50 dark:border-gray-800 dark:bg-gray-900/50">
+                            <!-- Payment Info -->
+                            <div class="flex flex-col gap-3">
+                                <h4 class="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                                    <span>💳</span>
+                                    <span>طريقة وتفاصيل الدفع</span>
+                                </h4>
+
+                                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-zinc-200 dark:border-gray-700 space-y-2 text-sm">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-zinc-500 text-xs">طريقة الدفع:</span>
+                                        <span class="font-bold text-zinc-900 dark:text-white">{{ $paymentTitle }}</span>
+                                    </div>
+
+                                    @if (! empty($snapshot))
+                                        <div class="pt-2 border-t border-zinc-100 dark:border-gray-700 text-xs space-y-1.5 text-zinc-600 dark:text-gray-300">
+                                            @if (! empty($snapshot['account']['display_name']))
+                                                <div class="flex justify-between">
+                                                    <span>حساب التحويل:</span>
+                                                    <span class="font-semibold text-zinc-900 dark:text-white">{{ $snapshot['account']['display_name'] }} ({{ $snapshot['account']['provider_name'] ?? '' }})</span>
+                                                </div>
+                                            @endif
+
+                                            @if (! empty($snapshot['account']['recipient_name']))
+                                                <div class="flex justify-between">
+                                                    <span>اسم المستلم:</span>
+                                                    <span class="font-semibold text-zinc-900 dark:text-white">{{ $snapshot['account']['recipient_name'] }}</span>
+                                                </div>
+                                            @endif
+
+                                            @if (! empty($snapshot['destination']['account_identifier']))
+                                                <div class="flex justify-between items-center">
+                                                    <span>رقم الحساب / المحفظة:</span>
+                                                    <span class="font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded">{{ $snapshot['destination']['account_identifier'] }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    @if (! empty($additional['receipt_path']))
+                                        <div class="pt-2 border-t border-zinc-100 dark:border-gray-700">
+                                            <span class="text-xs text-zinc-500 block mb-1.5">🖼️ إشعار التحويل المالي المرفق:</span>
+                                            <a href="{{ Storage::url($additional['receipt_path']) }}" target="_blank" class="inline-block">
+                                                <img src="{{ Storage::url($additional['receipt_path']) }}" class="h-20 w-auto rounded-lg border object-cover shadow-xs hover:opacity-90 transition-opacity" alt="إشعار التحويل">
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Shipping Info -->
+                            @if ($order->shipping_address)
+                                <div class="flex flex-col gap-3">
+                                    <h4 class="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                                        <span>🚚</span>
+                                        <span>طريقة وعنوان التوصيل</span>
+                                    </h4>
+
+                                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-zinc-200 dark:border-gray-700 space-y-2 text-sm">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-zinc-500 text-xs">طريقة الشحن / الاستلام:</span>
+                                            <span class="font-bold text-zinc-900 dark:text-white">{{ $order->shipping_title }}</span>
+                                        </div>
+
+                                        <div class="pt-2 border-t border-zinc-100 dark:border-gray-700 text-xs text-zinc-600 dark:text-gray-300 space-y-1">
+                                            <p class="font-semibold text-zinc-900 dark:text-white">{{ $order->shipping_address->name }}</p>
+                                            <p>{{ $order->shipping_address->address }}</p>
+                                            <p>{{ $order->shipping_address->city }}, {{ $order->shipping_address->state }}</p>
+                                            <p>هاتف: {{ $order->shipping_address->phone }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
                     </div>
 
                     <!-- For Mobile View -->
@@ -897,6 +980,59 @@
                                 {!! view_render_event('bagisto.shop.customers.account.orders.view.information.total-due.after') !!}
 
                             </div>
+                        </div>
+
+                        <!-- Payment & Shipping Details (Mobile) -->
+                        <div class="mt-4 flex flex-col gap-3">
+                            <div class="rounded-lg border bg-white p-4 text-xs space-y-2">
+                                <div class="flex justify-between items-center border-b pb-2">
+                                    <span class="font-bold text-zinc-900">💳 طريقة الدفع:</span>
+                                    <span class="font-semibold text-zinc-700">{{ $paymentTitle }}</span>
+                                </div>
+
+                                @if (! empty($snapshot))
+                                    <div class="space-y-1 text-zinc-600">
+                                        @if (! empty($snapshot['account']['display_name']))
+                                            <div class="flex justify-between">
+                                                <span>الحساب:</span>
+                                                <span class="font-medium text-zinc-900">{{ $snapshot['account']['display_name'] }}</span>
+                                            </div>
+                                        @endif
+                                        @if (! empty($snapshot['account']['recipient_name']))
+                                            <div class="flex justify-between">
+                                                <span>المستلم:</span>
+                                                <span class="font-medium text-zinc-900">{{ $snapshot['account']['recipient_name'] }}</span>
+                                            </div>
+                                        @endif
+                                        @if (! empty($snapshot['destination']['account_identifier']))
+                                            <div class="flex justify-between">
+                                                <span>رقم الحساب / المحفظة:</span>
+                                                <span class="font-bold text-blue-600">{{ $snapshot['destination']['account_identifier'] }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if (! empty($additional['receipt_path']))
+                                    <div class="pt-2 border-t">
+                                        <span class="text-zinc-500 block mb-1">🖼️ إشعار التحويل:</span>
+                                        <a href="{{ Storage::url($additional['receipt_path']) }}" target="_blank">
+                                            <img src="{{ Storage::url($additional['receipt_path']) }}" class="h-16 w-auto rounded border" alt="الإشعار">
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if ($order->shipping_address)
+                                <div class="rounded-lg border bg-white p-4 text-xs space-y-1.5">
+                                    <div class="flex justify-between items-center border-b pb-2">
+                                        <span class="font-bold text-zinc-900">🚚 التوصيل / الاستلام:</span>
+                                        <span class="font-semibold text-zinc-700">{{ $order->shipping_title }}</span>
+                                    </div>
+                                    <p class="font-medium text-zinc-900">{{ $order->shipping_address->name }}</p>
+                                    <p class="text-zinc-500">{{ $order->shipping_address->address }}, {{ $order->shipping_address->city }}</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </x-shop::tabs.item>

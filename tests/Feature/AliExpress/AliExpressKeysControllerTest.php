@@ -36,8 +36,8 @@ test('admin can save keys section only', function () {
         'authorize_url' => 'https://example.com/auth',
     ]);
 
-    $response->assertRedirect(route('admin.dropshipping.keys.index'));
-    $response->assertSessionHas('success', 'تم حفظ مفاتيح التطبيق وعناوين الاتصال بنجاح.');
+    $response->assertRedirect(route('admin.dropshipping.keys.index').'#keys');
+    $response->assertSessionHas('success', 'تم حفظ مفاتيح التطبيق وعناوين الاتصال بنجاح وتحديث الذاكرة المؤقتة.');
 
     $settings = AliExpressSetting::current();
     expect($settings->app_key)->toBe('new-app-key');
@@ -51,15 +51,15 @@ test('admin can save sync section only', function () {
     $response = $this->post(route('admin.dropshipping.keys.store'), [
         'section' => 'sync',
         'sync_enabled' => '1',
-        'sync_schedule' => 'hourly',
+        'sync_schedule' => 'twice-daily',
     ]);
 
-    $response->assertRedirect(route('admin.dropshipping.keys.index'));
-    $response->assertSessionHas('success', 'تم حفظ إعدادات المزامنة المجدولة بنجاح.');
+    $response->assertRedirect(route('admin.dropshipping.keys.index').'#sync');
+    $response->assertSessionHas('success', 'تم حفظ إعدادات المزامنة المجدولة بنجاح وتحديث الذاكرة المؤقتة.');
 
     $settings = AliExpressSetting::current();
     expect($settings->sync_enabled)->toBeTrue();
-    expect($settings->sync_schedule)->toBe('hourly');
+    expect($settings->sync_schedule)->toBe('twice-daily');
 });
 
 test('admin can save shipping section only', function () {
@@ -70,15 +70,19 @@ test('admin can save shipping section only', function () {
         'shipping_margin' => '12.50',
         'shipping_extra_days' => '5',
         'shipping_enabled' => '1',
+        'include_shipping_in_price' => '1',
+        'exclude_choice_from_shipping_price' => '1',
     ]);
 
-    $response->assertRedirect(route('admin.dropshipping.keys.index'));
-    $response->assertSessionHas('success', 'تم حفظ خيارات الشحن بنجاح.');
+    $response->assertRedirect(route('admin.dropshipping.keys.index').'#shipping');
+    $response->assertSessionHas('success', 'تم حفظ خيارات الشحن بنجاح وتحديث الذاكرة المؤقتة.');
 
     $settings = AliExpressSetting::current();
     expect((float) $settings->shipping_margin)->toBe(12.50);
     expect($settings->shipping_extra_days)->toBe(5);
     expect($settings->shipping_enabled)->toBeTrue();
+    expect($settings->include_shipping_in_price)->toBeTrue();
+    expect($settings->exclude_choice_from_shipping_price)->toBeTrue();
 });
 
 test('admin can save warehouse section only', function () {
@@ -96,8 +100,8 @@ test('admin can save warehouse section only', function () {
         'warehouse_postcode' => 'RMAD8016',
     ]);
 
-    $response->assertRedirect(route('admin.dropshipping.keys.index'));
-    $response->assertSessionHas('success', 'تم حفظ عنوان مستودع هايست وعناوين الشحن بنجاح.');
+    $response->assertRedirect(route('admin.dropshipping.keys.index').'#warehouse');
+    $response->assertSessionHas('success', 'تم حفظ عنوان مستودع هايست وعناوين الشحن بنجاح وتحديث الذاكرة المؤقتة.');
 
     $warehouse = DB::table('inventory_sources')->where('code', 'default')->first();
     expect($warehouse->contact_name)->toBe('Mostafa Mohammed');
