@@ -391,153 +391,320 @@
         </div>
 
         {{-- Panel 4: Warehouse Address --}}
-        <div id="tab-panel-warehouse" class="tab-panel hidden">
+        <div id="tab-panel-warehouse" class="tab-panel hidden flex flex-col gap-6">
             <form method="POST" action="{{ route('admin.dropshipping.keys.store') }}">
                 @csrf
                 <input type="hidden" name="section" value="warehouse" />
 
                 <div class="p-6 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900 flex flex-col gap-6">
-                    <h2 class="text-base font-bold text-gray-800 dark:text-white">عنوان شحن مستودع هايست (AliExpress Delivery Address)</h2>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 -mt-4 font-sans">
-                        هذا هو عنوان المستودع الذي سيتم شحن كافة طلبات AliExpress إليه تلقائياً من الموردين.
-                    </p>
+                    <div>
+                        <h2 class="text-base font-bold text-gray-800 dark:text-white">عنوان شحن مستودع هايست (AliExpress Delivery Address)</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-sans">
+                            هذا هو عنوان المستودع المعتمد الذي سيتم شحن كافة طلبات الشراء من الموردين في AliExpress إليه تلقائياً.
+                        </p>
+                    </div>
 
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        {{-- Contact Name --}}
-                        <div class="flex flex-col gap-1">
-                            <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                اسم مسؤول المستودع (Contact Name)
-                            </label>
-                            <input
-                                type="text"
-                                name="warehouse_contact_name"
-                                value="{{ old('warehouse_contact_name', $warehouse?->contact_name) }}"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                                placeholder="Al-Miftah Transport Office"
-                                required
-                            />
+                    {{-- Section 1: Identification & Contact --}}
+                    <div class="border-t border-gray-100 dark:border-gray-800 pt-4 flex flex-col gap-4">
+                        <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 font-sans flex items-center gap-2">
+                            <span class="inline-block w-2 h-2 rounded-full bg-blue-600"></span>
+                            بيانات التعريف والمسؤول والاتصال
+                        </h3>
+
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            {{-- Company / Warehouse Name --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    اسم المستودع / الشركة التجارية (Company / Warehouse Name)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="warehouse_company_name"
+                                    value="{{ old('warehouse_company_name', $warehouseMeta['company_name'] ?? $warehouse?->name) }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    placeholder="Al-Miftah Transport Office / Higest Warehouse"
+                                />
+                                <p class="text-[11px] text-gray-400 font-sans">الاسم الرسمي للمنشأة/المستودع الذي يظهر في بوليصة شحن المورد.</p>
+                            </div>
+
+                            {{-- Contact Person Name --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    اسم مسؤول الاستلام (Contact Person Name)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="warehouse_contact_name"
+                                    value="{{ old('warehouse_contact_name', $warehouse?->contact_name) }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    placeholder="Mostafa Bamashmous"
+                                    required
+                                />
+                                <p class="text-[11px] text-gray-400 font-sans">اسم الشخص المخول باستلام الطرود والتوقيع عليها.</p>
+                            </div>
+
+                            {{-- Contact Email --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    البريد الإلكتروني للمستودع (Email)
+                                </label>
+                                <input
+                                    type="email"
+                                    name="warehouse_contact_email"
+                                    value="{{ old('warehouse_contact_email', $warehouse?->contact_email) }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    placeholder="warehouse@hayest.com"
+                                    required
+                                />
+                            </div>
+
+                            {{-- Phone Country & Number --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    رقم هاتف المستودع ومفتاح الاتصال (Phone & Dial Code)
+                                </label>
+                                <div class="mt-1 flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        name="warehouse_phone_country"
+                                        value="{{ old('warehouse_phone_country', $warehouseMeta['phone_country'] ?? '966') }}"
+                                        class="w-24 rounded-md border border-gray-300 px-2.5 py-2 text-sm text-center dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                        placeholder="966"
+                                        title="رمز النداء الدولي (مثال: 966 أو 967)"
+                                    />
+                                    <input
+                                        type="text"
+                                        name="warehouse_contact_number"
+                                        value="{{ old('warehouse_contact_number', $warehouse?->contact_number) }}"
+                                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                        placeholder="572124578"
+                                        required
+                                    />
+                                </div>
+                                <p class="text-[11px] text-gray-400 font-sans">المفتاح الدولي (مثال: 966) يليه رقم الهاتف المباشر.</p>
+                            </div>
                         </div>
+                    </div>
 
-                        {{-- Contact Number --}}
-                        <div class="flex flex-col gap-1">
-                            <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                رقم هاتف المستودع (Phone Number)
-                            </label>
-                            <input
-                                type="text"
-                                name="warehouse_contact_number"
-                                value="{{ old('warehouse_contact_number', $warehouse?->contact_number) }}"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                                placeholder="0500000000"
-                                required
-                            />
+                    {{-- Section 2: Address & Location Details --}}
+                    <div class="border-t border-gray-100 dark:border-gray-800 pt-4 flex flex-col gap-4">
+                        <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 font-sans flex items-center gap-2">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-600"></span>
+                            العنوان الجغرافي وتفاصيل الشارع والمبنى
+                        </h3>
+
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            {{-- Street Address 1 --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    عنوان الشارع الرئيسي (Street Address 1)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="warehouse_street"
+                                    value="{{ old('warehouse_street', $warehouse?->street) }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    placeholder="3455 Ahmad Bin Rushd St"
+                                    required
+                                />
+                            </div>
+
+                            {{-- District --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    الحي / المنطقة الفرعية (District)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="warehouse_district"
+                                    value="{{ old('warehouse_district', $warehouseMeta['district'] ?? 'Al Aziziyah') }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    placeholder="Al Aziziyah / حي العزيزية"
+                                />
+                            </div>
+
+                            {{-- Address Line 2 / Building Details --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    سطر العنوان 2 / رقم المبنى الإضافي (Address Line 2)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="warehouse_address2"
+                                    value="{{ old('warehouse_address2', $warehouseMeta['address2'] ?? '') }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    placeholder="Building 7664 / Southern Ring Rd"
+                                />
+                                <p class="text-[11px] text-gray-400 font-sans">تفاصيل المبنى الإضافية أو المعالم القريبة (اختياري).</p>
+                            </div>
+
+                            {{-- City --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    المدينة (City)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="warehouse_city"
+                                    value="{{ old('warehouse_city', $warehouse?->city) }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    placeholder="Riyadh"
+                                    required
+                                />
+                            </div>
+
+                            {{-- State / Province --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    المنطقة / المقاطعة (State / Province)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="warehouse_state"
+                                    value="{{ old('warehouse_state', $warehouse?->state) }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    placeholder="Riyadh"
+                                    required
+                                />
+                            </div>
+
+                            {{-- Country Code --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    دولة المستودع (Country Code)
+                                </label>
+                                <select
+                                    name="warehouse_country"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    required
+                                >
+                                    <option value="SA" {{ old('warehouse_country', $warehouse?->country) === 'SA' ? 'selected' : '' }}>المملكة العربية السعودية (SA)</option>
+                                    <option value="YE" {{ old('warehouse_country', $warehouse?->country) === 'YE' ? 'selected' : '' }}>اليمن (YE)</option>
+                                    <option value="US" {{ old('warehouse_country', $warehouse?->country) === 'US' ? 'selected' : '' }}>الولايات المتحدة (US)</option>
+                                </select>
+                            </div>
                         </div>
+                    </div>
 
-                        {{-- Contact Email --}}
-                        <div class="flex flex-col gap-1">
-                            <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                البريد الإلكتروني للمستودع (Email)
-                            </label>
-                            <input
-                                type="email"
-                                name="warehouse_contact_email"
-                                value="{{ old('warehouse_contact_email', $warehouse?->contact_email) }}"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                                placeholder="warehouse@hayest.com"
-                                required
-                            />
-                        </div>
+                    {{-- Section 3: Postal Code & National Address --}}
+                    <div class="border-t border-gray-100 dark:border-gray-800 pt-4 flex flex-col gap-4">
+                        <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 font-sans flex items-center gap-2">
+                            <span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+                            الرمز البريدي والعنوان الوطني السعودي (SPL)
+                        </h3>
 
-                        {{-- Street Address --}}
-                        <div class="flex flex-col gap-1">
-                            <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                عنوان الشارع / الحي (Street Address)
-                            </label>
-                            <input
-                                type="text"
-                                name="warehouse_street"
-                                value="{{ old('warehouse_street', $warehouse?->street) }}"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                                placeholder="حي العزيزية, شارع الدايري الجنوبي"
-                                required
-                            />
-                        </div>
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            {{-- Standard Postal Code --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    الرمز البريدي القياسي للمنطقة (Postal Code / ZIP)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="warehouse_postcode"
+                                    value="{{ old('warehouse_postcode', $warehouse?->postcode) }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans"
+                                    placeholder="14512"
+                                    required
+                                />
+                                <p class="text-[11px] text-gray-400 font-sans">الرمز البريدي الرسمي المكون من 5 أرقام (مثال: 14512 للعزيزية بالرياض).</p>
+                            </div>
 
-                        {{-- City --}}
-                        <div class="flex flex-col gap-1">
-                            <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                المدينة (City)
-                            </label>
-                            <input
-                                type="text"
-                                name="warehouse_city"
-                                value="{{ old('warehouse_city', $warehouse?->city) }}"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                                placeholder="Riyadh"
-                                required
-                            />
-                        </div>
-
-                        {{-- State / Province --}}
-                        <div class="flex flex-col gap-1">
-                            <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                المنطقة / المقاطعة (State / Province)
-                            </label>
-                            <input
-                                type="text"
-                                name="warehouse_state"
-                                value="{{ old('warehouse_state', $warehouse?->state) }}"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                                placeholder="Riyadh"
-                                required
-                            />
-                        </div>
-
-                        {{-- Country Code --}}
-                        <div class="flex flex-col gap-1">
-                            <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                رمز الدولة (Country Code)
-                            </label>
-                            <select
-                                name="warehouse_country"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                                required
-                            >
-                                <option value="SA" {{ old('warehouse_country', $warehouse?->country) === 'SA' ? 'selected' : '' }}>المملكة العربية السعودية (SA)</option>
-                                <option value="YE" {{ old('warehouse_country', $warehouse?->country) === 'YE' ? 'selected' : '' }}>اليمن (YE)</option>
-                                <option value="US" {{ old('warehouse_country', $warehouse?->country) === 'US' ? 'selected' : '' }}>الولايات المتحدة (US)</option>
-                            </select>
-                        </div>
-
-                        {{-- Postcode / ZIP / National Address --}}
-                        <div class="flex flex-col gap-1">
-                            <label class="required block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
-                                الرمز البريدي / العنوان الوطني المختصر (Postcode / Short Address)
-                            </label>
-                            <input
-                                type="text"
-                                name="warehouse_postcode"
-                                value="{{ old('warehouse_postcode', $warehouse?->postcode) }}"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                                placeholder="ABCD1234"
-                                required
-                            />
-                            <p class="text-xs text-amber-600 dark:text-amber-500 mt-1 font-sans">
-                                هام جداً للسعودية: يجب كتابة العنوان الوطني المختصر المكون من 8 خانات (مثال: ABCD1234) ليقبل خادم AliExpress الطلب.
-                            </p>
+                            {{-- Saudi Short National Address --}}
+                            <div class="flex flex-col gap-1">
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 font-sans">
+                                    العنوان الوطني السعودي المختصر (Short National Address)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="warehouse_short_address"
+                                    value="{{ old('warehouse_short_address', $warehouseMeta['short_address'] ?? 'RMAD3455') }}"
+                                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-none font-sans uppercase font-mono tracking-wide"
+                                    placeholder="RMAD3455"
+                                    maxlength="8"
+                                />
+                                <p class="text-[11px] text-amber-600 dark:text-amber-500 font-sans">
+                                    كود سبل SPL المختصر المكون من 8 خانات (4 أحرف و 4 أرقام مثل RMAD3455). يُحقن تلقائياً في nat_addr لدى AliExpress.
+                                </p>
+                            </div>
                         </div>
                     </div>
 
                     <div class="flex items-center pt-2">
                         <button
                             type="submit"
-                            class="primary-button py-2 px-6 focus:ring-1 focus:ring-amber-500 focus:outline-none hover:bg-amber-600 transition-all font-sans font-semibold text-sm"
+                            class="primary-button py-2.5 px-7 focus:ring-1 focus:ring-amber-500 focus:outline-none hover:bg-amber-600 transition-all font-sans font-semibold text-sm cursor-pointer shadow-sm"
                         >
-                            حفظ عنوان الشحن
+                            حفظ وتحديث عنوان الشحن
                         </button>
                     </div>
                 </div>
             </form>
+
+            {{-- Live Injected Payload Preview Card --}}
+            <div class="p-6 border border-blue-200 dark:border-blue-900/60 rounded-lg shadow-sm bg-gradient-to-b from-blue-50/40 to-white dark:from-gray-900 dark:to-gray-900 flex flex-col gap-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-blue-100 dark:border-blue-900/40 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-600 text-white shadow-sm">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-800 dark:text-white font-sans">
+                                المحتوى المحقون المرسل إلى AliExpress API (Live Injected Payload)
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-sans">
+                                هذه هي بنية البيانات اللوجستية التي يولدها النظام ويحقنها حرفياً في طلبات الشراء الخارجية (<code class="text-blue-600 dark:text-blue-400 font-mono text-[11px]">aliexpress.ds.order.create</code>).
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        @if ($injectedStatus === 'valid')
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                مطابقة العنوان الوطني: نشطة ومعتمدة (Guard Active)
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 px-3 py-1 text-xs font-bold text-red-700 dark:text-red-400">
+                                <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                                غير مكتمل: {{ $injectedError }}
+                            </span>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {{-- Logistics Address Payload --}}
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 font-sans flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                كائن العنوان اللوجستي الرئيسي (logistics_address)
+                            </span>
+                            <span class="text-[11px] text-gray-400 font-mono">JSON Payload</span>
+                        </div>
+                        <div class="rounded-lg bg-gray-900 border border-gray-800 p-3.5 overflow-x-auto shadow-inner text-xs font-mono text-emerald-400 leading-relaxed max-h-72">
+                            <pre><code>{{ json_encode($injectedPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                        </div>
+                    </div>
+
+                    {{-- Saudi Trade Extra Param Payload --}}
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 font-sans flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                المعامل التجاري الإضافي للسعودية (ds_extend_request)
+                            </span>
+                            <span class="text-[11px] text-gray-400 font-mono">Saudi National Model</span>
+                        </div>
+                        <div class="rounded-lg bg-gray-900 border border-gray-800 p-3.5 overflow-x-auto shadow-inner text-xs font-mono text-amber-300 leading-relaxed max-h-72">
+                            <pre><code>{{ json_encode($injectedTradeExtra, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- Panel 5: Pricing Engine --}}

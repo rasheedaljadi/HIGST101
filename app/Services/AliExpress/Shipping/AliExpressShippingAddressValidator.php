@@ -39,6 +39,9 @@ class AliExpressShippingAddressValidator
         $province = trim($extracted['province'] ?? '');
         $rawZip = trim($extracted['zip'] ?? '');
         $companyName = trim($extracted['company_name'] ?? '');
+        $address2 = trim($extracted['address2'] ?? '');
+        $district = trim($extracted['district'] ?? '');
+        $explicitShortAddr = strtoupper(trim($extracted['short_address'] ?? ''));
 
         if (empty($contactPerson) || empty($phone) || empty($street) || empty($city) || empty($province)) {
             throw new AliExpressInvalidShippingAddressException(
@@ -63,18 +66,22 @@ class AliExpressShippingAddressValidator
         }
 
         $cleanZip = strtoupper($rawZip);
-
         $shortNationalAddress = null;
 
         if ($country === 'SA') {
-            if (preg_match(self::SA_NATIONAL_ADDRESS_REGEX, $cleanZip)) {
+            if (! empty($explicitShortAddr) && preg_match(self::SA_NATIONAL_ADDRESS_REGEX, $explicitShortAddr)) {
+                $shortNationalAddress = $explicitShortAddr;
+                if (empty($cleanZip) || preg_match(self::SA_NATIONAL_ADDRESS_REGEX, $cleanZip)) {
+                    $cleanZip = '14512';
+                }
+            } elseif (preg_match(self::SA_NATIONAL_ADDRESS_REGEX, $cleanZip)) {
                 $shortNationalAddress = $cleanZip;
                 $cleanZip = '14512';
             } elseif (preg_match('/^[0-9]{5}(-[0-9]{4})?$/', $cleanZip)) {
-                $shortNationalAddress = 'RMAD3455';
+                $shortNationalAddress = ! empty($explicitShortAddr) ? $explicitShortAddr : 'RMAD3455';
             } else {
                 $cleanZip = '14512';
-                $shortNationalAddress = 'RMAD3455';
+                $shortNationalAddress = ! empty($explicitShortAddr) ? $explicitShortAddr : 'RMAD3455';
             }
         } else {
             if (empty($cleanZip) || strlen($cleanZip) < 2 || strlen($cleanZip) > 20) {
@@ -83,6 +90,11 @@ class AliExpressShippingAddressValidator
                     message: 'Shipping address postal code is missing or has invalid length.'
                 );
             }
+        }
+
+        // If district is provided and not already in street line 1, append gracefully or pass in address2
+        if (! empty($district) && mb_strpos($street, $district) === false) {
+            $street = $street.' - '.$district;
         }
 
         return new ValidatedAliExpressShippingAddress(
@@ -96,7 +108,8 @@ class AliExpressShippingAddressValidator
             zip: $cleanZip,
             country: $country,
             companyName: ! empty($companyName) ? $companyName : $contactPerson,
-            passportNo: $shortNationalAddress
+            passportNo: $shortNationalAddress,
+            address2: ! empty($address2) ? $address2 : (! empty($shortNationalAddress) ? $shortNationalAddress : null)
         );
     }
 
@@ -114,11 +127,14 @@ class AliExpressShippingAddressValidator
                 'phone' => (string) ($address['phone_num'] ?? $address['mobile_no'] ?? $address['phone'] ?? $address['contact_number'] ?? ''),
                 'phone_country' => (string) ($address['phone_country'] ?? ''),
                 'street' => (string) ($address['address'] ?? $address['street'] ?? $address['address1'] ?? ''),
+                'address2' => (string) ($address['address2'] ?? ''),
+                'district' => (string) ($address['district'] ?? ''),
                 'city' => (string) ($address['city'] ?? ''),
                 'province' => (string) ($address['province'] ?? $address['state'] ?? ''),
                 'zip' => (string) ($address['zip'] ?? $address['postcode'] ?? ''),
                 'country' => (string) ($address['country'] ?? 'SA'),
                 'company_name' => (string) ($address['company_name'] ?? $address['name'] ?? ''),
+                'short_address' => (string) ($address['short_address'] ?? $address['nat_addr'] ?? $address['national_address'] ?? $address['passport_no'] ?? ''),
             ];
         }
 
@@ -139,23 +155,29 @@ class AliExpressShippingAddressValidator
 
         $phone = (string) ($address->phone ?? $address->contact_number ?? $address->phone_num ?? $address->mobile_no ?? '');
         $street = (string) ($address->address ?? $address->street ?? $address->address1 ?? '');
+        $address2 = (string) ($address->address2 ?? '');
+        $district = (string) ($address->district ?? '');
         $city = (string) ($address->city ?? '');
         $province = (string) ($address->state ?? $address->province ?? '');
         $zip = (string) ($address->postcode ?? $address->zip ?? '');
         $country = (string) ($address->country ?? 'SA');
         $phoneCountry = (string) ($address->phone_country ?? '');
         $companyName = (string) ($address->companyName ?? $address->company_name ?? $address->name ?? '');
+        $shortAddress = (string) ($address->short_address ?? $address->nat_addr ?? $address->national_address ?? $address->passport_no ?? '');
 
         return [
             'contact_person' => $contactPerson,
             'phone' => $phone,
             'phone_country' => $phoneCountry,
             'street' => $street,
+            'address2' => $address2,
+            'district' => $district,
             'city' => $city,
             'province' => $province,
             'zip' => $zip,
             'country' => $country,
             'company_name' => $companyName,
+            'short_address' => $shortAddress,
         ];
     }
 }

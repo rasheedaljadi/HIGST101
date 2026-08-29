@@ -8,6 +8,7 @@ use App\Jobs\Pricing\RecalculateCatalogPricesJob;
 use App\Models\AliExpressSetting;
 use App\Models\HigestPricingRule;
 use App\Services\AliExpress\AliExpressOAuthService;
+use App\Services\AliExpress\Shipping\AliExpressShippingAddressValidator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -48,6 +49,47 @@ class AliExpressKeysController extends Controller
             ->where('code', 'default')
             ->first();
 
+        $warehouseMeta = [];
+        if (! empty($warehouse?->description) && str_starts_with(trim($warehouse->description), '{')) {
+            $warehouseMeta = json_decode($warehouse->description, true) ?? [];
+        }
+
+        $injectedPayload = null;
+        $injectedTradeExtra = null;
+        $injectedStatus = 'valid';
+        $injectedError = null;
+
+        if ($warehouse) {
+            try {
+                $candidate = [
+                    'contact_person' => trim((string) ($warehouse->contact_name ?? $warehouse->name ?? '')),
+                    'company_name' => trim((string) ($warehouseMeta['company_name'] ?? $warehouse->name ?? $warehouse->contact_name ?? '')),
+                    'phone_num' => trim((string) ($warehouse->contact_number ?? '')),
+                    'mobile_no' => trim((string) ($warehouse->contact_number ?? '')),
+                    'phone_country' => trim((string) ($warehouseMeta['phone_country'] ?? '966')),
+                    'address' => trim((string) ($warehouse->street ?? '')),
+                    'address2' => trim((string) ($warehouseMeta['address2'] ?? '')),
+                    'district' => trim((string) ($warehouseMeta['district'] ?? '')),
+                    'city' => trim((string) ($warehouse->city ?? '')),
+                    'province' => trim((string) ($warehouse->state ?? '')),
+                    'zip' => trim((string) ($warehouse->postcode ?? '')),
+                    'country' => strtoupper(trim((string) ($warehouse->country ?? 'SA'))),
+                    'short_address' => trim((string) ($warehouseMeta['short_address'] ?? '')),
+                ];
+                $validatedAddress = AliExpressShippingAddressValidator::normalizeAndValidate($candidate);
+                $injectedPayload = $validatedAddress->toLogisticsAddressArray();
+                if ($injectedPayload['country'] === 'SA') {
+                    $injectedTradeExtra = [
+                        'business_model' => 'retail',
+                        'nat_addr' => $injectedPayload['nat_addr'] ?? 'RMAD3455',
+                    ];
+                }
+            } catch (Throwable $e) {
+                $injectedStatus = 'invalid';
+                $injectedError = $e->getMessage();
+            }
+        }
+
         $pricingRule = HigestPricingRule::where('scope', 'global')->first()
             ?? HigestPricingRule::orderByDesc('priority')->first()
             ?? HigestPricingRule::create([
@@ -74,6 +116,11 @@ class AliExpressKeysController extends Controller
             'tokenAccount' => $token?->account,
             'tokenExpiresAt' => $token?->access_token_expires_at,
             'warehouse' => $warehouse,
+            'warehouseMeta' => $warehouseMeta,
+            'injectedPayload' => $injectedPayload,
+            'injectedTradeExtra' => $injectedTradeExtra,
+            'injectedStatus' => $injectedStatus,
+            'injectedError' => $injectedError,
             'pricingRule' => $pricingRule,
             'pricingCategories' => $pricingCategories,
         ]);
@@ -111,21 +158,26 @@ class AliExpressKeysController extends Controller
         } elseif ($section === 'warehouse') {
             $isSa = strtoupper(trim((string) $request->input('warehouse_country', 'SA'))) === 'SA';
             $rules = [
+                'warehouse_company_name' => ['nullable', 'string', 'max:255'],
                 'warehouse_contact_name' => ['required', 'string', 'max:255'],
+                'warehouse_phone_country' => ['nullable', 'string', 'max:10'],
                 'warehouse_contact_number' => ['required', 'string', 'max:255'],
                 'warehouse_contact_email' => ['required', 'email', 'max:255'],
                 'warehouse_street' => ['required', 'string', 'max:255'],
+                'warehouse_district' => ['nullable', 'string', 'max:255'],
+                'warehouse_address2' => ['nullable', 'string', 'max:255'],
                 'warehouse_city' => ['required', 'string', 'max:255'],
                 'warehouse_state' => ['required', 'string', 'max:255'],
                 'warehouse_country' => ['required', 'string', 'size:2'],
-                'warehouse_postcode' => [
-                    'required',
+                'warehouse_postcode' => ['required', 'string', 'max:20'],
+                'warehouse_short_address' => [
+                    'nullable',
                     'string',
                     $isSa ? 'regex:/^[A-Za-z]{4}[0-9]{4}$/' : 'max:20',
                 ],
             ];
             $customMessages = [
-                'warehouse_postcode.regex' => 'يجب أن يتكون رمز العنوان الوطني السعودي المختصر من 8 خانات (4 أحرف إنجليزية متبوعة بـ 4 أرقام، مثل ABCD1234).',
+                'warehouse_short_address.regex' => 'يجب أن يتكون رمز العنوان الوطني السعودي المختصر من 8 خانات (4 أحرف إنجليزية متبوعة بـ 4 أرقام، مثل ABCD1234 أو RMAD3455).',
             ];
         } else {
             return redirect()->back()->with('error', 'القسم غير صالح.');
@@ -140,14 +192,19 @@ class AliExpressKeysController extends Controller
             'include_shipping_in_price' => 'دمج تكلفة الشحن في السعر',
             'exclude_choice_from_shipping_price' => 'استثناء منتجات Choice من دمج الشحن',
 
+            'warehouse_company_name' => 'اسم المستودع / الشركة التجارية',
             'warehouse_contact_name' => 'اسم مسؤول المستودع',
+            'warehouse_phone_country' => 'مفتاح الاتصال الدولي',
             'warehouse_contact_number' => 'رقم هاتف المستودع',
             'warehouse_contact_email' => 'البريد الإلكتروني للمستودع',
-            'warehouse_street' => 'عنوان المستودع (Street)',
+            'warehouse_street' => 'عنوان المستودع (Street 1)',
+            'warehouse_district' => 'الحي / المنطقة الفرعية',
+            'warehouse_address2' => 'سطر العنوان الإضافي (Address 2)',
             'warehouse_city' => 'مدينة المستودع',
             'warehouse_state' => 'منطقة المستودع',
             'warehouse_country' => 'دولة المستودع',
             'warehouse_postcode' => 'الرمز البريدي للمستودع',
+            'warehouse_short_address' => 'العنوان الوطني السعودي المختصر',
         ]);
 
         $settings = AliExpressSetting::current();
@@ -209,19 +266,34 @@ class AliExpressKeysController extends Controller
                 Log::channel('aliexpress')->error('Dispatching price recalculation job failed: '.$e->getMessage());
             }
         } elseif ($section === 'warehouse') {
+            $meta = [
+                'company_name' => $validated['warehouse_company_name'] ?? null,
+                'phone_country' => ltrim(trim((string) ($validated['warehouse_phone_country'] ?? ($isSa ? '966' : '967'))), '+'),
+                'district' => $validated['warehouse_district'] ?? null,
+                'address2' => $validated['warehouse_address2'] ?? null,
+                'short_address' => strtoupper(trim((string) ($validated['warehouse_short_address'] ?? ''))),
+            ];
+
+            $updateData = [
+                'contact_name' => $validated['warehouse_contact_name'],
+                'contact_number' => $validated['warehouse_contact_number'],
+                'contact_email' => $validated['warehouse_contact_email'],
+                'street' => $validated['warehouse_street'],
+                'city' => $validated['warehouse_city'],
+                'state' => $validated['warehouse_state'],
+                'country' => strtoupper(trim((string) $validated['warehouse_country'])),
+                'postcode' => strtoupper(trim((string) $validated['warehouse_postcode'])),
+                'description' => json_encode($meta, JSON_UNESCAPED_UNICODE),
+            ];
+
+            if (! empty($validated['warehouse_company_name'])) {
+                $updateData['name'] = $validated['warehouse_company_name'];
+            }
+
             // Update default inventory source warehouse address details directly
             DB::table('inventory_sources')
                 ->where('code', 'default')
-                ->update([
-                    'contact_name' => $validated['warehouse_contact_name'],
-                    'contact_number' => $validated['warehouse_contact_number'],
-                    'contact_email' => $validated['warehouse_contact_email'],
-                    'street' => $validated['warehouse_street'],
-                    'city' => $validated['warehouse_city'],
-                    'state' => $validated['warehouse_state'],
-                    'country' => strtoupper(trim((string) $validated['warehouse_country'])),
-                    'postcode' => strtoupper(trim((string) $validated['warehouse_postcode'])),
-                ]);
+                ->update($updateData);
         }
 
         Log::channel('aliexpress')->info('AliExpress settings updated from admin for section: '.$section, [

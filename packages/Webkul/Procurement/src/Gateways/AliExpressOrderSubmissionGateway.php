@@ -54,17 +54,25 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             throw new DomainException('SHIPPING_ADDRESS_NOT_CONFIGURED: Key Management inventory source [default] is not configured in database.');
         }
 
+        $meta = [];
+        if (! empty($warehouse->description) && str_starts_with(trim($warehouse->description), '{')) {
+            $meta = json_decode($warehouse->description, true) ?? [];
+        }
+
         $candidate = [
             'contact_person' => trim((string) ($warehouse->contact_name ?? $warehouse->name ?? '')),
+            'company_name' => trim((string) ($meta['company_name'] ?? $warehouse->name ?? $warehouse->contact_name ?? '')),
             'phone_num' => trim((string) ($warehouse->contact_number ?? '')),
             'mobile_no' => trim((string) ($warehouse->contact_number ?? '')),
-            'phone_country' => '966',
+            'phone_country' => trim((string) ($meta['phone_country'] ?? '966')),
             'address' => trim((string) ($warehouse->street ?? $warehouse->address1 ?? '')),
+            'address2' => trim((string) ($meta['address2'] ?? '')),
+            'district' => trim((string) ($meta['district'] ?? '')),
             'city' => trim((string) ($warehouse->city ?? '')),
             'province' => trim((string) ($warehouse->state ?? '')),
             'zip' => trim((string) ($warehouse->postcode ?? '')),
             'country' => strtoupper(trim((string) ($warehouse->country ?? 'SA'))),
-            'company_name' => trim((string) ($warehouse->name ?? $warehouse->contact_name ?? '')),
+            'short_address' => trim((string) ($meta['short_address'] ?? '')),
         ];
 
         return AliExpressShippingAddressValidator::normalizeAndValidate($candidate)->toLogisticsAddressArray();
