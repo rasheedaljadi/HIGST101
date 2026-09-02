@@ -319,6 +319,10 @@ class OnepageController extends APIController
                 'redirect' => false,
                 'message' => trans('shop::app.checkout.coupon.usage-limit-exceeded'),
             ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
         }
 
         Cart::deActivateCart();

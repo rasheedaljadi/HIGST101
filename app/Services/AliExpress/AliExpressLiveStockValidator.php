@@ -91,7 +91,7 @@ class AliExpressLiveStockValidator
 
         if ($cachedStock !== null) {
             if ((int) $cachedStock < $requestedQty) {
-                $this->handleOutOfStock($targetProductId, (int) $cachedStock);
+                $this->handleOutOfStock($targetProductId, (int) $cachedStock, $requestedQty);
             }
 
             return true;
@@ -158,14 +158,14 @@ class AliExpressLiveStockValidator
 
             // 4. If out of stock or insufficient quantity
             if ($resolvedStock < $requestedQty) {
-                $this->handleOutOfStock($targetProductId, $resolvedStock);
+                $this->handleOutOfStock($targetProductId, $resolvedStock, $requestedQty);
             }
 
             return true;
         } catch (InsufficientProductInventoryException $e) {
             throw $e;
         } catch (Throwable $e) {
-            Log::channel('aliexpress')->warning("Live stock check exception for product #{$productId}: ".$e->getMessage());
+            Log::channel('aliexpress')->warning('Live stock check API error: '.$e->getMessage());
 
             // On unexpected API error, allow customer to proceed without blocking checkout
             return true;
@@ -177,7 +177,7 @@ class AliExpressLiveStockValidator
      *
      * @throws InsufficientProductInventoryException
      */
-    protected function handleOutOfStock(int $targetProductId, int $liveStock): void
+    protected function handleOutOfStock(int $targetProductId, int $liveStock, int $requestedQty = 1): void
     {
         // Update local database inventory so Bagisto storefront immediately reflects out of stock
         try {
@@ -188,9 +188,34 @@ class AliExpressLiveStockValidator
             // Ignore DB update failures
         }
 
+        $parentId = DB::table('products')->where('id', $targetProductId)->value('parent_id')
+            ?: DB::table('product_relations')->where('child_id', $targetProductId)->value('parent_id');
+        $resolvedId = $parentId ?: $targetProductId;
+
+        $productName = DB::table('product_flat')
+            ->where('product_id', $resolvedId)
+            ->where('locale', app()->getLocale())
+            ->value('name');
+
+        if (! $productName) {
+            $productName = DB::table('product_flat')
+                ->where('product_id', $resolvedId)
+                ->value('name');
+        }
+
+        if (! $productName) {
+            $productName = DB::table('product_attribute_values')
+                ->join('attributes', 'product_attribute_values.attribute_id', '=', 'attributes.id')
+                ->where('product_attribute_values.product_id', $resolvedId)
+                ->where('attributes.code', 'name')
+                ->value('text_value');
+        }
+
+        $shortName = $productName ? mb_substr($productName, 0, 45).'...' : 'هذا الصنف';
+
         $errorMessage = $liveStock <= 0
-            ? 'عذراً، هذا الصنف (اللون/الموديل المحدد) غير متوفر حالياً لدى المورد في علي إكسبرس. يرجى اختيار خيار آخر.'
-            : "عذراً، الكمية المتوفرة لدى المورد حالياً ({$liveStock}) فقط، ولا تكفي للكمية المطلوبة.";
+            ? "عذراً، المنتج \"{$shortName}\" غير متوفر حالياً لدى المورد في علي إكسبرس. يرجى إزالته من السلة."
+            : "عذراً، الكمية المتوفرة لمنتج \"{$shortName}\" لدى المورد حالياً ({$liveStock}) فقط، ولا تكفي للكمية المطلوبة ({$requestedQty}). يرجى تعديل الكمية إلى ({$liveStock}).";
 
         throw new InsufficientProductInventoryException($errorMessage);
     }
