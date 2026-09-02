@@ -4,6 +4,7 @@ namespace Webkul\Procurement\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Webkul\Fulfillment\Events\OrderAccepted;
+use Webkul\Procurement\Listeners\AliExpressLiveStockListener;
 use Webkul\Procurement\Listeners\OrderAcceptedListener;
 
 class EventServiceProvider extends ServiceProvider
@@ -16,6 +17,12 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         OrderAccepted::class => [
             OrderAcceptedListener::class,
+        ],
+        'checkout.cart.add.before' => [
+            [AliExpressLiveStockListener::class, 'handleCartAddBefore'],
+        ],
+        'checkout.order.save.before' => [
+            [AliExpressLiveStockListener::class, 'handleOrderSaveBefore'],
         ],
     ];
 

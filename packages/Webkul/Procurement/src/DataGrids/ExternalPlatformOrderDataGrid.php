@@ -19,6 +19,10 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'external_platform_orders.external_order_id',
                 'supplier_purchase_orders.purchase_order_number',
                 'supplier_purchase_orders.supplier_store_name',
+                'supplier_purchase_orders.expected_items_total as spo_items_total',
+                'supplier_purchase_orders.expected_shipping_total as spo_shipping_total',
+                'supplier_purchase_orders.expected_total as spo_expected_total',
+                'supplier_purchase_orders.actual_total as spo_actual_total',
                 'external_platform_orders.provider',
                 'external_platform_orders.normalized_status',
                 'external_platform_orders.normalized_status as raw_normalized_status',
@@ -182,6 +186,91 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             },
         ]);
 
+        if (bouncer()->hasPermission('dropshipping.procurement_v2.cost_view')) {
+            $this->addColumn([
+                'index' => 'spo_items_total',
+                'label' => trans('procurement::app.datagrid.items-cost'),
+                'type' => 'string',
+                'searchable' => false,
+                'sortable' => true,
+                'filterable' => false,
+                'closure' => function ($row) {
+                    $val = $row->spo_items_total;
+                    if ($val !== null && (float) $val > 0) {
+                        return '<span class="font-mono font-semibold text-gray-900 dark:text-gray-100">$'.number_format((float) $val, 2).'</span>';
+                    }
+
+                    return '<span class="text-gray-400 font-mono">-</span>';
+                },
+            ]);
+
+            $this->addColumn([
+                'index' => 'spo_shipping_total',
+                'label' => trans('procurement::app.datagrid.shipping-fee'),
+                'type' => 'string',
+                'searchable' => false,
+                'sortable' => true,
+                'filterable' => false,
+                'closure' => function ($row) {
+                    $val = $row->spo_shipping_total;
+                    if ($val === null && $row->spo_expected_total === null) {
+                        return '<span class="text-gray-400 font-mono">-</span>';
+                    }
+
+                    $num = (float) ($val ?? 0.0);
+                    if ($num == 0) {
+                        return '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">Choice</span> <span class="text-xs text-gray-500 font-mono ml-1">$0.00</span>';
+                    }
+
+                    return '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 font-mono">+$'.number_format($num, 2).'</span>';
+                },
+            ]);
+
+            $this->addColumn([
+                'index' => 'spo_expected_total',
+                'label' => trans('procurement::app.datagrid.expected-cost'),
+                'type' => 'string',
+                'searchable' => false,
+                'sortable' => true,
+                'filterable' => false,
+                'closure' => function ($row) {
+                    $val = $row->spo_expected_total;
+                    if ($val !== null && (float) $val > 0) {
+                        return '<span class="font-mono font-medium text-gray-700 dark:text-gray-300 text-xs">$'.number_format((float) $val, 2).'</span>';
+                    }
+
+                    return '<span class="text-gray-400 font-mono">-</span>';
+                },
+            ]);
+
+            $this->addColumn([
+                'index' => 'spo_actual_total',
+                'label' => trans('procurement::app.datagrid.actual-cost'),
+                'type' => 'string',
+                'searchable' => false,
+                'sortable' => true,
+                'filterable' => false,
+                'closure' => function ($row) {
+                    $val = $row->spo_actual_total;
+                    $status = $row->raw_normalized_status ?? ($row->normalized_status ?? '');
+
+                    if ($val !== null && (float) $val > 0) {
+                        return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">✓ $'.number_format((float) $val, 2).'</span>';
+                    }
+
+                    if ($status === 'wait_buyer_pay') {
+                        return '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300">بانتظار الدفع</span>';
+                    }
+
+                    if ($status === 'cancelled') {
+                        return '<span class="text-gray-400 font-mono">-</span>';
+                    }
+
+                    return '<span class="text-gray-400 font-mono">-</span>';
+                },
+            ]);
+        }
+
         $this->addColumn([
             'index' => 'tracking_number',
             'label' => trans('procurement::app.datagrid.tracking-number'),
@@ -205,6 +294,13 @@ class ExternalPlatformOrderDataGrid extends DataGrid
     public function prepareActions(): void
     {
         if (bouncer()->hasPermission('dropshipping.procurement_v2.submit') || bouncer()->hasPermission('dropshipping.procurement_v2.view')) {
+            $this->addAction([
+                'icon' => 'icon-view text-2xl text-gray-700 hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400',
+                'title' => trans('procurement::app.datagrid.view') ?: 'عرض التفاصيل',
+                'method' => 'GET',
+                'url' => fn ($row) => route('admin.procurement.platform_orders.view', $row->platform_order_id),
+            ]);
+
             $this->addAction([
                 'icon' => 'icon-cart text-2xl text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300',
                 'title' => trans('procurement::app.datagrid.reorder'),

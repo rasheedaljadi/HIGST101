@@ -7,6 +7,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Webkul\Procurement\Contracts\AliExpressOrderGateway;
 use Webkul\Procurement\DataGrids\ExternalPlatformOrderDataGrid;
 use Webkul\Procurement\Http\Controllers\Admin\Concerns\AuthorizesProcurementActions;
 use Webkul\Procurement\Models\ExternalPlatformOrder;
@@ -54,6 +55,66 @@ class ExternalPlatformOrderController extends Controller
         ];
 
         return view('procurement::admin.platform_orders.index', compact('counts'));
+    }
+
+    public function view(Request $request, int $id)
+    {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_VIEW);
+
+        $order = ExternalPlatformOrder::with([
+            'supplierPurchaseOrder.items.product',
+            'supplierPurchaseOrder.batch',
+        ])->findOrFail($id);
+
+        $snapshots = is_array($order->snapshots)
+            ? $order->snapshots
+            : (json_decode((string) $order->snapshots, true) ?: []);
+
+        // Retrieve live or cached AliExpress payload
+        $gateway = app(AliExpressOrderGateway::class);
+        $liveData = null;
+        $liveError = null;
+
+        if (! empty($order->external_order_id)) {
+            try {
+                $snapshot = $gateway->getOrder((string) $order->external_order_id, $order->provider_account_id);
+                if (! in_array($snapshot->orderStatus, ['AUTH_UNAVAILABLE', 'QUERY_FAILED', 'TRANSPORT_ERROR', 'INVALID_EXTERNAL_ORDER_ID'], true)) {
+                    $raw = $snapshot->rawResponse;
+                    $liveData = $raw['aliexpress_trade_ds_order_get_response']['result'] ?? $raw['result'] ?? $raw;
+                } else {
+                    $liveError = $snapshot->rawStatus;
+                }
+            } catch (\Throwable $e) {
+                $liveError = $e->getMessage();
+            }
+        }
+
+        // Parse child order / product items from liveData
+        $childItems = $liveData['child_order_list']['aeop_child_order_info'] ?? [];
+        if (isset($childItems['product_id']) || isset($childItems['sku_id'])) {
+            $childItems = [$childItems];
+        }
+
+        // Parse logistics info list
+        $logisticsList = $liveData['logistics_info_list']['aeop_order_logistics_info']
+            ?? $liveData['logistics_info_list']['logistics_info']
+            ?? [];
+        if (isset($logisticsList['logistics_no']) || isset($logisticsList['logistics_service'])) {
+            $logisticsList = [$logisticsList];
+        }
+
+        // Store details
+        $storeInfo = $liveData['store_info'] ?? [];
+
+        return view('procurement::admin.platform_orders.view', compact(
+            'order',
+            'snapshots',
+            'liveData',
+            'liveError',
+            'childItems',
+            'logisticsList',
+            'storeInfo'
+        ));
     }
 
     public function sync(Request $request, int $id)

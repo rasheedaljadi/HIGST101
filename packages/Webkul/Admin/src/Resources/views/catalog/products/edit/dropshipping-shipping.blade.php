@@ -11,6 +11,22 @@
         || !empty($snapshot['shipping']['is_choice'])
     );
 
+    $settings = \App\Models\AliExpressSetting::current();
+    $includeShippingSetting = (bool) ($settings->include_shipping_in_price ?? false);
+    $excludeChoiceSetting = (bool) ($settings->exclude_choice_from_shipping_price ?? false);
+
+    $baseShipping = $import->base_shipping_cost !== null ? (float) $import->base_shipping_cost : null;
+    $effectiveShipping = ($excludeChoiceSetting && $isChoice) ? 0.0 : ($baseShipping ?? 0.0);
+
+    // Resolve Pricing Rule
+    $pricingRuleResolver = app(\App\Services\Pricing\PricingRuleResolver::class);
+    $pricingEngine = app(\App\Services\Pricing\PricingEngine::class);
+    $categoryId = $pricingRuleResolver->resolveCategoryId($product->id);
+    $rule = $pricingRuleResolver->resolve($product->id, $categoryId) 
+        ?? \App\Models\HigestPricingRule::where('scope', 'global')->first();
+
+    $ruleDesc = $rule ? ($rule->type === 'percentage' ? "{$rule->value}%" : "+$" . number_format($rule->value, 2)) : "10%";
+
     // Determine if we are editing a specific child variant
     $isVariant = !empty($product->parent_id);
 
@@ -58,7 +74,30 @@
         }
     }
 
-    $baseShipping = $import->base_shipping_cost !== null ? (float) $import->base_shipping_cost : null;
+    // Calculate Field 1: Price EXCLUDING Shipping (سعر البيع شامل الربح فقط وبدون شحن)
+    $priceWithoutShippingMin = null;
+    $priceWithoutShippingMax = null;
+
+    // Calculate Field 2: Price INCLUDING Shipping (سعر البيع شامل الربح وتكلفة الشحن)
+    $priceWithShippingMin = null;
+    $priceWithShippingMax = null;
+
+    if ($supplierMinPrice !== null && $rule) {
+        $resWithout = $pricingEngine->calculate($supplierMinPrice, $rule, new \App\Services\Pricing\DTO\PricingContext(shippingCost: 0.0));
+        $priceWithoutShippingMin = $resWithout->specialPrice ?? $resWithout->sellingPrice;
+
+        $resWith = $pricingEngine->calculate($supplierMinPrice, $rule, new \App\Services\Pricing\DTO\PricingContext(shippingCost: $effectiveShipping));
+        $priceWithShippingMin = $resWith->specialPrice ?? $resWith->sellingPrice;
+
+        if ($supplierMaxPrice !== null && $supplierMaxPrice > $supplierMinPrice) {
+            $resMaxWithout = $pricingEngine->calculate($supplierMaxPrice, $rule, new \App\Services\Pricing\DTO\PricingContext(shippingCost: 0.0));
+            $priceWithoutShippingMax = $resMaxWithout->specialPrice ?? $resMaxWithout->sellingPrice;
+
+            $resMaxWith = $pricingEngine->calculate($supplierMaxPrice, $rule, new \App\Services\Pricing\DTO\PricingContext(shippingCost: $effectiveShipping));
+            $priceWithShippingMax = $resMaxWith->specialPrice ?? $resMaxWith->sellingPrice;
+        }
+    }
+
     $isManualShipping = !empty($snapshot['is_manual_shipping']);
     $isShippingApiFailed = ($baseShipping === null) || $isManualShipping;
     // Manual shipping editing applies ONLY to the main product ($isVariant is false) AND only when API shipping fetch failed/unsynced
@@ -77,10 +116,10 @@
             <span class="icon-shipping text-xl text-blue-600 dark:text-blue-400"></span>
             <div>
                 <p class="text-base font-bold text-gray-800 dark:text-white">
-                    تكلفة شحن المورد (AliExpress)
+                    تكلفة شحن المورد وتحليل التسعير
                 </p>
                 <p class="text-[11px] text-gray-500">
-                    بيانات داخلية خاصة بالإدارة فقط (غير ظاهرة للعميل)
+                    بيانات إدارية ذكية لتحليل هوامش الربح والشحن (غير ظاهرة للعميل)
                 </p>
             </div>
         </div>
@@ -116,12 +155,17 @@
                 </a>
             </div>
 
-            @if($isChoice)
-                <span class="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 border border-amber-300 dark:border-amber-700 shadow-xs">
-                    <span class="rounded bg-amber-400 px-1 py-0.2 text-[9px] font-black text-black leading-tight">Choice</span>
-                    <span class="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">التزام AliExpress</span>
+            <div class="flex items-center gap-1.5">
+                @if($isChoice)
+                    <span class="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 border border-amber-300 dark:border-amber-700 shadow-xs">
+                        <span class="rounded bg-amber-400 px-1 py-0.2 text-[9px] font-black text-black leading-tight">Choice</span>
+                        <span class="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">شحن معفى ومجاني</span>
+                    </span>
+                @endif
+                <span class="text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 px-2 py-0.5 rounded font-semibold">
+                    قاعدة الربح: {{ $ruleDesc }}
                 </span>
-            @endif
+            </div>
         </div>
 
         {{-- 2. Shipping Details Grid --}}
@@ -129,7 +173,7 @@
             {{-- Shipping Cost --}}
             <div class="p-2.5 rounded-lg border border-gray-150 dark:border-gray-800 bg-white dark:bg-gray-900/40 relative">
                 <div class="flex items-center justify-between gap-1 mb-1">
-                    <span class="text-gray-500 block">تكلفة الشحن:</span>
+                    <span class="text-gray-500 block">تكلفة شحن المورد:</span>
 
                     @if($canEditManualShipping)
                         <button 
@@ -223,13 +267,78 @@
             </div>
         </div>
 
-        {{-- 3. Landed Cost & Margin Breakdown --}}
-        <div class="p-3 rounded-lg bg-blue-50/50 dark:bg-blue-950/30 border border-blue-150 dark:border-blue-900/40 space-y-1.5">
-            <p class="font-bold text-gray-800 dark:text-gray-200 mb-1 text-[11px]">
-                📊 تحليل التكلفة وهامش الربح التقديري:
+        {{-- 3. DUAL PRICING FIELDS (Requested by Merchant) --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+            {{-- Field 1: Price With Profit Only (Without Shipping) --}}
+            <div class="p-3 rounded-lg border {{ !$includeShippingSetting ? 'border-blue-400 bg-blue-50/70 dark:bg-blue-950/40 dark:border-blue-700' : 'border-gray-200 bg-gray-50/80 dark:bg-gray-800/50 dark:border-gray-700' }} relative">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                    <span class="font-bold text-gray-800 dark:text-gray-200 text-[11px]">
+                        1️⃣ سعر البيع شامل الربح فقط (بدون شحن):
+                    </span>
+                    @if(!$includeShippingSetting)
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">
+                            المعتمد بالمتجر
+                        </span>
+                    @endif
+                </div>
+                <div class="flex items-baseline gap-1 my-1">
+                    <span class="text-base font-extrabold text-blue-700 dark:text-blue-400 font-mono" dir="ltr">
+                        @if($priceWithoutShippingMin !== null)
+                            ${{ number_format($priceWithoutShippingMin, 2) }}
+                            @if($priceWithoutShippingMax !== null && $priceWithoutShippingMax > $priceWithoutShippingMin)
+                                - ${{ number_format($priceWithoutShippingMax, 2) }}
+                            @endif
+                        @else
+                            —
+                        @endif
+                    </span>
+                </div>
+                <p class="text-[10px] text-gray-500 leading-tight">
+                    محسوب على التكلفة الأساسية + ربح {{ $ruleDesc }} (الشحن يُضاف منفصلاً عند الدفع).
+                </p>
+            </div>
+
+            {{-- Field 2: Price With Profit AND Shipping --}}
+            <div class="p-3 rounded-lg border {{ $includeShippingSetting ? 'border-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/40 dark:border-emerald-700' : 'border-gray-200 bg-gray-50/80 dark:bg-gray-800/50 dark:border-gray-700' }} relative">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                    <span class="font-bold text-gray-800 dark:text-gray-200 text-[11px]">
+                        2️⃣ سعر البيع شامل الربح ورسوم الشحن:
+                    </span>
+                    @if($includeShippingSetting)
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white">
+                            المعتمد بالمتجر ✅
+                        </span>
+                    @endif
+                </div>
+                <div class="flex items-baseline gap-1 my-1">
+                    <span class="text-base font-extrabold text-emerald-700 dark:text-emerald-400 font-mono" dir="ltr">
+                        @if($priceWithShippingMin !== null)
+                            ${{ number_format($priceWithShippingMin, 2) }}
+                            @if($priceWithShippingMax !== null && $priceWithShippingMax > $priceWithShippingMin)
+                                - ${{ number_format($priceWithShippingMax, 2) }}
+                            @endif
+                        @else
+                            —
+                        @endif
+                    </span>
+                </div>
+                <p class="text-[10px] text-gray-500 leading-tight">
+                    @if($isChoice)
+                        منتج Choice (شحن المورد مجاني $0.00 ويبقى السعر على التكلفة المباشرة).
+                    @else
+                        (التكلفة + الشحن {{ $baseShipping !== null ? '$' . number_format($baseShipping, 2) : '' }}) + ربح {{ $ruleDesc }} (شحن مجاني للعميل).
+                    @endif
+                </p>
+            </div>
+        </div>
+
+        {{-- 4. Landed Cost & Cost Elements Breakdown --}}
+        <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/40 border border-gray-150 dark:border-gray-800 space-y-1">
+            <p class="font-bold text-gray-700 dark:text-gray-300 text-[11px] mb-1">
+                📋 تفكيك عناصر التكلفة المباشرة:
             </p>
 
-            <div class="flex justify-between text-gray-600 dark:text-gray-300">
+            <div class="flex justify-between text-gray-600 dark:text-gray-400 text-[11px]">
                 <span>{{ $isVariant ? 'سعر المتغير من المورد:' : 'سعر المنتج من المورد:' }}</span>
                 <span class="font-mono font-semibold" dir="ltr">
                     @if($supplierMinPrice !== null)
@@ -243,16 +352,16 @@
                 </span>
             </div>
 
-            <div class="flex justify-between text-gray-600 dark:text-gray-300">
-                <span>تكلفة الشحن (AliExpress):</span>
+            <div class="flex justify-between text-gray-600 dark:text-gray-400 text-[11px]">
+                <span>رسوم شحن المورد (AliExpress):</span>
                 <span class="font-mono font-semibold text-emerald-600 dark:text-emerald-400" dir="ltr">
                     {{ $baseShipping !== null ? '+$' . number_format($baseShipping, 2) : '—' }}
                 </span>
             </div>
 
             @if($isVariant)
-                <div class="flex justify-between border-t border-blue-200 dark:border-blue-800 pt-1 font-bold text-gray-900 dark:text-white">
-                    <span>إجمالي تكلفة شراء المتغير عليك:</span>
+                <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-1 font-bold text-gray-800 dark:text-gray-200 text-[11px]">
+                    <span>إجمالي تكلفة الشراء المباشرة عليك:</span>
                     <span class="font-mono text-blue-700 dark:text-blue-300" dir="ltr">
                         @if($totalLandedCostMin !== null)
                             ${{ number_format($totalLandedCostMin, 2) }}
@@ -264,17 +373,10 @@
                         @endif
                     </span>
                 </div>
-
-                <div class="flex justify-between pt-0.5 text-gray-600 dark:text-gray-300 text-[11px]">
-                    <span>سعر بيع هذا المتغير في المتجر:</span>
-                    <span class="font-mono font-bold text-gray-800 dark:text-gray-200" dir="ltr">
-                        ${{ number_format($storePrice, 2) }}
-                    </span>
-                </div>
             @endif
         </div>
 
-        {{-- 4. Last Sync Timestamp --}}
+        {{-- 5. Last Sync Timestamp --}}
         @if($import->shipping_synced_at)
             <div class="text-[10px] text-gray-400 text-left font-mono">
                 آخر فحص للشحن: {{ $import->shipping_synced_at }}

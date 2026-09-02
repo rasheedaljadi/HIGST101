@@ -101,8 +101,20 @@ class ProcessAliExpressWebhookJob implements ShouldQueue
         // 3. Handle Order Lifecycle & Tracking Events (Types 53, 51, 18)
         $tradeOrderId = $inboxMessage->external_order_id;
         if (empty($tradeOrderId)) {
-            $payloadData = $inboxMessage->payload['data'] ?? [];
-            $tradeOrderId = (string) ($payloadData['trade_order_id'] ?? $payloadData['order_id'] ?? '');
+            $payload = is_array($inboxMessage->payload) ? $inboxMessage->payload : (json_decode($inboxMessage->payload ?: '[]', true) ?: []);
+            $payloadData = $payload['data'] ?? [];
+            if (is_string($payloadData)) {
+                $payloadData = json_decode($payloadData, true) ?: [];
+            }
+            $tradeOrderId = (string) (
+                $payloadData['trade_order_id']
+                ?? $payloadData['order_id']
+                ?? $payloadData['orderId']
+                ?? $payloadData['tradeOrderId']
+                ?? $payload['order_id']
+                ?? $payload['orderId']
+                ?? ''
+            );
         }
 
         if (empty($tradeOrderId) || ! ctype_digit((string) $tradeOrderId)) {

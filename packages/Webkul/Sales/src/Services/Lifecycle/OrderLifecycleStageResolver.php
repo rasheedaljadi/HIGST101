@@ -34,10 +34,13 @@ class OrderLifecycleStageResolver
         $order = $order ?? $item->order;
         $additional = is_array($item->additional) ? $item->additional : json_decode($item->additional ?? '{}', true);
 
-        // Determine item origin type
+        // Determine item origin type (imported vs internal)
         $isImported = isset($additional['aliexpress'])
             || isset($additional['ae_product_id'])
-            || (isset($additional['inventory_source']) && $additional['inventory_source'] === 'aliexpress_source');
+            || (isset($additional['inventory_source']) && $additional['inventory_source'] === 'aliexpress_source')
+            || str_starts_with((string) $item->sku, 'ae-')
+            || (Schema::hasTable('aliexpress_product_imports') && DB::table('aliexpress_product_imports')->where('product_id', $item->product_id)->exists())
+            || (Schema::hasTable('procurement_demands') && DB::table('procurement_demands')->where('order_item_id', $item->id)->exists());
 
         $originType = $isImported ? 'imported' : 'internal';
         $defaultSourceType = $isImported ? 'hayest_dropship_ye' : 'hayest_internal_ye';
@@ -280,7 +283,7 @@ class OrderLifecycleStageResolver
             }
         }
 
-        // 3. Check Purchase Order
+        // 3. Check Purchase Order & Supplier Orders
         if (Schema::hasTable('purchase_orders') && Schema::hasTable('purchase_order_items')) {
             $poItem = DB::table('purchase_order_items')
                 ->join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
@@ -305,6 +308,35 @@ class OrderLifecycleStageResolver
                     'source_type' => 'aliexpress_source',
                     'rank' => self::STAGE_RANKS['po_created'],
                 ];
+            }
+        }
+
+        // 4. Check Procurement Demands & Batches (Procurement V2 Engine)
+        if (Schema::hasTable('procurement_demands')) {
+            $demand = DB::table('procurement_demands')
+                ->where('order_item_id', $item->id)
+                ->orWhere(function ($q) use ($order, $item) {
+                    $q->where('order_id', $order->id)
+                        ->where('product_id', $item->product_id);
+                })
+                ->first();
+
+            if ($demand) {
+                if (in_array($demand->state, ['ordered_external', 'batched'])) {
+                    return [
+                        'current_stage_code' => 'po_created',
+                        'source_type' => 'aliexpress_source',
+                        'rank' => self::STAGE_RANKS['po_created'],
+                    ];
+                }
+
+                if ($demand->state === 'open_for_batching' || $demand->state === 'created') {
+                    return [
+                        'current_stage_code' => 'sourcing_required',
+                        'source_type' => 'aliexpress_source',
+                        'rank' => self::STAGE_RANKS['sourcing_required'],
+                    ];
+                }
             }
         }
 

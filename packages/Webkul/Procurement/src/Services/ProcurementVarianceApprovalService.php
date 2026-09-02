@@ -28,10 +28,41 @@ class ProcurementVarianceApprovalService
                 throw new DomainException("Cannot approve cost variance for order in '{$spo->state}' state.");
             }
 
+            $varianceAmount = (float) ($spo->cost_variance_amount ?? 0.0);
+            $newExpectedTotal = (float) $spo->expected_total + $varianceAmount;
+
+            // Update items unit costs to reflect the approved live cost
+            $spo->load('items');
+            foreach ($spo->items as $item) {
+                if ($item->qty_ordered > 0 && $varianceAmount > 0) {
+                    $itemVariancePerUnit = $varianceAmount / $item->qty_ordered;
+                    $item->update([
+                        'expected_unit_cost' => (float) $item->expected_unit_cost + $itemVariancePerUnit,
+                    ]);
+                }
+            }
+
+            // Determine correct post-approval state based on whether order was already submitted or pre-submission
+            $hasLivePlatformOrder = $spo->platformOrders()
+                ->whereNotNull('external_order_id')
+                ->where('external_order_id', '!=', '')
+                ->exists();
+
+            $nextSpoState = $hasLivePlatformOrder
+                ? SupplierPurchaseOrder::STATE_SUPPLIER_PROCESSING
+                : SupplierPurchaseOrder::STATE_READY_TO_SUBMIT;
+
+            $nextBatchState = $hasLivePlatformOrder
+                ? ProcurementBatch::STATE_SUPPLIER_PROCESSING
+                : ProcurementBatch::STATE_APPROVED;
+
             $spo->update([
-                'state' => SupplierPurchaseOrder::STATE_SUPPLIER_PROCESSING,
-                'payment_state' => 'variance_approved',
-                'external_sync_state' => 'supplier_processing',
+                'state' => $nextSpoState,
+                'expected_items_total' => $newExpectedTotal,
+                'expected_total' => $newExpectedTotal,
+                'cost_variance_amount' => 0.0000,
+                'payment_state' => $hasLivePlatformOrder ? 'variance_approved' : $spo->payment_state,
+                'external_sync_state' => $hasLivePlatformOrder ? 'supplier_processing' : $spo->external_sync_state,
             ]);
 
             if ($spo->batch) {
@@ -42,7 +73,8 @@ class ProcurementVarianceApprovalService
 
                 if (! $hasOtherPendingVariances) {
                     $spo->batch->update([
-                        'state' => ProcurementBatch::STATE_SUPPLIER_PROCESSING,
+                        'state' => $nextBatchState,
+                        'expected_total_cost' => (float) $spo->batch->expected_total_cost + $varianceAmount,
                     ]);
                 }
             }

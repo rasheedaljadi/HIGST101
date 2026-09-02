@@ -32,4 +32,10 @@ Schedule::command('orders:check-unclosed-reminders')
     ->withoutOverlapping()
     ->runInBackground();
 
-
+/**
+ * HIGEST AliExpress Order Status & Tracking Polling Scheduler (Every 15 Minutes)
+ */
+Schedule::command('procurement:poll-aliexpress')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AliExpressSetting;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Queue;
 use Webkul\Procurement\Contracts\AliExpressOrderGateway;
 use Webkul\Procurement\DTO\AliExpressOrderSnapshot;
@@ -135,7 +136,7 @@ test('4. Database unique constraint on fingerprint guarantees race-condition ded
             'received_at' => now(),
             'status' => 'received',
         ]);
-    })->toThrow(\Illuminate\Database\QueryException::class);
+    })->toThrow(QueryException::class);
 });
 
 test('5. Type 53 event on registered numeric external ID triggers getOrder and valid state machine transition', function () {

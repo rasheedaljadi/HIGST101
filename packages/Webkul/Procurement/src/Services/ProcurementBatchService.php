@@ -2,11 +2,14 @@
 
 namespace Webkul\Procurement\Services;
 
+use App\Models\AliExpressProductImport;
+use App\Models\AliExpressSetting;
 use DomainException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Webkul\Procurement\Models\ExternalPlatformOrder;
 use Webkul\Procurement\Models\ProcurementAuditLog;
 use Webkul\Procurement\Models\ProcurementBatch;
 use Webkul\Procurement\Models\ProcurementBatchDemand;
@@ -120,26 +123,33 @@ class ProcurementBatchService
                 ->get();
 
             if ($demands->isEmpty()) {
-                throw new DomainException('No matching procurement demands found.');
+                throw new DomainException('لم يتم العثور على أي احتياجات شراء مطابقة للتجميع.');
             }
 
             // Verify each demand is open and has available unbatched quantity and valid store ID
             foreach ($demands as $demand) {
                 if ($demand->state !== ProcurementDemand::STATE_OPEN_FOR_BATCHING) {
-                    throw new DomainException("Demand #{$demand->id} is in state '{$demand->state}' and cannot be batched.");
+                    throw new DomainException("المطلب #{$demand->id} في حالة '{$demand->state}' ولا يمكن تجميعه في دفعة.");
                 }
 
                 if (empty($demand->supplier_store_id)) {
-                    throw new DomainException("Demand #{$demand->id} does not have a valid supplier_store_id and cannot be batched.");
+                    throw new DomainException("المطلب #{$demand->id} لا يحتوي على معرف متجر مورد صالح.");
                 }
 
                 $available = $demand->qty_required_external - $demand->qty_batched - $demand->qty_cancelled;
                 if ($available <= 0) {
-                    throw new DomainException("Demand #{$demand->id} has no remaining quantity available to batch.");
+                    throw new DomainException("المطلب #{$demand->id} ليس لديه كميات متبقية للتجميع.");
                 }
 
                 if (strtoupper((string) $demand->supplier_currency_code) !== 'USD') {
-                    throw new DomainException("Demand #{$demand->id} has non-USD currency ({$demand->supplier_currency_code}). V2 strictly accepts USD only.");
+                    throw new DomainException("المطلب #{$demand->id} بعملة غير الدولار ({$demand->supplier_currency_code}). النظام يقبل عملة USD فقط.");
+                }
+
+                // Stock validation check: Block batching if supplier stock is zero
+                $stock = $this->resolveDemandSupplierStock($demand);
+                if ($stock !== null && $stock <= 0) {
+                    $productName = $demand->product?->name ?: "الصنف {$demand->supplier_sku_id}";
+                    throw new DomainException("لا يمكن تجميع الدفعة: الصنف (SKU: {$demand->supplier_sku_id}) للمنتج '{$productName}' غير متوفر حالياً لدى المورد في علي إكسبرس (المخزون: 0). يرجى استبعاد هذا المطلب لتتمكن من تجميع باقي الطلبات.");
                 }
             }
 
@@ -295,9 +305,43 @@ class ProcurementBatchService
                     }
                 }
 
+                // Calculate Expected Shipping Total for this Store SPO
+                $poShippingTotal = 0.0;
+                $processedImportIds = [];
+
+                foreach ($groupedItems as $entry) {
+                    /** @var ProcurementDemand $demand */
+                    $demand = $entry['demand'];
+                    $importId = $demand->source_snapshot['import_id'] ?? null;
+                    $import = null;
+
+                    if ($importId) {
+                        $import = AliExpressProductImport::find($importId);
+                    }
+                    if (! $import && $demand->supplier_product_id) {
+                        $import = AliExpressProductImport::where('aliexpress_product_id', $demand->supplier_product_id)->first();
+                    }
+
+                    if ($import) {
+                        $isChoice = $import->isChoice() || (
+                            stripos($import->shipping_company ?? '', 'selection') !== false ||
+                            stripos($import->shipping_company ?? '', 'choice') !== false
+                        );
+                        if (! $isChoice && $import->base_shipping_cost !== null && (float) $import->base_shipping_cost > 0) {
+                            if (! in_array($import->id, $processedImportIds, true)) {
+                                $poShippingTotal += (float) $import->base_shipping_cost;
+                                $processedImportIds[] = $import->id;
+                            }
+                        }
+                    }
+                }
+
+                $poExpectedTotal = $poItemsTotal + $poShippingTotal;
+
                 $supplierPo->update([
                     'expected_items_total' => $poItemsTotal,
-                    'expected_total' => $poItemsTotal,
+                    'expected_shipping_total' => $poShippingTotal,
+                    'expected_total' => $poExpectedTotal,
                 ]);
 
                 // Create Cost Snapshot for SPO
@@ -306,26 +350,27 @@ class ProcurementBatchService
                     'snapshotable_id' => $supplierPo->id,
                     'snapshot_type' => ProcurementCostSnapshot::TYPE_EXPECTED_AT_BATCHING,
                     'items_subtotal' => $poItemsTotal,
-                    'shipping_amount' => 0.0000,
+                    'shipping_amount' => $poShippingTotal,
                     'discount_amount' => 0.0000,
                     'tax_fee_amount' => 0.0000,
-                    'total_amount' => $poItemsTotal,
+                    'total_amount' => $poExpectedTotal,
                     'currency_code' => 'USD',
                     'exchange_rate' => 1.000000,
                     'allocation_basis' => 'proportionate_subtotal',
                     'breakdown' => [
                         'spo_id' => $supplierPo->id,
                         'items_total' => $poItemsTotal,
+                        'shipping_total' => $poShippingTotal,
                         'items_count' => count($skuGroups),
                     ],
                     'actor_id' => $actorId,
                     'actor_type' => 'admin',
                     'correlation_id' => "batch-{$batch->id}-spo-{$supplierPo->id}",
-                    'snapshot_hash' => hash('sha256', "spo-{$supplierPo->id}-{$poItemsTotal}-USD-".now()->toIso8601String()),
+                    'snapshot_hash' => hash('sha256', "spo-{$supplierPo->id}-{$poExpectedTotal}-USD-".now()->toIso8601String()),
                     'created_at' => now(),
                 ]);
 
-                $batchTotalExpectedCost += $poItemsTotal;
+                $batchTotalExpectedCost += $poExpectedTotal;
             }
 
             // Update Batch totals
@@ -391,14 +436,109 @@ class ProcurementBatchService
 
         ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_BATCH_APPROVE);
 
-        return DB::transaction(function () use ($batchId, $actorId, $notes) {
-            /** @var ProcurementBatch $batch */
-            $batch = ProcurementBatch::where('id', $batchId)->lockForUpdate()->firstOrFail();
+        /** @var ProcurementBatch $batch */
+        $batch = ProcurementBatch::where('id', $batchId)->firstOrFail();
 
-            if ($batch->state !== ProcurementBatch::STATE_READY_FOR_REVIEW && $batch->state !== ProcurementBatch::STATE_DRAFT) {
-                throw new DomainException("Cannot approve batch in state '{$batch->state}'.");
+        if ($batch->state !== ProcurementBatch::STATE_READY_FOR_REVIEW && $batch->state !== ProcurementBatch::STATE_DRAFT && $batch->state !== ProcurementBatch::STATE_EXCEPTION) {
+            throw new DomainException("Cannot approve batch in state '{$batch->state}'.");
+        }
+
+        // Pre-Approval Gate: Live Verification of Stock, Deliverability, and Cost Variance for all SPOs in Batch
+        if (! (app()->environment('testing') && config('procurement.mock_dispatch_in_testing', true))) {
+            /** @var ProcurementSubmitService $submitService */
+            $submitService = app(ProcurementSubmitService::class);
+            $aeSetting = AliExpressSetting::current();
+            $varType = $aeSetting->variance_product_type ?? 'percentage';
+            $varLimit = (float) ($aeSetting->variance_product_limit ?? 10.0);
+
+            foreach ($batch->supplierOrders as $spo) {
+                // If SPO is already in cost_variance_review and pending approval, inform admin
+                if ($spo->state === SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW) {
+                    throw new DomainException(
+                        "لا يمكن اعتماد الدفعة: أمر الشراء {$spo->purchase_order_number} بانتظار مراجعة وقبول فرق التكلفة في صفحة (فروقات التكلفة)."
+                    );
+                }
+
+                $spo->load('items');
+
+                // 1. Live Cost Variance Guard
+                foreach ($spo->items as $item) {
+                    $expectedCost = (float) $item->expected_unit_cost;
+                    if ($expectedCost <= 0) {
+                        continue;
+                    }
+
+                    $liveCost = $submitService->fetchLiveSkuCost($spo, $item);
+                    if ($liveCost !== null && $liveCost > 0) {
+                        $isExceeded = false;
+                        $variancePercent = 0.0;
+                        if ($varType === 'fixed') {
+                            $varianceDelta = abs($liveCost - $expectedCost);
+                            $isExceeded = $varianceDelta > $varLimit;
+                            $variancePercent = ($varianceDelta / $expectedCost) * 100;
+                        } else {
+                            $variancePercent = abs(($liveCost - $expectedCost) / $expectedCost) * 100;
+                            $isExceeded = $variancePercent > $varLimit;
+                        }
+
+                        if ($isExceeded) {
+                            $varianceAmount = round($liveCost - $expectedCost, 4);
+
+                            // Persist cost variance state transition to DB
+                            $spo->update([
+                                'state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                                'cost_variance_amount' => $varianceAmount,
+                            ]);
+
+                            $batch->update([
+                                'state' => ProcurementBatch::STATE_EXCEPTION,
+                            ]);
+
+                            ProcurementAuditLog::create([
+                                'auditable_type' => SupplierPurchaseOrder::class,
+                                'auditable_id' => $spo->id,
+                                'action' => 'cost_variance_guard_triggered_at_approval',
+                                'actor_id' => $actorId,
+                                'actor_type' => 'admin',
+                                'old_state' => $spo->getOriginal('state') ?? SupplierPurchaseOrder::STATE_DRAFT,
+                                'new_state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                                'details' => [
+                                    'item_id' => $item->id,
+                                    'supplier_sku_id' => $item->supplier_sku_id,
+                                    'expected_unit_cost' => $expectedCost,
+                                    'live_unit_cost' => $liveCost,
+                                    'variance_percent' => round($variancePercent, 2),
+                                    'threshold_limit' => $varLimit,
+                                    'threshold_type' => $varType,
+                                ],
+                                'correlation_id' => "spo-{$spo->id}-approval-cost-guard",
+                            ]);
+
+                            $limitDisplay = $varType === 'fixed' ? "\${$varLimit}" : "{$varLimit}%";
+                            throw new DomainException(
+                                "لا يمكن اعتماد الدفعة: تجاوز تغير السعر للصنف (SKU: {$item->supplier_sku_id}) في أمر الشراء {$spo->purchase_order_number} الحد المسموح ({$limitDisplay}). التكلفة المتوقعة: \${$expectedCost}، التكلفة الحالية لدى المورد: \${$liveCost}. تم تحويله إلى قائمة (فروقات التكلفة) لمراجعته."
+                            );
+                        }
+                    }
+                }
+
+                // 2. Preflight Check (Live Stock & Deliverability)
+                $preflight = $submitService->preflightSupplierPurchaseOrder($spo->id);
+                if (! $preflight->isSuccess || ! $preflight->isDeliverableToDestination) {
+                    $batch->update([
+                        'state' => ProcurementBatch::STATE_EXCEPTION,
+                    ]);
+
+                    $errReason = $preflight->errorMessage ?: 'أمر الشراء غير مؤهل للإرسال إلى المورد';
+                    throw new DomainException(
+                        "لا يمكن اعتماد الدفعة: أمر الشراء {$spo->purchase_order_number} غير مؤهل للإرسال إلى علي إكسبرس ({$errReason})."
+                    );
+                }
             }
+        }
 
+        // Commit Batch Approval in Transaction
+        return DB::transaction(function () use ($batch, $actorId, $notes) {
             $batch->update([
                 'state' => ProcurementBatch::STATE_APPROVED,
                 'approved_by' => $actorId,
@@ -406,9 +546,11 @@ class ProcurementBatchService
             ]);
 
             foreach ($batch->supplierOrders as $spo) {
-                $spo->update([
-                    'state' => SupplierPurchaseOrder::STATE_READY_TO_SUBMIT,
-                ]);
+                if ($spo->state !== SupplierPurchaseOrder::STATE_CANCELLED && $spo->state !== SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW) {
+                    $spo->update([
+                        'state' => SupplierPurchaseOrder::STATE_READY_TO_SUBMIT,
+                    ]);
+                }
             }
 
             ProcurementAuditLog::create([
@@ -502,5 +644,149 @@ class ProcurementBatchService
 
             return $batch->fresh();
         });
+    }
+
+    /**
+     * Remove a Supplier Purchase Order from a batch, releasing its demands back to open pool.
+     *
+     * @throws DomainException
+     */
+    public function removeSupplierOrderFromBatch(int $batchId, int $spoId, int $actorId): ProcurementBatch
+    {
+        if ($actorId <= 0) {
+            $actorId = (int) (auth()->guard('admin')->id() ?: auth()->id()) ?: (Admin::first()?->id ?? 1);
+        }
+
+        ProcurementAcl::authorizeActor($actorId, ProcurementAcl::PERMISSION_BATCH_APPROVE, allowSystem: true);
+
+        return DB::transaction(function () use ($batchId, $spoId, $actorId) {
+            /** @var ProcurementBatch $batch */
+            $batch = ProcurementBatch::with(['supplierOrders.items.allocations'])->where('id', $batchId)->lockForUpdate()->firstOrFail();
+
+            /** @var SupplierPurchaseOrder|null $spo */
+            $spo = $batch->supplierOrders->where('id', $spoId)->first();
+            if (! $spo) {
+                throw new DomainException('أمر الشراء المحدد غير موجود ضمن هذه الدفعة.');
+            }
+
+            // Check if this SPO has an active live order created on AliExpress
+            $hasLiveOrder = $spo->platformOrders()
+                ->whereNotNull('external_order_id')
+                ->where('external_order_id', '!=', '')
+                ->where('normalized_status', '!=', ExternalPlatformOrder::STATUS_SUBMISSION_FAILED)
+                ->exists();
+
+            if ($hasLiveOrder) {
+                throw new DomainException('لا يمكن إزالة هذا الأمر لأنه تم إنشاؤه مسبقاً في علي إكسبرس. يرجى إلغاء طلب علي إكسبرس أولاً.');
+            }
+
+            // 1. Release allocations and update demand counters
+            foreach ($spo->items as $item) {
+                foreach ($item->allocations as $allocation) {
+                    $demand = ProcurementDemand::where('id', $allocation->procurement_demand_id)->lockForUpdate()->first();
+                    if ($demand) {
+                        $newQtyBatched = max(0, $demand->qty_batched - $allocation->qty_allocated);
+                        $demand->update([
+                            'qty_batched' => $newQtyBatched,
+                            'state' => ProcurementDemand::STATE_OPEN_FOR_BATCHING,
+                        ]);
+
+                        $batchDemand = ProcurementBatchDemand::where('batch_id', $batch->id)
+                            ->where('procurement_demand_id', $demand->id)
+                            ->first();
+
+                        if ($batchDemand) {
+                            $newBatchQty = max(0, $batchDemand->qty_batched - $allocation->qty_allocated);
+                            if ($newBatchQty <= 0) {
+                                $batchDemand->delete();
+                            } else {
+                                $batchDemand->update(['qty_batched' => $newBatchQty]);
+                            }
+                        }
+                    }
+
+                    $allocation->delete();
+                }
+
+                $item->delete();
+            }
+
+            $spoNumber = $spo->purchase_order_number;
+            $storeName = $spo->supplier_store_name;
+            $spo->delete();
+
+            // 2. Recalculate remaining batch SPOs and cost
+            $remainingSpos = SupplierPurchaseOrder::where('batch_id', $batch->id)->get();
+            if ($remainingSpos->isEmpty()) {
+                $batch->update([
+                    'state' => ProcurementBatch::STATE_CANCELLED,
+                    'expected_total_cost' => 0.0000,
+                ]);
+            } else {
+                $newExpectedTotal = $remainingSpos->sum(fn ($s) => (float) $s->expected_total);
+                $newState = $batch->state;
+                if (in_array($batch->state, [ProcurementBatch::STATE_EXCEPTION, ProcurementBatch::STATE_PARTIALLY_SUBMITTED])) {
+                    $allDraftOrReady = $remainingSpos->every(fn ($s) => in_array($s->state, [
+                        SupplierPurchaseOrder::STATE_DRAFT,
+                        SupplierPurchaseOrder::STATE_READY_TO_SUBMIT,
+                    ]));
+                    if ($allDraftOrReady) {
+                        $newState = ProcurementBatch::STATE_APPROVED;
+                    }
+                }
+
+                $batch->update([
+                    'expected_total_cost' => $newExpectedTotal,
+                    'state' => $newState,
+                ]);
+            }
+
+            // 3. Audit Log
+            ProcurementAuditLog::create([
+                'auditable_type' => ProcurementBatch::class,
+                'auditable_id' => $batch->id,
+                'action' => 'supplier_order_removed_from_batch',
+                'actor_id' => $actorId,
+                'actor_type' => 'admin',
+                'details' => [
+                    'removed_spo_id' => $spoId,
+                    'purchase_order_number' => $spoNumber,
+                    'supplier_store_name' => $storeName,
+                    'remaining_spos_count' => $remainingSpos->count(),
+                ],
+                'correlation_id' => "batch-{$batch->id}-remove-spo-{$spoId}",
+            ]);
+
+            return $batch->fresh(['supplierOrders.items.allocations', 'demands']);
+        });
+    }
+
+    /**
+     * Resolve the current supplier SKU stock from AliExpress import snapshots or demand snapshot.
+     */
+    public function resolveDemandSupplierStock(ProcurementDemand $demand): ?int
+    {
+        $import = AliExpressProductImport::where('id', $demand->source_snapshot['import_id'] ?? null)
+            ->orWhere('aliexpress_product_id', $demand->supplier_product_id)
+            ->orWhere('product_id', $demand->product_id)
+            ->latest('id')
+            ->first();
+
+        if ($import && ! empty($import->payload_snapshot['variants'])) {
+            foreach ($import->payload_snapshot['variants'] as $v) {
+                $sId = (string) ($v['sku_id'] ?? $v['id'] ?? '');
+                if ($sId == $demand->supplier_sku_id || count($import->payload_snapshot['variants']) === 1) {
+                    return isset($v['stock']) || isset($v['quantity']) || isset($v['sku_stock'])
+                        ? (int) ($v['stock'] ?? $v['quantity'] ?? $v['sku_stock'])
+                        : 0;
+                }
+            }
+        }
+
+        if (! empty($demand->source_snapshot['stock'])) {
+            return (int) $demand->source_snapshot['stock'];
+        }
+
+        return null;
     }
 }

@@ -159,11 +159,20 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
                         $snap = json_decode((string) $localImport->payload_snapshot, true);
                         $variants = $snap['variants'] ?? [];
                         if (! empty($variants)) {
-                            $productCache[$pId] = $variants;
+                            $hasValidSkuAttr = false;
+                            foreach ($variants as $v) {
+                                if (! empty($v['sku_attr'])) {
+                                    $hasValidSkuAttr = true;
+                                    break;
+                                }
+                            }
+                            if ($hasValidSkuAttr) {
+                                $productCache[$pId] = $variants;
+                            }
                         }
                     }
 
-                    // 2. If not in local cache, call product.get with safe rate-limit fallback
+                    // 2. If not in local cache or lacks sku_attr, call product.get with safe rate-limit fallback
                     if (! isset($productCache[$pId])) {
                         $prodRes = $this->apiClient->call('aliexpress.ds.product.get', $auth->accessToken, [
                             'product_id' => $pId,
@@ -190,11 +199,19 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
 
                 $resolvedItemSkuAttr = '';
                 $resolvedItemSkuId = $sId;
+                $resolvedItemStock = null;
                 if (! empty($productCache[$pId])) {
                     foreach ($productCache[$pId] as $v) {
                         if (($v['sku_id'] ?? '') == $sId) {
                             $resolvedItemSkuAttr = (string) ($v['sku_attr'] ?? '');
                             $resolvedItemSkuId = (string) ($v['sku_id'] ?? $sId);
+                            if (isset($v['sku_available_stock'])) {
+                                $resolvedItemStock = (int) $v['sku_available_stock'];
+                            } elseif (isset($v['ipm_sku_stock'])) {
+                                $resolvedItemStock = (int) $v['ipm_sku_stock'];
+                            } elseif (isset($v['stock'])) {
+                                $resolvedItemStock = (int) $v['stock'];
+                            }
                             break;
                         }
                     }
@@ -202,14 +219,34 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
 
                 $skuAttrMap[$sId] = $resolvedItemSkuAttr;
                 $skuIdMap[$sId] = $resolvedItemSkuId;
+                $skuStockMap[$sId] = $resolvedItemStock;
             }
         } catch (\Throwable $e) {
             $skuAttrMap[$skuId] = '';
             $skuIdMap[$skuId] = $skuId;
+            $skuStockMap[$skuId] = null;
         }
 
         $resolvedSkuAttr = $skuAttrMap[$skuId] ?? '';
         $resolvedFreightSkuId = $skuIdMap[$skuId] ?? $skuId;
+
+        // Check if selected SKU is strictly out of stock on AliExpress
+        if (isset($skuStockMap[$skuId]) && $skuStockMap[$skuId] !== null && $skuStockMap[$skuId] < $qty) {
+            return new AliExpressOrderPreflight(
+                isSuccess: false,
+                isDeliverableToDestination: false,
+                destinationCountry: $country,
+                resolvedSkuAttr: $resolvedSkuAttr,
+                errorCode: 'INVENTORY_HOLD_ERROR',
+                errorMessage: self::mapAliExpressErrorMessage('INVENTORY_HOLD_ERROR', "المخزون غير متوفر لهذا الصنف لدى المورد في علي إكسبرس (نفد المخزون - الكمية المتاحة: {$skuStockMap[$skuId]})"),
+                rawDetails: [
+                    'available_stock' => $skuStockMap[$skuId],
+                    'required_qty' => $qty,
+                    'sku_attrs' => $skuAttrMap,
+                    'resolved_sku_ids' => $skuIdMap,
+                ]
+            );
+        }
 
         // 2. Query live freight options specifically for selected SKU (or use pre-selected service)
         $directService = $items[0]['logistics_service_name'] ?? null;
@@ -449,9 +486,13 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
 
         // 7. Check for transport or API error envelope
         if (! $response['ok'] || ! empty($body['error_response']) || ($code !== null && (string) $code !== '0' && (string) $code !== '200')) {
+            $rawMsg = $message ?: ($body['error_response']['msg'] ?? null);
+            $errCode = (string) ($code ?? $body['error_response']['sub_code'] ?? $body['error_response']['code'] ?? 'API_ERROR');
+            $localizedMsg = self::mapAliExpressErrorMessage($errCode, $rawMsg);
+
             return new ExternalOrderSubmissionFailed(
-                errorCode: (string) ($code ?? 'API_ERROR'),
-                errorMessageMasked: (string) $message,
+                errorCode: $errCode,
+                errorMessageMasked: $localizedMsg,
                 providerRequestId: $requestId,
                 retryClassification: 'fatal',
                 rawResponse: $this->redactSensitivePayload($body)
@@ -463,12 +504,13 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         $result = $resp['result'] ?? [];
 
         if (! isset($result['is_success']) || $result['is_success'] !== true) {
-            $errCode = $result['error_code'] ?? 'ORDER_SUBMISSION_REJECTED';
-            $errMsg = $result['error_msg'] ?? 'AliExpress order creation rejected or is_success was false.';
+            $errCode = (string) ($result['error_code'] ?? 'ORDER_SUBMISSION_REJECTED');
+            $rawMsg = $result['error_msg'] ?? null;
+            $localizedMsg = self::mapAliExpressErrorMessage($errCode, $rawMsg);
 
             return new ExternalOrderSubmissionFailed(
-                errorCode: (string) $errCode,
-                errorMessageMasked: (string) $errMsg,
+                errorCode: $errCode,
+                errorMessageMasked: $localizedMsg,
                 providerRequestId: $requestId,
                 retryClassification: 'fatal',
                 rawResponse: $this->redactSensitivePayload($body)
@@ -543,8 +585,15 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             $res = $resp['result'] ?? [];
 
             $rawState = $res['order_status'] ?? 'UNKNOWN';
-            $trackingNumber = $res['logistics_info_list']['logistics_info'][0]['logistics_no'] ?? null;
-            $trackingCompany = $res['logistics_info_list']['logistics_info'][0]['logistics_service_name'] ?? null;
+            $logisticsList = $res['logistics_info_list']['aeop_order_logistics_info']
+                ?? $res['logistics_info_list']['logistics_info']
+                ?? [];
+            if (isset($logisticsList['logistics_no']) || isset($logisticsList['logistics_service']) || isset($logisticsList['tracking_no'])) {
+                $logisticsList = [$logisticsList];
+            }
+            $firstLogistics = $logisticsList[0] ?? [];
+            $trackingNumber = $firstLogistics['logistics_no'] ?? $firstLogistics['tracking_no'] ?? $firstLogistics['mail_no'] ?? null;
+            $trackingCompany = $firstLogistics['logistics_service'] ?? $firstLogistics['logistics_service_name'] ?? $firstLogistics['company_name'] ?? null;
 
             $overTimeLeft = null;
             if (isset($res['over_time_left']) && is_numeric($res['over_time_left'])) {
@@ -733,5 +782,58 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         });
 
         return $redacted;
+    }
+
+    /**
+     * Map AliExpress machine error codes and raw English messages to clear, localized Arabic messages.
+     */
+    public static function mapAliExpressErrorMessage(string $errorCode, ?string $rawMessage = null): string
+    {
+        $code = strtoupper(trim($errorCode));
+
+        $messages = [
+            'INVENTORY_HOLD_ERROR' => 'المخزون غير متوفر لهذا الصنف لدى المورد في علي إكسبرس (نفد المخزون - Out of Stock)',
+            'OUT_OF_STOCK' => 'المخزون غير متوفر لهذا الصنف لدى المورد في علي إكسبرس (نفد المخزون - Out of Stock)',
+            'SKU_NOT_EXIST' => 'المتغير أو الصنف المطلوب غير متاح حالياً لدى المورد في علي إكسبرس (الـ SKU غير موجود أو تم تعديل خصائصه)',
+            'PRODUCT_NOT_EXIST' => 'المنتج غير متوفر أو تم حذفه من متجر المورد في علي إكسبرس',
+            'ITEM_NOT_EXIST' => 'المنتج غير متوفر أو تم حذفه من متجر المورد في علي إكسبرس',
+            'ITEM_OFFLINE' => 'المنتج متوقف عن العرض والبيع حالياً لدى المورد على علي إكسبرس',
+            'ITEM_DELETED' => 'تم حذف هذا المنتج من متجر المورد على علي إكسبرس',
+            'PRODUCT_CANNOT_DELIVER_TO_COUNTRY' => 'المورد لا يدعم الشحن إلى الوجهة المحددة (المملكة العربية السعودية)',
+            'DELIVER_NOT_SUPPORT' => 'المورد لا يدعم الشحن إلى الوجهة المحددة (المملكة العربية السعودية)',
+            'NOT_SUPPORT_DELIVERY' => 'المورد لا يدعم الشحن إلى الوجهة المحددة (المملكة العربية السعودية)',
+            'SHIPPING_SERVICE_NOT_AVAILABLE' => 'طريقة الشحن المطلوبة غير متوفرة لهذا المنتج إلى الوجهة المحددة',
+            'NO_SKU_SPECIFIC_SHIPPING_OPTION' => 'لا تتوفر خيارات شحن لهذا المتغير إلى الوجهة المحددة',
+            'BUYER_NOT_LEGAL' => 'حساب المشتري على علي إكسبرس مقيد أو غير مصرح له بإنشاء طلبات دروب شيبنج',
+            'ACCOUNT_UNAUTHORIZED' => 'انتهت صلاحية جلسة الربط مع علي إكسبرس، يرجى إعادة تسجيل الدخول من إدارة المفاتيح',
+            'TOKEN_EXPIRED' => 'انتهت صلاحية رمز الوصول (Access Token) في علي إكسبرس، يرجى إعادة توثيق الحساب',
+            'ORDER_CREATION_LIMIT_EXCEEDED' => 'تم تجاوز الحد الأقصى المسموح به لإنشاء الطلبات مؤقتاً على علي إكسبرس',
+            'FREQUENCY_LIMIT' => 'تم تجاوز حد الاستعلامات المسموح به على علي إكسبرس، يرجى المحاولة بعد لحظات',
+            'SHIPPING_ADDRESS_INVALID' => 'بيانات عنوان الشحن غير صالحة وفق متطلبات الشحن لدى علي إكسبرس',
+            'LOGISTICS_ADDRESS_INVALID' => 'بيانات عنوان الشحن غير صالحة وفق متطلبات الشحن لدى علي إكسبرس',
+            'PRICE_CHANGED' => 'تغير سعر المنتج لدى المورد على علي إكسبرس، يرجى مراجعة وتحديث التكلفة',
+            'PAYMENT_UNSUPPORTED' => 'طريقة الدفع أو العملة غير مدعومة لهذا الطلب لدى علي إكسبرس',
+            'EMPTY_OR_NON_NUMERIC_EXTERNAL_ORDER_ID' => 'لم يقم علي إكسبرس بإرجاع رقم طلب رسمي معتمد',
+            'PREFLIGHT_VALIDATION_FAILED' => 'فشل التحقق المسبق من توفر المنتج أو خيارات الشحن لدى المورد',
+            'EMPTY_ITEMS_DRAFT' => 'أمر الشراء لا يحتوي على أي منتجات للإرسال',
+            'SHIPPING_ADDRESS_NOT_CONFIGURED' => 'عنوان المستودع الرئيسي غير مهيأ في النظام لإرسال الشحنات',
+            'API_TRANSPORT_ERROR' => 'تعذر الاتصال بخوادم علي إكسبرس (خطأ في شبكة الاتصال)',
+        ];
+
+        if (isset($messages[$code])) {
+            return $messages[$code];
+        }
+
+        foreach ($messages as $key => $msg) {
+            if (str_contains($code, $key)) {
+                return $msg;
+            }
+        }
+
+        if (! empty($rawMessage) && $rawMessage !== 'Order creation failed' && $rawMessage !== 'AliExpress order creation rejected or is_success was false.') {
+            return "فشل إنشاء الطلب لدى علي إكسبرس [{$errorCode}]: {$rawMessage}";
+        }
+
+        return "فشل إنشاء الطلب لدى علي إكسبرس بسبب استجابة المورد [كود الخطأ: {$errorCode}]";
     }
 }

@@ -43,6 +43,13 @@ class AliExpressSetting extends Model
         'inventory_buffer',
         'price_change_limit',
         'stock_sync_enabled',
+        'variance_product_type',
+        'variance_product_limit',
+        'variance_shipping_type',
+        'variance_shipping_limit',
+        'variance_auto_approve',
+        'variance_profit_guard_enabled',
+        'variance_min_profit_margin',
     ];
 
     protected $hidden = [
@@ -62,6 +69,11 @@ class AliExpressSetting extends Model
             'inventory_buffer' => 'integer',
             'price_change_limit' => 'decimal:4',
             'stock_sync_enabled' => 'boolean',
+            'variance_product_limit' => 'decimal:4',
+            'variance_shipping_limit' => 'decimal:4',
+            'variance_auto_approve' => 'boolean',
+            'variance_profit_guard_enabled' => 'boolean',
+            'variance_min_profit_margin' => 'decimal:4',
         ];
     }
 

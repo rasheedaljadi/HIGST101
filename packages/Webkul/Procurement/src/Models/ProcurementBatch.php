@@ -24,6 +24,8 @@ class ProcurementBatch extends Model implements ProcurementBatchContract
 
     public const STATE_SUBMITTED_TO_PROVIDER = 'submitted_to_provider';
 
+    public const STATE_PARTIALLY_SUBMITTED = 'partially_submitted';
+
     public const STATE_AWAITING_MANUAL_PAYMENT = 'awaiting_manual_payment';
 
     public const STATE_PAYMENT_DECLARED = 'payment_declared';

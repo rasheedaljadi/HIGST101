@@ -128,10 +128,10 @@ class ProcurementBatchController extends Controller
         try {
             $batch = $this->batchService->rejectBatch($id, $this->resolveAdminActorId(), $request->input('reason'));
 
-            session()->flash('success', trans('procurement::app.messages.batch-rejected-success'));
+            session()->flash('success', 'تم إلغاء الدفعة وإعادة كافة الطلبات إلى شاشة احتياجات الشراء ومرحلة التجميع بنجاح.');
 
-            return redirect()->route('admin.procurement.batches.view', $batch->id);
-        } catch (Exception $e) {
+            return redirect()->route('admin.procurement.batches.index');
+        } catch (\Throwable $e) {
             session()->flash('error', $e->getMessage());
 
             return redirect()->back();
@@ -145,7 +145,28 @@ class ProcurementBatchController extends Controller
         try {
             $batch = $this->submitService->submitBatch($id, $this->resolveAdminActorId());
 
-            session()->flash('success', trans('procurement::app.messages.batch-submitted-success'));
+            if ($batch->state === ProcurementBatch::STATE_PARTIALLY_SUBMITTED) {
+                session()->flash('warning', 'تم إرسال بعض أوامر الشراء بنجاح إلى علي إكسبرس، بينما تعذر إرسال أوامر أخرى. يرجى مراجعة تفاصيل الأوامر أدناه.');
+            } else {
+                session()->flash('success', trans('procurement::app.messages.batch-submitted-success'));
+            }
+
+            return redirect()->route('admin.procurement.batches.view', $batch->id);
+        } catch (\Throwable $e) {
+            session()->flash('error', $e->getMessage());
+
+            return redirect()->back();
+        }
+    }
+
+    public function removeSupplierOrder(int $batchId, int $spoId)
+    {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_BATCH_APPROVE);
+
+        try {
+            $batch = $this->batchService->removeSupplierOrderFromBatch($batchId, $spoId, $this->resolveAdminActorId());
+
+            session()->flash('success', 'تمت إزالة أمر المورد من الدفعة بنجاح وإعادة المنتجات إلى شاشة احتياجات الشراء.');
 
             return redirect()->route('admin.procurement.batches.view', $batch->id);
         } catch (\Throwable $e) {

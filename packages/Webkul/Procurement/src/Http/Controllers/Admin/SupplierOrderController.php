@@ -12,6 +12,7 @@ use Webkul\Procurement\Models\SupplierPurchaseOrder;
 use Webkul\Procurement\Security\ProcurementAcl;
 use Webkul\Procurement\Services\ProcurementInboundReceiptService;
 use Webkul\Procurement\Services\ProcurementOrderCancellationService;
+use Webkul\Procurement\Services\ProcurementSubmitService;
 
 class SupplierOrderController extends Controller
 {
@@ -46,7 +47,10 @@ class SupplierOrderController extends Controller
             'manualPaymentConfirmations.admin',
         ])->findOrFail($id);
 
-        $inventorySources = InventorySource::all();
+        $inventorySources = InventorySource::whereIn('code', [
+            'hayest_dropship_sa',
+            'hayest_quarantine_sa',
+        ])->get();
 
         return view('procurement::admin.supplier_orders.view', compact('order', 'inventorySources'));
     }
@@ -109,6 +113,24 @@ class SupplierOrderController extends Controller
                 ], 400);
             }
 
+            session()->flash('error', $e->getMessage());
+
+            return redirect()->back();
+        }
+    }
+
+    public function submit(int $id)
+    {
+        $this->authorizeProcurementAction(ProcurementAcl::PERMISSION_SUBMIT);
+
+        try {
+            $submitService = app(ProcurementSubmitService::class);
+            $submitService->submitSupplierPurchaseOrder($id, $this->resolveAdminActorId());
+
+            session()->flash('success', trans('procurement::app.messages.batch-submitted-success') ?: 'تم إرسال أمر الشراء بنجاح إلى علي إكسبرس.');
+
+            return redirect()->route('admin.procurement.supplier_orders.view', $id);
+        } catch (Exception $e) {
             session()->flash('error', $e->getMessage());
 
             return redirect()->back();

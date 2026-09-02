@@ -15,6 +15,7 @@ Route::group(['middleware' => ['web', 'admin', NoCacheMiddleware::class], 'prefi
     Route::group(['middleware' => ['theme', 'locale', 'currency']], function () {
         // 1. Eligible Demands
         Route::get('demands', [ProcurementDemandController::class, 'index'])->name('admin.procurement.demands.index');
+        Route::post('demands/sync-stock', [ProcurementDemandController::class, 'syncStock'])->name('admin.procurement.demands.sync_stock');
 
         // 2. Batches
         Route::get('batches', [ProcurementBatchController::class, 'index'])->name('admin.procurement.batches.index');
@@ -25,15 +26,18 @@ Route::group(['middleware' => ['web', 'admin', NoCacheMiddleware::class], 'prefi
         Route::post('batches/approve/{id}', [ProcurementBatchController::class, 'approve'])->name('admin.procurement.batches.approve');
         Route::post('batches/reject/{id}', [ProcurementBatchController::class, 'reject'])->name('admin.procurement.batches.reject');
         Route::post('batches/submit/{id}', [ProcurementBatchController::class, 'submit'])->name('admin.procurement.batches.submit');
+        Route::post('batches/{batch}/remove-order/{spo}', [ProcurementBatchController::class, 'removeSupplierOrder'])->name('admin.procurement.batches.remove_supplier_order');
 
         // 3. Supplier POs
         Route::get('supplier-orders', [SupplierOrderController::class, 'index'])->name('admin.procurement.supplier_orders.index');
         Route::get('supplier-orders/view/{id}', [SupplierOrderController::class, 'view'])->name('admin.procurement.supplier_orders.view');
+        Route::post('supplier-orders/submit/{id}', [SupplierOrderController::class, 'submit'])->name('admin.procurement.supplier_orders.submit');
         Route::post('supplier-orders/receive/{id}', [SupplierOrderController::class, 'receive'])->name('admin.procurement.supplier_orders.receive');
         Route::post('supplier-orders/cancel/{id}', [SupplierOrderController::class, 'cancel'])->name('admin.procurement.supplier_orders.cancel');
 
         // 4. AliExpress Platform Orders
         Route::get('platform-orders', [ExternalPlatformOrderController::class, 'index'])->name('admin.procurement.platform_orders.index');
+        Route::get('platform-orders/view/{id}', [ExternalPlatformOrderController::class, 'view'])->name('admin.procurement.platform_orders.view');
         Route::post('platform-orders/sync-all', [ExternalPlatformOrderController::class, 'syncAll'])->name('admin.procurement.platform_orders.sync_all');
         Route::post('platform-orders/sync/{id}', [ExternalPlatformOrderController::class, 'sync'])->name('admin.procurement.platform_orders.sync');
         Route::post('platform-orders/cancel/{id}', [ExternalPlatformOrderController::class, 'cancel'])->name('admin.procurement.platform_orders.cancel');

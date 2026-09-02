@@ -113,4 +113,14 @@ class CostVarianceDataGrid extends DataGrid
             'closure' => fn ($row) => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">'.trans('procurement::app.states.cost_variance_review').'</span>',
         ]);
     }
+
+    public function prepareActions(): void
+    {
+        $this->addAction([
+            'icon' => 'icon-view text-2xl text-gray-700 hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400',
+            'title' => trans('procurement::app.datagrid.view'),
+            'method' => 'GET',
+            'url' => fn ($row) => route('admin.procurement.supplier_orders.view', $row->spo_id),
+        ]);
+    }
 }

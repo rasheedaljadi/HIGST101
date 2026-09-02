@@ -2,6 +2,7 @@
 
 namespace Webkul\Procurement\Services;
 
+use App\Models\AliExpressSetting;
 use App\Services\AliExpress\AliExpressApiClient;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,7 @@ use Webkul\Procurement\DTO\ExternalOrderDraft;
 use Webkul\Procurement\DTO\ExternalOrderSubmissionFailed;
 use Webkul\Procurement\DTO\VerifiedExternalOrderCreated;
 use Webkul\Procurement\Exceptions\ExternalOrderSubmissionException;
+use Webkul\Procurement\Gateways\AliExpressOrderSubmissionGateway;
 use Webkul\Procurement\Models\ExternalPlatformOrder;
 use Webkul\Procurement\Models\ExternalPlatformOrderItem;
 use Webkul\Procurement\Models\ProcurementAuditLog;
@@ -40,16 +42,127 @@ class ProcurementSubmitService
 
         return DB::transaction(function () use ($batchId, $actorId) {
             /** @var ProcurementBatch $batch */
-            $batch = ProcurementBatch::where('id', $batchId)->lockForUpdate()->firstOrFail();
+            $batch = ProcurementBatch::with(['supplierOrders.items'])->where('id', $batchId)->lockForUpdate()->firstOrFail();
 
-            if ($batch->state !== ProcurementBatch::STATE_APPROVED && $batch->state !== ProcurementBatch::STATE_READY_FOR_REVIEW) {
-                throw new DomainException("Cannot submit batch in '{$batch->state}' state. Must be approved first.");
+            if (! in_array($batch->state, [
+                ProcurementBatch::STATE_APPROVED,
+                ProcurementBatch::STATE_READY_FOR_REVIEW,
+                ProcurementBatch::STATE_EXCEPTION,
+                ProcurementBatch::STATE_PARTIALLY_SUBMITTED,
+            ], true)) {
+                throw new DomainException("لا يمكن إرسال الدفعة في حالتها الحالية ({$batch->state}). يجب أن تكون معتمدة أولاً.");
             }
 
             if (strtoupper((string) $batch->currency_code) !== 'USD') {
-                throw new DomainException("Batch currency is '{$batch->currency_code}'. V2 strictly allows USD only. Submission halted for manual review.");
+                throw new DomainException("عملة الدفعة هي '{$batch->currency_code}'. النظام يقبل عملة USD فقط.");
             }
 
+            // Identify unsubmitted SPOs in this batch
+            $pendingSpos = $batch->supplierOrders->filter(function ($spo) {
+                $hasLiveOrder = $spo->platformOrders()
+                    ->whereNotNull('external_order_id')
+                    ->where('external_order_id', '!=', '')
+                    ->where('normalized_status', '!=', ExternalPlatformOrder::STATUS_SUBMISSION_FAILED)
+                    ->exists();
+
+                return ! $hasLiveOrder;
+            });
+
+            if ($pendingSpos->isEmpty()) {
+                throw new DomainException('جميع أوامر الشراء في هذه الدفعة تم إرسالها مسبقاً إلى علي إكسبرس.');
+            }
+
+            // =========================================================================
+            // PHASE 1: STRICT PREFLIGHT VALIDATION (All-or-Nothing Pre-Check)
+            // =========================================================================
+            $preflightErrors = [];
+            $aeSetting = AliExpressSetting::current();
+            $varType = $aeSetting->variance_product_type ?? 'percentage';
+            $varLimit = (float) ($aeSetting->variance_product_limit ?? 10.0);
+
+            foreach ($pendingSpos as $spo) {
+                $storeName = $spo->supplier_store_name ?: "متجر #{$spo->supplier_store_id}";
+
+                // 1. Currency check
+                if (strtoupper((string) $spo->currency_code) !== 'USD') {
+                    $preflightErrors[] = "أمر المورد [{$storeName} - {$spo->purchase_order_number}]: العملة غير متوافقة ({$spo->currency_code}).";
+
+                    continue;
+                }
+
+                // 2. Preflight via API Gateway (Stock, Deliverability, Address)
+                try {
+                    $preflight = $this->preflightSupplierPurchaseOrder($spo->id);
+                    if (! $preflight->isSuccess || ! $preflight->isDeliverableToDestination) {
+                        $rawErr = $preflight->errorMessage ?: $preflight->errorCode ?: 'فشل التحقق من توفر الشحن أو المنتج لدى المورد';
+                        $errMsg = AliExpressOrderSubmissionGateway::mapAliExpressErrorMessage((string) $preflight->errorCode, $rawErr);
+                        $preflightErrors[] = "أمر المورد [{$storeName} - {$spo->purchase_order_number}]: {$errMsg}";
+
+                        continue;
+                    }
+                } catch (\Throwable $e) {
+                    $preflightErrors[] = "أمر المورد [{$storeName} - {$spo->purchase_order_number}]: ".$e->getMessage();
+
+                    continue;
+                }
+
+                // 3. Live Cost Variance Guard
+                foreach ($spo->items as $item) {
+                    $expectedCost = (float) $item->expected_unit_cost;
+                    if ($expectedCost <= 0) {
+                        continue;
+                    }
+
+                    $liveCost = $this->fetchLiveSkuCost($spo, $item);
+                    if ($liveCost !== null && $liveCost > 0) {
+                        $isExceeded = false;
+                        $variancePercent = 0.0;
+                        if ($varType === 'fixed') {
+                            $varianceDelta = abs($liveCost - $expectedCost);
+                            $isExceeded = $varianceDelta > $varLimit;
+                            $variancePercent = ($varianceDelta / $expectedCost) * 100;
+                        } else {
+                            $variancePercent = abs(($liveCost - $expectedCost) / $expectedCost) * 100;
+                            $isExceeded = $variancePercent > $varLimit;
+                        }
+
+                        if ($isExceeded) {
+                            $limitDisplay = $varType === 'fixed' ? "\${$varLimit}" : "{$varLimit}%";
+                            $preflightErrors[] = "أمر المورد [{$storeName} - {$spo->purchase_order_number}]: تغير سعر الصنف (SKU: {$item->supplier_sku_id}) تجاوز حد التسامح المسموح ({$limitDisplay}). المتوقع: \${$expectedCost}، الحالي لدى المورد: \${$liveCost}.";
+                        }
+                    }
+                }
+            }
+
+            // If ANY preflight check failed across the batch: HALT IMMEDIATELY WITH ZERO ORDERS SENT
+            if (! empty($preflightErrors)) {
+                $batch->update([
+                    'state' => ProcurementBatch::STATE_EXCEPTION,
+                ]);
+
+                ProcurementAuditLog::create([
+                    'auditable_type' => ProcurementBatch::class,
+                    'auditable_id' => $batch->id,
+                    'action' => 'batch_preflight_halted',
+                    'actor_id' => $actorId,
+                    'actor_type' => 'admin',
+                    'old_state' => $batch->getOriginal('state') ?? ProcurementBatch::STATE_APPROVED,
+                    'new_state' => ProcurementBatch::STATE_EXCEPTION,
+                    'details' => [
+                        'reasons' => $preflightErrors,
+                        'pending_spos_count' => $pendingSpos->count(),
+                        'orders_sent' => 0,
+                    ],
+                    'correlation_id' => "batch-{$batch->id}-preflight-halt",
+                ]);
+
+                $errList = implode(' | ', $preflightErrors);
+                throw new DomainException("تعذر إرسال الدفعة لوجود تعثر في الفحص المسبق لأوامر الموردين: {$errList}. تم إيقاف الإرسال بالكامل لحماية الطلب — يمكنك إزالة أمر المورد المتعثر من الدفعة أو معالجته لإعادة الإرسال.");
+            }
+
+            // =========================================================================
+            // PHASE 2: ATOMIC EXECUTION (Submit All Verified SPOs)
+            // =========================================================================
             $batch->update([
                 'state' => ProcurementBatch::STATE_SUBMITTED_TO_PROVIDER,
             ]);
@@ -58,7 +171,7 @@ class ProcurementSubmitService
             $failedCount = 0;
             $failedMessages = [];
 
-            foreach ($batch->supplierOrders as $spo) {
+            foreach ($pendingSpos as $spo) {
                 try {
                     $submittedSpo = $this->submitSupplierPurchaseOrder($spo->id, $actorId);
                     $hasLiveOrder = $submittedSpo->platformOrders()
@@ -72,39 +185,19 @@ class ProcurementSubmitService
                     } else {
                         $failedCount++;
                         $lastFail = $submittedSpo->platformOrders()->latest()->first();
-                        $failedMessages[] = "SPO #{$spo->id} ({$spo->purchase_order_number}): ".($lastFail?->failure_message ?: $lastFail?->failure_code ?: 'Submission failed');
+                        $errMsg = $lastFail?->failure_message ?: $lastFail?->failure_code ?: 'تعذر إرسال الطلب للمورد';
+                        $storeName = $spo->supplier_store_name ?: "متجر #{$spo->supplier_store_id}";
+                        $failedMessages[] = "أمر المورد [{$storeName} - {$spo->purchase_order_number}]: {$errMsg}";
                     }
                 } catch (\Throwable $e) {
                     $failedCount++;
-                    $failedMessages[] = "SPO #{$spo->id} ({$spo->purchase_order_number}): ".$e->getMessage();
+                    $storeName = $spo->supplier_store_name ?: "متجر #{$spo->supplier_store_id}";
+                    $failedMessages[] = "أمر المورد [{$storeName} - {$spo->purchase_order_number}]: ".$e->getMessage();
                 }
             }
 
-            if ($submittedCount === 0 && $failedCount > 0) {
-                $batch->update([
-                    'state' => ProcurementBatch::STATE_EXCEPTION,
-                ]);
-
-                ProcurementAuditLog::create([
-                    'auditable_type' => ProcurementBatch::class,
-                    'auditable_id' => $batch->id,
-                    'action' => 'batch_submission_failed',
-                    'actor_id' => $actorId,
-                    'actor_type' => 'admin',
-                    'old_state' => ProcurementBatch::STATE_SUBMITTED_TO_PROVIDER,
-                    'new_state' => ProcurementBatch::STATE_EXCEPTION,
-                    'details' => [
-                        'failed_count' => $failedCount,
-                        'reasons' => $failedMessages,
-                    ],
-                    'correlation_id' => "batch-{$batch->id}",
-                ]);
-
-                throw new DomainException('فشل إرسال أوامر الشراء إلى علي إكسبرس: '.implode(' | ', $failedMessages));
-            }
-
             $finalState = ($failedCount > 0)
-                ? ProcurementBatch::STATE_PARTIALLY_SUBMITTED
+                ? ($submittedCount > 0 ? ProcurementBatch::STATE_PARTIALLY_SUBMITTED : ProcurementBatch::STATE_EXCEPTION)
                 : ProcurementBatch::STATE_AWAITING_MANUAL_PAYMENT;
 
             $batch->update([
@@ -117,11 +210,12 @@ class ProcurementSubmitService
                 'action' => 'batch_submitted',
                 'actor_id' => $actorId,
                 'actor_type' => 'admin',
-                'old_state' => ProcurementBatch::STATE_APPROVED,
+                'old_state' => ProcurementBatch::STATE_SUBMITTED_TO_PROVIDER,
                 'new_state' => $finalState,
                 'details' => [
                     'submitted_orders_count' => $submittedCount,
                     'failed_orders_count' => $failedCount,
+                    'failed_messages' => $failedMessages,
                 ],
                 'correlation_id' => "batch-{$batch->id}",
             ]);
@@ -171,7 +265,10 @@ class ProcurementSubmitService
             $correlationKey = $spo->purchase_order_number;
 
             // 1b. Pre-Submit Cost Guard: verify live AliExpress prices match expected costs
-            $maxVariancePercent = (float) config('procurement.max_cost_variance_percent', 15.0);
+            $aeSetting = AliExpressSetting::current();
+            $varType = $aeSetting->variance_product_type ?? 'percentage';
+            $varLimit = (float) ($aeSetting->variance_product_limit ?? 10.0);
+
             $spo->load('items');
             foreach ($spo->items as $item) {
                 $expectedCost = (float) $item->expected_unit_cost;
@@ -181,36 +278,53 @@ class ProcurementSubmitService
 
                 $liveCost = $this->fetchLiveSkuCost($spo, $item);
                 if ($liveCost !== null && $liveCost > 0) {
-                    $variancePercent = abs(($liveCost - $expectedCost) / $expectedCost) * 100;
-                    if ($variancePercent > $maxVariancePercent) {
-                        $spo->update([
-                            'state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
-                            'cost_variance_amount' => round($liveCost - $expectedCost, 4),
-                        ]);
+                    $isExceeded = false;
+                    $variancePercent = 0.0;
+                    if ($varType === 'fixed') {
+                        $varianceDelta = abs($liveCost - $expectedCost);
+                        $isExceeded = $varianceDelta > $varLimit;
+                        $variancePercent = ($varianceDelta / $expectedCost) * 100;
+                    } else {
+                        $variancePercent = abs(($liveCost - $expectedCost) / $expectedCost) * 100;
+                        $isExceeded = $variancePercent > $varLimit;
+                    }
 
-                        ProcurementAuditLog::create([
-                            'auditable_type' => SupplierPurchaseOrder::class,
-                            'auditable_id' => $spo->id,
-                            'action' => 'cost_variance_guard_triggered',
-                            'actor_id' => $actorId,
-                            'actor_type' => 'admin',
-                            'old_state' => $spo->getOriginal('state') ?? SupplierPurchaseOrder::STATE_DRAFT,
-                            'new_state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
-                            'details' => [
-                                'item_id' => $item->id,
-                                'supplier_sku_id' => $item->supplier_sku_id,
-                                'expected_unit_cost' => $expectedCost,
-                                'live_unit_cost' => $liveCost,
-                                'variance_percent' => round($variancePercent, 2),
-                                'threshold_percent' => $maxVariancePercent,
-                            ],
-                            'correlation_id' => "spo-{$spo->id}-cost-guard",
-                        ]);
+                    if ($isExceeded) {
+                        $varianceAmount = round($liveCost - $expectedCost, 4);
+                        DB::transaction(function () use ($spo, $varianceAmount, $actorId, $item, $expectedCost, $liveCost, $variancePercent, $varLimit, $varType) {
+                            $spo->update([
+                                'state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                                'cost_variance_amount' => $varianceAmount,
+                            ]);
 
+                            if ($spo->batch_id) {
+                                DB::table('procurement_batches')->where('id', $spo->batch_id)->update(['state' => ProcurementBatch::STATE_EXCEPTION]);
+                            }
+
+                            ProcurementAuditLog::create([
+                                'auditable_type' => SupplierPurchaseOrder::class,
+                                'auditable_id' => $spo->id,
+                                'action' => 'cost_variance_guard_triggered',
+                                'actor_id' => $actorId,
+                                'actor_type' => 'admin',
+                                'old_state' => $spo->getOriginal('state') ?? SupplierPurchaseOrder::STATE_DRAFT,
+                                'new_state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                                'details' => [
+                                    'item_id' => $item->id,
+                                    'supplier_sku_id' => $item->supplier_sku_id,
+                                    'expected_unit_cost' => $expectedCost,
+                                    'live_unit_cost' => $liveCost,
+                                    'variance_percent' => round($variancePercent, 2),
+                                    'threshold_limit' => $varLimit,
+                                    'threshold_type' => $varType,
+                                ],
+                                'correlation_id' => "spo-{$spo->id}-cost-guard",
+                            ]);
+                        });
+
+                        $limitDisplay = $varType === 'fixed' ? "\${$varLimit}" : "{$varLimit}%";
                         throw new DomainException(
-                            "Cost variance {$variancePercent}% exceeds {$maxVariancePercent}% threshold. ".
-                            "Expected: \${$expectedCost}, Live: \${$liveCost}. ".
-                            "SPO #{$spo->id} moved to cost variance review."
+                            "تم تحويل أمر الشراء {$spo->purchase_order_number} إلى مراجعة فروقات التكلفة: تغير السعر للصنف (SKU: {$item->supplier_sku_id}) تجاوز الحد المسموح ({$limitDisplay}). التكلفة المتوقعة: \${$expectedCost}، التكلفة الحالية لدى المورد: \${$liveCost}. يرجى مراجعته وقبوله أو رفضه من صفحة (فروقات التكلفة)."
                         );
                     }
                 }
@@ -450,7 +564,7 @@ class ProcurementSubmitService
      * Fetch live AliExpress unit cost for a specific SKU.
      * Best-effort: returns null if API call fails.
      */
-    protected function fetchLiveSkuCost(SupplierPurchaseOrder $spo, $item): ?float
+    public function fetchLiveSkuCost(SupplierPurchaseOrder $spo, $item): ?float
     {
         try {
             /** @var AliExpressAuthorizationContextResolver $authResolver */

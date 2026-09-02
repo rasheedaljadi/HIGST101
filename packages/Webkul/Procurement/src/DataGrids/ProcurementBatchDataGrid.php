@@ -113,12 +113,14 @@ class ProcurementBatchDataGrid extends DataGrid
                     'ready_for_review' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
                     'approved' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
                     'submitted_to_provider' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+                    'partially_submitted' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
                     'awaiting_manual_payment' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
                     'payment_declared' => 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
                     'cost_variance_review' => 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
                     'supplier_processing' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
                     'completed' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
                     'cancelled' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+                    'exception' => 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
                 ];
                 $color = $colors[$row->state] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
                 $label = trans("procurement::app.states.{$row->state}") ?: $row->state;

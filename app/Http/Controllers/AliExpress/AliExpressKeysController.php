@@ -12,6 +12,7 @@ use App\Services\AliExpress\Shipping\AliExpressShippingAddressValidator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -109,6 +110,43 @@ class AliExpressKeysController extends Controller
             ->select('categories.id', 'category_translations.name')
             ->get();
 
+        // API Communications & Usage Stats
+        $todayStart = now()->startOfDay();
+        $apiLogsQuery = DB::table('external_api_logs')->where('provider', 'aliexpress');
+
+        $todayTotalCalls = (clone $apiLogsQuery)->where('created_at', '>=', $todayStart)->count();
+        $todaySuccessCalls = (clone $apiLogsQuery)->where('created_at', '>=', $todayStart)->where('status_code', 200)->count();
+        $todayFailedCalls = (clone $apiLogsQuery)->where('created_at', '>=', $todayStart)->where('status_code', '!=', 200)->count();
+        $todayAvgLatency = round((float) ((clone $apiLogsQuery)->where('created_at', '>=', $todayStart)->avg('latency_ms') ?: 0), 1);
+        $totalAllTimeCalls = (clone $apiLogsQuery)->count();
+        $todaySuccessRate = $todayTotalCalls > 0 ? round(($todaySuccessCalls / $todayTotalCalls) * 100, 1) : 100.0;
+
+        $dailyQuotaLimit = 50000;
+        $quotaUsedPercent = round(($todayTotalCalls / $dailyQuotaLimit) * 100, 2);
+
+        $circuitBanUntil = (int) Cache::get('aliexpress:api:ban_until', 0);
+        $circuitBreakerActive = $circuitBanUntil > time();
+        $circuitBanRemaining = $circuitBreakerActive ? ($circuitBanUntil - time()) : 0;
+
+        $endpointStats = (clone $apiLogsQuery)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->select(
+                'endpoint',
+                DB::raw('count(*) as total_calls'),
+                DB::raw('SUM(CASE WHEN status_code = 200 THEN 1 ELSE 0 END) as success_calls'),
+                DB::raw('SUM(CASE WHEN status_code != 200 THEN 1 ELSE 0 END) as failed_calls'),
+                DB::raw('ROUND(AVG(latency_ms), 0) as avg_latency')
+            )
+            ->groupBy('endpoint')
+            ->orderByDesc('total_calls')
+            ->limit(10)
+            ->get();
+
+        $recentApiCalls = (clone $apiLogsQuery)
+            ->latest('id')
+            ->limit(25)
+            ->get();
+
         return view('aliexpress.keys', [
             'settings' => $settings,
             'callbackUrl' => $this->oauth->resolveRedirectUri(),
@@ -123,6 +161,18 @@ class AliExpressKeysController extends Controller
             'injectedError' => $injectedError,
             'pricingRule' => $pricingRule,
             'pricingCategories' => $pricingCategories,
+            'todayTotalCalls' => $todayTotalCalls,
+            'todaySuccessCalls' => $todaySuccessCalls,
+            'todayFailedCalls' => $todayFailedCalls,
+            'todayAvgLatency' => $todayAvgLatency,
+            'todaySuccessRate' => $todaySuccessRate,
+            'totalAllTimeCalls' => $totalAllTimeCalls,
+            'dailyQuotaLimit' => $dailyQuotaLimit,
+            'quotaUsedPercent' => $quotaUsedPercent,
+            'circuitBreakerActive' => $circuitBreakerActive,
+            'circuitBanRemaining' => $circuitBanRemaining,
+            'endpointStats' => $endpointStats,
+            'recentApiCalls' => $recentApiCalls,
         ]);
     }
 
@@ -179,6 +229,16 @@ class AliExpressKeysController extends Controller
             $customMessages = [
                 'warehouse_short_address.regex' => 'يجب أن يتكون رمز العنوان الوطني السعودي المختصر من 8 خانات (4 أحرف إنجليزية متبوعة بـ 4 أرقام، مثل ABCD1234 أو RMAD3455).',
             ];
+        } elseif ($section === 'cost_variance') {
+            $rules = [
+                'variance_product_type' => ['required', 'in:percentage,fixed'],
+                'variance_product_limit' => ['required', 'numeric', 'min:0'],
+                'variance_shipping_type' => ['required', 'in:percentage,fixed'],
+                'variance_shipping_limit' => ['required', 'numeric', 'min:0'],
+                'variance_auto_approve' => ['nullable', 'boolean'],
+                'variance_profit_guard_enabled' => ['nullable', 'boolean'],
+                'variance_min_profit_margin' => ['required', 'numeric', 'min:0', 'max:100'],
+            ];
         } else {
             return redirect()->back()->with('error', 'القسم غير صالح.');
         }
@@ -205,6 +265,14 @@ class AliExpressKeysController extends Controller
             'warehouse_country' => 'دولة المستودع',
             'warehouse_postcode' => 'الرمز البريدي للمستودع',
             'warehouse_short_address' => 'العنوان الوطني السعودي المختصر',
+
+            'variance_product_type' => 'نوع حد التسامح لسعر المنتج',
+            'variance_product_limit' => 'قيمة حد التسامح لسعر المنتج',
+            'variance_shipping_type' => 'نوع حد التسامح لرسوم الشحن',
+            'variance_shipping_limit' => 'قيمة حد التسامح لرسوم الشحن',
+            'variance_auto_approve' => 'الاعتماد التلقائي لفروق التكلفة المقبولة',
+            'variance_profit_guard_enabled' => 'تفعيل درع حماية هامش الربح',
+            'variance_min_profit_margin' => 'الحد الأدنى لهامش الربح الآمن',
         ]);
 
         $settings = AliExpressSetting::current();
@@ -225,6 +293,15 @@ class AliExpressKeysController extends Controller
         } elseif ($section === 'sync') {
             $settings->sync_enabled = (bool) ($validated['sync_enabled'] ?? false);
             $settings->sync_schedule = $validated['sync_schedule'] ?? 'daily';
+            $settings->save();
+        } elseif ($section === 'cost_variance') {
+            $settings->variance_product_type = $validated['variance_product_type'];
+            $settings->variance_product_limit = $validated['variance_product_limit'];
+            $settings->variance_shipping_type = $validated['variance_shipping_type'];
+            $settings->variance_shipping_limit = $validated['variance_shipping_limit'];
+            $settings->variance_auto_approve = (bool) ($validated['variance_auto_approve'] ?? false);
+            $settings->variance_profit_guard_enabled = (bool) ($validated['variance_profit_guard_enabled'] ?? false);
+            $settings->variance_min_profit_margin = $validated['variance_min_profit_margin'];
             $settings->save();
         } elseif ($section === 'shipping') {
             $newIncludeShipping = (bool) ($validated['include_shipping_in_price'] ?? false);
@@ -307,11 +384,15 @@ class AliExpressKeysController extends Controller
             'sync' => 'إعدادات المزامنة المجدولة',
             'shipping' => 'خيارات الشحن',
             'warehouse' => 'عنوان مستودع هايست وعناوين الشحن',
+            'cost_variance' => 'إعدادات حدود التسامح لفروق التكلفة',
         ];
 
-        session()->flash('success', "تم حفظ {$sectionNames[$section]} بنجاح وتحديث الذاكرة المؤقتة.");
+        $sectionLabel = $sectionNames[$section] ?? $section;
+        session()->flash('success', "تم حفظ {$sectionLabel} بنجاح وتحديث الذاكرة المؤقتة.");
 
-        return redirect()->to(route('admin.dropshipping.keys.index').'#'.$section);
+        $hashSection = ($section === 'cost_variance') ? 'cost-variance' : $section;
+
+        return redirect()->to(route('admin.dropshipping.keys.index').'#'.$hashSection);
     }
 
     /**

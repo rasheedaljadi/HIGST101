@@ -1228,10 +1228,21 @@ class AliExpressProductImporter
             $aeImport = AliExpressProductImport::where('product_id', $product->id)
                 ->orWhere('aliexpress_product_id', (string) $dto->aliexpressProductId)
                 ->first();
-            if ($aeImport && $aeImport->base_shipping_cost !== null) {
-                $isChoice = $aeImport->isChoice();
+
+            $baseShipping = $aeImport?->base_shipping_cost;
+            $isChoice = $aeImport ? $aeImport->isChoice() : false;
+
+            if ($aeImport === null || $baseShipping === null) {
+                $shippingData = $this->resolveShipping($dto);
+                if ($shippingData) {
+                    $baseShipping = $shippingData['cost'] ?? null;
+                    $isChoice = (bool) ($shippingData['is_choice'] ?? false);
+                }
+            }
+
+            if ($baseShipping !== null) {
                 if (! ($settings->exclude_choice_from_shipping_price && $isChoice)) {
-                    $shippingCost = (float) $aeImport->base_shipping_cost;
+                    $shippingCost = (float) $baseShipping;
                 }
             }
         }

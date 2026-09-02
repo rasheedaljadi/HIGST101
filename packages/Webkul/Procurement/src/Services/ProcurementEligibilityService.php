@@ -5,6 +5,7 @@ namespace Webkul\Procurement\Services;
 use App\Models\AliExpressProductImport;
 use App\Models\ExternalVariantProjection;
 use App\Models\HigestSourceOffer;
+use Illuminate\Support\Facades\DB;
 use Webkul\Product\Models\ProductProxy;
 use Webkul\Sales\Contracts\Order;
 use Webkul\Sales\Contracts\OrderItem;
@@ -122,13 +123,42 @@ class ProcurementEligibilityService
 
             // Fallback: Resolve directly from import payload snapshot variants if projection is missing
             if (empty($externalSkuId) && ! empty($payload['variants'])) {
-                $variantSku = (string) ($effectiveVariantProduct?->sku ?? '');
-                // Try matching by option label or variant SKU index
+                $itemAttributes = [];
+                if (! empty($item->additional['attributes']) && is_array($item->additional['attributes'])) {
+                    foreach ($item->additional['attributes'] as $attr) {
+                        if (! empty($attr['option_label'])) {
+                            $itemAttributes[] = (string) $attr['option_label'];
+                        }
+                    }
+                }
+
+                if (empty($itemAttributes) && $effectiveVariantProduct) {
+                    $itemAttributes = DB::table('product_attribute_values')
+                        ->join('attribute_options', 'product_attribute_values.integer_value', '=', 'attribute_options.id')
+                        ->join('attribute_option_translations', 'attribute_options.id', '=', 'attribute_option_translations.attribute_option_id')
+                        ->where('product_attribute_values.product_id', $effectiveVariantId)
+                        ->pluck('attribute_option_translations.label')
+                        ->toArray();
+                }
+
                 foreach ($payload['variants'] as $idx => $v) {
                     $vSkuId = (string) ($v['sku_id'] ?? '');
                     if (! empty($vSkuId)) {
-                        // Check if variant SKU contains option ids or index
-                        if (str_contains($variantSku, (string) ($idx + 1)) || ($effectiveVariantProduct && (float) $v['price'] === (float) $effectiveVariantProduct->cost)) {
+                        $opts = array_values($v['options_by_axis'] ?? []);
+                        foreach ($opts as $opt) {
+                            if (in_array((string) $opt, $itemAttributes, true)) {
+                                $externalSkuId = $vSkuId;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+
+                if (empty($externalSkuId)) {
+                    $variantSku = (string) ($effectiveVariantProduct?->sku ?? '');
+                    foreach ($payload['variants'] as $idx => $v) {
+                        $vSkuId = (string) ($v['sku_id'] ?? '');
+                        if (! empty($vSkuId) && (str_contains($variantSku, (string) ($idx + 1)) || ($effectiveVariantProduct && (float) $v['price'] === (float) $effectiveVariantProduct->cost))) {
                             $externalSkuId = $vSkuId;
                             break;
                         }

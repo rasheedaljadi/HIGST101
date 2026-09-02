@@ -2,6 +2,7 @@
 
 namespace Webkul\Procurement\Services;
 
+use App\Models\AliExpressSetting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -9,6 +10,7 @@ use Webkul\Procurement\Contracts\AliExpressOrderGateway;
 use Webkul\Procurement\Models\ExternalPlatformOrder;
 use Webkul\Procurement\Models\ProcurementAuditLog;
 use Webkul\Procurement\Models\ProcurementBatch;
+use Webkul\Procurement\Models\ProcurementCostSnapshot;
 use Webkul\Procurement\Models\ProcurementDemand;
 use Webkul\Procurement\Models\ProcurementDemandAllocation;
 use Webkul\Procurement\Models\SupplierPurchaseOrder;
@@ -150,7 +152,69 @@ class AliExpressPollingService
                     ]);
                 }
 
-                if (abs($costVariance) > 0.001) {
+                $expectedTotal = (float) $spo->expected_total;
+                $costVariance = round($actualTotal - $expectedTotal, 4);
+
+                $aeSetting = AliExpressSetting::current();
+                $autoApprove = (bool) ($aeSetting->variance_auto_approve ?? true);
+                $profitGuardEnabled = (bool) ($aeSetting->variance_profit_guard_enabled ?? true);
+                $minProfitMargin = (float) ($aeSetting->variance_min_profit_margin ?? 5.0);
+
+                // Calculate allowed threshold based on settings
+                $shippingLimitType = $aeSetting->variance_shipping_type ?? 'percentage';
+                $shippingLimitValue = (float) ($aeSetting->variance_shipping_limit ?? 15.0);
+                $productLimitType = $aeSetting->variance_product_type ?? 'percentage';
+                $productLimitValue = (float) ($aeSetting->variance_product_limit ?? 10.0);
+
+                $isWithinTolerance = false;
+                if ($costVariance <= 0.001) {
+                    $isWithinTolerance = true;
+                } else {
+                    $maxAllowedDelta = 0.0;
+                    if ($shippingLimitType === 'fixed' || $productLimitType === 'fixed') {
+                        $maxAllowedDelta = max(
+                            $shippingLimitType === 'fixed' ? $shippingLimitValue : 0,
+                            $productLimitType === 'fixed' ? $productLimitValue : 0
+                        );
+                    }
+                    if ($expectedTotal > 0) {
+                        $maxPercent = max(
+                            $shippingLimitType === 'percentage' ? $shippingLimitValue : 0,
+                            $productLimitType === 'percentage' ? $productLimitValue : 0
+                        );
+                        $percentDelta = ($expectedTotal * $maxPercent) / 100.0;
+                        $maxAllowedDelta = max($maxAllowedDelta, $percentDelta);
+                    }
+
+                    $isWithinTolerance = ($costVariance <= $maxAllowedDelta);
+                }
+
+                // Check profit margin safe guard if applicable
+                $isProfitProtected = false;
+                if (! $isWithinTolerance && $profitGuardEnabled && $actualTotal > 0) {
+                    $spo->load('items.allocations.procurementDemand');
+                    $customerSellingRevenue = 0.0;
+                    foreach ($spo->items as $spoItem) {
+                        foreach ($spoItem->allocations as $alloc) {
+                            $orderItem = DB::table('order_items')
+                                ->where('id', $alloc->procurementDemand->order_item_id ?? 0)
+                                ->first();
+                            if ($orderItem) {
+                                $customerSellingRevenue += ((float) $orderItem->price * (int) $alloc->qty_allocated);
+                            }
+                        }
+                    }
+                    if ($customerSellingRevenue > 0) {
+                        $effectiveProfitMargin = (($customerSellingRevenue - $actualTotal) / $customerSellingRevenue) * 100;
+                        if ($effectiveProfitMargin >= $minProfitMargin) {
+                            $isProfitProtected = true;
+                        }
+                    }
+                }
+
+                $shouldAutoPass = $autoApprove && ($isWithinTolerance || $isProfitProtected);
+
+                if (! $shouldAutoPass && abs($costVariance) > 0.001) {
                     $spo->update([
                         'actual_total' => $actualTotal,
                         'cost_variance_amount' => $costVariance,
@@ -177,13 +241,14 @@ class AliExpressPollingService
                             'expected_total' => $spo->expected_total,
                             'actual_total' => $actualTotal,
                             'variance' => $costVariance,
+                            'reason' => 'Exceeded tolerance limit and breached minimum profit safeguard',
                         ],
                         'correlation_id' => "spo-{$spo->id}-variance",
                     ]);
                 } else {
                     $spo->update([
                         'actual_total' => $actualTotal,
-                        'cost_variance_amount' => 0.0000,
+                        'cost_variance_amount' => $costVariance,
                         'state' => SupplierPurchaseOrder::STATE_SUPPLIER_PROCESSING,
                         'payment_state' => 'paid_externally',
                         'external_sync_state' => 'supplier_processing',
@@ -193,6 +258,24 @@ class AliExpressPollingService
                         $spo->batch->update([
                             'state' => ProcurementBatch::STATE_SUPPLIER_PROCESSING,
                             'actual_total_cost' => $actualTotal,
+                            'cost_variance_amount' => $costVariance,
+                        ]);
+                    }
+
+                    if (abs($costVariance) > 0.001) {
+                        ProcurementAuditLog::create([
+                            'auditable_type' => SupplierPurchaseOrder::class,
+                            'auditable_id' => $spo->id,
+                            'action' => $isWithinTolerance ? 'cost_variance_auto_approved_within_tolerance' : 'cost_variance_auto_approved_by_profit_guard',
+                            'old_state' => $spo->getOriginal('state'),
+                            'new_state' => SupplierPurchaseOrder::STATE_SUPPLIER_PROCESSING,
+                            'details' => [
+                                'expected_total' => $expectedTotal,
+                                'actual_total' => $actualTotal,
+                                'variance' => $costVariance,
+                                'reason' => $isWithinTolerance ? 'Within configured variance tolerance' : 'Protected by profit margin safe-guard',
+                            ],
+                            'correlation_id' => "spo-{$spo->id}-auto-variance",
                         ]);
                     }
                 }
@@ -397,8 +480,8 @@ class AliExpressPollingService
 
         return match ($rawStatus) {
             'PLACE_ORDER_SUCCESS', 'WAIT_BUYER_PAY' => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
-            'WAIT_SELLER_SEND_GOODS', 'PROCESSING', 'PAYMENT_CONFIRMED' => ExternalPlatformOrder::STATUS_PROCESSING,
-            'SELLER_SEND_GOODS', 'SHIPPED', 'WAIT_RECEIVE' => ExternalPlatformOrder::STATUS_SHIPPED,
+            'RISK_CONTROL', 'WAIT_SELLER_SEND_GOODS', 'PROCESSING', 'PAYMENT_CONFIRMED' => ExternalPlatformOrder::STATUS_PROCESSING,
+            'SELLER_SEND_GOODS', 'SHIPPED', 'WAIT_RECEIVE', 'WAIT_BUYER_ACCEPT_GOODS', 'SELLER_SEND_PART_GOODS' => ExternalPlatformOrder::STATUS_SHIPPED,
             'FINISH', 'COMPLETED' => ExternalPlatformOrder::STATUS_COMPLETED,
             'IN_CANCEL', 'CANCELLED', 'CLOSED' => ExternalPlatformOrder::STATUS_CANCELLED,
             default => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
