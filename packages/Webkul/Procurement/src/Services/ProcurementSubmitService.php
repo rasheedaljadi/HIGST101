@@ -115,20 +115,19 @@ class ProcurementSubmitService
 
                     $liveCost = $this->fetchLiveSkuCost($spo, $item);
                     if ($liveCost !== null && $liveCost > 0) {
-                        $isExceeded = false;
-                        $variancePercent = 0.0;
-                        if ($varType === 'fixed') {
-                            $varianceDelta = abs($liveCost - $expectedCost);
-                            $isExceeded = $varianceDelta > $varLimit;
+                        // Only flag cost variance if the supplier INCREASES the price above threshold.
+                        // If the price decreased, it is savings/profit for the store!
+                        if ($liveCost > $expectedCost) {
+                            $varianceDelta = $liveCost - $expectedCost;
                             $variancePercent = ($varianceDelta / $expectedCost) * 100;
-                        } else {
-                            $variancePercent = abs(($liveCost - $expectedCost) / $expectedCost) * 100;
-                            $isExceeded = $variancePercent > $varLimit;
-                        }
+                            $isExceeded = $varType === 'fixed' ? ($varianceDelta > $varLimit) : ($variancePercent > $varLimit);
 
-                        if ($isExceeded) {
-                            $limitDisplay = $varType === 'fixed' ? "\${$varLimit}" : "{$varLimit}%";
-                            $preflightErrors[] = "أمر المورد [{$storeName} - {$spo->purchase_order_number}]: تغير سعر الصنف (SKU: {$item->supplier_sku_id}) تجاوز حد التسامح المسموح ({$limitDisplay}). المتوقع: \${$expectedCost}، الحالي لدى المورد: \${$liveCost}.";
+                            if ($isExceeded && $spo->state !== SupplierPurchaseOrder::STATE_READY_TO_SUBMIT) {
+                                $limitDisplay = $varType === 'fixed' ? "\${$varLimit}" : "{$varLimit}%";
+                                $preflightErrors[] = "أمر المورد [{$storeName} - {$spo->purchase_order_number}]: ارتفاع سعر الصنف (SKU: {$item->supplier_sku_id}) تجاوز حد التسامح المسموح ({$limitDisplay}). المتوقع: \${$expectedCost}، الحالي لدى المورد: \${$liveCost}.";
+                            }
+                        } elseif ($liveCost < $expectedCost) {
+                            $item->update(['expected_unit_cost' => $liveCost]);
                         }
                     }
                 }
@@ -278,54 +277,58 @@ class ProcurementSubmitService
 
                 $liveCost = $this->fetchLiveSkuCost($spo, $item);
                 if ($liveCost !== null && $liveCost > 0) {
-                    $isExceeded = false;
-                    $variancePercent = 0.0;
-                    if ($varType === 'fixed') {
-                        $varianceDelta = abs($liveCost - $expectedCost);
-                        $isExceeded = $varianceDelta > $varLimit;
+                    if ($liveCost > $expectedCost) {
+                        $varianceDelta = $liveCost - $expectedCost;
                         $variancePercent = ($varianceDelta / $expectedCost) * 100;
-                    } else {
-                        $variancePercent = abs(($liveCost - $expectedCost) / $expectedCost) * 100;
-                        $isExceeded = $variancePercent > $varLimit;
-                    }
+                        $isExceeded = $varType === 'fixed' ? ($varianceDelta > $varLimit) : ($variancePercent > $varLimit);
 
-                    if ($isExceeded) {
-                        $varianceAmount = round($liveCost - $expectedCost, 4);
-                        DB::transaction(function () use ($spo, $varianceAmount, $actorId, $item, $expectedCost, $liveCost, $variancePercent, $varLimit, $varType) {
-                            $spo->update([
-                                'state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
-                                'cost_variance_amount' => $varianceAmount,
-                            ]);
+                        // If the order was already approved by admin, do not re-halt on already-approved price
+                        $alreadyApproved = in_array($spo->state, [
+                            SupplierPurchaseOrder::STATE_READY_TO_SUBMIT,
+                            SupplierPurchaseOrder::STATE_SUBMITTED,
+                        ], true);
 
-                            if ($spo->batch_id) {
-                                DB::table('procurement_batches')->where('id', $spo->batch_id)->update(['state' => ProcurementBatch::STATE_EXCEPTION]);
-                            }
+                        if ($isExceeded && ! $alreadyApproved) {
+                            $varianceAmount = round($varianceDelta, 4);
+                            DB::transaction(function () use ($spo, $varianceAmount, $actorId, $item, $expectedCost, $liveCost, $variancePercent, $varLimit, $varType) {
+                                $spo->update([
+                                    'state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                                    'cost_variance_amount' => $varianceAmount,
+                                ]);
 
-                            ProcurementAuditLog::create([
-                                'auditable_type' => SupplierPurchaseOrder::class,
-                                'auditable_id' => $spo->id,
-                                'action' => 'cost_variance_guard_triggered',
-                                'actor_id' => $actorId,
-                                'actor_type' => 'admin',
-                                'old_state' => $spo->getOriginal('state') ?? SupplierPurchaseOrder::STATE_DRAFT,
-                                'new_state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
-                                'details' => [
-                                    'item_id' => $item->id,
-                                    'supplier_sku_id' => $item->supplier_sku_id,
-                                    'expected_unit_cost' => $expectedCost,
-                                    'live_unit_cost' => $liveCost,
-                                    'variance_percent' => round($variancePercent, 2),
-                                    'threshold_limit' => $varLimit,
-                                    'threshold_type' => $varType,
-                                ],
-                                'correlation_id' => "spo-{$spo->id}-cost-guard",
-                            ]);
-                        });
+                                if ($spo->batch_id) {
+                                    DB::table('procurement_batches')->where('id', $spo->batch_id)->update(['state' => ProcurementBatch::STATE_EXCEPTION]);
+                                }
 
-                        $limitDisplay = $varType === 'fixed' ? "\${$varLimit}" : "{$varLimit}%";
-                        throw new DomainException(
-                            "تم تحويل أمر الشراء {$spo->purchase_order_number} إلى مراجعة فروقات التكلفة: تغير السعر للصنف (SKU: {$item->supplier_sku_id}) تجاوز الحد المسموح ({$limitDisplay}). التكلفة المتوقعة: \${$expectedCost}، التكلفة الحالية لدى المورد: \${$liveCost}. يرجى مراجعته وقبوله أو رفضه من صفحة (فروقات التكلفة)."
-                        );
+                                ProcurementAuditLog::create([
+                                    'auditable_type' => SupplierPurchaseOrder::class,
+                                    'auditable_id' => $spo->id,
+                                    'action' => 'cost_variance_guard_triggered',
+                                    'actor_id' => $actorId,
+                                    'actor_type' => 'admin',
+                                    'old_state' => $spo->getOriginal('state') ?? SupplierPurchaseOrder::STATE_DRAFT,
+                                    'new_state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                                    'details' => [
+                                        'item_id' => $item->id,
+                                        'supplier_sku_id' => $item->supplier_sku_id,
+                                        'expected_unit_cost' => $expectedCost,
+                                        'live_unit_cost' => $liveCost,
+                                        'variance_percent' => round($variancePercent, 2),
+                                        'threshold_limit' => $varLimit,
+                                        'threshold_type' => $varType,
+                                    ],
+                                    'correlation_id' => "spo-{$spo->id}-cost-guard",
+                                ]);
+                            });
+
+                            $limitDisplay = $varType === 'fixed' ? "\${$varLimit}" : "{$varLimit}%";
+                            throw new DomainException(
+                                "تم تحويل أمر الشراء {$spo->purchase_order_number} إلى مراجعة فروقات التكلفة: ارتفاع السعر للصنف (SKU: {$item->supplier_sku_id}) تجاوز الحد المسموح ({$limitDisplay}). المتوقع: \${$expectedCost}، الحالي لدى المورد: \${$liveCost}. يرجى مراجعته وقبوله أو رفضه من صفحة (فروقات التكلفة)."
+                            );
+                        }
+                    } elseif ($liveCost < $expectedCost) {
+                        // Profit/Discount: quietly update expected_unit_cost to the lower price
+                        $item->update(['expected_unit_cost' => $liveCost]);
                     }
                 }
             }

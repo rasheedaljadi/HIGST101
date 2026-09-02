@@ -496,54 +496,51 @@ class ProcurementBatchService
 
                     $liveCost = $submitService->fetchLiveSkuCost($spo, $item);
                     if ($liveCost !== null && $liveCost > 0) {
-                        $isExceeded = false;
-                        $variancePercent = 0.0;
-                        if ($varType === 'fixed') {
-                            $varianceDelta = abs($liveCost - $expectedCost);
-                            $isExceeded = $varianceDelta > $varLimit;
+                        if ($liveCost > $expectedCost) {
+                            $varianceDelta = $liveCost - $expectedCost;
                             $variancePercent = ($varianceDelta / $expectedCost) * 100;
-                        } else {
-                            $variancePercent = abs(($liveCost - $expectedCost) / $expectedCost) * 100;
-                            $isExceeded = $variancePercent > $varLimit;
-                        }
+                            $isExceeded = $varType === 'fixed' ? ($varianceDelta > $varLimit) : ($variancePercent > $varLimit);
 
-                        if ($isExceeded) {
-                            $varianceAmount = round($liveCost - $expectedCost, 4);
+                            if ($isExceeded) {
+                                $varianceAmount = round($varianceDelta, 4);
 
-                            // Persist cost variance state transition to DB
-                            $spo->update([
-                                'state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
-                                'cost_variance_amount' => $varianceAmount,
-                            ]);
+                                // Persist cost variance state transition to DB
+                                $spo->update([
+                                    'state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                                    'cost_variance_amount' => $varianceAmount,
+                                ]);
 
-                            $batch->update([
-                                'state' => ProcurementBatch::STATE_EXCEPTION,
-                            ]);
+                                $batch->update([
+                                    'state' => ProcurementBatch::STATE_EXCEPTION,
+                                ]);
 
-                            ProcurementAuditLog::create([
-                                'auditable_type' => SupplierPurchaseOrder::class,
-                                'auditable_id' => $spo->id,
-                                'action' => 'cost_variance_guard_triggered_at_approval',
-                                'actor_id' => $actorId,
-                                'actor_type' => 'admin',
-                                'old_state' => $spo->getOriginal('state') ?? SupplierPurchaseOrder::STATE_DRAFT,
-                                'new_state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
-                                'details' => [
-                                    'item_id' => $item->id,
-                                    'supplier_sku_id' => $item->supplier_sku_id,
-                                    'expected_unit_cost' => $expectedCost,
-                                    'live_unit_cost' => $liveCost,
-                                    'variance_percent' => round($variancePercent, 2),
-                                    'threshold_limit' => $varLimit,
-                                    'threshold_type' => $varType,
-                                ],
-                                'correlation_id' => "spo-{$spo->id}-approval-cost-guard",
-                            ]);
+                                ProcurementAuditLog::create([
+                                    'auditable_type' => SupplierPurchaseOrder::class,
+                                    'auditable_id' => $spo->id,
+                                    'action' => 'cost_variance_guard_triggered_at_approval',
+                                    'actor_id' => $actorId,
+                                    'actor_type' => 'admin',
+                                    'old_state' => $spo->getOriginal('state') ?? SupplierPurchaseOrder::STATE_DRAFT,
+                                    'new_state' => SupplierPurchaseOrder::STATE_COST_VARIANCE_REVIEW,
+                                    'details' => [
+                                        'item_id' => $item->id,
+                                        'supplier_sku_id' => $item->supplier_sku_id,
+                                        'expected_unit_cost' => $expectedCost,
+                                        'live_unit_cost' => $liveCost,
+                                        'variance_percent' => round($variancePercent, 2),
+                                        'threshold_limit' => $varLimit,
+                                        'threshold_type' => $varType,
+                                    ],
+                                    'correlation_id' => "spo-{$spo->id}-approval-cost-guard",
+                                ]);
 
-                            $limitDisplay = $varType === 'fixed' ? "\${$varLimit}" : "{$varLimit}%";
-                            throw new DomainException(
-                                "لا يمكن اعتماد الدفعة: تجاوز تغير السعر للصنف (SKU: {$item->supplier_sku_id}) في أمر الشراء {$spo->purchase_order_number} الحد المسموح ({$limitDisplay}). التكلفة المتوقعة: \${$expectedCost}، التكلفة الحالية لدى المورد: \${$liveCost}. تم تحويله إلى قائمة (فروقات التكلفة) لمراجعته."
-                            );
+                                $limitDisplay = $varType === 'fixed' ? "\${$varLimit}" : "{$varLimit}%";
+                                throw new DomainException(
+                                    "لا يمكن اعتماد الدفعة: تجاوز ارتفاع السعر للصنف (SKU: {$item->supplier_sku_id}) في أمر الشراء {$spo->purchase_order_number} الحد المسموح ({$limitDisplay}). المتوقع: \${$expectedCost}، الحالي لدى المورد: \${$liveCost}. تم تحويله إلى قائمة (فروقات التكلفة) لمراجعته."
+                                );
+                            }
+                        } elseif ($liveCost < $expectedCost) {
+                            $item->update(['expected_unit_cost' => $liveCost]);
                         }
                     }
                 }

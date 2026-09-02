@@ -33,8 +33,14 @@ class ProcurementVarianceApprovalService
 
             // Update items unit costs to reflect the approved live cost
             $spo->load('items');
+            /** @var ProcurementSubmitService $submitService */
+            $submitService = app(ProcurementSubmitService::class);
+
             foreach ($spo->items as $item) {
-                if ($item->qty_ordered > 0 && $varianceAmount > 0) {
+                $liveCost = $submitService->fetchLiveSkuCost($spo, $item);
+                if ($liveCost !== null && $liveCost > 0) {
+                    $item->update(['expected_unit_cost' => $liveCost]);
+                } elseif ($item->qty_ordered > 0 && $varianceAmount != 0) {
                     $itemVariancePerUnit = $varianceAmount / $item->qty_ordered;
                     $item->update([
                         'expected_unit_cost' => (float) $item->expected_unit_cost + $itemVariancePerUnit,
