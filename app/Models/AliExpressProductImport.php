@@ -116,4 +116,12 @@ class AliExpressProductImport extends Model
 
         return false;
     }
+
+    /**
+     * Accessor for is_choice property in Blade templates.
+     */
+    public function getIsChoiceAttribute(): bool
+    {
+        return $this->isChoice();
+    }
 }

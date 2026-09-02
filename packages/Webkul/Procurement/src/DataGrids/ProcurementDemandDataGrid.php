@@ -155,7 +155,16 @@ class ProcurementDemandDataGrid extends DataGrid
                     $attributesHtml = '<div class="flex flex-wrap gap-1 mt-1.5">'.implode('', $attrBadges).'</div>';
                 }
 
-                return '<div class="flex flex-col max-w-[280px]"><span class="font-semibold text-gray-900 dark:text-white text-xs leading-snug line-clamp-2" title="'.e($name).'">'.e($name).'</span>'.$attributesHtml.'</div>';
+                $isChoice = (
+                    stripos($row->shipping_company ?? '', 'selection') !== false ||
+                    stripos($row->shipping_company ?? '', 'choice') !== false
+                );
+
+                $choiceBadge = $isChoice
+                    ? '<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-sm shrink-0" title="منتج Choice - شحن مجاني">Choice</span>'
+                    : '';
+
+                return '<div class="flex flex-col max-w-[280px]"><div class="flex items-start gap-1 flex-wrap"><span class="font-semibold text-gray-900 dark:text-white text-xs leading-snug line-clamp-2" title="'.e($name).'">'.e($name).'</span>'.$choiceBadge.'</div>'.$attributesHtml.'</div>';
             },
         ]);
 

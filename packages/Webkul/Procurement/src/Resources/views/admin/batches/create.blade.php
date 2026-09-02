@@ -111,9 +111,10 @@
                                     $isOutOfStock = ($skuStock !== null && $skuStock <= 0);
 
                                     $isChoice = $import && (
-                                        $import->is_choice 
+                                        $import->isChoice() 
+                                        || stripos((string) $import->shipping_company, 'selection') !== false 
                                         || stripos((string) $import->shipping_company, 'choice') !== false 
-                                        || (float) $import->base_shipping_cost == 0
+                                        || (float) ($import->base_shipping_cost ?? 0) == 0
                                     );
                                     $shippingFee = ($isChoice || ! $import) ? 0.0 : (float) ($import->base_shipping_cost ?? 0.0);
                                     $lineGrandTotal = $itemsCost + $shippingFee;
@@ -126,22 +127,20 @@
                                             value="{{ $demand->id }}" 
                                             data-grand-total="{{ $lineGrandTotal }}"
                                             {{ $isOutOfStock ? 'disabled' : '' }}
-                                            class="demand-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 {{ $isOutOfStock ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer' }}" 
+                                            class="demand-checkbox rounded border-gray-300 text-amber-600 focus:ring-amber-500 {{ $isOutOfStock ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' }}" 
                                             onchange="updateSelectionSummary()"
                                             title="{{ $isOutOfStock ? 'لا يمكن تحديد هذا الصنف لنفاد المخزون لدى المورد' : '' }}"
                                         >
                                     </td>
-                                    <td class="p-4 font-semibold text-gray-900 dark:text-gray-100">#{{ $demand->id }}</td>
-                                    <td class="p-4">
-                                        <span class="font-medium text-blue-600">#{{ $demand->order?->increment_id ?: $demand->order_id }}</span>
-                                    </td>
+                                    <td class="p-4 font-mono text-xs font-bold text-gray-900 dark:text-white">#{{ $demand->id }}</td>
+                                    <td class="p-4 font-mono text-xs text-blue-600 dark:text-blue-400">#{{ $demand->order?->increment_id ?: $demand->order_id }}</td>
                                     <td class="p-4">
                                         @php
-                                            $pName = $demand->orderItem?->name ?: $demand->product?->name ?: 'منتج بدون اسم';
-                                            $additional = $demand->orderItem?->additional;
+                                            $pName = $demand->orderItem?->name ?: ($demand->product?->name ?: 'منتج بدون اسم');
+                                            $itemAdditional = $demand->orderItem?->additional;
                                             $attrBadges = [];
-                                            if (! empty($additional['attributes']) && is_array($additional['attributes'])) {
-                                                foreach ($additional['attributes'] as $attr) {
+                                            if (! empty($itemAdditional['attributes']) && is_array($itemAdditional['attributes'])) {
+                                                foreach ($itemAdditional['attributes'] as $attr) {
                                                     $attrName = $attr['attribute_name'] ?? '';
                                                     $optLabel = $attr['option_label'] ?? '';
                                                     if ($optLabel) {
@@ -154,9 +153,14 @@
                                             }
                                         @endphp
                                         <div class="flex flex-col max-w-[260px]">
-                                            <span class="font-semibold text-gray-900 dark:text-white text-xs leading-snug line-clamp-2" title="{{ $pName }}">
-                                                {{ $pName }}
-                                            </span>
+                                            <div class="flex items-start gap-1 flex-wrap">
+                                                <span class="font-semibold text-gray-900 dark:text-white text-xs leading-snug line-clamp-2" title="{{ $pName }}">
+                                                    {{ $pName }}
+                                                </span>
+                                                @if ($isChoice)
+                                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-sm" title="منتج Choice - شحن مجاني">Choice</span>
+                                                @endif
+                                            </div>
                                             @if (! empty($attrBadges))
                                                 <div class="flex flex-wrap gap-1 mt-1">
                                                     @foreach ($attrBadges as $b)
