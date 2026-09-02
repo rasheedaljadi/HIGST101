@@ -230,22 +230,26 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
         $resolvedSkuAttr = $skuAttrMap[$skuId] ?? '';
         $resolvedFreightSkuId = $skuIdMap[$skuId] ?? $skuId;
 
-        // Check if selected SKU is strictly out of stock on AliExpress
-        if (isset($skuStockMap[$skuId]) && $skuStockMap[$skuId] !== null && $skuStockMap[$skuId] < $qty) {
-            return new AliExpressOrderPreflight(
-                isSuccess: false,
-                isDeliverableToDestination: false,
-                destinationCountry: $country,
-                resolvedSkuAttr: $resolvedSkuAttr,
-                errorCode: 'INVENTORY_HOLD_ERROR',
-                errorMessage: self::mapAliExpressErrorMessage('INVENTORY_HOLD_ERROR', "المخزون غير متوفر لهذا الصنف لدى المورد في علي إكسبرس (نفد المخزون - الكمية المتاحة: {$skuStockMap[$skuId]})"),
-                rawDetails: [
-                    'available_stock' => $skuStockMap[$skuId],
-                    'required_qty' => $qty,
-                    'sku_attrs' => $skuAttrMap,
-                    'resolved_sku_ids' => $skuIdMap,
-                ]
-            );
+        // Check if ANY selected SKU in the draft is strictly out of stock on AliExpress
+        foreach ($items as $draftItem) {
+            $sId = (string) ($draftItem['supplier_sku_id'] ?? '');
+            $itemQty = (int) ($draftItem['qty'] ?? 1);
+            if (isset($skuStockMap[$sId]) && $skuStockMap[$sId] !== null && $skuStockMap[$sId] < $itemQty) {
+                return new AliExpressOrderPreflight(
+                    isSuccess: false,
+                    isDeliverableToDestination: false,
+                    destinationCountry: $country,
+                    resolvedSkuAttr: $skuAttrMap[$sId] ?? '',
+                    errorCode: 'INVENTORY_HOLD_ERROR',
+                    errorMessage: self::mapAliExpressErrorMessage('INVENTORY_HOLD_ERROR', "المخزون غير متوفر للصنف ({$sId}) لدى المورد في علي إكسبرس (نفد المخزون - الكمية المتاحة: {$skuStockMap[$sId]}، المطلوبة: {$itemQty})"),
+                    rawDetails: [
+                        'available_stock' => $skuStockMap[$sId],
+                        'required_qty' => $itemQty,
+                        'sku_attrs' => $skuAttrMap,
+                        'resolved_sku_ids' => $skuIdMap,
+                    ]
+                );
+            }
         }
 
         // 2. Query live freight options specifically for selected SKU (or use pre-selected service)

@@ -312,10 +312,27 @@ class ProcurementV2RebuildFullWorkflowTest extends TestCase
         $demands = $this->demandService->processOrderDemands($order);
         $demandIds = collect($demands)->pluck('id')->toArray();
 
+        // 1. Default Consolidated Mode: Multi-supplier batch creates exactly 1 unified SPO
+        config(['procurement.batching.consolidate_orders' => true]);
         $batch = $this->batchService->createBatch($demandIds, $this->adminUser->id);
 
-        $this->assertEquals(3, $batch->supplierOrders->count());
-        $storesInBatch = $batch->supplierOrders->pluck('supplier_store_id')->toArray();
+        $this->assertEquals(1, $batch->supplierOrders->count());
+        $spo = $batch->supplierOrders->first();
+        $this->assertEquals('consolidated', $spo->supplier_store_id);
+        $this->assertEquals(3, $spo->items->count());
+
+        // 2. Legacy Store-Split Mode: when consolidate_orders = false, splits by store
+        config(['procurement.batching.consolidate_orders' => false]);
+        $order2 = $this->createTestOrder('processing', 'cashondelivery');
+        $this->createTestOrderItem($order2, $p1, 1, 20.0);
+        $this->createTestOrderItem($order2, $p2, 1, 30.0);
+        $this->createTestOrderItem($order2, $p3, 1, 40.0);
+        $demands2 = $this->demandService->processOrderDemands($order2);
+        $demandIds2 = collect($demands2)->pluck('id')->toArray();
+
+        $batch2 = $this->batchService->createBatch($demandIds2, $this->adminUser->id);
+        $this->assertEquals(3, $batch2->supplierOrders->count());
+        $storesInBatch = $batch2->supplierOrders->pluck('supplier_store_id')->toArray();
         $this->assertContains('store_alpha', $storesInBatch);
         $this->assertContains('store_beta', $storesInBatch);
         $this->assertContains('store_gamma', $storesInBatch);

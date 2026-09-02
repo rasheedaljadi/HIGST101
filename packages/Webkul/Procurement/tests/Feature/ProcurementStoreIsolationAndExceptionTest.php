@@ -133,15 +133,27 @@ class ProcurementStoreIsolationAndExceptionTest extends TestCase
         $this->assertEquals(ProcurementDemand::STATE_OPEN_FOR_BATCHING, $demandStoreA2->state);
         $this->assertEquals(ProcurementDemand::STATE_OPEN_FOR_BATCHING, $demandStoreB1->state);
 
-        // Batch all 3 demands
-        $batch = $this->batchService->createBatch(
+        // 1. In consolidated mode: exactly 1 SPO created with consolidated store id
+        config(['procurement.batching.consolidate_orders' => true]);
+        $batchConsolidated = $this->batchService->createBatch(
             [$demandStoreA1->id, $demandStoreA2->id, $demandStoreB1->id],
             $this->adminUser->id
         );
+        $this->assertEquals(1, $batchConsolidated->supplierOrders->count());
+        $this->assertEquals('consolidated', $batchConsolidated->supplierOrders->first()->supplier_store_id);
 
-        // Should split into exactly 2 SupplierPurchaseOrders (one for store_1001, one for store_1002)
+        // 2. In split mode (consolidate_orders = false): splits into exactly 2 SupplierPurchaseOrders
+        config(['procurement.batching.consolidate_orders' => false]);
+        [$prodA1_2, $ordA1_2, $demandStoreA1_2] = $this->createOrderWithItem('SKU-1001-A2', 'store_1001', 'Store Alpha');
+        [$prodA2_2, $ordA2_2, $demandStoreA2_2] = $this->createOrderWithItem('SKU-1001-B2', 'store_1001', 'Store Alpha');
+        [$prodB1_2, $ordB1_2, $demandStoreB1_2] = $this->createOrderWithItem('SKU-1002-A2', 'store_1002', 'Store Beta');
+
+        $batch = $this->batchService->createBatch(
+            [$demandStoreA1_2->id, $demandStoreA2_2->id, $demandStoreB1_2->id],
+            $this->adminUser->id
+        );
+
         $this->assertEquals(2, $batch->supplierOrders->count());
-
         $spoStores = $batch->supplierOrders->pluck('supplier_store_id')->toArray();
         $this->assertContains('store_1001', $spoStores);
         $this->assertContains('store_1002', $spoStores);

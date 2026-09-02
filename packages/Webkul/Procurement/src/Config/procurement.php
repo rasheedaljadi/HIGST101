@@ -58,6 +58,7 @@ return [
         'max_items_per_batch' => 500,
         'max_demands_per_batch' => 100,
         'default_currency' => 'USD',
+        'consolidate_orders' => env('PROCUREMENT_CONSOLIDATE_ORDERS', true),
     ],
 
     /**

@@ -127,7 +127,11 @@
         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
             <div class="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white">
-                    {{ trans('procurement::app.batches.split-supplier-pos') }} ({{ $batch->supplierOrders->count() }})
+                    @if ($batch->supplierOrders->count() === 1 && $batch->supplierOrders->first()->supplier_store_id === 'consolidated')
+                        أمر التوريد الموحد للدفعة (Consolidated Purchase Order)
+                    @else
+                        {{ trans('procurement::app.batches.split-supplier-pos') }} ({{ $batch->supplierOrders->count() }})
+                    @endif
                 </h2>
             </div>
 
@@ -212,9 +216,10 @@
                                                 ->first();
 
                                             $isChoice = $import && (
-                                                $import->is_choice 
+                                                $import->isChoice() 
+                                                || stripos((string) $import->shipping_company, 'selection') !== false 
                                                 || stripos((string) $import->shipping_company, 'choice') !== false 
-                                                || (float) $import->base_shipping_cost == 0
+                                                || (float) ($import->base_shipping_cost ?? 0) == 0
                                             );
                                             $shippingFee = ($isChoice || ! $import) ? 0.0 : (float) ($import->base_shipping_cost ?? 0.0);
                                             $itemCost = (float) ($item->qty_ordered * $item->expected_unit_cost);
@@ -222,7 +227,12 @@
                                         @endphp
                                         <tr>
                                             <td class="p-2.5">
-                                                <div class="font-semibold text-gray-900 dark:text-white">{{ $item->product?->name ?: $item->supplier_product_id }}</div>
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <span class="font-semibold text-gray-900 dark:text-white">{{ $item->product?->name ?: $item->supplier_product_id }}</span>
+                                                    @if ($isChoice)
+                                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-sm" title="منتج Choice - شحن مجاني">Choice</span>
+                                                    @endif
+                                                </div>
                                                 <div class="font-mono text-gray-500">{{ $item->supplier_sku_id }}</div>
                                             </td>
                                             <td class="p-2.5 text-center font-bold">{{ $item->qty_ordered }}</td>

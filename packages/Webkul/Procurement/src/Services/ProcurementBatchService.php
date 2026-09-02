@@ -202,24 +202,50 @@ class ProcurementBatchService
                 ];
             }
 
+            $shouldConsolidate = (bool) config('procurement.batching.consolidate_orders', true);
+
+            if ($shouldConsolidate) {
+                // Combine all demands across all suppliers into a single consolidated purchase order
+                $orderGroups = ['consolidated' => []];
+                foreach ($storeGroups as $groupedItems) {
+                    foreach ($groupedItems as $item) {
+                        $orderGroups['consolidated'][] = $item;
+                    }
+                }
+            } else {
+                $orderGroups = $storeGroups;
+            }
+
             $batchTotalExpectedCost = 0.0;
             $storeIndex = 1;
 
-            // Create SupplierPurchaseOrder for each store
-            foreach ($storeGroups as $storeId => $groupedItems) {
+            // Create SupplierPurchaseOrder for each order group
+            foreach ($orderGroups as $groupId => $groupedItems) {
                 $poNumber = 'SPO-'.now()->format('Ymd').'-'.Str::upper(Str::random(6)).'-'.str_pad((string) $storeIndex, 2, '0', STR_PAD_LEFT);
                 $storeIndex++;
 
                 $firstItemDemand = $groupedItems[0]['demand'];
-                $activeFingerprint = hash('sha256', "batch-{$batch->id}-store-{$storeId}-provider-{$firstItemDemand->provider}-curr-USD");
+
+                $uniqueStores = collect($groupedItems)->pluck('demand.supplier_store_id')->filter()->unique();
+                $uniqueStoreNames = collect($groupedItems)->pluck('demand.supplier_store_name')->filter()->unique();
+
+                if ($uniqueStores->count() === 1) {
+                    $resolvedStoreId = (string) $uniqueStores->first();
+                    $resolvedStoreName = (string) ($uniqueStoreNames->first() ?: "Store #{$resolvedStoreId}");
+                } else {
+                    $resolvedStoreId = 'consolidated';
+                    $resolvedStoreName = 'موردين متعددين (AliExpress Consolidated)';
+                }
+
+                $activeFingerprint = hash('sha256', "batch-{$batch->id}-group-{$groupId}-provider-{$firstItemDemand->provider}-curr-USD-".now()->timestamp);
 
                 $supplierPo = SupplierPurchaseOrder::create([
                     'batch_id' => $batch->id,
                     'purchase_order_number' => $poNumber,
                     'provider' => $firstItemDemand->provider ?? 'aliexpress',
                     'provider_account_id' => $firstItemDemand->provider_account_id,
-                    'supplier_store_id' => $storeId,
-                    'supplier_store_name' => $firstItemDemand->supplier_store_name,
+                    'supplier_store_id' => $resolvedStoreId,
+                    'supplier_store_name' => $resolvedStoreName,
                     'currency_code' => 'USD',
                     'destination_signature' => $firstItemDemand->destination_source_code,
                     'state' => SupplierPurchaseOrder::STATE_DRAFT,
