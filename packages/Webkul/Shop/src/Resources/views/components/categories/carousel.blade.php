@@ -29,7 +29,7 @@
                     >
                         <a
                             :href="category.slug"
-                            class="h-[110px] w-[110px] rounded-full bg-zinc-100 max-md:h-20 max-md:w-20 max-sm:h-[60px] max-sm:w-[60px]"
+                            class="h-[110px] w-[110px] rounded-full bg-zinc-100 max-md:h-20 max-md:w-20 max-sm:h-[60px] max-sm:w-[60px] overflow-hidden flex items-center justify-center"
                             :aria-label="category.name"
                         >
                             <x-shop::media.images.lazy
@@ -42,7 +42,8 @@
                                 sizes="(max-width: 640px) 60px, 110px"
                                 width="110"
                                 height="110"
-                                class="w-full rounded-full max-sm:h-[60px] max-sm:w-[60px]"
+                                class="h-full w-full object-cover rounded-full max-sm:h-[60px] max-sm:w-[60px]"
+                                @error="$event.target.src = fallback"
                                 ::alt="category.name"
                             />
                         </a>
