@@ -26,16 +26,16 @@ class CategoryResource extends JsonResource
             'display_mode' => $this->display_mode,
             'description' => $this->description,
             'logo' => $this->when($this->logo_path, fn () => [
-                'small_image_url' => $this->resolveImageUrl('small', $this->logo_path),
-                'medium_image_url' => $this->resolveImageUrl('medium', $this->logo_path),
-                'large_image_url' => $this->resolveImageUrl('large', $this->logo_path),
-                'original_image_url' => $this->resolveImageUrl('original', $this->logo_path),
+                'small_image_url' => $this->resolveImageUrl('small', $this->logo_path, 'logo'),
+                'medium_image_url' => $this->resolveImageUrl('medium', $this->logo_path, 'logo'),
+                'large_image_url' => $this->resolveImageUrl('large', $this->logo_path, 'logo'),
+                'original_image_url' => $this->resolveImageUrl('original', $this->logo_path, 'logo'),
             ]),
             'banner' => $this->when($this->banner_path, fn () => [
-                'small_image_url' => $this->resolveImageUrl('small', $this->banner_path),
-                'medium_image_url' => $this->resolveImageUrl('medium', $this->banner_path),
-                'large_image_url' => $this->resolveImageUrl('large', $this->banner_path),
-                'original_image_url' => $this->resolveImageUrl('original', $this->banner_path),
+                'small_image_url' => $this->resolveImageUrl('small', $this->banner_path, 'banner'),
+                'medium_image_url' => $this->resolveImageUrl('medium', $this->banner_path, 'banner'),
+                'large_image_url' => $this->resolveImageUrl('large', $this->banner_path, 'banner'),
+                'original_image_url' => $this->resolveImageUrl('original', $this->banner_path, 'banner'),
             ]),
             'meta' => [
                 'title' => $this->meta_title,
@@ -50,12 +50,12 @@ class CategoryResource extends JsonResource
     /**
      * Resolve cached image URL or generate cached file on demand, falling back to Storage URL.
      */
-    protected function resolveImageUrl(string $template, string $path): string
+    protected function resolveImageUrl(string $template, string $path, string $type = 'logo'): string
     {
         $cachedPath = public_path('cache/'.$template.'/'.$path);
 
         if (file_exists($cachedPath)) {
-            return url('cache/'.$template.'/'.$path);
+            return url('cache/'.$template.'/'.$path).'?v='.filemtime($cachedPath);
         }
 
         $originalPath = storage_path('app/public/'.$path);
@@ -70,6 +70,17 @@ class CategoryResource extends JsonResource
 
                 if ($template === 'original') {
                     @copy($originalPath, $cachedPath);
+                } elseif ($type === 'logo') {
+                    $sizes = [
+                        'small' => [110, 110],
+                        'medium' => [200, 200],
+                        'large' => [400, 400],
+                    ];
+
+                    $size = $sizes[$template] ?? [200, 200];
+                    $image = image_manager()->read($originalPath);
+                    $image = $image->scaleDown($size[0], $size[1]);
+                    @file_put_contents($cachedPath, (string) $image->encodeByMediaType());
                 } else {
                     $templates = config('imagecache.templates', []);
                     $templateClass = $templates[$template] ?? null;
@@ -90,7 +101,7 @@ class CategoryResource extends JsonResource
                 }
 
                 if (file_exists($cachedPath)) {
-                    return url('cache/'.$template.'/'.$path);
+                    return url('cache/'.$template.'/'.$path).'?v='.filemtime($cachedPath);
                 }
             } catch (\Throwable) {
                 // Ignore and fall through to Storage::url
