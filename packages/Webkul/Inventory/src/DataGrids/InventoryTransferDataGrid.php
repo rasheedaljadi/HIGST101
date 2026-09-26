@@ -110,6 +110,7 @@ class InventoryTransferDataGrid extends DataGrid
                     'partially_received' => 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
                     'received' => 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
                     'discrepancy' => 'bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
+                    'cancelled' => 'bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
                     default => 'bg-gray-100 text-gray-800',
                 };
 

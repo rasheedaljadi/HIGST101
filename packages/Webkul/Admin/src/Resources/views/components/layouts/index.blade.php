@@ -78,7 +78,41 @@
 
     <style>
         {!! core()->getConfigData('general.content.custom_scripts.custom_css') !!}
+
+        /* Force Western Arabic numerals (1234) across the entire admin panel */
+        :root, html, body, input, select, textarea, button, table, td, th, span, div, p {
+            font-feature-settings: "lnum" 1 !important;
+            -webkit-font-feature-settings: "lnum" 1 !important;
+            font-variant-numeric: lining-nums tabular-nums !important;
+        }
+
+        input[type="number"], input[inputmode="decimal"], input[inputmode="numeric"] {
+            direction: ltr;
+            font-feature-settings: "lnum" 1 !important;
+            -webkit-font-feature-settings: "lnum" 1 !important;
+            font-variant-numeric: lining-nums tabular-nums !important;
+        }
     </style>
+
+    <script>
+        /* Global guard: Force all numeric inputs to use en-US to prevent Eastern Arabic (Hindi) digits */
+        (function() {
+            function enforceWesternNumerals() {
+                document.querySelectorAll('input[type="number"], input[inputmode="decimal"], input[inputmode="numeric"]').forEach(function(el) {
+                    if (!el.getAttribute('lang')) {
+                        el.setAttribute('lang', 'en-US');
+                    }
+                });
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', enforceWesternNumerals);
+            } else {
+                enforceWesternNumerals();
+            }
+            const observer = new MutationObserver(enforceWesternNumerals);
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+        })();
+    </script>
 
     {!! view_render_event('bagisto.admin.layout.head.after') !!}
 </head>

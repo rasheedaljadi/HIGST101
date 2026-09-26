@@ -102,7 +102,7 @@
                 </div>
             </a>
 
-            {{-- Returned to Hayest --}}
+            {{-- Returned to HIGHEST --}}
             <a href="{{ route('admin.delivery.assignments.index', ['status' => 'returned_to_hayest']) }}" class="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-r-4 border-r-gray-500 flex items-center justify-between">
                 <div class="flex flex-col">
                     <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">{{ trans('delivery::app.admin.dashboard.returned') }}</span>

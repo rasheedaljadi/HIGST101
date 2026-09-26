@@ -806,7 +806,7 @@ return [
         'index' => [
             'create-administrator' => [
                 'admin' => 'مدير',
-                'bagisto' => 'Hayest',
+                'bagisto' => 'HIGHEST',
                 'confirm-password' => 'تأكيد كلمة المرور',
                 'email' => 'البريد الإلكتروني',
                 'email-address' => 'admin@example.com',
@@ -821,7 +821,7 @@ return [
                 'application-name' => 'اسم التطبيق',
                 'argentine-peso' => 'البيزو الأرجنتيني (ARS)',
                 'australian-dollar' => 'الدولار الأسترالي (AUD)',
-                'bagisto' => 'Hayest',
+                'bagisto' => 'HIGHEST',
                 'bangladeshi-taka' => 'التاكا البنغلاديشي (BDT)',
                 'bahraini-dinar' => 'دينار بحريني (BHD)',
                 'brazilian-real' => 'الريال البرازيلي (BRL)',
@@ -914,25 +914,25 @@ return [
             ],
 
             'installation-processing' => [
-                'bagisto' => 'تثبيت Hayest',
+                'bagisto' => 'تثبيت HIGHEST',
                 'bagisto-info' => 'إنشاء جداول قاعدة البيانات، وقد يستغرق ذلك بضع دقائق',
                 'title' => 'التثبيت',
             ],
 
             'installation-completed' => [
                 'admin-panel' => 'لوحة المشرف',
-                'bagisto-forums' => 'منتديات Hayest',
+                'bagisto-forums' => 'منتديات HIGHEST',
                 'customer-panel' => 'لوحة العميل',
-                'explore-bagisto-extensions' => 'استكشاف امتدادات Hayest',
+                'explore-bagisto-extensions' => 'استكشاف امتدادات HIGHEST',
                 'title' => 'اكتمال التثبيت',
-                'title-info' => 'تم تثبيت Hayest بنجاح على نظامك.',
+                'title-info' => 'تم تثبيت HIGHEST بنجاح على نظامك.',
             ],
 
             'ready-for-installation' => [
                 'create-database-tables' => 'إنشاء جداول قاعدة البيا',
                 'drop-existing-tables' => 'حذف أي جداول موجودة',
                 'install' => 'التثبيت',
-                'install-info' => 'Hayest للتثبيت',
+                'install-info' => 'HIGHEST للتثبيت',
                 'install-info-button' => 'انقر على الزر أدناه ل',
                 'populate-database-tables' => 'ملء جداول قاعدة البيانات',
                 'start-installation' => 'بدء التثبيت',
@@ -944,8 +944,8 @@ return [
                 'locale' => 'اللغة',
                 'main' => 'بداية',
                 'select-locale' => 'اختر اللغة',
-                'title' => 'تثبيت Hayest الخاص بك',
-                'welcome-title' => 'مرحبًا بك في Hayest',
+                'title' => 'تثبيت HIGHEST الخاص بك',
+                'welcome-title' => 'مرحبًا بك في HIGHEST',
             ],
 
             'server-requirements' => [
@@ -973,9 +973,9 @@ return [
 
             'arabic' => 'العربية',
             'back' => 'رجوع',
-            'bagisto' => 'Hayest',
+            'bagisto' => 'HIGHEST',
             'bagisto-info' => 'مشروع مجتمعي من قبل',
-            'bagisto-logo' => 'شعار Hayest',
+            'bagisto-logo' => 'شعار HIGHEST',
             'bengali' => 'البنغالية',
             'catalan' => 'الكاتالونية',
             'chinese' => 'الصينية',
@@ -987,7 +987,7 @@ return [
             'hebrew' => 'العبرية',
             'hindi' => 'الهندية',
             'indonesian' => 'الإندونيسية',
-            'installation-description' => 'عادة ما تتضمن عملية تثبيت Hayest عدة خطوات. إليك نظرة عامة عامة على عملية التثبيت لBagisto',
+            'installation-description' => 'عادة ما تتضمن عملية تثبيت HIGHEST عدة خطوات. إليك نظرة عامة عامة على عملية التثبيت لBagisto',
             'installation-info' => 'نحن سعداء برؤيتك هنا!',
             'installation-title' => 'مرحبًا بك في التثبيت',
             'italian' => 'الإيطالية',
@@ -999,7 +999,7 @@ return [
             'russian' => 'الروسية',
             'sinhala' => 'السنهالية',
             'spanish' => 'الإسبانية',
-            'title' => 'مثبت Hayest',
+            'title' => 'مثبت HIGHEST',
             'turkish' => 'التركية',
             'ukrainian' => 'الأوكرانية',
             'webkul' => 'Webkul',

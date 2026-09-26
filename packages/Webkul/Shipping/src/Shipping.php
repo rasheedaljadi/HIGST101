@@ -48,6 +48,26 @@ class Shipping
             }
         }
 
+        if (empty($ratesList)) {
+            foreach (Config::get('carriers') as $shippingMethod) {
+                $carrierCode = $shippingMethod['code'] ?? '';
+
+                if (in_array($carrierCode, ['homedelivery', 'deliverypoint'], true)) {
+                    continue;
+                }
+
+                $object = new $shippingMethod['class'];
+
+                if ($rates = $object->calculate()) {
+                    if (is_array($rates)) {
+                        $ratesList[] = $rates;
+                    } else {
+                        $ratesList[] = [$rates];
+                    }
+                }
+            }
+        }
+
         $this->rates = ! empty($ratesList) ? array_merge(...$ratesList) : [];
 
         $this->saveAllShippingRates();
@@ -122,6 +142,7 @@ class Shipping
             }
 
             $rate['base_formatted_price'] = core()->currency($rate->base_price);
+            $rate['formatted_price'] = core()->currency($rate->base_price);
 
             $rates[$rate->carrier]['rates'][] = $rate;
         }
@@ -158,6 +179,29 @@ class Shipping
                 'method_title' => $object->getTitle(),
                 'description' => $object->getDescription(),
             ];
+        }
+
+        if (empty($methods)) {
+            foreach (Config::get('carriers') as $shippingMethod) {
+                $carrierCode = $shippingMethod['code'] ?? '';
+
+                if (in_array($carrierCode, ['homedelivery', 'deliverypoint'], true)) {
+                    continue;
+                }
+
+                $object = new $shippingMethod['class'];
+
+                if (! $object->isAvailable()) {
+                    continue;
+                }
+
+                $methods[] = [
+                    'code' => $object->getCode(),
+                    'method' => $object->getMethod(),
+                    'method_title' => $object->getTitle(),
+                    'description' => $object->getDescription(),
+                ];
+            }
         }
 
         return $methods;

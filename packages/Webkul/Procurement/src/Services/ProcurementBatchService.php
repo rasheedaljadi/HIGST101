@@ -221,7 +221,7 @@ class ProcurementBatchService
 
             // Create SupplierPurchaseOrder for each order group
             foreach ($orderGroups as $groupId => $groupedItems) {
-                $poNumber = 'SPO-'.now()->format('Ymd').'-'.Str::upper(Str::random(6)).'-'.str_pad((string) $storeIndex, 2, '0', STR_PAD_LEFT);
+                $poNumber = $this->generatePurchaseOrderNumber($groupedItems, $batch->id, $storeIndex);
                 $storeIndex++;
 
                 $firstItemDemand = $groupedItems[0]['demand'];
@@ -811,5 +811,36 @@ class ProcurementBatchService
         }
 
         return null;
+    }
+
+    /**
+     * Generate a simplified, human-readable, and collision-resistant Supplier Purchase Order number.
+     * Format:
+     * - Single customer order: SPO-{customer_order_id}-{index} (e.g. SPO-351-01)
+     * - Consolidated multi-customer batch: SPO-B{batch_id}-{index} (e.g. SPO-B12-01)
+     */
+    public function generatePurchaseOrderNumber(array|Collection $groupedItems, int $batchId, int $storeIndex = 1): string
+    {
+        $customerOrderIds = collect($groupedItems)->map(function ($item) {
+            if (is_array($item)) {
+                return data_get($item, 'demand.order_id') ?? data_get($item, 'order_id');
+            }
+
+            return $item->demand->order_id ?? $item->order_id ?? null;
+        })->filter()->unique();
+
+        $basePoNumber = $customerOrderIds->count() === 1
+            ? 'SPO-'.$customerOrderIds->first()
+            : 'SPO-B'.$batchId;
+
+        $candidatePoNumber = $basePoNumber.'-'.str_pad((string) $storeIndex, 2, '0', STR_PAD_LEFT);
+        $seq = $storeIndex;
+
+        while (SupplierPurchaseOrder::where('purchase_order_number', $candidatePoNumber)->exists()) {
+            $seq++;
+            $candidatePoNumber = $basePoNumber.'-'.str_pad((string) $seq, 2, '0', STR_PAD_LEFT);
+        }
+
+        return $candidatePoNumber;
     }
 }

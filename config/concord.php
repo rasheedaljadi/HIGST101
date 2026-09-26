@@ -55,5 +55,6 @@ return [
         Webkul\Wallet\Providers\ModuleServiceProvider::class,
         Webkul\DeliveryManagement\Providers\ModuleServiceProvider::class,
         Webkul\Procurement\Providers\ModuleServiceProvider::class,
+        Webkul\MobileApi\Providers\ModuleServiceProvider::class,
     ],
 ];

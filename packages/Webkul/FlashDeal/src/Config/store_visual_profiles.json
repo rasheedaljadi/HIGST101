@@ -1,0 +1,46 @@
+{
+    "scanned_valid_samples": 300,
+    "generated_at": "2026-09-04 00:34:27",
+    "archetypes": {
+        "general": {
+            "sample_count": 453,
+            "golden_subject_fill": 0.826,
+            "safe_margin_top": 0.008,
+            "safe_margin_bottom": 0.018,
+            "safe_margin_left": 0.068,
+            "safe_margin_right": 0.084
+        },
+        "screen_display": {
+            "sample_count": 20,
+            "golden_subject_fill": 0.624,
+            "safe_margin_top": 0.116,
+            "safe_margin_bottom": 0.106,
+            "safe_margin_left": 0.094,
+            "safe_margin_right": 0.121
+        },
+        "dresses_tops": {
+            "sample_count": 127,
+            "golden_subject_fill": 0.975,
+            "safe_margin_top": 0,
+            "safe_margin_bottom": 0.012,
+            "safe_margin_left": 0,
+            "safe_margin_right": 0.012
+        },
+        "footwear": {
+            "sample_count": 0,
+            "golden_subject_fill": 0.76,
+            "safe_margin_top": 0.1,
+            "safe_margin_bottom": 0.1,
+            "safe_margin_left": 0.11,
+            "safe_margin_right": 0.11
+        },
+        "accessories": {
+            "sample_count": 0,
+            "golden_subject_fill": 0.76,
+            "safe_margin_top": 0.1,
+            "safe_margin_bottom": 0.1,
+            "safe_margin_left": 0.11,
+            "safe_margin_right": 0.11
+        }
+    }
+}

@@ -28,6 +28,7 @@ class DeliveryGovernorateRuleDataGrid extends DataGrid
                 'delivery_governorate_rules.is_enabled',
                 'delivery_governorate_rules.allowed_payment_methods',
                 'delivery_governorate_rules.delivery_fee',
+                'delivery_governorate_rules.free_delivery_threshold',
                 'delivery_governorate_rules.min_order_amount',
                 'delivery_governorate_rules.updated_at',
                 DB::raw('COALESCE(country_state_translations.default_name, country_states.default_name, delivery_governorate_rules.state_code) as governorate_name')
@@ -95,6 +96,20 @@ class DeliveryGovernorateRuleDataGrid extends DataGrid
             'sortable' => true,
             'closure' => function ($row) {
                 return '<span class="font-semibold text-gray-800 dark:text-white">'.core()->formatPrice((float) $row->delivery_fee, core()->getBaseCurrencyCode()).'</span>';
+            },
+        ]);
+
+        $this->addColumn([
+            'index' => 'free_delivery_threshold',
+            'label' => 'حد التوصيل المجاني',
+            'type' => 'string',
+            'sortable' => true,
+            'closure' => function ($row) {
+                if ($row->free_delivery_threshold !== null && (float) $row->free_delivery_threshold > 0) {
+                    return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800 font-semibold dark:bg-emerald-900/50 dark:text-emerald-300">🎁 مجاني فوق '.core()->formatPrice((float) $row->free_delivery_threshold, core()->getBaseCurrencyCode()).'</span>';
+                }
+
+                return '<span class="text-gray-400 text-xs">—</span>';
             },
         ]);
 

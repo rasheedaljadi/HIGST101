@@ -21,6 +21,9 @@ class EventServiceProvider extends ServiceProvider
         'checkout.cart.add.before' => [
             [AliExpressLiveStockListener::class, 'handleCartAddBefore'],
         ],
+        'checkout.cart.update.before' => [
+            [AliExpressLiveStockListener::class, 'handleCartUpdateBefore'],
+        ],
         'checkout.order.save.before' => [
             [AliExpressLiveStockListener::class, 'handleOrderSaveBefore'],
         ],

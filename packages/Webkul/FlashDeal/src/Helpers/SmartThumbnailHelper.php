@@ -10,7 +10,7 @@ use Webkul\Product\Contracts\Product;
 
 class SmartThumbnailHelper
 {
-    protected string $version = 'v2';
+    protected string $version = 'v4';
 
     protected string $configHash = 'v3_aspect_safe'; // Config parameter signature
 
@@ -106,6 +106,68 @@ class SmartThumbnailHelper
             }
         } catch (\Throwable $e) {
             Log::warning('Quick Offer Smart Thumbnail inline generation failed: '.$e->getMessage(), [
+                'product_id' => $product->id,
+                'source' => $sourcePath,
+            ]);
+        }
+
+        return $fallbackUrl;
+    }
+
+    /**
+     * Get Square Smart Thumbnail URL for product cards (1:1 square ratio).
+     */
+    public function getSquareThumbnailUrl(?Product $product, string $fallbackUrl = ''): string
+    {
+        if (! $product || ! $this->isEngineActive()) {
+            return $fallbackUrl;
+        }
+
+        $baseImage = $product->images->first();
+
+        if (! $baseImage || ! $baseImage->path) {
+            return $fallbackUrl;
+        }
+
+        $sourcePath = storage_path('app/public/'.$baseImage->path);
+
+        if (! file_exists($sourcePath)) {
+            return $fallbackUrl;
+        }
+
+        $sourceHash = md5_file($sourcePath) ?: md5($sourcePath);
+        $cacheKey = md5($product->id.'_'.$sourceHash.'_1x1_'.$this->version);
+        $subDir = substr($cacheKey, 0, 2);
+
+        $relativePath = 'smart-thumbnails/square_cards/'.$this->version.'/'.$subDir.'/card-'.$product->id.'-'.substr($cacheKey, 0, 12).'.webp';
+        $fullTargetPath = storage_path('app/public/'.$relativePath);
+
+        // 1. Check if thumbnail exists in public storage
+        if (file_exists($fullTargetPath)) {
+            return Storage::url($relativePath).'?v='.$this->version;
+        }
+
+        // 2. Check public/cache folder fallback
+        $publicCachePath = public_path('cache/'.$relativePath);
+        if (file_exists($publicCachePath)) {
+            return url('cache/'.$relativePath).'?v='.$this->version;
+        }
+
+        // 3. Inline generation with Fast-Path
+        try {
+            $imageManager = image_manager();
+            $cropEngine = app(SmartCropEngine::class);
+            $encoder = app(WebpEncoder::class);
+
+            $img = $imageManager->read($sourcePath);
+            $processed = $cropEngine->process($img, $sourcePath, 400, 400, $product);
+            $encoder->encodeAndSave($processed, $fullTargetPath);
+
+            if (file_exists($fullTargetPath)) {
+                return Storage::url($relativePath).'?v='.$this->version;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Square Smart Thumbnail inline generation failed: '.$e->getMessage(), [
                 'product_id' => $product->id,
                 'source' => $sourcePath,
             ]);

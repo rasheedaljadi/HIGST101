@@ -321,6 +321,7 @@
                                                     class="flex max-w-max items-center gap-x-2.5 rounded-[54px] border border-navyBlue px-3.5 py-1.5 max-md:gap-x-1.5 max-md:px-1 max-md:py-0.5"
                                                     name="quantity"
                                                     ::value="item?.quantity"
+                                                    ::max-value="item?.total_qty"
                                                     @change="setItemQuantity(item.id, $event)"
                                                 />
 
@@ -522,18 +523,22 @@
 
                         this.$axios.put('{{ route('shop.api.checkout.cart.update') }}', { qty: this.applied.quantity })
                             .then(response => {
-                                if (response.data.message) {
+                                if (response.data.data) {
                                     this.cart = response.data.data;
-
-                                    this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
-                                } else {
-                                    this.$emitter.emit('add-flash', { type: 'warning', message: response.data.data.message });
                                 }
 
-                                this.isStoring = false;
+                                this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
 
+                                this.isStoring = false;
                             })
                             .catch(error => {
+                                if (error.response?.data?.data) {
+                                    this.cart = error.response.data.data;
+                                }
+
+                                let msg = error.response?.data?.message || '@lang('shop::app.checkout.cart.inventory-warning')';
+                                this.$emitter.emit('add-flash', { type: 'warning', message: msg });
+
                                 this.isStoring = false;
                             });
                     },

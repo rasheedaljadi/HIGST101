@@ -48,7 +48,8 @@
         "spatie/laravel-responsecache": "^7.4",
         "spatie/laravel-sitemap": "^7.3",
         "stevebauman/purify": "^6.3",
-        "stripe/stripe-php": "^17.3"
+        "stripe/stripe-php": "^17.3",
+        "webonyx/graphql-php": "^15.37"
     },
     "require-dev": {
         "bagisto/laravel-datafaker": "2.3.*",
@@ -110,7 +111,8 @@
             "Webkul\\Wallet\\": "packages/Webkul/Wallet/src",
             "Webkul\\FlashDeal\\": "packages/Webkul/FlashDeal/src",
             "Webkul\\DeliveryManagement\\": "packages/Webkul/DeliveryManagement/src",
-            "Webkul\\Procurement\\": "packages/Webkul/Procurement/src"
+            "Webkul\\Procurement\\": "packages/Webkul/Procurement/src",
+            "Webkul\\MobileApi\\": "packages/Webkul/MobileApi/src"
         }
     },
     "autoload-dev": {

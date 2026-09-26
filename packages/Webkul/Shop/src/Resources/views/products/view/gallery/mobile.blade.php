@@ -1,35 +1,3 @@
-@php
-    $sku = strtolower((string) ($product->sku ?? ''));
-    $originType = (string) ($product->origin_type ?? '');
-    $isInternal = ($originType === 'internal')
-        || (! str_starts_with($sku, 'ae-') && ! str_starts_with($sku, 'ali-') && $originType !== 'imported');
-
-    $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-    $m100 = ((int) ($product->id ?? 0)) % 100;
-    $isCleanProduct = $isInternal || ($m100 % 5 === 0);
-
-    if ($isCleanProduct) {
-        $productSampledColor = '#ffffff';
-        $mobileImageStyle = 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;';
-    } elseif ($m100 === 1 || $m100 === 6 || $m100 === 11) {
-        // 3% slight vertical
-        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
-        $mobileImageStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.82, 1.25) !important; transform-origin: center !important;';
-    } elseif ($m100 === 2 || $m100 === 7 || $m100 === 12) {
-        // 3% slight horizontal
-        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
-        $mobileImageStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.25, 0.82) !important; transform-origin: center !important;';
-    } elseif (in_array($m100, [3, 8, 13, 18, 23, 28, 33, 38, 43, 48], true)) {
-        // 10% pronounced horizontal
-        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
-        $mobileImageStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.70, 0.60) !important; transform-origin: center !important;';
-    } else {
-        // 64% pronounced vertical
-        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
-        $mobileImageStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.70) !important; transform-origin: center !important;';
-    }
-@endphp
-
 <div
     class="overflow-hidden md:hidden"
     v-if="isMediaLoading"
@@ -64,8 +32,7 @@
                 ref="sliderContainer"
             >
                 <div
-                    class="grid max-h-screen w-screen content-center overflow-hidden rounded-xl"
-                    :style="{ backgroundColor: (media.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? '#ffffff' : '{{ $productSampledColor }}' }"
+                    class="grid max-h-screen w-screen content-center bg-white dark:bg-gray-800 overflow-hidden rounded-xl"
                     v-for="(media, index) in options"
                     ref="slide"
                 >
@@ -85,8 +52,7 @@
 
                     <template v-else>
                         <img
-                            class="aspect-[5/4] max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out rounded-xl"
-                            :style="(media.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;' : '{{ $mobileImageStyle }}'"
+                            class="aspect-[5/4] object-contain max-h-full w-full max-w-full select-none transition-transform duration-300 ease-in-out bg-white dark:bg-gray-800 rounded-xl"
                             :src="media.large_image_url"
                             :alt="media.large_image_url"
                             v-on:error="$event.target.src = media.original_image_url || media.fallback_url || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"

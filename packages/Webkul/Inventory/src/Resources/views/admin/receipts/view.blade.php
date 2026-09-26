@@ -38,11 +38,11 @@
                 <div class="flex flex-col gap-2 text-xs">
                     <div class="flex justify-between">
                         <span class="text-gray-500">المستودع المستلم:</span>
-                        <span class="font-bold text-gray-900 dark:text-white">{{ $receipt->destinationInventorySource?->name }}</span>
+                        <span class="font-bold text-gray-900 dark:text-white">{{ $receipt->destinationInventorySource?->name ?: ($receipt->destination?->name ?: '-') }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">مستودع الحجر:</span>
-                        <span>{{ $receipt->quarantineInventorySource?->name ?: '-' }}</span>
+                        <span>{{ $receipt->quarantineInventorySource?->name ?: ($receipt->quarantine?->name ?: '-') }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">مانيفست النقل:</span>
@@ -54,7 +54,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">فحص وتوثيق بواسطة:</span>
-                        <span>{{ $receipt->receivedByAdmin?->name ?: 'Admin' }}</span>
+                        <span>{{ $receipt->receivedByAdmin?->name ?: ($receipt->receivedBy?->name ?: 'Admin') }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">تاريخ الاستلام:</span>
@@ -98,6 +98,9 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             @foreach($receipt->items as $item)
+                                @php
+                                    $itemCond = $item->condition instanceof \BackedEnum ? $item->condition->value : $item->condition;
+                                @endphp
                                 <tr>
                                     <td class="p-2.5 font-bold">{{ $item->sku }}</td>
                                     <td class="p-2.5 font-bold text-emerald-600">{{ $item->qty_good }}</td>
@@ -105,7 +108,7 @@
                                     <td class="p-2.5 font-bold text-amber-600">{{ $item->qty_missing }}</td>
                                     <td class="p-2.5">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 dark:bg-gray-800">
-                                            {{ trans("inventory::app.admin.item_conditions.{$item->condition}") ?: $item->condition }}
+                                            {{ trans("inventory::app.admin.item_conditions.{$itemCond}") ?: ($itemCond ?: '-') }}
                                         </span>
                                     </td>
                                 </tr>

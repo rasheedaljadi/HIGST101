@@ -33,7 +33,7 @@ return [
     /**
      * Internal local warehouse source code (strictly for internal products).
      */
-    'internal_source_code' => 'hayest_internal_ye',
+    'internal_source_code' => 'hayest_central',
 
     /**
      * Quarantine source codes.

@@ -806,7 +806,7 @@ return [
         'index' => [
             'create-administrator' => [
                 'admin' => 'Admin',
-                'bagisto' => 'Hayest',
+                'bagisto' => 'HIGHEST',
                 'confirm-password' => 'Confirm Password',
                 'email' => 'Email',
                 'email-address' => 'admin@example.com',
@@ -821,7 +821,7 @@ return [
                 'application-name' => 'Application Name',
                 'argentine-peso' => 'Argentine Peso (ARS)',
                 'australian-dollar' => 'Australian Dollar (AUD)',
-                'bagisto' => 'Hayest',
+                'bagisto' => 'HIGHEST',
                 'bangladeshi-taka' => 'Bangladeshi Taka (BDT)',
                 'bahraini-dinar' => 'Bahraini Dinar (BHD)',
                 'brazilian-real' => 'Brazilian Real (BRL)',
@@ -914,25 +914,25 @@ return [
             ],
 
             'installation-processing' => [
-                'bagisto' => 'Installation Hayest',
+                'bagisto' => 'Installation HIGHEST',
                 'bagisto-info' => 'Creating the database tables, this can take a few moments',
                 'title' => 'Installation',
             ],
 
             'installation-completed' => [
                 'admin-panel' => 'Admin Panel',
-                'bagisto-forums' => 'Hayest Forum',
+                'bagisto-forums' => 'HIGHEST Forum',
                 'customer-panel' => 'Customer Panel',
-                'explore-bagisto-extensions' => 'Explore Hayest Extension',
+                'explore-bagisto-extensions' => 'Explore HIGHEST Extension',
                 'title' => 'Installation Completed',
-                'title-info' => 'Hayest is Successfully installed on your system.',
+                'title-info' => 'HIGHEST is Successfully installed on your system.',
             ],
 
             'ready-for-installation' => [
                 'create-database-tables' => 'Create the database tables',
                 'drop-existing-tables' => 'Drop any existing tables present',
                 'install' => 'Installation',
-                'install-info' => 'Hayest For Installation',
+                'install-info' => 'HIGHEST For Installation',
                 'install-info-button' => 'Click the button below to',
                 'populate-database-tables' => 'Populate the database tables',
                 'start-installation' => 'Start Installation',
@@ -944,8 +944,8 @@ return [
                 'locale' => 'Locale',
                 'main' => 'Start',
                 'select-locale' => 'Select Locale',
-                'title' => 'Your Hayest install',
-                'welcome-title' => 'Welcome to Hayest',
+                'title' => 'Your HIGHEST install',
+                'welcome-title' => 'Welcome to HIGHEST',
             ],
 
             'server-requirements' => [
@@ -973,9 +973,9 @@ return [
 
             'arabic' => 'Arabic',
             'back' => 'Back',
-            'bagisto' => 'Hayest',
+            'bagisto' => 'HIGHEST',
             'bagisto-info' => 'a Community Project by',
-            'bagisto-logo' => 'Hayest Logo',
+            'bagisto-logo' => 'HIGHEST Logo',
             'bengali' => 'Bengali',
             'catalan' => 'Catalan',
             'chinese' => 'Chinese',
@@ -987,7 +987,7 @@ return [
             'hebrew' => 'Hebrew',
             'hindi' => 'Hindi',
             'indonesian' => 'Indonesian',
-            'installation-description' => 'Hayest installation typically involves several steps. Here\'s a general outline of the installation process for Hayest',
+            'installation-description' => 'HIGHEST installation typically involves several steps. Here\'s a general outline of the installation process for HIGHEST',
             'installation-info' => 'We are happy to see you here!',
             'installation-title' => 'Welcome to Installation',
             'italian' => 'Italian',
@@ -999,7 +999,7 @@ return [
             'russian' => 'Russian',
             'sinhala' => 'Sinhala',
             'spanish' => 'Spanish',
-            'title' => 'Hayest Installer',
+            'title' => 'HIGHEST Installer',
             'turkish' => 'Turkish',
             'ukrainian' => 'Ukrainian',
             'webkul' => 'Webkul',

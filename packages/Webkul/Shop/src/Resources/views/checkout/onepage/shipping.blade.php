@@ -63,14 +63,30 @@
                                         </label>
 
                                         <label 
-                                            class="block cursor-pointer rounded-xl border border-zinc-200 p-5 max-sm:flex max-sm:gap-4 max-sm:rounded-lg max-sm:px-4 max-sm:py-2.5"
+                                            class="block cursor-pointer rounded-xl border border-zinc-200 p-5 max-sm:flex max-sm:gap-4 max-sm:rounded-lg max-sm:px-4 max-sm:py-2.5 relative transition-all"
+                                            :class="rate.base_price == 0 ? 'border-emerald-400 bg-emerald-50/30 dark:border-emerald-700' : ''"
                                             :for="rate.method"
                                         >
+                                            <div 
+                                                v-if="rate.base_price == 0" 
+                                                class="absolute -top-2.5 ltr:right-3 rtl:left-3 bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm"
+                                            >
+                                                مجاناً 🎉
+                                            </div>
+
                                             <span class="icon-flate-rate text-6xl text-navyBlue max-sm:text-5xl"></span>
 
                                             <div>
-                                                <p class="mt-1.5 text-2xl font-semibold max-md:text-base">
-                                                    @{{ rate.base_formatted_price }}
+                                                <p class="mt-1.5 text-2xl font-semibold max-md:text-base font-mono flex items-center gap-2 flex-wrap">
+                                                    <span :class="rate.base_price == 0 ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-zinc-900 dark:text-white font-bold'">
+                                                        @{{ rate.formatted_price || rate.base_formatted_price || (rate.base_price == 0 ? '$0.00' : ('$' + Number(rate.price || rate.base_price || 0).toFixed(2))) }}
+                                                    </span>
+                                                    <span 
+                                                        v-if="rate.base_price == 0" 
+                                                        class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                                    >
+                                                        مجاناً 🎉
+                                                    </span>
                                                 </p>
                                                 
                                                 <p class="mt-2.5 text-xs font-medium max-md:mt-1 max-sm:mt-0 max-sm:font-normal max-sm:text-zinc-500">
@@ -83,6 +99,22 @@
                                     {!! view_render_event('bagisto.shop.checkout.onepage.shipping_method.after') !!}
                                 </template>
                             </div>
+
+                            <!-- Smart Free Delivery Notice Banner -->
+                            <template v-for="method in methods">
+                                <template v-for="rate in method.rates">
+                                    <div 
+                                        v-if="selectedShippingMethod === rate.method"
+                                        class="rounded-xl p-3 text-xs transition-all border flex items-center gap-2.5"
+                                        :class="rate.base_price == 0 
+                                            ? 'bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-200' 
+                                            : 'bg-amber-50/80 text-amber-900 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-200'"
+                                    >
+                                        <span class="text-lg flex-shrink-0">@{{ rate.base_price == 0 ? '🎉' : '💡' }}</span>
+                                        <span class="font-medium leading-relaxed">@{{ rate.method_description }}</span>
+                                    </div>
+                                </template>
+                            </template>
 
                             <!-- Delivery Points Selector -->
                             <div 

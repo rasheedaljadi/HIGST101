@@ -13,4 +13,15 @@ class CatalogRuleProductPriceRepository extends Repository
     {
         return 'Webkul\CatalogRule\Contracts\CatalogRuleProductPrice';
     }
+
+    /**
+     * Disable repository cache for intermediate price index table.
+     *
+     * @param  string  $method
+     * @return bool
+     */
+    protected function allowedCache($method)
+    {
+        return false;
+    }
 }

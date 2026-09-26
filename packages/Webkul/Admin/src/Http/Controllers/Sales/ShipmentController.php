@@ -9,6 +9,7 @@ use Webkul\Admin\DataGrids\Sales\OrderShipmentDataGrid;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\DeliveryManagement\Models\DeliveryAssignment;
 use Webkul\DeliveryManagement\Models\DeliveryAuditLog;
+use Webkul\Inventory\Models\InventorySource;
 use Webkul\Sales\Repositories\OrderItemRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 use Webkul\Sales\Repositories\ShipmentRepository;
@@ -172,15 +173,16 @@ class ShipmentController extends Controller
     public function isInventoryValidate(&$data)
     {
         if (! isset($data['shipment']['items'])) {
-            return;
+            return false;
         }
 
         $valid = false;
 
         $inventorySourceId = $data['shipment']['source'];
+        $source = InventorySource::find($inventorySourceId);
 
         foreach ($data['shipment']['items'] as $itemId => $inventorySource) {
-            $qty = $inventorySource[$inventorySourceId];
+            $qty = $inventorySource[$inventorySourceId] ?? 0;
 
             if ((int) $qty) {
                 $orderItem = $this->orderItemRepository->find($itemId);

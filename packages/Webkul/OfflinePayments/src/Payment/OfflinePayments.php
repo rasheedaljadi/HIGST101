@@ -36,12 +36,16 @@ class OfflinePayments extends Payment
         $this->setCart();
 
         if (! $this->cart) {
-            return false;
+            return \Webkul\OfflinePayments\Models\OfflinePaymentDestination::where('is_active', true)->exists();
         }
 
         $accounts = $this->accountResolver->getAccountsForCart($this->cart);
 
-        return $accounts->isNotEmpty();
+        if ($accounts->isNotEmpty()) {
+            return true;
+        }
+
+        return \Webkul\OfflinePayments\Models\OfflinePaymentDestination::where('is_active', true)->exists();
     }
 
     /**

@@ -14,7 +14,7 @@ return [
     'deliverypoint' => [
         'code' => 'deliverypoint',
         'title' => 'Delivery Point Pickup',
-        'description' => 'Pickup from Hayest Delivery Point',
+        'description' => 'Pickup from HIGHEST Delivery Point',
         'active' => true,
         'default_rate' => '5',
         'type' => 'per_order',

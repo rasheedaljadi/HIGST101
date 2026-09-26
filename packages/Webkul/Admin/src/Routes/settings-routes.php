@@ -98,6 +98,10 @@ Route::prefix('settings')->group(function () {
         Route::put('edit/{id}', 'update')->name('admin.settings.inventory_sources.update');
 
         Route::delete('edit/{id}', 'destroy')->name('admin.settings.inventory_sources.delete');
+
+        Route::get('view/{id}', 'viewInventory')->name('admin.settings.inventory_sources.view');
+
+        Route::get('view/{id}/data', 'viewInventoryData')->name('admin.settings.inventory_sources.view.data');
     });
 
     Route::prefix('taxes')->group(function () {

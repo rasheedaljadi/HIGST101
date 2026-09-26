@@ -20,11 +20,8 @@
                 v-if="mode != 'list'"
                 class="w-full h-full bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border select-none"
             >
-                <!-- Product Image Container with Golden Frame and Sampled Logic (Internal clean, Imported 1 in 5 clean) -->
-                <div 
-                    class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden shrink-0 mb-2 flex items-center justify-center"
-                    :style="getCardContainerStyle(product)"
-                >
+                <!-- Product Image Container -->
+                <div class="relative w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shrink-0 mb-2 flex items-center justify-center">
                     <!-- Badges Overlay (Supports Multiple Badges: Featured, Discount %, New) -->
                     <div class="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1 items-end pointer-events-none">
                         <!-- Featured Badge -->
@@ -92,8 +89,7 @@
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
-                            class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
-                            :style="getImageDistortionStyle(product)"
+                            class="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-300 block"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
@@ -144,16 +140,12 @@
                 v-else
                 class="relative flex w-full gap-4 overflow-hidden rounded-2xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 shadow-sm max-sm:flex-wrap"
             >
-                <div 
-                    class="group relative w-[180px] sm:w-[220px] aspect-[336/302] overflow-hidden rounded-xl shrink-0 flex items-center justify-center"
-                    :style="getCardContainerStyle(product)"
-                >
+                <div class="group relative w-[160px] sm:w-[200px] aspect-square overflow-hidden rounded-xl bg-white dark:bg-gray-800 shrink-0 flex items-center justify-center">
                     <a :href="'{{ route('shop.product_or_category.index', ':slug') }}'.replace(':slug', product.url_key)" class="w-full h-full flex items-center justify-center block">
                         <img 
                             :src="product.base_image?.medium_image_url || product.base_image?.small_image_url || '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'" 
                             :alt="product.name"
-                            class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
-                            :style="getImageDistortionStyle(product)"
+                            class="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-300 block"
                             loading="lazy"
                             v-on:error="$event.target.src = '{{ bagisto_asset('images/medium-product-placeholder.webp', 'shop') }}'"
                         />
@@ -231,6 +223,7 @@
                                 this.product.is_wishlist = ! this.product.is_wishlist;
 
                                 this.$emitter.emit('add-flash', { type: 'success', message: response.data.data.message });
+                                this.$emitter.emit('wishlist-updated');
                             })
                             .catch(error => {});
                         } else {
@@ -295,98 +288,6 @@
                     return JSON.parse(value);
                 },
 
-                isInternalProduct(product) {
-                    if (! product) return true;
-                    if (product.origin_type === 'internal') return true;
-                    if (product.origin_type === 'imported') return false;
-                    if (product.is_imported === true) return false;
-                    if (product.is_imported === false) return true;
-                    const sku = String(product.sku || '').toLowerCase();
-                    if (sku.startsWith('ae-') || sku.startsWith('ali-')) return false;
-                    return true;
-                },
-
-                getSampledSideColor(productId) {
-                    const colors = [
-                        '#c5ced9', // Cool Slate Gray (Grade 4)
-                        '#d8ccbc', // Warm Murky Sand (Grade 4)
-                        '#b8c5d6', // Dusty Steel (Grade 4)
-                        '#ccc4b4', // Muddy Khaki (Grade 4)
-                        '#dbc7b4', // Dull Clay Beige (Grade 5)
-                        '#c4ccbe', // Dirty Sage Gray (Grade 4)
-                    ];
-                    const id = parseInt(productId) || 0;
-                    return colors[id % colors.length];
-                },
-
-                isCleanImage(product) {
-                    if (! product) return true;
-                    // Locally uploaded image on any product (internal or imported) is ALWAYS clean
-                    if (product.base_image?.is_local === true || product.base_image?.is_local === 1) return true;
-                    // Internal product is ALWAYS clean
-                    if (this.isInternalProduct(product)) return true;
-                    // Imported product: 1 in 5 clean sample
-                    const id = parseInt(product?.id) || 0;
-                    return (id % 5) === 0;
-                },
-
-                getCardContainerStyle(product) {
-                    const id = parseInt(product?.id) || 0;
-                    if (this.isCleanImage(product)) {
-                        // Clean white background
-                        return {
-                            aspectRatio: '336 / 302',
-                            border: '2px solid #D4AF37',
-                            backgroundColor: '#ffffff'
-                        };
-                    }
-                    // Distorted imported product: Mismatched derived background color
-                    return {
-                        aspectRatio: '336 / 302',
-                        border: '2px solid #D4AF37',
-                        backgroundColor: this.getSampledSideColor(id)
-                    };
-                },
-
-                getImageDistortionType(product) {
-                    if (this.isCleanImage(product)) {
-                        return 'clean';
-                    }
-                    const id = parseInt(product?.id) || 0;
-                    const m = id % 100;
-                    if (m === 1 || m === 6 || m === 11) {
-                        return 'slight_vertical'; // 3% طولي طفيف
-                    }
-                    if (m === 2 || m === 7 || m === 12) {
-                        return 'slight_horizontal'; // 3% عرضي طفيف
-                    }
-                    if ([3, 8, 13, 18, 23, 28, 33, 38, 43, 48].includes(m)) {
-                        return 'horizontal'; // 10% عرضي حاد
-                    }
-                    return 'vertical'; // 64% طولي حاد
-                },
-
-                getImageDistortionStyle(product) {
-                    const type = this.getImageDistortionType(product);
-                    if (type === 'clean') {
-                        // Internal & clean images: Complete full-frame cover fill without empty spaces
-                        return 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;';
-                    }
-                    if (type === 'slight_vertical') {
-                        // 3%: Slight vertical stretch
-                        return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.82, 1.25) !important; transform-origin: center !important;';
-                    }
-                    if (type === 'slight_horizontal') {
-                        // 3%: Slight horizontal stretch
-                        return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.25, 0.82) !important; transform-origin: center !important;';
-                    }
-                    if (type === 'horizontal') {
-                        // 10%: Pronounced horizontal width stretch (squashed vertically, stretched wide)
-                        return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.80, 0.60) !important; transform-origin: center !important;';
-                    }
-                    // 64%: Pronounced vertical height stretch (squashed horizontally, stretched tall)
-                    return 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
-                },
 
                 addToCart() {
                     this.isAddingToCart = true;

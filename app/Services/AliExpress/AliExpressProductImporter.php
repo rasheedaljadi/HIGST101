@@ -271,6 +271,7 @@ class AliExpressProductImporter
             'meta_description' => $primaryText['metaDescription'],
             'status' => 1,
             'visible_individually' => 1,
+            'manage_stock' => 1,
             'weight' => 0,
             'tax_category_id' => '',
             'price' => $created['price'],

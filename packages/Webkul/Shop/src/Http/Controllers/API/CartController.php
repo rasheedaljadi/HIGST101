@@ -145,7 +145,7 @@ class CartController extends APIController
     /**
      * Updates the quantity of the items present in the cart.
      */
-    public function update(): JsonResource
+    public function update()
     {
         try {
             Cart::updateItems(request()->input());
@@ -157,9 +157,10 @@ class CartController extends APIController
                 'message' => trans('shop::app.checkout.cart.index.quantity-update'),
             ]);
         } catch (\Exception $exception) {
-            return new JsonResource([
+            return response()->json([
+                'data' => ($cart = Cart::getCart()) ? new CartResource($cart) : null,
                 'message' => $exception->getMessage(),
-            ]);
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
     }
 

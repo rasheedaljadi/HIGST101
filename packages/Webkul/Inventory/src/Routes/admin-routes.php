@@ -20,6 +20,7 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => config('app.admin_ur
         // 2. Sources & Balances
         Route::controller(InventorySourceBalanceController::class)->prefix('sources')->group(function () {
             Route::get('', 'index')->name('sources.index');
+            Route::get('view/{id}', 'show')->name('sources.view');
         });
 
         // 3. Product Stock by Source
@@ -38,14 +39,17 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => config('app.admin_ur
             Route::get('', 'index')->name('transfers.index');
             Route::get('create', 'create')->name('transfers.create');
             Route::post('create', 'store')->name('transfers.store');
+            Route::get('source-products/{sourceId}', 'getSourceProducts')->name('transfers.source-products');
             Route::get('view/{id}', 'show')->name('transfers.show');
             Route::post('dispatch/{id}', 'dispatchManifest')->name('transfers.dispatch');
+            Route::post('cancel/{id}', 'cancelManifest')->name('transfers.cancel');
         });
 
         // 6. Inbound Receipts & Discrepancies
         Route::controller(InboundReceiptController::class)->prefix('receipts')->group(function () {
             Route::get('', 'index')->name('receipts.index');
             Route::get('create', 'create')->name('receipts.create');
+            Route::get('manifest-details/{id}', 'getTransferManifestDetails')->name('receipts.manifest-details');
             Route::post('preview', 'preview')->name('receipts.preview');
             Route::post('create', 'store')->name('receipts.store');
             Route::get('view/{id}', 'show')->name('receipts.show');

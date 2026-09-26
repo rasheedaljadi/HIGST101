@@ -3,8 +3,10 @@
 namespace Webkul\Shop\Http\Controllers\API;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Marketing\Jobs\UpdateCreateSearchTerm as UpdateCreateSearchTermJob;
+use Webkul\Product\Models\ProductFlat;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Shop\Http\Resources\ProductResource;
 
@@ -101,9 +103,43 @@ class ProductController extends APIController
     {
         $product = $this->productRepository->findOrFail($id);
 
+        $configuredLimit = (int) core()->getConfigData('catalog.products.product_view_page.no_of_related_products');
+        $limit = ($configuredLimit > 0 && $configuredLimit <= 20) ? $configuredLimit : 12;
+
         $relatedProducts = $product->related_products()
-            ->take(core()->getConfigData('catalog.products.product_view_page.no_of_related_products'))
+            ->take($limit)
             ->get();
+
+        if ($relatedProducts->count() < $limit) {
+            $excludeIds = $relatedProducts->pluck('id')->push($product->id)->all();
+            $categoryIds = DB::table('product_categories')
+                ->where('product_id', $product->id)
+                ->pluck('category_id')
+                ->toArray();
+
+            if (! empty($categoryIds)) {
+                $channel = core()->getCurrentChannel()->code ?? 'default';
+                $locale = core()->getCurrentLocale()->code ?? 'ar';
+
+                $flatIds = ProductFlat::where('product_flat.status', 1)
+                    ->where('product_flat.visible_individually', 1)
+                    ->where('product_flat.channel', $channel)
+                    ->where('product_flat.locale', $locale)
+                    ->join('product_categories', 'product_categories.product_id', '=', 'product_flat.product_id')
+                    ->whereIn('product_categories.category_id', $categoryIds)
+                    ->whereNotIn('product_flat.product_id', $excludeIds)
+                    ->select('product_flat.product_id')
+                    ->distinct()
+                    ->limit($limit - $relatedProducts->count())
+                    ->pluck('product_id')
+                    ->toArray();
+
+                if (! empty($flatIds)) {
+                    $backfill = $this->productRepository->findWhereIn('id', $flatIds);
+                    $relatedProducts = $relatedProducts->concat($backfill);
+                }
+            }
+        }
 
         return ProductResource::collection($relatedProducts);
     }
@@ -117,9 +153,65 @@ class ProductController extends APIController
     {
         $product = $this->productRepository->findOrFail($id);
 
+        $configuredLimit = (int) core()->getConfigData('catalog.products.product_view_page.no_of_up_sells_products');
+        $limit = ($configuredLimit > 0 && $configuredLimit <= 20) ? $configuredLimit : 12;
+
         $upSellProducts = $product->up_sells()
-            ->take(core()->getConfigData('catalog.products.product_view_page.no_of_up_sells_products'))
+            ->take($limit)
             ->get();
+
+        if ($upSellProducts->count() < $limit) {
+            $excludeIds = $upSellProducts->pluck('id')->push($product->id)->all();
+            $relatedIds = $product->related_products()->pluck('id')->toArray();
+            $excludeIds = array_unique(array_merge($excludeIds, $relatedIds));
+
+            $categoryIds = DB::table('product_categories')
+                ->where('product_id', $product->id)
+                ->pluck('category_id')
+                ->toArray();
+
+            if (! empty($categoryIds)) {
+                $channel = core()->getCurrentChannel()->code ?? 'default';
+                $locale = core()->getCurrentLocale()->code ?? 'ar';
+
+                $flatIds = ProductFlat::where('product_flat.status', 1)
+                    ->where('product_flat.visible_individually', 1)
+                    ->where('product_flat.channel', $channel)
+                    ->where('product_flat.locale', $locale)
+                    ->join('product_categories', 'product_categories.product_id', '=', 'product_flat.product_id')
+                    ->whereIn('product_categories.category_id', $categoryIds)
+                    ->whereNotIn('product_flat.product_id', $excludeIds)
+                    ->select('product_flat.product_id')
+                    ->distinct()
+                    ->limit($limit - $upSellProducts->count())
+                    ->pluck('product_id')
+                    ->toArray();
+
+                if (empty($flatIds) || count($flatIds) < ($limit - $upSellProducts->count())) {
+                    $relaxedExclude = $upSellProducts->pluck('id')->push($product->id)->all();
+                    $alreadyFetched = array_merge($excludeIds, $flatIds);
+                    $moreFlatIds = ProductFlat::where('product_flat.status', 1)
+                        ->where('product_flat.visible_individually', 1)
+                        ->where('product_flat.channel', $channel)
+                        ->where('product_flat.locale', $locale)
+                        ->join('product_categories', 'product_categories.product_id', '=', 'product_flat.product_id')
+                        ->whereIn('product_categories.category_id', $categoryIds)
+                        ->whereNotIn('product_flat.product_id', $alreadyFetched)
+                        ->select('product_flat.product_id')
+                        ->distinct()
+                        ->limit(($limit - $upSellProducts->count()) - count($flatIds))
+                        ->pluck('product_id')
+                        ->toArray();
+
+                    $flatIds = array_merge($flatIds, $moreFlatIds);
+                }
+
+                if (! empty($flatIds)) {
+                    $backfill = $this->productRepository->findWhereIn('id', $flatIds);
+                    $upSellProducts = $upSellProducts->concat($backfill);
+                }
+            }
+        }
 
         return ProductResource::collection($upSellProducts);
     }

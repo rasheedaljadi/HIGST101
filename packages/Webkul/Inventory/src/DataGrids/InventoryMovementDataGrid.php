@@ -88,6 +88,7 @@ class InventoryMovementDataGrid extends DataGrid
             'closure' => function ($row) {
                 $typeClass = match ($row->movement_type) {
                     'hayest_stock_in', 'source_receipt' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+                    'transfer_stock_out' => 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
                     'reservation', 'package_prepared' => 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
                     'handoff_to_delivery_party' => 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300',
                     'damage_or_loss' => 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',

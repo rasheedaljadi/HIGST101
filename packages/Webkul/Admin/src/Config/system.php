@@ -85,10 +85,60 @@ return [
             ],
         ],
     ], [
+        'key' => 'general.content.app_download',
+        'name' => 'admin::app.configuration.index.general.content.app-download.title',
+        'info' => 'admin::app.configuration.index.general.content.app-download.info',
+        'sort' => 2,
+        'fields' => [
+            [
+                'name' => 'enabled',
+                'title' => 'admin::app.configuration.index.general.content.app-download.enabled',
+                'type' => 'boolean',
+                'default' => true,
+                'channel_based' => true,
+            ],
+            [
+                'name' => 'title',
+                'title' => 'admin::app.configuration.index.general.content.app-download.app-title',
+                'type' => 'text',
+                'default' => 'حمل تطبيق HIGHEST',
+                'channel_based' => true,
+                'locale_based' => true,
+            ],
+            [
+                'name' => 'subtitle',
+                'title' => 'admin::app.configuration.index.general.content.app-download.app-subtitle',
+                'type' => 'text',
+                'default' => 'امسح QR code للتحميل',
+                'channel_based' => true,
+                'locale_based' => true,
+            ],
+            [
+                'name' => 'google_play_link',
+                'title' => 'admin::app.configuration.index.general.content.app-download.google-play-link',
+                'type' => 'text',
+                'channel_based' => true,
+            ],
+            [
+                'name' => 'app_store_link',
+                'title' => 'admin::app.configuration.index.general.content.app-download.app-store-link',
+                'type' => 'text',
+                'channel_based' => true,
+            ],
+            [
+                'name' => 'qr_code_image',
+                'title' => 'admin::app.configuration.index.general.content.app-download.qr-code-image',
+                'type' => 'image',
+                'info' => 'admin::app.configuration.index.general.content.app-download.qr-code-image-info',
+                'channel_based' => true,
+                'validation' => 'mimes:bmp,jpeg,jpg,png,webp,svg',
+            ],
+        ],
+    ], [
         'key' => 'general.content.footer',
         'name' => 'admin::app.configuration.index.general.content.copyright-content.title',
         'info' => 'admin::app.configuration.index.general.content.copyright-content.info',
-        'sort' => 2,
+        'sort' => 3,
         'fields' => [
             [
                 'name' => 'copyright_content',

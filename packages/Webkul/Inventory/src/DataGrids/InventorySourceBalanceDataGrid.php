@@ -172,4 +172,21 @@ class InventorySourceBalanceDataGrid extends DataGrid
             },
         ]);
     }
+
+    /**
+     * Prepare actions.
+     *
+     * @return void
+     */
+    public function prepareActions()
+    {
+        $this->addAction([
+            'icon' => 'icon-view',
+            'title' => trans('inventory::app.admin.sources.view-action') ?? 'معاينة المخزون وسجل العناصر',
+            'method' => 'GET',
+            'url' => function ($row) {
+                return route('admin.inventory.sources.view', $row->id);
+            },
+        ]);
+    }
 }

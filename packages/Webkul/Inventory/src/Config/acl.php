@@ -62,6 +62,12 @@ return [
         'sort' => 3,
     ],
     [
+        'key' => 'inventory.transfers.cancel',
+        'name' => 'inventory::app.admin.acl.transfers-cancel',
+        'route' => 'admin.inventory.transfers.cancel',
+        'sort' => 4,
+    ],
+    [
         'key' => 'inventory.receipts',
         'name' => 'inventory::app.admin.acl.receipts',
         'route' => 'admin.inventory.receipts.index',

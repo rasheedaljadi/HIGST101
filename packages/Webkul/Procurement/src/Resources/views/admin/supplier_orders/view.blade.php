@@ -49,11 +49,13 @@
                     </form>
                 @endif
 
+                {{-- Temporarily hidden: payment status is read automatically via API key
                 @if (in_array($order->state, ['awaiting_manual_payment', 'submitted', 'payment_declared']) && bouncer()->hasPermission('dropshipping.procurement_v2.payment_confirm'))
                     <button type="button" onclick="document.getElementById('manual-payment-modal').classList.remove('hidden')" class="primary-button bg-purple-600 hover:bg-purple-700">
                         {{ trans('procurement::app.manual_payments.declare-payment') }}
                     </button>
                 @endif
+                --}}
 
                 @if (!in_array($order->state, ['cancelled', 'supplier_shipped', 'closed']) && bouncer()->hasPermission('dropshipping.procurement_v2.submit'))
                     <form action="{{ route('admin.procurement.supplier_orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('{{ trans('procurement::app.supplier_orders.cancel-confirm') }}');">
@@ -316,11 +318,35 @@
                 </div>
             </div>
 
+            <style>
+                #modal-confirm-submit-btn {
+                    background-color: #059669 !important;
+                    color: #ffffff !important;
+                    border: 1px solid #047857 !important;
+                }
+                #modal-confirm-submit-btn:hover {
+                    background-color: #047857 !important;
+                }
+                #modal-confirm-submit-btn:disabled {
+                    opacity: 0.65 !important;
+                    cursor: not-allowed !important;
+                }
+            </style>
+
             <div class="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-3">
-                <button type="button" onclick="window.closeReceiptConfirmModal(event)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-xl transition">
+                <button type="button" 
+                        onclick="window.closeReceiptConfirmModal(event)" 
+                        class="px-4 py-2 text-sm font-semibold rounded-xl transition cursor-pointer"
+                        style="background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db;"
+                        onmouseover="this.style.backgroundColor='#e5e7eb'" 
+                        onmouseout="this.style.backgroundColor='#f3f4f6'">
                     إلغاء وتراجع
                 </button>
-                <button type="button" id="modal-confirm-submit-btn" onclick="window.executeReceiptSubmission(event)" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-md transition">
+                <button type="button" 
+                        id="modal-confirm-submit-btn" 
+                        onclick="window.executeReceiptSubmission(event)" 
+                        class="primary-button px-5 py-2 text-sm font-bold rounded-xl shadow-md transition cursor-pointer"
+                        style="background-color: #059669 !important; color: #ffffff !important; border: 1px solid #047857 !important;">
                     ✓ نعم، تأكيد وحفظ الاستلام
                 </button>
             </div>
@@ -409,7 +435,7 @@
     </script>
     @endpushOnce
 
-    {{-- Manual Payment Modal --}}
+    {{-- Temporarily hidden: Manual Payment Modal
     <div id="manual-payment-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
         <div class="bg-white dark:bg-gray-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-800">
             <div class="flex items-center justify-between mb-4">
@@ -438,4 +464,5 @@
             </form>
         </div>
     </div>
+    --}}
 </x-admin::layouts>

@@ -171,6 +171,7 @@ return [
         'batch-number' => 'Batch Number',
         'provider' => 'Provider',
         'po-number' => 'PO Number',
+        'customer-order-id' => 'Commande client',
         'aliexpress-order-id' => 'AliExpress Order ID',
         'tracking-number' => 'Tracking Number',
         'purchased-at' => 'Date et heure d\'achat',

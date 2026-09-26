@@ -161,7 +161,11 @@
             @if ($hasFooter)
                 <x-shop::layouts.footer />
             @endif
+
         </div>
+
+        <!-- Floating WhatsApp Support Button -->
+        <x-shop::whatsapp-button />
 
         {!! view_render_event('bagisto.shop.layout.body.after') !!}
 

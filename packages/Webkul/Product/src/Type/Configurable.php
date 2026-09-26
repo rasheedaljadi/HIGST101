@@ -371,10 +371,28 @@ class Configurable extends AbstractType
     public function getProductPrices()
     {
         $minPrice = $this->getMinimalPrice();
+        $priceIndex = $this->getPriceIndex();
+        $regularPrice = $priceIndex && (float) $priceIndex->regular_min_price > 0
+            ? (float) $priceIndex->regular_min_price
+            : $minPrice;
+
+        if ($regularPrice > $minPrice) {
+            return [
+                'regular' => [
+                    'price' => core()->convertPrice($regularPrice),
+                    'formatted_price' => core()->currency($regularPrice),
+                ],
+
+                'final' => [
+                    'price' => core()->convertPrice($minPrice),
+                    'formatted_price' => core()->currency($minPrice),
+                ],
+            ];
+        }
 
         return [
             'regular' => [
-                'price' => $minPrice,
+                'price' => core()->convertPrice($minPrice),
                 'formatted_price' => core()->currency($minPrice),
             ],
         ];
@@ -622,9 +640,7 @@ class Configurable extends AbstractType
         $total = 0;
 
         foreach ($this->product->variants as $variant) {
-            $inventoryIndex = $variant->totalQuantity();
-
-            $total += $inventoryIndex->qty;
+            $total += (int) $variant->totalQuantity();
         }
 
         return $total;

@@ -122,6 +122,8 @@ return [
             'cod-home' => 'COD for Home Delivery',
             'cod-point' => 'COD for Pickup Points',
             'delivery-fee' => 'Default Delivery Fee',
+            'free-delivery-threshold' => 'Free Delivery Threshold',
+            'free-delivery-threshold-hint' => 'If customer cart subtotal meets or exceeds this amount, delivery or pickup becomes free (0.00). Leave empty to disable.',
             'status' => 'Rule Status',
             'save-btn' => 'Save Rule & Audit Changes',
         ],

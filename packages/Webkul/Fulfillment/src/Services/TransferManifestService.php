@@ -4,6 +4,7 @@ namespace Webkul\Fulfillment\Services;
 
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Webkul\Fulfillment\Enums\ReceiptItemCondition;
@@ -11,9 +12,16 @@ use Webkul\Fulfillment\Enums\TransferStatus;
 use Webkul\Fulfillment\Models\InventoryTransferManifest;
 use Webkul\Fulfillment\Models\InventoryTransferManifestItem;
 use Webkul\Inventory\Models\InventorySource;
+use Webkul\Inventory\Services\InventoryMovementService;
 
 class TransferManifestService
 {
+    public function __construct(
+        protected ?InventoryMovementService $inventoryMovementService = null
+    ) {
+        $this->inventoryMovementService = $inventoryMovementService ?? app(InventoryMovementService::class);
+    }
+
     /**
      * Create a new cross-border transfer manifest with strict idempotency and transaction safety.
      *
@@ -127,6 +135,31 @@ class TransferManifestService
                 throw new Exception("Cannot dispatch manifest #{$manifest->manifest_number} in final status '{$manifest->status->value}'.");
             }
 
+            $manifest->loadMissing('items');
+
+            // Deduct stock from source warehouse for each item in the manifest
+            foreach ($manifest->items as $item) {
+                $qtyShipped = (int) $item->qty_shipped;
+                if ($qtyShipped <= 0) {
+                    continue;
+                }
+
+                $this->inventoryMovementService->recordTransferStockOut(
+                    productId: (int) $item->product_id,
+                    sku: (string) $item->sku,
+                    quantity: $qtyShipped,
+                    sourceId: (int) $manifest->source_inventory_source_id,
+                    targetSourceId: (int) $manifest->destination_inventory_source_id,
+                    transferManifestId: (int) $manifest->id,
+                    idempotencyKey: "trf_{$manifest->id}_item_{$item->id}_dispatch",
+                    actorId: $actorId,
+                    actorType: 'admin',
+                    referenceEvent: 'TransferManifestDispatched',
+                    jobClass: self::class,
+                    notes: "Stock deducted upon dispatch of Transfer Manifest #{$manifest->manifest_number}"
+                );
+            }
+
             $manifest->status = TransferStatus::IN_TRANSIT;
             $manifest->dispatched_at = now();
             if ($trackingNumber) {
@@ -140,6 +173,38 @@ class TransferManifestService
             Event::dispatch('inventory.transfer_manifest.in_transit', $manifest);
 
             Log::channel('fulfillment')->info("Dispatched Transfer Manifest #{$manifest->manifest_number} by Admin #{$actorId}.");
+
+            return $manifest;
+        });
+    }
+
+    /**
+     * Cancel an existing draft transfer manifest.
+     *
+     * @throws Exception
+     */
+    public function cancelManifest(int $manifestId, int $actorId, ?string $reason = null): InventoryTransferManifest
+    {
+        return DB::transaction(function () use ($manifestId, $actorId, $reason) {
+            $manifest = InventoryTransferManifest::lockForUpdate()->findOrFail($manifestId);
+
+            if ($manifest->status === TransferStatus::CANCELLED) {
+                return $manifest;
+            }
+
+            if ($manifest->status !== TransferStatus::DRAFT) {
+                throw new Exception("لا يمكن إلغاء المانيفست إلا عندما يكون في حالة مسودة (Draft). الحالة الحالية: '{$manifest->status->value}'.");
+            }
+
+            $manifest->status = TransferStatus::CANCELLED;
+            if ($reason) {
+                $manifest->notes = trim(($manifest->notes ? $manifest->notes.PHP_EOL : '').'سبب الإلغاء: '.$reason);
+            }
+            $manifest->save();
+
+            Event::dispatch('inventory.transfer_manifest.cancelled', $manifest);
+
+            Log::channel('fulfillment')->info("Cancelled Transfer Manifest #{$manifest->manifest_number} by Admin #{$actorId}. Reason: {$reason}");
 
             return $manifest;
         });

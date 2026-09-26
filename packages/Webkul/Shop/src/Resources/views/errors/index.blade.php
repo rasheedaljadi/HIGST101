@@ -1,3 +1,6 @@
+@if (($errorCode ?? null) == 503)
+    @include('shop::errors.503')
+@else
 <x-shop::layouts
     :has-header="false"
     :has-feature="false"
@@ -27,10 +30,7 @@
                 </h1>
 
                 <p class="mt-4 text-lg text-zinc-500 max-md:text-sm">
-                    {{ 
-                        $errorCode === 503 && core()->getCurrentChannel()->maintenance_mode_text != ""
-                        ? core()->getCurrentChannel()->maintenance_mode_text : trans("shop::app.errors.{$errorCode}.description")
-                    }}
+                    @lang("shop::app.errors.{$errorCode}.description")
                 </p>
 
                 <a 
@@ -43,3 +43,4 @@
 		</div>
 	</div>
 </x-shop::layouts>
+@endif

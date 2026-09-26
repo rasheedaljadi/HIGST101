@@ -43,7 +43,7 @@ class OrderLifecycleStageResolver
             || (Schema::hasTable('procurement_demands') && DB::table('procurement_demands')->where('order_item_id', $item->id)->exists());
 
         $originType = $isImported ? 'imported' : 'internal';
-        $defaultSourceType = $isImported ? 'hayest_dropship_ye' : 'hayest_internal_ye';
+        $defaultSourceType = $isImported ? 'hayest_dropship_ye' : config('procurement.internal_source_code', 'hayest_central');
 
         // Check 1: Exception - Canceled Order / Item
         if ($order->status === 'canceled' || $item->qty_canceled >= $item->qty_ordered) {
@@ -97,12 +97,12 @@ class OrderLifecycleStageResolver
             ], $deliveryStage);
         }
 
-        // For Internal Items (Ready locally in hayest_internal_ye)
+        // For Internal Items (Ready locally in hayest_central)
         if (! $isImported) {
             return [
                 'origin_type' => 'internal',
                 'current_stage_code' => 'confirmed',
-                'source_type' => 'hayest_internal_ye',
+                'source_type' => config('procurement.internal_source_code', 'hayest_central'),
                 'is_exception' => false,
                 'exception_reason' => null,
                 'rank' => self::STAGE_RANKS['confirmed'],
@@ -180,7 +180,7 @@ class OrderLifecycleStageResolver
         if ($assignment->status === 'delivered') {
             return [
                 'current_stage_code' => 'delivered',
-                'source_type' => $isImported ? 'hayest_dropship_ye' : 'hayest_internal_ye',
+                'source_type' => $isImported ? 'hayest_dropship_ye' : config('procurement.internal_source_code', 'hayest_central'),
                 'rank' => self::STAGE_RANKS['delivered'],
             ];
         }
@@ -197,7 +197,7 @@ class OrderLifecycleStageResolver
 
             return [
                 'current_stage_code' => 'handed_off',
-                'source_type' => $isImported ? 'hayest_dropship_ye' : 'hayest_internal_ye',
+                'source_type' => $isImported ? 'hayest_dropship_ye' : config('procurement.internal_source_code', 'hayest_central'),
                 'rank' => self::STAGE_RANKS['handed_off'],
             ];
         }

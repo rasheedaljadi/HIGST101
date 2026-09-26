@@ -24,6 +24,7 @@ return [
             'transfers-create' => 'Create Draft Manifest',
             'transfers-view' => 'View Transfer Manifest',
             'transfers-dispatch' => 'Approve & Dispatch Manifest',
+            'transfers-cancel' => 'Cancel Draft Manifest',
             'receipts' => 'Receipts & Discrepancies',
             'receipts-process' => 'Inspect & Process Receipt',
             'receipts-view' => 'View Inbound Receipt',
@@ -52,6 +53,8 @@ return [
             'title' => '6 Canonical Sources & Live Balances',
             'description' => 'Architectural Model V1.2 inventory sources and aggregated stock levels',
             'canonical-notice' => 'Architectural fields (is_salable, is_delivery_source) are protected to maintain catalog indexing integrity.',
+            'view-action' => 'View Inventory & Items Record',
+            'view-title' => 'Warehouse Inventory Record',
         ],
         'products' => [
             'title' => 'Product Stock by Source',
@@ -73,6 +76,7 @@ return [
             'delivery_failure_return' => 'Delivery Failure Return',
             'damage_or_loss' => 'Damage / Loss',
             'quarantine_release' => 'Approved Quarantine Release',
+            'transfer_stock_out' => 'Transfer Dispatch',
             'adjustment' => 'Approved Inventory Adjustment',
         ],
         'transfers' => [
@@ -91,6 +95,8 @@ return [
             'qty-shipped' => 'Qty Shipped',
             'dispatch-action' => 'Dispatch Manifest (In Transit)',
             'dispatch-confirm' => 'Are you sure you want to dispatch this manifest? Status will change to In Transit.',
+            'cancel-action' => 'Cancel Manifest',
+            'cancel-confirm' => 'Are you sure you want to cancel this draft manifest? You will not be able to edit or dispatch it later.',
             'open-receipt' => 'Inspect & Receive Manifest',
             'virtual-source-error' => 'Cannot create physical transfer from AliExpress virtual projection source.',
         ],
@@ -148,12 +154,14 @@ return [
             'partially_received' => 'Partially Received',
             'received' => 'Fully Received',
             'discrepancy' => 'Discrepancy Reported',
+            'cancelled' => 'Cancelled',
         ],
         'item_conditions' => [
             'good' => 'Good Condition',
             'damaged' => 'Damaged',
             'missing' => 'Missing / Shortage',
             'wrong' => 'Wrong Item',
+            'wrong_item' => 'Wrong Item / Defective',
             'pending' => 'Pending Inspection',
         ],
         'receipt_statuses' => [

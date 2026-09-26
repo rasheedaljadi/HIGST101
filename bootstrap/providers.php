@@ -101,4 +101,5 @@ return [
     WalletServiceProvider::class,
     DeliveryManagementServiceProvider::class,
     ProcurementServiceProvider::class,
+    \Webkul\MobileApi\Providers\MobileApiServiceProvider::class,
 ];

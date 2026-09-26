@@ -303,4 +303,73 @@ class InventoryMovementService
             ]);
         });
     }
+
+    /**
+     * Record stock out when a transfer manifest is dispatched from a source inventory source.
+     */
+    public function recordTransferStockOut(
+        int $productId,
+        string $sku,
+        int $quantity,
+        int $sourceId,
+        int $targetSourceId,
+        int $transferManifestId,
+        string $idempotencyKey,
+        ?int $actorId = null,
+        string $actorType = 'admin',
+        ?string $referenceEvent = null,
+        ?string $jobClass = null,
+        ?string $notes = null
+    ): InventoryMovement {
+        return DB::transaction(function () use (
+            $productId,
+            $sku,
+            $quantity,
+            $sourceId,
+            $targetSourceId,
+            $transferManifestId,
+            $idempotencyKey,
+            $actorId,
+            $actorType,
+            $referenceEvent,
+            $jobClass,
+            $notes
+        ) {
+            $existing = InventoryMovement::where('idempotency_key', $idempotencyKey)->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            // Deduct product_inventories from source inventory source
+            $currentStock = DB::table('product_inventories')
+                ->where('product_id', $productId)
+                ->where('inventory_source_id', $sourceId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($currentStock) {
+                $newQty = max(0, $currentStock->qty - $quantity);
+                DB::table('product_inventories')
+                    ->where('id', $currentStock->id)
+                    ->update([
+                        'qty' => $newQty,
+                    ]);
+            }
+
+            return InventoryMovement::create([
+                'movement_type' => 'transfer_stock_out',
+                'product_id' => $productId,
+                'sku' => $sku,
+                'quantity' => -$quantity,
+                'source_inventory_source_id' => $sourceId,
+                'target_inventory_source_id' => $targetSourceId,
+                'actor_id' => $actorId,
+                'actor_type' => $actorType,
+                'reference_event' => $referenceEvent,
+                'job_class' => $jobClass,
+                'idempotency_key' => $idempotencyKey,
+                'notes' => $notes ?? "Stock deducted for Transfer Manifest #{$transferManifestId}",
+            ]);
+        });
+    }
 }

@@ -571,6 +571,358 @@
 
                 {!! view_render_event('bagisto.admin.settings.channels.edit.card.accordion.settings.after', ['channel' => $channel]) !!}
 
+                <!-- WhatsApp Support -->
+                <x-admin::accordion>
+                    <x-slot:header>
+                        <div class="flex items-center justify-between">
+                            <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
+                                @lang('admin::app.settings.channels.edit.whatsapp-support')
+                            </p>
+                        </div>
+                    </x-slot>
+
+                    <x-slot:content>
+                        <!-- WhatsApp Phone Number -->
+                        <x-admin::form.control-group class="!mb-0">
+                            <x-admin::form.control-group.label>
+                                @lang('admin::app.settings.channels.edit.whatsapp-number')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                id="whatsapp_number"
+                                name="whatsapp_number"
+                                :value="old('whatsapp_number') ?? $channel->whatsapp_number"
+                                :label="trans('admin::app.settings.channels.edit.whatsapp-number')"
+                                :placeholder="trans('admin::app.settings.channels.edit.whatsapp-number-placeholder')"
+                            />
+
+                            <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                                @lang('admin::app.settings.channels.edit.whatsapp-number-tip')
+                            </p>
+
+                            <x-admin::form.control-group.error control-name="whatsapp_number" />
+                        </x-admin::form.control-group>
+                    </x-slot>
+                </x-admin::accordion>
+
+                <!-- Social Media Links -->
+                <x-admin::accordion>
+                    <x-slot:header>
+                        <div class="flex items-center justify-between">
+                            <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
+                                @lang('admin::app.settings.channels.edit.social-links')
+                            </p>
+                        </div>
+                    </x-slot>
+
+                    <x-slot:content>
+                        <p class="mb-4 text-xs text-gray-600 dark:text-gray-300">
+                            @lang('admin::app.settings.channels.edit.social-links-tip')
+                        </p>
+
+                        @php
+                            $socialLinks = old('social_links') ?? ($channel->social_links ?? []);
+                        @endphp
+
+                        <!-- Facebook -->
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label>
+                                @lang('admin::app.settings.channels.edit.facebook')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                id="social_links_facebook"
+                                name="social_links[facebook]"
+                                :value="$socialLinks['facebook'] ?? ''"
+                                placeholder="https://facebook.com/your-page"
+                            />
+
+                            <x-admin::form.control-group.error control-name="social_links[facebook]" />
+                        </x-admin::form.control-group>
+
+                        <!-- Instagram -->
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label>
+                                @lang('admin::app.settings.channels.edit.instagram')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                id="social_links_instagram"
+                                name="social_links[instagram]"
+                                :value="$socialLinks['instagram'] ?? ''"
+                                placeholder="https://instagram.com/your-profile"
+                            />
+
+                            <x-admin::form.control-group.error control-name="social_links[instagram]" />
+                        </x-admin::form.control-group>
+
+                        <!-- X / Twitter -->
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label>
+                                @lang('admin::app.settings.channels.edit.twitter')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                id="social_links_twitter"
+                                name="social_links[twitter]"
+                                :value="$socialLinks['twitter'] ?? ''"
+                                placeholder="https://x.com/your-handle"
+                            />
+
+                            <x-admin::form.control-group.error control-name="social_links[twitter]" />
+                        </x-admin::form.control-group>
+
+                        <!-- YouTube -->
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label>
+                                @lang('admin::app.settings.channels.edit.youtube')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                id="social_links_youtube"
+                                name="social_links[youtube]"
+                                :value="$socialLinks['youtube'] ?? ''"
+                                placeholder="https://youtube.com/@your-channel"
+                            />
+
+                            <x-admin::form.control-group.error control-name="social_links[youtube]" />
+                        </x-admin::form.control-group>
+
+                        <!-- TikTok -->
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label>
+                                @lang('admin::app.settings.channels.edit.tiktok')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                id="social_links_tiktok"
+                                name="social_links[tiktok]"
+                                :value="$socialLinks['tiktok'] ?? ''"
+                                placeholder="https://tiktok.com/@your-account"
+                            />
+
+                            <x-admin::form.control-group.error control-name="social_links[tiktok]" />
+                        </x-admin::form.control-group>
+
+                        <!-- Snapchat -->
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label>
+                                @lang('admin::app.settings.channels.edit.snapchat')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                id="social_links_snapchat"
+                                name="social_links[snapchat]"
+                                :value="$socialLinks['snapchat'] ?? ''"
+                                placeholder="https://snapchat.com/add/your-username"
+                            />
+
+                            <x-admin::form.control-group.error control-name="social_links[snapchat]" />
+                        </x-admin::form.control-group>
+
+                        <!-- Telegram -->
+                        <x-admin::form.control-group class="!mb-0">
+                            <x-admin::form.control-group.label>
+                                @lang('admin::app.settings.channels.edit.telegram')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                id="social_links_telegram"
+                                name="social_links[telegram]"
+                                :value="$socialLinks['telegram'] ?? ''"
+                                placeholder="https://t.me/your-channel"
+                            />
+
+                            <x-admin::form.control-group.error control-name="social_links[telegram]" />
+                        </x-admin::form.control-group>
+                    </x-slot>
+                </x-admin::accordion>
+
+                <!-- Accepted Payment Methods in Footer -->
+                <x-admin::accordion>
+                    <x-slot:header>
+                        <div class="flex items-center justify-between">
+                            <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
+                                وسائل الدفع المقبولة في الفوتر (اللوجو)
+                            </p>
+                        </div>
+                    </x-slot>
+
+                    <x-slot:content>
+                        <p class="mb-4 text-xs text-gray-600 dark:text-gray-300">
+                            حدد شعارات وسائل الدفع المعتمدة التي ترغب بظهورها في أسفل صفحة المتجر (الفوتر).
+                        </p>
+
+                        @php
+                            $paymentMethods = old('payment_methods') ?? ($channel->payment_methods ?? []);
+                            $showTitle = isset($paymentMethods['show_title']) ? (bool) $paymentMethods['show_title'] : true;
+                            $savedMethods = $paymentMethods['methods'] ?? null;
+                            $deletedKeys = $paymentMethods['deleted_keys'] ?? [];
+
+                            $availableMethods = [
+                                'bank_transfer'    => ['title' => 'تحويل بنكي', 'default' => true],
+                                'apple_pay'        => ['title' => 'Apple Pay', 'default' => true],
+                                'mada'             => ['title' => 'مدى (mada)', 'default' => true],
+                                'mastercard'       => ['title' => 'Mastercard', 'default' => true],
+                                'visa'             => ['title' => 'VISA', 'default' => true],
+                                'kuraimi'          => ['title' => 'الكريمي (Kuraimi)', 'default' => false],
+                                'onecash'          => ['title' => 'ون كاش (OneCash)', 'default' => false],
+                                'jawali'           => ['title' => 'جوالي (Jawali)', 'default' => false],
+                                'paypal'           => ['title' => 'PayPal', 'default' => false],
+                                'stc_pay'          => ['title' => 'STC Pay', 'default' => false],
+                                'cash_on_delivery' => ['title' => 'الدفع عند الاستلام', 'default' => false],
+                                'tabby'            => ['title' => 'تابي (Tabby)', 'default' => false],
+                                'tamara'           => ['title' => 'تمارا (Tamara)', 'default' => false],
+                            ];
+                        @endphp
+
+                        <!-- Hidden Container for Deleted Keys -->
+                        <div id="deleted-payment-methods-container">
+                            @foreach($deletedKeys as $delKey)
+                                <input type="hidden" name="payment_methods[deleted_keys][]" value="{{ $delKey }}">
+                            @endforeach
+                        </div>
+
+                        <!-- Show/Hide Title Toggle -->
+                        <div class="mb-5 pb-4 border-b border-gray-200 dark:border-gray-800">
+                            <input type="hidden" name="payment_methods[show_title]" value="0">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    name="payment_methods[show_title]"
+                                    value="1"
+                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                                    {{ $showTitle ? 'checked' : '' }}
+                                >
+                                <div>
+                                    <span class="text-sm font-semibold text-gray-800 dark:text-white">إظهار عبارة "وسائل الدفع المقبولة" بجانب الشعارات</span>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">عند إلغاء التحديد، سيتم عرض شعارات وسائل الدفع فقط (فقط اللوجو) بدون نص العبارة.</p>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Payment Methods Checkboxes Grid with Delete Action -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6" id="payment-methods-grid">
+                            @foreach($availableMethods as $methodKey => $methodInfo)
+                                @if(! in_array($methodKey, $deletedKeys))
+                                    @php
+                                        $isChecked = is_null($savedMethods) 
+                                            ? $methodInfo['default'] 
+                                            : ! empty($savedMethods[$methodKey]['enabled']);
+                                    @endphp
+                                    <div id="payment-method-card-{{ $methodKey }}" class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                                        <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
+                                            <input
+                                                type="checkbox"
+                                                name="payment_methods[methods][{{ $methodKey }}][enabled]"
+                                                value="1"
+                                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                                                {{ $isChecked ? 'checked' : '' }}
+                                            >
+                                            <span class="text-sm font-medium text-gray-800 dark:text-white">{{ $methodInfo['title'] }}</span>
+                                        </label>
+
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-mono">
+                                                {{ $methodKey }}
+                                            </span>
+
+                                            <!-- Delete Button for Each Item -->
+                                            <button
+                                                type="button"
+                                                data-action="delete-payment-item"
+                                                data-key="{{ $methodKey }}"
+                                                data-title="{{ $methodInfo['title'] }}"
+                                                onclick="window.removePaymentMethodItem('{{ $methodKey }}', '{{ $methodInfo['title'] }}')"
+                                                title="حذف {{ $methodInfo['title'] }} من القائمة"
+                                                class="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                            >
+                                                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+
+                        @if(! empty($deletedKeys))
+                            <!-- Restore Deleted Methods Section -->
+                            <div class="mb-5 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-between flex-wrap gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-amber-800 dark:text-amber-300 font-medium">وسائل دفع تم حذفها:</span>
+                                    <select id="restore-payment-select" class="text-xs rounded border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-1 px-2">
+                                        @foreach($deletedKeys as $delKey)
+                                            <option value="{{ $delKey }}">{{ $availableMethods[$delKey]['title'] ?? $delKey }} ({{ $delKey }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button
+                                    type="button"
+                                    onclick="window.restorePaymentMethodItem()"
+                                    class="secondary-button text-xs py-1 px-3"
+                                >
+                                    + استعادة وسيلة الدفع
+                                </button>
+                            </div>
+                        @endif
+
+                        <!-- Custom Payment Logos -->
+                        <div class="pt-4 border-t border-gray-200 dark:border-gray-800">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-white mb-1">إضافة شعار وسيلة دفع مخصصة (صورة)</h4>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">يمكنك رفع صورة شعار إضافي لوسيلة دفع محلية أو مخصصة (PNG, SVG, WebP).</p>
+
+                            @if(! empty($paymentMethods['custom_logos']))
+                                <div class="space-y-2 mb-4">
+                                    <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">الشعارات المخصصة المرفوعة حالياً:</p>
+                                    @foreach($paymentMethods['custom_logos'] as $cIdx => $cLogo)
+                                        <div id="custom-logo-card-{{ $cIdx }}" class="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+                                            <div class="flex items-center gap-3">
+                                                <img src="{{ Storage::url($cLogo['image']) }}" alt="{{ $cLogo['title'] ?? 'شعار' }}" class="h-6 w-auto object-contain">
+                                                <span class="text-xs font-medium text-gray-800 dark:text-white">{{ $cLogo['title'] ?? 'وسيلة دفع مخصصة' }}</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                data-action="delete-custom-logo"
+                                                data-index="{{ $cIdx }}"
+                                                onclick="window.removeCustomPaymentLogo({{ $cIdx }})"
+                                                title="حذف هذا الشعار المخصص"
+                                                class="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                            >
+                                                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                            <input type="hidden" name="payment_methods[custom_logos][{{ $cIdx }}][title]" value="{{ $cLogo['title'] }}">
+                                            <input type="hidden" name="payment_methods[custom_logos][{{ $cIdx }}][image]" value="{{ $cLogo['image'] }}">
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">اسم وسيلة الدفع</label>
+                                    <input type="text" name="custom_payment_logo_titles[0]" placeholder="مثال: ون كاش أو فلوسك" class="w-full text-xs rounded border border-gray-300 dark:border-gray-700 p-2 dark:bg-gray-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">ملف الشعار</label>
+                                    <input type="file" name="custom_payment_logo_files[0]" accept="image/*" class="w-full text-xs border border-gray-300 dark:border-gray-700 rounded p-1 dark:bg-gray-900 dark:text-white">
+                                </div>
+                            </div>
+                        </div>
+                    </x-slot>
+                </x-admin::accordion>
+
             </div>
         </div>
 
@@ -581,3 +933,84 @@
     {!! view_render_event('bagisto.admin.settings.channels.edit.after', ['channel' => $channel]) !!}
 
 </x-admin::layouts>
+
+@push('scripts')
+    <script>
+        window.removePaymentMethodItem = function(key, title) {
+            if (confirm('هل أنت متأكد من حذف "' + title + '" من القائمة؟ لن تظهر في الفوتر بعد الحفظ.')) {
+                var el = document.getElementById('payment-method-card-' + key);
+                if (el) {
+                    el.style.opacity = '0';
+                    el.style.transform = 'scale(0.95)';
+                    el.style.transition = 'all 0.2s ease';
+                    setTimeout(function() { el.remove(); }, 200);
+                }
+                var container = document.getElementById('deleted-payment-methods-container');
+                if (container) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'payment_methods[deleted_keys][]';
+                    input.value = key;
+                    container.appendChild(input);
+                }
+            }
+        };
+
+        window.restorePaymentMethodItem = function() {
+            var select = document.getElementById('restore-payment-select');
+            if (select && select.value) {
+                var restoreKey = select.value;
+                var container = document.getElementById('deleted-payment-methods-container');
+                if (container) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'payment_methods[restore_key]';
+                    input.value = restoreKey;
+                    container.appendChild(input);
+                }
+                var form = select.closest('form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        };
+
+        window.removeCustomPaymentLogo = function(index) {
+            if (confirm('هل أنت متأكد من حذف هذا الشعار المخصص؟')) {
+                var el = document.getElementById('custom-logo-card-' + index);
+                if (el) {
+                    el.remove();
+                }
+                var container = document.getElementById('deleted-payment-methods-container');
+                if (container) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'payment_methods[remove_custom_logos][' + index + ']';
+                    input.value = '1';
+                    container.appendChild(input);
+                }
+            }
+        };
+
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-action="delete-payment-item"]');
+            if (btn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var key = btn.getAttribute('data-key');
+                var title = btn.getAttribute('data-title');
+                window.removePaymentMethodItem(key, title);
+                return;
+            }
+
+            var customBtn = e.target.closest('[data-action="delete-custom-logo"]');
+            if (customBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var index = customBtn.getAttribute('data-index');
+                window.removeCustomPaymentLogo(index);
+                return;
+            }
+        });
+    </script>
+@endPush

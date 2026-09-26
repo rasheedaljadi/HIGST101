@@ -32,7 +32,17 @@ class InventoryTransferManifest extends Model
         return $this->belongsTo(InventorySource::class, 'source_inventory_source_id');
     }
 
+    public function sourceInventorySource(): BelongsTo
+    {
+        return $this->belongsTo(InventorySource::class, 'source_inventory_source_id');
+    }
+
     public function destination(): BelongsTo
+    {
+        return $this->belongsTo(InventorySource::class, 'destination_inventory_source_id');
+    }
+
+    public function destinationInventorySource(): BelongsTo
     {
         return $this->belongsTo(InventorySource::class, 'destination_inventory_source_id');
     }
@@ -47,7 +57,17 @@ class InventoryTransferManifest extends Model
         return $this->belongsTo(Admin::class, 'created_by_admin_id');
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'created_by_admin_id');
+    }
+
     public function receivedBy(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'received_by_admin_id');
+    }
+
+    public function receiver(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'received_by_admin_id');
     }

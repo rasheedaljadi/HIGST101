@@ -1,35 +1,3 @@
-@php
-    $sku = strtolower((string) ($product->sku ?? ''));
-    $originType = (string) ($product->origin_type ?? '');
-    $isInternal = ($originType === 'internal')
-        || (! str_starts_with($sku, 'ae-') && ! str_starts_with($sku, 'ali-') && $originType !== 'imported');
-
-    $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-    $m100 = ((int) ($product->id ?? 0)) % 100;
-    $isCleanProduct = $isInternal || ($m100 % 5 === 0);
-
-    if ($isCleanProduct) {
-        $productSampledColor = '#ffffff';
-        $imageStyle = 'width: 100%; height: 100%; object-fit: cover; object-position: center;';
-    } elseif ($m100 === 1 || $m100 === 6 || $m100 === 11) {
-        // 3% slight vertical
-        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
-        $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(0.82, 1.25); transform-origin: center;';
-    } elseif ($m100 === 2 || $m100 === 7 || $m100 === 12) {
-        // 3% slight horizontal
-        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
-        $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(1.25, 0.82); transform-origin: center;';
-    } elseif (in_array($m100, [3, 8, 13, 18, 23, 28, 33, 38, 43, 48], true)) {
-        // 10% pronounced horizontal
-        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
-        $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(1.70, 0.60); transform-origin: center;';
-    } else {
-        // 64% pronounced vertical
-        $productSampledColor = $sampledColors[((int) ($product->id ?? 0)) % count($sampledColors)];
-        $imageStyle = 'width: 100%; height: 100%; object-fit: fill; transform: scale(0.60, 1.70); transform-origin: center;';
-    }
-@endphp
-
 <!-- For screens 768px and greater (tablets, laptops, desktop). -->
 <div class="sticky top-20 flex h-max gap-8 max-md:hidden min-w-[400px] w-full max-w-[620px] shrink-0">
     <!-- Product Image and Videos Slider -->
@@ -102,21 +70,13 @@
     </div>
 
     <div
-        class="relative w-full min-w-[320px] max-w-[560px] h-[448px] min-h-[380px] overflow-hidden rounded-xl flex items-center justify-center border border-gray-100 shrink-0"
-        :style="{
-            aspectRatio: '5 / 4',
-            width: '100%',
-            maxWidth: '560px',
-            height: '448px',
-            minHeight: '380px',
-            alignSelf: 'flex-start',
-            backgroundColor: (baseFile.is_local || media.images[activeIndex]?.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? '#ffffff' : '{{ $productSampledColor }}'
-        }"
+        class="relative w-full min-w-[320px] max-w-[560px] h-[448px] min-h-[380px] overflow-hidden rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center border border-gray-100 shrink-0"
+        style="aspect-ratio: 5 / 4; width: 100%; max-width: 560px; height: 448px; min-height: 380px; align-self: flex-start;"
         v-show="! isMediaLoading"
     >
         <img
             class="h-full w-full cursor-pointer rounded-xl block"
-            :style="(baseFile.is_local || media.images[activeIndex]?.is_local || {{ $isCleanProduct ? 'true' : 'false' }}) ? 'width: 100%; height: 100%; object-fit: cover; object-position: center;' : '{{ $imageStyle }}'"
+            style="width: 100%; height: 100%; object-fit: contain; object-position: center;"
             :src="baseFile.path || '{{ bagisto_asset('images/large-product-placeholder.webp', 'shop') }}'"
             v-if="baseFile.type == 'image' || !baseFile.type"
             alt="{{ $product->name }}"

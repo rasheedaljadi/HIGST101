@@ -423,38 +423,130 @@ class ProcurementSubmitService
                 $paymentDeadlineAt = now()->addSeconds($defaultTimeout)->toIso8601String();
             }
 
-            $platformOrder = ExternalPlatformOrder::create([
-                'supplier_purchase_order_id' => $spo->id,
-                'provider' => $spo->provider,
-                'provider_account_id' => $spo->provider_account_id,
-                'supplier_store_id' => $spo->supplier_store_id,
-                'external_order_id' => $externalOrderId,
-                'correlation_key' => $correlationKey,
-                'provider_request_id' => $result->providerRequestId,
-                'raw_status' => $result->providerStatus,
-                'normalized_status' => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
-                'currency_code' => 'USD',
-                'payment_deadline_at' => $paymentDeadlineAt,
-                'last_synced_at' => now(),
-                'snapshots' => array_merge([
-                    'created_via' => 'ProcurementSubmitService',
-                    'submitted_at' => now()->toIso8601String(),
-                    'expected_total' => (float) $spo->expected_total,
-                    'payment_deadline_at' => $paymentDeadlineAt,
-                    'over_time_left' => $overTimeLeft,
-                ], $result->responseMetadata),
-            ]);
+            $orderIds = ! empty($result->externalOrderIds) ? $result->externalOrderIds : [$externalOrderId];
+            $orderIds = array_values(array_unique(array_filter($orderIds)));
 
-            foreach ($spo->items as $item) {
-                ExternalPlatformOrderItem::create([
-                    'external_platform_order_id' => $platformOrder->id,
-                    'supplier_purchase_order_item_id' => $item->id,
-                    'external_sku_id' => $item->supplier_sku_id,
-                    'quantity' => $item->qty_ordered,
-                    'actual_item_amount' => $item->qty_ordered * $item->expected_unit_cost,
-                    'actual_shipping_amount' => 0.0000,
-                    'actual_tax_amount' => 0.0000,
+            $auth = null;
+            $aliClient = null;
+            try {
+                /** @var AliExpressAuthorizationContextResolver $authResolver */
+                $authResolver = app(AliExpressAuthorizationContextResolver::class);
+                $auth = $authResolver->resolveForDropshipperSubmission();
+                $aliClient = app(AliExpressApiClient::class);
+            } catch (\Throwable $e) {
+                // Ignore auth resolution error if in test or mock environment
+            }
+
+            foreach ($orderIds as $idx => $extOrderId) {
+                $storeId = $spo->supplier_store_id;
+                $storeName = $spo->supplier_store_name;
+                $orderAmount = null;
+                $matchedItemIds = [];
+                $orderSnapshots = [];
+
+                if ($aliClient && $auth) {
+                    try {
+                        $orderRes = $aliClient->call('aliexpress.trade.ds.order.get', $auth->accessToken, [
+                            'single_order_query' => json_encode(['order_id' => (string) $extOrderId]),
+                        ]);
+
+                        if (! empty($orderRes['ok'])) {
+                            $orderBody = $orderRes['body']['aliexpress_trade_ds_order_get_response']['result'] ?? $orderRes['body'];
+                            $storeInfo = $orderBody['store_info'] ?? [];
+                            if (! empty($storeInfo['store_id'])) {
+                                $storeId = (string) $storeInfo['store_id'];
+                            }
+                            if (! empty($storeInfo['store_name'])) {
+                                $storeName = (string) $storeInfo['store_name'];
+                            }
+                            if (isset($orderBody['order_amount']['amount'])) {
+                                $orderAmount = (float) $orderBody['order_amount']['amount'];
+                            } elseif (isset($orderBody['order_amount']) && is_numeric($orderBody['order_amount'])) {
+                                $orderAmount = (float) $orderBody['order_amount'];
+                            }
+
+                            $childList = $orderBody['child_order_list']['aeop_child_order_info']
+                                ?? $orderBody['child_order_list']['ae_child_order_dto']
+                                ?? [];
+                            if (isset($childList['product_id'])) {
+                                $childList = [$childList];
+                            }
+
+                            foreach ($childList as $child) {
+                                $childProductId = (string) ($child['product_id'] ?? '');
+                                $childSku = (string) ($child['sku_code'] ?? $child['product_sku'] ?? $child['sku_id'] ?? '');
+                                foreach ($spo->items as $it) {
+                                    if ((string) $it->supplier_product_id === $childProductId) {
+                                        if (empty($childSku) || (string) $it->supplier_sku_id === $childSku) {
+                                            $matchedItemIds[] = $it->id;
+                                        }
+                                    }
+                                }
+                            }
+                            $orderSnapshots['store_info'] = $storeInfo;
+                            $orderSnapshots['ali_order_details'] = $orderBody;
+                        }
+                    } catch (\Throwable $e) {
+                        Log::warning("Failed to fetch order details for {$extOrderId}: ".$e->getMessage());
+                    }
+                }
+
+                // Match items
+                if (empty($matchedItemIds)) {
+                    if (count($orderIds) === 1) {
+                        $matchedItems = $spo->items;
+                    } elseif (count($orderIds) === $spo->items->count()) {
+                        $matchedItems = collect([$spo->items->values()->get($idx)])->filter();
+                    } else {
+                        $matchedItems = $spo->items->filter(function ($it) use ($storeId) {
+                            return (string) ($it->supplier_store_id ?? '') === (string) $storeId;
+                        });
+                        if ($matchedItems->isEmpty()) {
+                            $matchedItems = $spo->items->slice($idx, 1);
+                        }
+                    }
+                } else {
+                    $matchedItems = $spo->items->whereIn('id', array_unique($matchedItemIds));
+                }
+
+                $calculatedAmount = (float) $matchedItems->sum(fn ($it) => $it->qty_ordered * $it->expected_unit_cost);
+                $finalOrderAmount = $orderAmount ?? $calculatedAmount;
+
+                $platformOrder = ExternalPlatformOrder::create([
+                    'supplier_purchase_order_id' => $spo->id,
+                    'provider' => $spo->provider,
+                    'provider_account_id' => $spo->provider_account_id,
+                    'supplier_store_id' => $storeId,
+                    'external_order_id' => $extOrderId,
+                    'correlation_key' => count($orderIds) > 1 ? "{$correlationKey}-{$idx}" : $correlationKey,
+                    'provider_request_id' => $result->providerRequestId,
+                    'raw_status' => $result->providerStatus,
+                    'normalized_status' => ExternalPlatformOrder::STATUS_WAIT_BUYER_PAY,
+                    'currency_code' => 'USD',
+                    'payment_deadline_at' => $paymentDeadlineAt,
+                    'last_synced_at' => now(),
+                    'snapshots' => array_merge([
+                        'created_via' => 'ProcurementSubmitService',
+                        'submitted_at' => now()->toIso8601String(),
+                        'store_name' => $storeName,
+                        'order_amount' => $finalOrderAmount,
+                        'expected_total' => $finalOrderAmount,
+                        'payment_deadline_at' => $paymentDeadlineAt,
+                        'over_time_left' => $overTimeLeft,
+                    ], $orderSnapshots, $result->responseMetadata),
                 ]);
+
+                foreach ($matchedItems as $item) {
+                    ExternalPlatformOrderItem::create([
+                        'external_platform_order_id' => $platformOrder->id,
+                        'supplier_purchase_order_item_id' => $item->id,
+                        'external_sku_id' => $item->supplier_sku_id,
+                        'quantity' => $item->qty_ordered,
+                        'actual_item_amount' => $item->qty_ordered * $item->expected_unit_cost,
+                        'actual_shipping_amount' => 0.0000,
+                        'actual_tax_amount' => 0.0000,
+                    ]);
+                }
             }
 
             $spo->update([

@@ -106,6 +106,18 @@
                 $createdTime = \Carbon\Carbon::parse($createdTime)->format('Y-m-d H:i:s');
             } catch (\Throwable $e) {}
         }
+
+        $customerOrders = [];
+        foreach ($order->items as $item) {
+            $spoItem = $item->purchaseOrderItem;
+            if ($spoItem) {
+                foreach ($spoItem->allocations as $alloc) {
+                    if ($alloc->demand && $alloc->demand->order) {
+                        $customerOrders[$alloc->demand->order->id] = $alloc->demand->order->increment_id ?: $alloc->demand->order->id;
+                    }
+                }
+            }
+        }
     @endphp
 
     <div class="flex flex-col gap-6 max-w-7xl mx-auto pb-12">
@@ -135,6 +147,14 @@
             </div>
 
             <div class="flex items-center gap-2.5 flex-wrap">
+                {{-- Customer Order Link --}}
+                @foreach ($customerOrders as $cId => $cNum)
+                    <a href="{{ route('admin.sales.orders.view', $cId) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-sm font-semibold rounded-xl border border-blue-200 dark:border-blue-800 transition duration-150" title="عرض تفاصيل طلب العميل">
+                        <span class="text-base">🛒</span>
+                        <span>طلب العميل: #{{ $cNum }}</span>
+                    </a>
+                @endforeach
+
                 {{-- Live Sync Button --}}
                 <form action="{{ route('admin.procurement.platform_orders.sync', $order->id) }}" method="POST" class="inline">
                     @csrf
@@ -164,7 +184,7 @@
                 @if ($normalizedStatus === 'cancelled')
                     <form action="{{ route('admin.procurement.platform_orders.reorder', $order->id) }}" method="POST" onsubmit="return confirm('هل تريد إعادة إنشاء أمر الشراء وإرساله مجدداً لعلي إكسبرس؟');">
                         @csrf
-                        <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-sm transition duration-150">
+                        <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow-sm transition duration-150 cursor-pointer" style="background-color: #059669 !important; color: #ffffff !important;">
                             <span class="icon-cart text-lg"></span>
                             <span>إعادة الطلب</span>
                         </button>
@@ -498,7 +518,7 @@
                         <div class="mt-4">
                             <form action="{{ route('admin.procurement.platform_orders.reorder', $order->id) }}" method="POST" class="inline" onsubmit="return confirm('هل تريد إعادة إنشاء أمر الشراء وإرساله مجدداً لعلي إكسبرس؟');">
                                 @csrf
-                                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+                                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer" style="background-color: #059669 !important; color: #ffffff !important;">
                                     <span class="icon-cart"></span>
                                     <span>إعادة إنشاء الطلب مجدداً</span>
                                 </button>

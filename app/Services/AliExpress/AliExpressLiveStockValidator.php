@@ -181,8 +181,28 @@ class AliExpressLiveStockValidator
     {
         // Update local database inventory so Bagisto storefront immediately reflects out of stock
         try {
-            DB::table('product_inventories')
+            $aeSourceId = DB::table('inventory_sources')->where('code', 'aliexpress_source')->value('id') ?: 3;
+            $hasAeSource = DB::table('product_inventories')
                 ->where('product_id', $targetProductId)
+                ->where('inventory_source_id', $aeSourceId)
+                ->exists();
+
+            if ($hasAeSource) {
+                DB::table('product_inventories')
+                    ->where('product_id', $targetProductId)
+                    ->where('inventory_source_id', $aeSourceId)
+                    ->update(['qty' => max(0, $liveStock)]);
+            } else {
+                DB::table('product_inventories')
+                    ->where('product_id', $targetProductId)
+                    ->limit(1)
+                    ->update(['qty' => max(0, $liveStock)]);
+            }
+
+            $channelId = core()->getCurrentChannel()?->id ?: 1;
+            DB::table('product_inventory_indices')
+                ->where('product_id', $targetProductId)
+                ->where('channel_id', $channelId)
                 ->update(['qty' => max(0, $liveStock)]);
         } catch (Throwable) {
             // Ignore DB update failures

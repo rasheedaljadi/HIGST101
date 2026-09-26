@@ -14,6 +14,20 @@ use Illuminate\Support\Facades\Log;
 use Webkul\Core\Http\Middleware\SecureHeaders;
 use Webkul\Installer\Http\Middleware\CanInstall;
 
+spl_autoload_register(function ($class) {
+    if (str_starts_with($class, 'Webkul\\MobileApi\\')) {
+        $file = __DIR__.'/../packages/Webkul/MobileApi/src/'.str_replace('\\', '/', substr($class, 17)).'.php';
+        if (file_exists($file)) {
+            require_once $file;
+        }
+    } elseif (str_starts_with($class, 'GraphQL\\')) {
+        $file = __DIR__.'/../vendor/webonyx/graphql-php/src/'.str_replace('\\', '/', substr($class, 8)).'.php';
+        if (file_exists($file)) {
+            require_once $file;
+        }
+    }
+});
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -49,6 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'stripe/*',
             'aliexpress/webhook',
             'aliexpress/receiveCallBack',
+            'graphql',
         ]);
 
         $middleware->trustProxies(at: '*');

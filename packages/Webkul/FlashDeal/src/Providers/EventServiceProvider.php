@@ -4,6 +4,7 @@ namespace Webkul\FlashDeal\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Webkul\FlashDeal\Listeners\OrderPlacedListener;
+use Webkul\FlashDeal\Listeners\ProductImageListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -15,6 +16,12 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         'checkout.order.save.after' => [
             OrderPlacedListener::class,
+        ],
+        'catalog.product.create.after' => [
+            ProductImageListener::class.'@afterProductSave',
+        ],
+        'catalog.product.update.after' => [
+            ProductImageListener::class.'@afterProductSave',
         ],
     ];
 }

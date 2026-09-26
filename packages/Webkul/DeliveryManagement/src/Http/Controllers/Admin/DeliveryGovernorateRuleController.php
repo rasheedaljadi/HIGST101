@@ -56,6 +56,7 @@ class DeliveryGovernorateRuleController extends Controller
 
         $request->validate([
             'delivery_fee' => 'required|numeric|min:0',
+            'free_delivery_threshold' => 'nullable|numeric|min:0',
             'min_order_amount' => 'nullable|numeric|min:0',
             'is_enabled' => 'nullable|boolean',
             'allowed_payment_methods' => 'nullable|array',
@@ -70,8 +71,13 @@ class DeliveryGovernorateRuleController extends Controller
             $allowedMethods = [];
         }
 
+        $freeThreshold = $request->filled('free_delivery_threshold') && $request->input('free_delivery_threshold') !== ''
+            ? (float) $request->input('free_delivery_threshold')
+            : null;
+
         $rule->update([
             'delivery_fee' => (float) $request->input('delivery_fee', 0),
+            'free_delivery_threshold' => $freeThreshold,
             'min_order_amount' => (float) $request->input('min_order_amount', 0),
             'is_enabled' => (bool) $request->input('is_enabled', false),
             'allowed_payment_methods' => $allowedMethods,

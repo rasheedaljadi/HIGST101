@@ -170,6 +170,7 @@ return [
         'batch-number' => 'رقم الدفعة',
         'provider' => 'المزود',
         'po-number' => 'رقم أمر الشراء',
+        'customer-order-id' => 'رقم طلب العميل',
         'aliexpress-order-id' => 'رقم علي إكسبرس',
         'tracking-number' => 'رقم التتبع',
         'purchased-at' => 'تاريخ ووقت الشراء',

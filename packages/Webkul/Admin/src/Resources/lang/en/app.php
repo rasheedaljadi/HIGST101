@@ -3578,6 +3578,19 @@ return [
                 'status' => 'Status',
                 'theme' => 'Theme',
                 'title' => 'Create Channel',
+                'whatsapp-support' => 'WhatsApp Contact Support',
+                'whatsapp-number' => 'WhatsApp Phone Number',
+                'whatsapp-number-placeholder' => '+967770000000',
+                'whatsapp-number-tip' => 'Enter the WhatsApp number with international country code (e.g. +96777xxxxxxx or 96777xxxxxxx).',
+                'social-links' => 'Social Media Links',
+                'social-links-tip' => 'Enter your store social media profile URLs to display them automatically in the footer.',
+                'facebook' => 'Facebook',
+                'instagram' => 'Instagram',
+                'twitter' => 'X (Twitter)',
+                'youtube' => 'YouTube',
+                'tiktok' => 'TikTok',
+                'snapchat' => 'Snapchat',
+                'telegram' => 'Telegram',
             ],
 
             'edit' => [
@@ -3613,6 +3626,19 @@ return [
                 'theme' => 'Theme',
                 'title' => 'Edit Channel',
                 'update-success' => 'Update Channel Successfully',
+                'whatsapp-support' => 'WhatsApp Contact Support',
+                'whatsapp-number' => 'WhatsApp Phone Number',
+                'whatsapp-number-placeholder' => '+967770000000',
+                'whatsapp-number-tip' => 'Enter the WhatsApp number with international country code (e.g. +96777xxxxxxx or 96777xxxxxxx).',
+                'social-links' => 'Social Media Links',
+                'social-links-tip' => 'Enter your store social media profile URLs to display them automatically in the footer.',
+                'facebook' => 'Facebook',
+                'instagram' => 'Instagram',
+                'twitter' => 'X (Twitter)',
+                'youtube' => 'YouTube',
+                'tiktok' => 'TikTok',
+                'snapchat' => 'Snapchat',
+                'telegram' => 'Telegram',
             ],
         ],
 
@@ -4068,6 +4094,18 @@ return [
                         'custom-javascript' => 'Custom Javascript',
                         'title' => 'Custom Scripts',
                         'title-info' => 'Custom scripts are personalized pieces of code created to add specific functions or features to software, enhancing its capabilities uniquely.',
+                    ],
+
+                    'app-download' => [
+                        'title' => 'Mobile App Download',
+                        'info' => 'Configure Mobile App download button, store links, and QR code in the header.',
+                        'enabled' => 'Enable App Download Button',
+                        'app-title' => 'App Title',
+                        'app-subtitle' => 'App Subtitle / QR Call to Action',
+                        'google-play-link' => 'Google Play Store Link',
+                        'app-store-link' => 'Apple App Store Link',
+                        'qr-code-image' => 'QR Code Image (Optional)',
+                        'qr-code-image-info' => 'Upload a custom QR code image. If not provided, an automatic QR code linking to your apps will be displayed.',
                     ],
                 ],
 
@@ -5572,7 +5610,7 @@ return [
     ],
 
     'footer' => [
-        'copy-right' => 'Powered by <a href="https://bagisto.com/" target="_blank">Hayest</a>, A Community Project by <a href="https://webkul.com/" target="_blank">Webkul</a>',
+        'copy-right' => 'Powered by <a href="https://bagisto.com/" target="_blank">HIGHEST</a>, A Community Project by <a href="https://webkul.com/" target="_blank">Webkul</a>',
     ],
 
     'emails' => [

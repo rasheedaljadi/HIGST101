@@ -1,4 +1,4 @@
-﻿{
+{
     "name": "webkul/wallet",
     "description": "HIGEST Wallet Domain — Customer digital wallet with ledger-based balance management",
     "type": "library",

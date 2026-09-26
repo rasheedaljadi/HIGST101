@@ -28,6 +28,9 @@ class Channel extends TranslatableModel implements ChannelContract
         'description',
         'theme',
         'hostname',
+        'whatsapp_number',
+        'social_links',
+        'payment_methods',
         'default_locale_id',
         'base_currency_id',
         'root_category_id',
@@ -43,7 +46,9 @@ class Channel extends TranslatableModel implements ChannelContract
      * @var array
      */
     protected $casts = [
-        'home_seo' => 'array',
+        'home_seo'        => 'array',
+        'social_links'    => 'array',
+        'payment_methods' => 'array',
     ];
 
     /**

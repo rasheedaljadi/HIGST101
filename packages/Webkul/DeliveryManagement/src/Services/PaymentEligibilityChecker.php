@@ -100,7 +100,7 @@ class PaymentEligibilityChecker
         $additional = is_array($shippingAddress->additional) ? $shippingAddress->additional : json_decode($shippingAddress->additional ?? '[]', true);
         $deliveryPointId = isset($additional['delivery_point_id']) ? (int) $additional['delivery_point_id'] : null;
 
-        $cartAmount = (float) ($cart->grand_total ?? $cart->base_grand_total ?? 0.0);
+        $cartAmount = (float) ($cart->base_grand_total ?? $cart->grand_total ?? 0.0);
 
         return $this->isEligible(
             paymentMethod: $paymentMethod,

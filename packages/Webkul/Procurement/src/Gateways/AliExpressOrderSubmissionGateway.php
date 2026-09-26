@@ -521,8 +521,9 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             );
         }
 
-        // 9. Extract official numeric external order ID
-        $extractedId = $this->parseAuthoritativeOrderId($body);
+        // 9. Extract official numeric external order IDs
+        $orderIds = $this->parseAuthoritativeOrderIds($body);
+        $extractedId = $orderIds[0] ?? $this->parseAuthoritativeOrderId($body);
 
         if (empty($extractedId) || ! ctype_digit($extractedId) || strlen($extractedId) < 10) {
             return new ExternalOrderSubmissionFailed(
@@ -538,7 +539,8 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
             externalOrderId: $extractedId,
             providerRequestId: $requestId,
             providerStatus: 'WAIT_BUYER_PAY',
-            responseMetadata: $this->redactSensitivePayload($body)
+            responseMetadata: $this->redactSensitivePayload($body),
+            externalOrderIds: $orderIds
         );
     }
 
@@ -661,10 +663,63 @@ class AliExpressOrderSubmissionGateway implements AliExpressOrderGateway
     }
 
     /**
+     * Extract authoritative numeric order IDs from response body.
+     *
+     * @return array<string>
+     */
+    protected function parseAuthoritativeOrderIds(array $body): array
+    {
+        $resp = $body['aliexpress_ds_order_create_response'] ?? $body;
+        $res = $resp['result'] ?? [];
+
+        $orderIds = [];
+
+        if (isset($res['order_list']['number'])) {
+            $num = $res['order_list']['number'];
+            if (is_array($num)) {
+                foreach ($num as $n) {
+                    if (is_scalar($n) && ctype_digit((string) $n) && strlen((string) $n) >= 10) {
+                        $orderIds[] = (string) $n;
+                    }
+                }
+            } elseif (is_scalar($num) && ctype_digit((string) $num) && strlen((string) $num) >= 10) {
+                $orderIds[] = (string) $num;
+            }
+        }
+
+        if (isset($res['order_list']) && is_array($res['order_list'])) {
+            foreach ($res['order_list'] as $item) {
+                if (is_scalar($item) && ctype_digit((string) $item) && strlen((string) $item) >= 10) {
+                    $orderIds[] = (string) $item;
+                }
+                if (is_array($item)) {
+                    if (isset($item['order_id']) && ctype_digit((string) $item['order_id']) && strlen((string) $item['order_id']) >= 10) {
+                        $orderIds[] = (string) $item['order_id'];
+                    }
+                    if (isset($item['number']) && ctype_digit((string) $item['number']) && strlen((string) $item['number']) >= 10) {
+                        $orderIds[] = (string) $item['number'];
+                    }
+                }
+            }
+        }
+
+        if (isset($res['order_id']) && is_scalar($res['order_id']) && ctype_digit((string) $res['order_id']) && strlen((string) $res['order_id']) >= 10) {
+            $orderIds[] = (string) $res['order_id'];
+        }
+
+        return array_values(array_unique($orderIds));
+    }
+
+    /**
      * Extract authoritative numeric order ID from response body.
      */
     protected function parseAuthoritativeOrderId(array $body): ?string
     {
+        $all = $this->parseAuthoritativeOrderIds($body);
+        if (! empty($all)) {
+            return $all[0];
+        }
+
         $resp = $body['aliexpress_ds_order_create_response'] ?? $body;
         $res = $resp['result'] ?? [];
 

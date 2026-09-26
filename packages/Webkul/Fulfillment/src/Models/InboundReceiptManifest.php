@@ -33,7 +33,17 @@ class InboundReceiptManifest extends Model
         return $this->belongsTo(InventorySource::class, 'destination_inventory_source_id');
     }
 
+    public function destinationInventorySource(): BelongsTo
+    {
+        return $this->belongsTo(InventorySource::class, 'destination_inventory_source_id');
+    }
+
     public function quarantine(): BelongsTo
+    {
+        return $this->belongsTo(InventorySource::class, 'quarantine_inventory_source_id');
+    }
+
+    public function quarantineInventorySource(): BelongsTo
     {
         return $this->belongsTo(InventorySource::class, 'quarantine_inventory_source_id');
     }
@@ -44,6 +54,11 @@ class InboundReceiptManifest extends Model
     }
 
     public function receivedBy(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'received_by_admin_id');
+    }
+
+    public function receivedByAdmin(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'received_by_admin_id');
     }

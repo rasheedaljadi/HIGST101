@@ -20,6 +20,7 @@
         <div>
             <span 
                 class="icon-minus cursor-pointer text-2xl"
+                :class="{'opacity-40 !cursor-not-allowed': isAtMin}"
                 role="button"
                 tabindex="0"
                 aria-label="@lang('shop::app.components.quantity-changer.decrease-quantity')"
@@ -27,12 +28,13 @@
             >
             </span>
 
-            <p class="w-2.5 select-none text-center max-sm:text-sm">
+            <p class="w-auto min-w-[20px] px-1 select-none text-center max-sm:text-sm">
                 @{{ quantity }}
             </p>
             
             <span 
                 class="icon-plus cursor-pointer text-2xl"
+                :class="{'opacity-40 !cursor-not-allowed': isAtMax}"
                 role="button"
                 tabindex="0"
                 aria-label="@lang('shop::app.components.quantity-changer.increase-quantity')"
@@ -52,27 +54,57 @@
         app.component("v-quantity-changer", {
             template: '#v-quantity-changer-template',
 
-            props:['name', 'value', 'minValue'],
+            props: ['name', 'value', 'minValue', 'maxValue'],
 
             data() {
                 return  {
-                    quantity: this.value,
+                    quantity: parseInt(this.value) || 1,
+                }
+            },
+
+            computed: {
+                isAtMin() {
+                    let min = parseInt(this.minValue);
+                    return !isNaN(min) && this.quantity <= min;
+                },
+
+                isAtMax() {
+                    if (this.maxValue === null || this.maxValue === undefined || this.maxValue === '') {
+                        return false;
+                    }
+                    let max = parseInt(this.maxValue);
+                    return !isNaN(max) && max > 0 && this.quantity >= max;
                 }
             },
 
             watch: {
-                value() {
-                    this.quantity = this.value;
+                value(newVal) {
+                    this.quantity = parseInt(newVal) || 1;
                 },
+
+                maxValue(newMax) {
+                    if (newMax !== null && newMax !== undefined && newMax !== '') {
+                        let max = parseInt(newMax);
+                        if (!isNaN(max) && max > 0 && this.quantity > max) {
+                            this.quantity = max;
+                            this.$emit('change', this.quantity);
+                        }
+                    }
+                }
             },
 
             methods: {
                 increase() {
-                    this.$emit('change', ++this.quantity);
+                    if (this.isAtMax) {
+                        return;
+                    }
+
+                    this.quantity++;
+                    this.$emit('change', this.quantity);
                 },
 
                 decrease() {
-                    if (this.quantity > this.minValue) {
+                    if (this.quantity > (parseInt(this.minValue) || 1)) {
                         this.quantity -= 1;
 
                         this.$emit('change', this.quantity);

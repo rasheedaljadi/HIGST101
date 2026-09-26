@@ -6,7 +6,7 @@ return [
             'email' => 'البريد الإلكتروني',
             'forget-password-link' => 'نسيت كلمة المرور؟',
             'password' => 'كلمة المرور',
-            'powered-by-description' => 'Hayest | هايست — منصتك للتجارة الإلكترونية.',
+            'powered-by-description' => 'HIGHEST | هايست — منصتك للتجارة الإلكترونية.',
             'submit-btn' => 'تسجيل الدخول',
             'title' => 'تسجيل الدخول',
         ],
@@ -16,7 +16,7 @@ return [
                 'email' => 'بريدك الإلكتروني',
                 'email-not-exist' => 'لا يوجد حساب مرتبط بهذا البريد.',
                 'page-title' => 'نسيت كلمة المرور',
-                'powered-by-description' => 'Hayest | هايست — منصتك للتجارة الإلكترونية.',
+                'powered-by-description' => 'HIGHEST | هايست — منصتك للتجارة الإلكترونية.',
                 'reset-link-sent' => 'أرسلنا لك رابط إعادة تعيين كلمة المرور.',
                 'sign-in-link' => 'رجوع إلى تسجيل الدخول',
                 'submit-btn' => 'إرسال الرابط',
@@ -29,7 +29,7 @@ return [
             'confirm-password' => 'تأكيد كلمة المرور',
             'email' => 'بريدك الإلكتروني',
             'password' => 'كلمة المرور الجديدة',
-            'powered-by-description' => 'Hayest | هايست — منصتك للتجارة الإلكترونية.',
+            'powered-by-description' => 'HIGHEST | هايست — منصتك للتجارة الإلكترونية.',
             'submit-btn' => 'تعيين كلمة المرور الجديدة',
             'title' => 'إعادة تعيين كلمة المرور',
         ],
@@ -3585,6 +3585,19 @@ return [
                 'status' => 'الحالة',
                 'theme' => 'السمة',
                 'title' => 'إنشاء قناة',
+                'whatsapp-support' => 'عنصر التواصل (واتساب)',
+                'whatsapp-number' => 'رقم هاتف الواتساب',
+                'whatsapp-number-placeholder' => '+967770000000',
+                'whatsapp-number-tip' => 'أدخل رقم الواتساب متضمناً مفتاح الدولة الدولي (مثال: 96777xxxxxxx+ أو 96777xxxxxxx).',
+                'social-links' => 'روابط وسائل التواصل الاجتماعي',
+                'social-links-tip' => 'أدخل روابط حسابات وسائل التواصل الاجتماعي الخاصة بمتجرك لتظهر تلقائياً في الفوتر.',
+                'facebook' => 'فيسبوك (Facebook)',
+                'instagram' => 'إنستغرام (Instagram)',
+                'twitter' => 'إكس / تويتر (X / Twitter)',
+                'youtube' => 'يوتيوب (YouTube)',
+                'tiktok' => 'تيك توك (TikTok)',
+                'snapchat' => 'سناب شات (Snapchat)',
+                'telegram' => 'تيليجرام (Telegram)',
             ],
 
             'edit' => [
@@ -3620,6 +3633,19 @@ return [
                 'theme' => 'السمة',
                 'title' => 'تعديل القناة',
                 'update-success' => 'تم تحديث القناة بنجاح.',
+                'whatsapp-support' => 'عنصر التواصل (واتساب)',
+                'whatsapp-number' => 'رقم هاتف الواتساب',
+                'whatsapp-number-placeholder' => '+967770000000',
+                'whatsapp-number-tip' => 'أدخل رقم الواتساب متضمناً مفتاح الدولة الدولي (مثال: 96777xxxxxxx+ أو 96777xxxxxxx).',
+                'social-links' => 'روابط وسائل التواصل الاجتماعي',
+                'social-links-tip' => 'أدخل روابط حسابات وسائل التواصل الاجتماعي الخاصة بمتجرك لتظهر تلقائياً في الفوتر.',
+                'facebook' => 'فيسبوك (Facebook)',
+                'instagram' => 'إنستغرام (Instagram)',
+                'twitter' => 'إكس / تويتر (X / Twitter)',
+                'youtube' => 'يوتيوب (YouTube)',
+                'tiktok' => 'تيك توك (TikTok)',
+                'snapchat' => 'سناب شات (Snapchat)',
+                'telegram' => 'تيليجرام (Telegram)',
             ],
         ],
 
@@ -4075,6 +4101,18 @@ return [
                         'custom-javascript' => 'جافا سكريبت مخصص',
                         'title' => 'النصوص المخصصة',
                         'title-info' => 'أضف أكواد CSS أو JavaScript مخصصة لتعديل مظهر متجرك أو إضافة وظائف خاصة.',
+                    ],
+
+                    'app-download' => [
+                        'title' => 'تحميل تطبيق الجوال',
+                        'info' => 'إعدادات زر تحميل التطبيق في الهيدر وروابط المتاجر ورمز الاستجابة السريعة (QR Code).',
+                        'enabled' => 'تفعيل زر تحميل التطبيق',
+                        'app-title' => 'عنوان التطبيق',
+                        'app-subtitle' => 'الوصف الترويجي / دعوة مسح الكود',
+                        'google-play-link' => 'رابط متجر جوجل بلاي (Google Play)',
+                        'app-store-link' => 'رابط متجر آبل (App Store)',
+                        'qr-code-image' => 'صورة رمز QR مخصصة (اختياري)',
+                        'qr-code-image-info' => 'ارفع صورة QR كود مخصصة. في حال عدم الرفع، سيتم إنشاء وتوليد QR Code تلقائياً.',
                     ],
                 ],
 
@@ -5255,7 +5293,7 @@ return [
             ],
 
             'powered-by' => [
-                'description' => 'Hayest | هايست — منصتك للتجارة الإلكترونية.',
+                'description' => 'HIGHEST | هايست — منصتك للتجارة الإلكترونية.',
             ],
         ],
 
@@ -5582,7 +5620,7 @@ return [
     ],
 
     'footer' => [
-        'copy-right' => '© :year جميع الحقوق محفوظة لـ <strong>Hayest | هايست</strong>',
+        'copy-right' => '© :year جميع الحقوق محفوظة لـ <strong>HIGHEST | هايست</strong>',
     ],
 
     'emails' => [

@@ -5,6 +5,7 @@ namespace Webkul\Inventory\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Webkul\Fulfillment\Models\InboundReceiptManifest;
 use Webkul\Fulfillment\Models\InventoryTransferManifest;
 use Webkul\Fulfillment\Services\InboundReceiptService;
@@ -38,7 +39,7 @@ class InboundReceiptController extends Controller
         $transferManifest = null;
 
         if ($transferManifestId) {
-            $transferManifest = InventoryTransferManifest::with(['items', 'sourceInventorySource', 'destinationInventorySource'])
+            $transferManifest = InventoryTransferManifest::with(['items.product', 'sourceInventorySource', 'destinationInventorySource'])
                 ->find($transferManifestId);
         }
 
@@ -55,6 +56,60 @@ class InboundReceiptController extends Controller
             'destinationSources',
             'quarantineSources'
         ));
+    }
+
+    /**
+     * Get details of a transfer manifest including full item breakdown.
+     */
+    public function getTransferManifestDetails(int $id)
+    {
+        $manifest = InventoryTransferManifest::with([
+            'items.product',
+            'sourceInventorySource',
+            'destinationInventorySource',
+        ])->find($id);
+
+        if (! $manifest) {
+            return response()->json(['error' => 'Transfer manifest not found'], 404);
+        }
+
+        $locale = app()->getLocale();
+
+        $items = $manifest->items->map(function ($item) use ($locale) {
+            $productFlat = DB::table('product_flat')
+                ->where('product_id', $item->product_id)
+                ->where('locale', $locale)
+                ->first();
+
+            $image = DB::table('product_images')
+                ->where('product_id', $item->product_id)
+                ->value('path');
+
+            return [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'sku' => $item->sku,
+                'name' => $productFlat?->name ?? $item->product?->name ?? $item->sku,
+                'qty_shipped' => (int) $item->qty_shipped,
+                'qty_good' => (int) $item->qty_shipped,
+                'qty_damaged' => 0,
+                'qty_missing' => 0,
+                'image_url' => $image ? asset('storage/'.$image) : null,
+            ];
+        });
+
+        return response()->json([
+            'id' => $manifest->id,
+            'manifest_number' => $manifest->manifest_number,
+            'status' => $manifest->status?->value ?? $manifest->status,
+            'carrier_name' => $manifest->carrier_name,
+            'tracking_number' => $manifest->tracking_number,
+            'source_inventory_source_id' => $manifest->source_inventory_source_id,
+            'destination_inventory_source_id' => $manifest->destination_inventory_source_id,
+            'source_name' => $manifest->sourceInventorySource?->name ?? $manifest->source?->name,
+            'destination_name' => $manifest->destinationInventorySource?->name ?? $manifest->destination?->name,
+            'items' => $items,
+        ]);
     }
 
     /**

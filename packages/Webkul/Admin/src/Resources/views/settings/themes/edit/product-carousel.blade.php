@@ -56,6 +56,31 @@
                     <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[options][title]" />
                 </x-admin::form.control-group>
 
+                <!-- Display Mode Selection -->
+                <x-admin::form.control-group class="mb-2.5">
+                    <x-admin::form.control-group.label>
+                        طريقة عرض قسم المنتجات (Display Mode)
+                    </x-admin::form.control-group.label>
+
+                    <v-field
+                        name="{{ $currentLocale->code }}[options][display_mode]"
+                        v-slot="{ field }"
+                        value="{{ $theme->translate($currentLocale->code)->options['display_mode'] ?? 'carousel' }}"
+                        label="طريقة عرض قسم المنتجات"
+                    >
+                        <select
+                            name="{{ $currentLocale->code }}[options][display_mode]"
+                            v-bind="field"
+                            class="custom-select flex min-h-[39px] w-full rounded-md border bg-white px-3 py-1.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
+                        >
+                            <option value="carousel">شريط أفقي مع أسهم للتمرير (سلايدر النظام الافتراضي)</option>
+                            <option value="grid">عرض شبكي في صفوف متتالية (تحميل عند التمرير)</option>
+                        </select>
+                    </v-field>
+
+                    <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[options][display_mode]" />
+                </x-admin::form.control-group>
+
                 <!-- Card Style Selection -->
                 <x-admin::form.control-group class="mb-2.5">
                     <x-admin::form.control-group.label>
@@ -131,10 +156,10 @@
                         label="@lang('admin::app.settings.themes.edit.limit')"
                     >
                         <select
-                            name="options[filters][limit]"
+                            name="{{ $currentLocale->code }}[options][filters][limit]"
                             v-bind="field"
                             class="custom-select flex min-h-[39px] w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
-                            :class="[errors['options[filters][limit]'] ? 'border border-red-600 hover:border-red-600' : '']"
+                            :class="[errors['{{ $currentLocale->code }}[options][filters][limit]'] ? 'border border-red-600 hover:border-red-600' : '']"
                         >
                             <option value="" selected disabled>@lang('admin::app.settings.themes.edit.select')</option>
 

@@ -13,4 +13,15 @@ class CatalogRuleProductRepository extends Repository
     {
         return 'Webkul\CatalogRule\Contracts\CatalogRuleProduct';
     }
+
+    /**
+     * Disable repository cache for intermediate indexing table.
+     *
+     * @param  string  $method
+     * @return bool
+     */
+    protected function allowedCache($method)
+    {
+        return false;
+    }
 }

@@ -74,14 +74,33 @@ class HomeDelivery extends AbstractShipping
         $rule = $validator->getActiveRule($stateCode, ShippingMethodAdapter::CANONICAL_HOME_DELIVERY);
 
         $fee = (float) ($rule?->delivery_fee ?? 0.0);
+        $cartSubTotal = (float) ($cart?->base_sub_total ?? 0.0);
+        $freeThreshold = $rule?->free_delivery_threshold !== null ? (float) $rule->free_delivery_threshold : null;
+
+        $isFreeDelivery = false;
+        if ($freeThreshold !== null && $freeThreshold > 0 && $cartSubTotal >= $freeThreshold) {
+            $isFreeDelivery = true;
+            $fee = 0.0;
+        }
 
         $cartShippingRate = new CartShippingRate;
 
         $cartShippingRate->carrier = $this->getCode();
         $cartShippingRate->carrier_title = 'توصيل إلى المنزل (Home Delivery)';
         $cartShippingRate->method = $this->getMethod();
-        $cartShippingRate->method_title = 'توصيل مباشر إلى العنوان';
-        $cartShippingRate->method_description = 'توصيل الطلب إلى العنوان المحدد من قبل العميل';
+
+        if ($isFreeDelivery) {
+            $cartShippingRate->method_title = 'توصيل منزلي مجاني';
+            $cartShippingRate->method_description = '🎉 توصيل مجاني لتجاوز سلتك الحد الأدنى ('.core()->currency($freeThreshold).')';
+        } else {
+            $cartShippingRate->method_title = 'توصيل مباشر إلى العنوان';
+            if ($freeThreshold !== null && $freeThreshold > 0) {
+                $cartShippingRate->method_description = 'توصيل الطلب إلى عنوان العميل (توصيل مجاني للطلبات أكبر من '.core()->currency($freeThreshold).')';
+            } else {
+                $cartShippingRate->method_description = 'توصيل الطلب إلى العنوان المحدد من قبل العميل';
+            }
+        }
+
         $cartShippingRate->price = core()->convertPrice($fee);
         $cartShippingRate->base_price = $fee;
 

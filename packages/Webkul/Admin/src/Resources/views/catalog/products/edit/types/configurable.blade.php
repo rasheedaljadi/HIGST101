@@ -1499,13 +1499,31 @@
             created() {
                 let inventories = {};
 
-                this.inventorySources.forEach((source) => {
-                    const inventory = Array.isArray(this.variant.inventories)
-                        ? this.variant.inventories.find(inventory => inventory.inventory_source_id === source.id)
-                        : null;
+                if (Array.isArray(this.variant.inventories)) {
+                    this.inventorySources.forEach((source) => {
+                        const inventory = this.variant.inventories.find(inv => inv.inventory_source_id === source.id);
 
-                    inventories[source.id] = inventory ? (inventory.qty || 0) : 0;
-                });
+                        inventories[source.id] = inventory ? (parseInt(inventory.qty) || 0) : 0;
+                    });
+
+                    this.variant.inventories.forEach((inv) => {
+                        if (inv.inventory_source_id && inventories[inv.inventory_source_id] === undefined) {
+                            inventories[inv.inventory_source_id] = parseInt(inv.qty) || 0;
+                        }
+                    });
+                } else if (typeof this.variant.inventories === 'object' && this.variant.inventories !== null) {
+                    inventories = { ...this.variant.inventories };
+
+                    this.inventorySources.forEach((source) => {
+                        if (inventories[source.id] === undefined) {
+                            inventories[source.id] = 0;
+                        }
+                    });
+                } else {
+                    this.inventorySources.forEach((source) => {
+                        inventories[source.id] = 0;
+                    });
+                }
 
                 this.variant.inventories = inventories;
             },

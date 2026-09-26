@@ -24,6 +24,7 @@ return [
             'transfers-create' => 'إنشاء مسودة مانيفست',
             'transfers-view' => 'عرض تفاصيل المانيفست',
             'transfers-dispatch' => 'اعتماد وإرسال المانيفست',
+            'transfers-cancel' => 'إلغاء مسودة المانيفست',
             'receipts' => 'الاستلام والفروقات',
             'receipts-process' => 'تنفيذ الفحص والاستلام',
             'receipts-view' => 'عرض تفاصيل الاستلام',
@@ -52,6 +53,8 @@ return [
             'title' => 'المصادر الستة الرسمية والأرصدة',
             'description' => 'استعراض مصادر المخزون المعتمدة وفق النموذج المعماري V1.2 مع الأرصدة الحية',
             'canonical-notice' => 'الحقول المعمارية (قابلية البيع والتسليم) محمية وغير قابلة للتعديل للحفاظ على سلامة الفهرس ومسارات الشحن.',
+            'view-action' => 'معاينة المخزون وتفاصيل العناصر',
+            'view-title' => 'معاينة سجل المخزون',
         ],
         'products' => [
             'title' => 'بطاقة المنتج حسب المصدر',
@@ -73,6 +76,7 @@ return [
             'delivery_failure_return' => 'إرجاع بعد تعثر التوصيل',
             'damage_or_loss' => 'تلف أو فقدان',
             'quarantine_release' => 'فك حجر وتسوية معتمدة',
+            'transfer_stock_out' => 'إرسال مانيفست نقل',
             'adjustment' => 'تسوية رسمية معتمدة',
         ],
         'transfers' => [
@@ -91,6 +95,8 @@ return [
             'qty-shipped' => 'الكمية المشحونة',
             'dispatch-action' => 'اعتماد وإرسال المانيفست (In Transit)',
             'dispatch-confirm' => 'هل أنت متأكد من اعتماد وإرسال هذا المانيفست؟ سيتحول إلى قيد النقل.',
+            'cancel-action' => 'إلغاء المانيفست',
+            'cancel-confirm' => 'هل أنت متأكد من إلغاء مسودة هذا المانيفست؟ لن تتمكن من تعديله أو إرساله بعد ذلك.',
             'open-receipt' => 'فتح الاستلام والفحص الميداني',
             'virtual-source-error' => 'لا يمكن إنشاء نقل من مصدر افتراضي (AliExpress). النقل المادي يبدأ من مستودعات التجميع المعتمدة فقط.',
         ],
@@ -148,12 +154,14 @@ return [
             'partially_received' => 'مستلم جزئياً',
             'received' => 'مستلم بالكامل',
             'discrepancy' => 'مستلم مع وجود فروقات',
+            'cancelled' => 'ملغى',
         ],
         'item_conditions' => [
             'good' => 'سليم (Good)',
             'damaged' => 'تالف (Damaged)',
             'missing' => 'ناقص / عجز (Missing)',
             'wrong' => 'صنف مختلف',
+            'wrong_item' => 'صنف مختلف / خطأ',
             'pending' => 'قيد الفحص',
         ],
         'receipt_statuses' => [

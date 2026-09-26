@@ -22,6 +22,53 @@
         : ($isDeliveryPoint ? 'نقطة تسليم معتمدة (هايست)' : ($order->shipping_title ?: 'شحن هايست'));
 
     $defaultTrackNumber = 'HAYEST-' . str_pad((string) ($order->increment_id ?? $order->id), 8, '0', STR_PAD_LEFT);
+
+    // Determine order items origin (internal vs dropship)
+    $hasInternalItems = false;
+    $hasDropshipItems = false;
+
+    foreach ($order->items as $orderItem) {
+        if ($orderItem->qty_to_ship <= 0 || ! $orderItem->product) {
+            continue;
+        }
+        $isItemDropship = str_starts_with((string) $orderItem->sku, 'ae-')
+            || isset($orderItem->additional['aliexpress'])
+            || isset($orderItem->additional['ae_product_id'])
+            || (isset($orderItem->additional['inventory_source']) && $orderItem->additional['inventory_source'] === 'aliexpress_source');
+
+        if ($isItemDropship) {
+            $hasDropshipItems = true;
+        } else {
+            $hasInternalItems = true;
+        }
+    }
+
+    $allowedCodes = [];
+    if ($hasInternalItems) {
+        $allowedCodes[] = 'hayest_central';
+    }
+    if ($hasDropshipItems) {
+        $allowedCodes[] = 'hayest_dropship_ye';
+    }
+    if (empty($allowedCodes)) {
+        $allowedCodes = ['hayest_central', 'hayest_dropship_ye'];
+    }
+
+    $shipmentSources = $order->channel->inventory_sources
+        ->whereIn('code', $allowedCodes);
+
+    if ($shipmentSources->isEmpty()) {
+        $shipmentSources = \Webkul\Inventory\Models\InventorySource::whereIn('code', $allowedCodes)->where('status', 1)->get();
+    }
+
+    if ($hasDropshipItems && ! $hasInternalItems) {
+        $defaultShipmentSource = $shipmentSources->firstWhere('code', 'hayest_dropship_ye') ?: $shipmentSources->first();
+    } elseif ($hasInternalItems && ! $hasDropshipItems) {
+        $defaultShipmentSource = $shipmentSources->firstWhere('code', 'hayest_central') ?: $shipmentSources->first();
+    } else {
+        $defaultShipmentSource = $shipmentSources->first();
+    }
+    $defaultSourceId = $defaultShipmentSource?->id ?? '';
 @endphp
 
 <!-- Shipment Vue Components -->
@@ -232,7 +279,7 @@
                                     :placeholder="trans('admin::app.sales.shipments.create.source')"
                                     @change="onSourceChange"
                                 >
-                                    @foreach ($order->channel->inventory_sources as $inventorySource)
+                                    @foreach ($shipmentSources as $inventorySource)
                                         <option 
                                             value="{{ $inventorySource->id }}"
                                             v-pre
@@ -340,29 +387,50 @@
                                         </div>
 
                                         <!-- Information -->
-                                        @foreach ($order->channel->inventory_sources as $inventorySource)
+                                        @php
+                                            $isItemDropship = str_starts_with((string) $item->sku, 'ae-')
+                                                || isset($item->additional['aliexpress'])
+                                                || isset($item->additional['ae_product_id'])
+                                                || (isset($item->additional['inventory_source']) && $item->additional['inventory_source'] === 'aliexpress_source');
+
+                                            $targetItemSourceCode = $isItemDropship ? 'hayest_dropship_ye' : 'hayest_central';
+                                            $inventorySource = $order->channel->inventory_sources->firstWhere('code', $targetItemSourceCode)
+                                                ?: \Webkul\Inventory\Models\InventorySource::where('code', $targetItemSourceCode)->first();
+                                        @endphp
+
+                                        @if ($inventorySource)
                                             <div class="grid grid-cols-2 gap-2.5 border-b border-slate-300 py-2.5 dark:border-gray-800">
                                                 <div class="grid gap-1">
                                                     <!--Inventory Source -->
                                                     <p
-                                                        class="text-base font-semibold text-gray-800 dark:text-white"
+                                                        class="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-1.5"
                                                         v-pre
                                                     >
+                                                        @if ($isItemDropship)
+                                                            <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-700">📦 دروبشوبنج</span>
+                                                        @else
+                                                            <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700">🏢 مخزون داخلي</span>
+                                                        @endif
                                                         {{ $inventorySource->name }}
                                                     </p>
 
                                                     <!-- Available Quantity -->
-                                                    <p class="text-gray-600 dark:text-gray-300">
+                                                    <p class="text-gray-600 dark:text-gray-300 text-xs">
                                                         @lang('admin::app.sales.shipments.create.qty-available') :
 
                                                         @php
                                                             $product = $item->getTypeInstance()->getOrderedItem($item)->product;
-
-                                                            $sourceQty = $product?->type == 'bundle' ? $item->qty_ordered : $product?->inventory_source_qty($inventorySource->id);
+                                                            $sourceQty = (int) ($product?->inventory_source_qty($inventorySource->id) ?? 0);
                                                         @endphp
 
-                                                        {{ $sourceQty }}
+                                                        <span class="font-semibold {{ $sourceQty > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }} font-mono">{{ $sourceQty }}</span>
                                                     </p>
+
+                                                    @if ($isItemDropship && $sourceQty <= 0)
+                                                        <p class="text-[11px] text-amber-600 dark:text-amber-400 font-medium leading-relaxed">
+                                                            ⏳ لا يوجد مخزون حالي في مركز التوزيع بصنعاء (بانتظار تنفيذ أمر الشراء والتوريد عبر الرياض).
+                                                        </p>
+                                                    @endif
                                                 </div>
 
                                                 <div class="grid ltr:text-right rtl:text-left">
@@ -378,7 +446,7 @@
 
                                                         <x-admin::form.control-group.control
                                                             type="text"
-                                                            class="!w-[100px]"
+                                                            class="!w-[100px] font-mono text-center font-bold"
                                                             :id="$inputName"
                                                             :name="$inputName"
                                                             :rules="'required|numeric|min_value:0|max_value:' . $canShipQty['qty']"
@@ -393,11 +461,11 @@
                                                     </x-admin::form.control-group>
                                                 </div>
 
-												@if ($canShipQty['message'])
-													<p class="mt-1 text-xs italic text-green-600">{{ $canShipQty['message'] }}</p>
-												@endif
+                                                @if ($canShipQty['message'])
+                                                    <p class="mt-1 text-xs italic text-green-600 col-span-2">{{ $canShipQty['message'] }}</p>
+                                                @endif
                                             </div>
-                                        @endforeach
+                                        @endif
                                     @endif
                                 @endforeach
                             </div>
@@ -414,8 +482,14 @@
 
         data() {
             return {
-                source: "",
+                source: "{{ $defaultSourceId }}",
             };
+        },
+
+        mounted() {
+            this.$nextTick(() => {
+                this.setOriginalQuantityToAllShipmentInputElements();
+            });
         },
 
         methods: {

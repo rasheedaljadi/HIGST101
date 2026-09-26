@@ -66,16 +66,96 @@ class ProductPDPTransformer
         $customAttributeValues = $this->productViewHelper->getAdditionalData($product);
         $dropshipping = $this->productViewHelper->getDropshippingMetadata($product);
 
-        $totalQty = 0;
-        if ($product->type === 'simple') {
-            $totalQty = $product->inventories()->sum('qty');
-        } elseif ($product->type === 'configurable') {
-            foreach ($product->variants as $variant) {
-                $totalQty += $variant->inventories()->sum('qty');
+        $totalQty = (int) $typeInstance->totalQuantity();
+        if ($totalQty <= 0) {
+            if ($product->type === 'simple') {
+                $totalQty = (int) $product->inventories()->sum('qty');
+            } elseif ($product->type === 'configurable') {
+                foreach ($product->variants as $variant) {
+                    $totalQty += (int) $variant->inventories()->sum('qty');
+                }
             }
         }
 
         $isSaleable = (bool) $product->isSaleable(1);
+
+        // Resolve Expected Shipping Duration from product settings / import
+        $aeImport = \App\Models\AliExpressProductImport::where('product_id', $product->id)
+            ->orWhere('sku', $product->sku)
+            ->orWhere('aliexpress_product_id', $product->sku)
+            ->orWhere(function ($q) use ($product) {
+                if (! empty($product->parent_id)) {
+                    $q->where('product_id', $product->parent_id);
+                }
+            })
+            ->first();
+
+        $shippingDaysText = null;
+        $shippingMinDays = null;
+        $shippingMaxDays = null;
+
+        if ($aeImport && ($aeImport->shipping_min_days !== null || $aeImport->shipping_max_days !== null)) {
+            $aeSettings = \App\Models\AliExpressSetting::first();
+            $extraDays = (int) ($aeSettings->shipping_extra_days ?? 0);
+            $shippingMinDays = $aeImport->shipping_min_days !== null ? ((int) $aeImport->shipping_min_days + $extraDays) : null;
+            $shippingMaxDays = $aeImport->shipping_max_days !== null ? ((int) $aeImport->shipping_max_days + $extraDays) : null;
+
+            if ($shippingMinDays && $shippingMaxDays && $shippingMinDays !== $shippingMaxDays) {
+                $shippingDaysText = "{$shippingMinDays} - {$shippingMaxDays} يوم";
+            } elseif ($shippingMaxDays ?: $shippingMinDays) {
+                $shippingDaysText = ($shippingMaxDays ?: $shippingMinDays) . ' يوم';
+            }
+        } elseif (! empty($product->shipping_days) || ! empty($product->delivery_days) || ! empty($product->shipping_time)) {
+            $val = $product->shipping_days ?: ($product->delivery_days ?: $product->shipping_time);
+            $shippingDaysText = is_numeric($val) ? "{$val} يوم" : (string) $val;
+        }
+
+        // Resolve Return Policy (if defined for product)
+        $allowRmaAttrId = once(fn () => \Illuminate\Support\Facades\DB::table('attributes')->where('code', 'allow_rma')->value('id'));
+        $rmaRuleAttrId = once(fn () => \Illuminate\Support\Facades\DB::table('attributes')->where('code', 'rma_rule_id')->value('id'));
+        $prodIds = array_filter([$product->id, $product->parent_id]);
+
+        $allowRma = false;
+        if ($allowRmaAttrId) {
+            $allowRma = (bool) \Illuminate\Support\Facades\DB::table('product_attribute_values')
+                ->whereIn('product_id', $prodIds)
+                ->where('attribute_id', $allowRmaAttrId)
+                ->value('boolean_value');
+        }
+
+        $returnDays = null;
+        $returnDaysText = null;
+        if ($allowRma) {
+            if ($rmaRuleAttrId) {
+                $returnDays = \Illuminate\Support\Facades\DB::table('product_attribute_values')
+                    ->whereIn('product_attribute_values.product_id', $prodIds)
+                    ->where('product_attribute_values.attribute_id', $rmaRuleAttrId)
+                    ->join('rma_rules', 'product_attribute_values.integer_value', '=', 'rma_rules.id')
+                    ->where('rma_rules.status', 1)
+                    ->value('rma_rules.return_period');
+            }
+
+            if ($returnDays === null || $returnDays === '') {
+                $defaultRmaDays = core()->getConfigData('sales.rma.setting.default_allow_days');
+                if ($defaultRmaDays) {
+                    $returnDays = (int) $defaultRmaDays;
+                }
+            } else {
+                $returnDays = (int) $returnDays;
+            }
+
+            if ($returnDays && $returnDays > 0) {
+                if ($returnDays == 1) {
+                    $returnDaysText = 'خلال يوم واحد';
+                } elseif ($returnDays == 2) {
+                    $returnDaysText = 'خلال يومين';
+                } elseif ($returnDays >= 3 && $returnDays <= 10) {
+                    $returnDaysText = "خلال {$returnDays} أيام";
+                } else {
+                    $returnDaysText = "خلال {$returnDays} يوم";
+                }
+            }
+        }
 
         return [
             'id' => $product->id,
@@ -105,6 +185,16 @@ class ProductPDPTransformer
             ],
             'custom_attributes' => $customAttributeValues,
             'dropshipping' => $dropshipping,
+            'shipping_estimation' => [
+                'min_days' => $shippingMinDays,
+                'max_days' => $shippingMaxDays,
+                'text'     => $shippingDaysText,
+            ],
+            'return_policy' => [
+                'allowed'  => (bool) $allowRma,
+                'days'     => $returnDays,
+                'text'     => $returnDaysText,
+            ],
             'model' => $product,
         ];
     }

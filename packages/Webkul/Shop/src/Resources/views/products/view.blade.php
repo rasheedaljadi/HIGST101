@@ -101,9 +101,9 @@
         <x-shop::shimmer.products.view />
     </v-product>
 
-    <!-- Information Section -->
-    <div class="1180:mt-20">
-        <div class="max-1180:hidden">
+    <!-- Information Section (Tabs for Tablets, Laptops & Desktops: md and up) -->
+    <div class="mt-14 max-md:hidden">
+        <div>
             <x-shop::tabs
                 position="center"
                 ref="productTabs"
@@ -115,7 +115,7 @@
                     id="descritpion-tab"
                     class="container mt-[60px] !p-0"
                     :title="trans('shop::app.products.view.description')"
-                    :is-selected="true"
+                    :is-selected="false"
                 >
                     <div class="container mt-[60px] max-1180:px-5">
                         <p
@@ -187,19 +187,39 @@
                 >
                     @include('shop::products.view.reviews')
                 </x-shop::tabs.item>
+
+                <!-- Related Products Tab (Default Active) -->
+                <x-shop::tabs.item
+                    id="related-products-tab"
+                    class="container !p-0"
+                    :title="trans('shop::app.products.view.related-product-title')"
+                    :is-selected="true"
+                >
+                    <div class="max-1180:px-5 [&_.container]:!mt-8 [&_.container]:!p-0">
+                        <x-shop::products.carousel
+                            :title="trans('shop::app.products.view.related-product-title')"
+                            :src="route('shop.api.products.related.index', ['id' => $product->id])"
+                        />
+
+                        <x-shop::products.carousel
+                            :title="trans('shop::app.products.view.up-sell-title')"
+                            :src="route('shop.api.products.up-sell.index', ['id' => $product->id])"
+                        />
+                    </div>
+                </x-shop::tabs.item>
             </x-shop::tabs>
         </div>
     </div>
 
-    <!-- Information Section -->
-    <div class="container mt-6 grid gap-3 !p-0 max-1180:px-5 1180:hidden">
+    <!-- Information Section (Collapsible Accordions for Mobile Phones: < md) -->
+    <div class="container mt-6 grid gap-3 !p-0 max-md:px-4 md:hidden">
         <!-- Description Accordion -->
         <x-shop::accordion
             class="max-md:border-none"
-            :is-active="true"
+            :is-active="false"
         >
             <x-slot:header class="bg-gray-100 max-md:!py-3 max-sm:!py-2">
-                <p class="text-base font-medium 1180:hidden">
+                <p class="text-base font-medium">
                     @lang('shop::app.products.view.description')
                 </p>
             </x-slot>
@@ -218,7 +238,7 @@
                 :is-active="false"
             >
                 <x-slot:header class="bg-gray-100 max-md:!py-3 max-sm:!py-2">
-                    <p class="text-base font-medium 1180:hidden">
+                    <p class="text-base font-medium">
                         @lang('shop::app.products.view.additional-information')
                     </p>
                 </x-slot>
@@ -289,6 +309,32 @@
 
             <x-slot:content>
                 @include('shop::products.view.reviews')
+            </x-slot>
+        </x-shop::accordion>
+
+        <!-- Related Products Accordion (Default Active on Mobile) -->
+        <x-shop::accordion
+            class="max-md:border-none"
+            :is-active="true"
+        >
+            <x-slot:header class="bg-gray-100 max-md:!py-3 max-sm:!py-2">
+                <p class="text-base font-medium">
+                    @lang('shop::app.products.view.related-product-title')
+                </p>
+            </x-slot>
+
+            <x-slot:content class="max-sm:px-0">
+                <div class="max-md:px-2 [&_.container]:!mt-2 [&_.container]:!p-0">
+                    <x-shop::products.carousel
+                        :title="trans('shop::app.products.view.related-product-title')"
+                        :src="route('shop.api.products.related.index', ['id' => $product->id])"
+                    />
+
+                    <x-shop::products.carousel
+                        :title="trans('shop::app.products.view.up-sell-title')"
+                        :src="route('shop.api.products.up-sell.index', ['id' => $product->id])"
+                    />
+                </div>
             </x-slot>
         </x-shop::accordion>
     </div>
@@ -442,6 +488,47 @@
 
                                 {!! view_render_event('bagisto.shop.products.price.after', ['product' => $product]) !!}
 
+                                {{-- Shipping Estimate & Return Policy Inline Row (Clean & Non-Intrusive) --}}
+                                @php
+                                    $shippingEstimation = $pdpViewData['shipping_estimation'] ?? null;
+                                    $returnPolicy = $pdpViewData['return_policy'] ?? null;
+
+                                    $shippingText = $shippingEstimation['text'] ?? null;
+                                    $returnText = ($returnPolicy['allowed'] ?? false) ? ($returnPolicy['text'] ?? null) : null;
+                                @endphp
+
+                                @if (! empty($shippingText) || ! empty($returnText))
+                                    <div class="mt-2.5 flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
+                                        @if (! empty($shippingText))
+                                            <div class="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                                                <svg class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="1" y="3" width="15" height="13"></rect>
+                                                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                                                </svg>
+                                                <span>{{ app()->getLocale() == 'ar' ? 'التوصيل المتوقع:' : 'Est. Delivery:' }} <strong class="font-semibold text-gray-900 dark:text-white">{{ $shippingText }}</strong></span>
+                                            </div>
+                                        @endif
+
+                                        @if (! empty($returnText))
+                                            @if (! empty($shippingText))
+                                                <span class="text-gray-300 dark:text-gray-600">|</span>
+                                            @endif
+                                            <div class="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                                                <svg class="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="1 4 1 10 7 10"></polyline>
+                                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                                                </svg>
+                                                <span>{{ app()->getLocale() == 'ar' ? 'إرجاع متاح:' : 'Returns:' }} <strong class="font-semibold text-gray-900 dark:text-white">{{ $returnText }}</strong></span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                <!-- Smart Offer Countdown Timer -->
+                                <x-shop::products.pdp-countdown :product="$product" />
+
                                 {!! view_render_event('bagisto.shop.products.short_description.before', ['product' => $product]) !!}
 
                                 <p
@@ -474,6 +561,7 @@
                                             <x-shop::quantity-changer
                                                 name="quantity"
                                                 value="1"
+                                                :max-value="$pdpViewData['total_qty'] ?? null"
                                                 class="gap-x-2.5 sm:gap-x-3 rounded-xl px-3 py-2.5 max-sm:px-2.5 max-sm:py-2 text-sm shrink-0 border border-gray-300 dark:border-gray-700"
                                             />
                                         @endif
@@ -534,10 +622,7 @@
                                     {!! view_render_event('bagisto.shop.products.view.additional_actions.after', ['product' => $product]) !!}
                                 </div>
 
-                                <!-- Dropshipping Fulfillment & Dispatch Transparency Card -->
-                                <x-shop::products.dropshipping-transparency
-                                    :dropshipping="$pdpViewData['dropshipping'] ?? []"
-                                />
+
                             </div>
                         </div>
                     </div>
@@ -741,6 +826,7 @@
                                     this.isWishlist = ! this.isWishlist;
 
                                     this.$emitter.emit('add-flash', { type: 'success', message: response.data.data.message });
+                                    this.$emitter.emit('wishlist-updated');
                                 })
                                 .catch(error => {});
                         } else {
@@ -866,9 +952,9 @@
             type="text/x-template"
             id="v-product-associations-template"
         >
-            <div ref="carouselWrapper">
+            <div ref="carouselWrapper" class="min-h-[100px]">
                 <template v-if="isVisible">
-                    <!-- Featured Products -->
+                    <!-- Related Products -->
                     <x-shop::products.carousel
                         :title="trans('shop::app.products.view.related-product-title')"
                         :src="route('shop.api.products.related.index', ['id' => $product->id])"
@@ -894,19 +980,28 @@
                 },
 
                 mounted() {
+                    if (! ('IntersectionObserver' in window)) {
+                        this.isVisible = true;
+                        return;
+                    }
+
                     const observer = new IntersectionObserver(
                         (entries) => {
                             entries.forEach((entry) => {
                                 if (entry.isIntersecting) {
                                     this.isVisible = true;
-                                    observer.unobserve(entry.target); // Stop observing
+                                    observer.unobserve(entry.target);
                                 }
                             });
                         },
-                        { threshold: 0.1 }
+                        { rootMargin: '400px 0px', threshold: 0 }
                     );
 
-                    observer.observe(this.$refs.carouselWrapper);
+                    if (this.$refs.carouselWrapper) {
+                        observer.observe(this.$refs.carouselWrapper);
+                    } else {
+                        this.isVisible = true;
+                    }
                 }
             });
         </script>

@@ -4,6 +4,7 @@ namespace Webkul\Shop\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Webkul\FlashDeal\Helpers\SmartThumbnailHelper;
 use Webkul\Product\Helpers\Review;
 
 class ProductResource extends JsonResource
@@ -30,11 +31,25 @@ class ProductResource extends JsonResource
     public function toArray($request)
     {
         $productTypeInstance = $this->getTypeInstance();
-        $regularPrice = (float) $this->price;
-        $finalPrice = (float) $productTypeInstance->getMinimalPrice();
+        $productPrices = $productTypeInstance->getProductPrices();
+        $regularPrice = isset($productPrices['regular']['price']) ? (float) $productPrices['regular']['price'] : (float) $this->price;
+        $finalPrice = isset($productPrices['final']['price']) ? (float) $productPrices['final']['price'] : (float) $productTypeInstance->getMinimalPrice();
         $discountPercent = 0;
         if ($regularPrice > $finalPrice && $regularPrice > 0) {
             $discountPercent = (int) round((($regularPrice - $finalPrice) / $regularPrice) * 100);
+        }
+
+        $baseImage = product_image()->getProductBaseImage($this);
+
+        try {
+            if (class_exists(SmartThumbnailHelper::class)) {
+                $smartHelper = app(SmartThumbnailHelper::class);
+                if (isset($baseImage['medium_image_url'])) {
+                    $smartUrl = $smartHelper->getSquareThumbnailUrl($this->resource, $baseImage['medium_image_url']);
+                    $baseImage['medium_image_url'] = $smartUrl;
+                }
+            }
+        } catch (\Throwable $e) {
         }
 
         return [
@@ -43,7 +58,7 @@ class ProductResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'url_key' => $this->url_key,
-            'base_image' => product_image()->getProductBaseImage($this),
+            'base_image' => $baseImage,
             'images' => product_image()->getGalleryImages($this),
             'is_new' => (bool) $this->new,
             'is_featured' => (bool) $this->featured,
@@ -54,7 +69,7 @@ class ProductResource extends JsonResource
                 ->where('channel_id', core()->getCurrentChannel()->id)
                 ->where('product_id', $this->id)->count(),
             'min_price' => core()->formatPrice($productTypeInstance->getMinimalPrice()),
-            'prices' => $productTypeInstance->getProductPrices(),
+            'prices' => $productPrices,
             'price_html' => $productTypeInstance->getPriceHtml(),
             'ratings' => [
                 'average' => $this->reviewHelper->getAverageRating($this),

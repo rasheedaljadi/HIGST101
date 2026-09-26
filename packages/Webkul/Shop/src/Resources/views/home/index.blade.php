@@ -146,29 +146,38 @@
 
                 @break
             @case ($customization::PRODUCT_CAROUSEL)
-                @if (($data['display_mode'] ?? '') === 'grid' || ($data['mode'] ?? '') === 'grid' || ($data['card_style'] ?? '') === 'grid')
-                    <!-- Products Grid Section (قسم المنتجات بتنسيق شبكي رسمياً من السمات) -->
+                @php
+                    $displayMode = $data['display_mode'] ?? 'carousel';
+                    if (empty($data['display_mode']) && (($data['mode'] ?? '') === 'grid' || ($data['card_style'] ?? '') === 'grid')) {
+                        $displayMode = 'grid';
+                    }
+                @endphp
+
+                @if ($displayMode === 'grid')
+                    <!-- Products Grid Section (عرض شبكي في صفوف متتالية مع تحميل عند التمرير) -->
                     <div class="container px-4 py-8 mx-auto max-w-[1440px]">
-                        <div class="flex items-center justify-between mb-6 pb-2 border-b border-gray-100 dark:border-gray-800">
-                            <h2 class="text-xl sm:text-2xl font-bold text-[#001A54] dark:text-white">
-                                {{ $customization->name ?? ($data['title'] ?? 'المنتجات') }}
+                        <div class="flex items-center justify-between mb-8 pb-3 border-b border-gray-100 dark:border-gray-800">
+                            <h2 class="font-dmserif text-2xl sm:text-3xl text-[#001A54] dark:text-white">
+                                {{ $data['title'] ?? ($customization->name ?? 'المنتجات') }}
                             </h2>
                             <a 
                                 href="{{ route('shop.search.index', $data['filters'] ?? []) }}"
-                                class="text-xs sm:text-sm font-bold text-[#001A54] hover:opacity-80 border border-gray-200 dark:border-gray-700 px-4 py-1.5 rounded-full transition-opacity flex items-center gap-1"
+                                class="text-xs sm:text-sm font-bold text-[#001A54] hover:opacity-80 border border-gray-200 dark:border-gray-700 px-4 py-1.5 rounded-full transition-opacity flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-gray-800"
                             >
                                 @lang('shop::app.home.index.view-all')
-                                <span class="icon-arrow-right rtl:rotate-180 text-xs"></span>
+                                <span class="icon-arrow-left rtl:rotate-0 rotate-180 text-xs"></span>
                             </a>
                         </div>
 
                         <!-- Vue Products Grid Component -->
                         <v-products-grid
-                            src="{{ route('shop.api.products.index', array_merge(['limit' => 12], $data['filters'] ?? [])) }}"
+                            src="{{ route('shop.api.products.index', array_merge($data['filters'] ?? [], ['limit' => 20])) }}"
+                            navigation-link="{{ route('shop.search.index', $data['filters'] ?? []) }}"
+                            card-style="{{ $data['card_style'] ?? 'standard' }}"
                         ></v-products-grid>
                     </div>
                 @else
-                    <!-- Product Carousel -->
+                    <!-- Product Carousel (شريط أفقي مع أسهم للتمرير - الافتراضي) -->
                     <x-shop::products.carousel
                         :title="$data['title'] ?? ''"
                         :src="route('shop.api.products.index', $data['filters'] ?? [])"
@@ -184,19 +193,47 @@
 
     @pushonce('scripts')
         <script type="text/x-template" id="v-products-grid-template">
-            <div v-if="isLoading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
-                <div v-for="n in 8" :key="n" class="h-[380px] bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse"></div>
-            </div>
-            <div v-else-if="products.length" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
-                <v-product-card
-                    :mode="'grid'"
-                    v-for="product in products"
-                    :key="product.id"
-                    :product="product"
-                ></v-product-card>
-            </div>
-            <div v-else class="text-center py-8 text-gray-500">
-                لا توجد منتجات متاحة حالياً
+            <div ref="gridContainer" class="w-full">
+                <!-- Initial Loading Skeleton (10 cards) -->
+                <div v-if="isLoading && !products.length" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-5">
+                    <div v-for="n in 10" :key="n" class="h-[360px] bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse"></div>
+                </div>
+
+                <!-- Products Grid -->
+                <div v-else-if="products.length" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-5">
+                    <v-product-card
+                        :mode="'grid'"
+                        v-for="product in products"
+                        :key="product.id"
+                        :product="product"
+                        :card-style="cardStyle"
+                    ></v-product-card>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="text-center py-12 text-gray-500 dark:text-gray-400">
+                    <p class="text-base sm:text-lg">لا توجد منتجات متاحة حالياً</p>
+                </div>
+
+                <!-- Loading more indicator on scroll -->
+                <div v-if="isLoadingMore" class="py-8 flex justify-center items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="inline-block w-6 h-6 border-3 border-[#001A54] border-t-transparent rounded-full animate-spin"></span>
+                    <span class="text-sm font-medium">جاري تحميل المزيد من المنتجات...</span>
+                </div>
+
+                <!-- Sentinel Element for scroll detection -->
+                <div ref="scrollSentinel" class="h-4 w-full"></div>
+
+                <!-- End-of-section View More button (تنقل المستخدم الى صفحة المنتجات) -->
+                <div v-if="navigationLink && products.length" class="mt-10 mb-4 text-center">
+                    <a
+                        :href="navigationLink"
+                        class="secondary-button inline-flex items-center justify-center gap-2 rounded-2xl px-10 py-3 text-center text-base font-semibold transition-all hover:shadow-md max-md:rounded-xl"
+                    >
+                        <span>عرض المزيد من المنتجات</span>
+                        <span class="icon-arrow-left rtl:rotate-0 rotate-180 text-lg"></span>
+                    </a>
+                </div>
             </div>
         </script>
 
@@ -204,30 +241,117 @@
             app.component('v-products-grid', {
                 template: '#v-products-grid-template',
 
-                props: ['src'],
+                props: {
+                    src: {
+                        type: String,
+                        required: true,
+                    },
+                    navigationLink: {
+                        type: String,
+                        default: '',
+                    },
+                    cardStyle: {
+                        type: String,
+                        default: 'standard',
+                    },
+                },
 
                 data() {
                     return {
                         isLoading: true,
+                        isLoadingMore: false,
                         products: [],
+                        page: 1,
+                        hasMore: true,
+                        observer: null,
                     };
                 },
 
                 mounted() {
-                    this.getProducts();
+                    this.getProducts(1);
+                    this.setupIntersectionObserver();
+                },
+
+                beforeUnmount() {
+                    if (this.observer) {
+                        this.observer.disconnect();
+                    }
                 },
 
                 methods: {
-                    getProducts() {
-                        this.$axios.get(this.src)
+                    getProducts(page = 1) {
+                        if (page === 1) {
+                            this.isLoading = true;
+                        } else {
+                            this.isLoadingMore = true;
+                        }
+
+                        const url = new URL(this.src, window.location.origin);
+                        url.searchParams.set('page', page);
+                        if (! url.searchParams.has('limit')) {
+                            url.searchParams.set('limit', 20);
+                        }
+
+                        this.$axios.get(url.toString())
                             .then(response => {
+                                const newProducts = response.data.data || [];
+
+                                if (page === 1) {
+                                    this.products = newProducts;
+                                } else {
+                                    const existingIds = new Set(this.products.map(p => p.id));
+                                    newProducts.forEach(p => {
+                                        if (! existingIds.has(p.id)) {
+                                            this.products.push(p);
+                                        }
+                                    });
+                                }
+
+                                const meta = response.data.meta;
+                                if (meta && meta.current_page && meta.last_page) {
+                                    this.hasMore = meta.current_page < meta.last_page;
+                                } else if (response.data.links && response.data.links.next) {
+                                    this.hasMore = true;
+                                } else {
+                                    this.hasMore = newProducts.length >= 20;
+                                }
+
+                                this.page = page;
                                 this.isLoading = false;
-                                this.products = response.data.data;
+                                this.isLoadingMore = false;
                             })
                             .catch(error => {
                                 this.isLoading = false;
-                                console.error(error);
+                                this.isLoadingMore = false;
+                                console.error('Failed to load products grid:', error);
                             });
+                    },
+
+                    setupIntersectionObserver() {
+                        if (! ('IntersectionObserver' in window)) {
+                            return;
+                        }
+
+                        this.observer = new IntersectionObserver((entries) => {
+                            const entry = entries[0];
+                            if (entry && entry.isIntersecting && ! this.isLoading && ! this.isLoadingMore && this.hasMore) {
+                                this.loadMore();
+                            }
+                        }, {
+                            rootMargin: '250px',
+                        });
+
+                        this.$nextTick(() => {
+                            if (this.$refs.scrollSentinel) {
+                                this.observer.observe(this.$refs.scrollSentinel);
+                            }
+                        });
+                    },
+
+                    loadMore() {
+                        if (! this.isLoadingMore && this.hasMore) {
+                            this.getProducts(this.page + 1);
+                        }
                     },
                 },
             });

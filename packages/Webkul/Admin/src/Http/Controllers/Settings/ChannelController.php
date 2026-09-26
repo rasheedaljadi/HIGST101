@@ -59,6 +59,11 @@ class ChannelController extends Controller
             'inventory_sources' => 'required|array|min:1',
             'root_category_id' => 'required',
             'hostname' => 'unique:channels,hostname',
+            'whatsapp_number' => 'nullable|string|max:30',
+            'social_links' => 'nullable|array',
+            'social_links.*' => 'nullable|string|max:255',
+            'payment_methods' => 'nullable|array',
+            'custom_payment_logo_files.*' => 'nullable|image|mimes:jpeg,jpg,png,webp,svg|max:2048',
 
             /* currencies and locales */
             'locales' => 'required|array|min:1',
@@ -83,6 +88,33 @@ class ChannelController extends Controller
         ]);
 
         $data = $this->setSEOContent($data);
+
+        // Handle custom payment logos upload and deleted keys
+        $paymentMethods = request()->input('payment_methods', []);
+        $deletedKeys = request()->input('payment_methods.deleted_keys', []);
+        if (! empty($deletedKeys)) {
+            $paymentMethods['deleted_keys'] = array_values(array_unique($deletedKeys));
+            if (! empty($paymentMethods['methods'])) {
+                foreach ($paymentMethods['deleted_keys'] as $delKey) {
+                    unset($paymentMethods['methods'][$delKey]);
+                }
+            }
+        }
+
+        if (request()->hasFile('custom_payment_logo_files')) {
+            $customLogos = $paymentMethods['custom_logos'] ?? [];
+            foreach (request()->file('custom_payment_logo_files') as $idx => $file) {
+                if ($file && $file->isValid()) {
+                    $path = $file->store('channel/payments', 'public');
+                    $customLogos[] = [
+                        'title' => request()->input('custom_payment_logo_titles.'.$idx, 'وسيلة دفع'),
+                        'image' => $path,
+                    ];
+                }
+            }
+            $paymentMethods['custom_logos'] = $customLogos;
+        }
+        $data['payment_methods'] = $paymentMethods;
 
         Event::dispatch('core.channel.create.before');
 
@@ -130,6 +162,11 @@ class ChannelController extends Controller
             'inventory_sources' => 'required|array|min:1',
             'root_category_id' => 'required',
             'hostname' => 'unique:channels,hostname,'.$id,
+            'whatsapp_number' => 'nullable|string|max:30',
+            'social_links' => 'nullable|array',
+            'social_links.*' => 'nullable|string|max:255',
+            'payment_methods' => 'nullable|array',
+            'custom_payment_logo_files.*' => 'nullable|image|mimes:jpeg,jpg,png,webp,svg|max:2048',
 
             /* currencies and locales */
             'locales' => 'required|array|min:1',
@@ -154,6 +191,57 @@ class ChannelController extends Controller
         ]);
 
         $data['is_maintenance_on'] = request()->input('is_maintenance_on') == '1';
+
+        // Handle custom payment logos upload and deleted keys
+        $paymentMethods = request()->input('payment_methods', []);
+        $channel = $this->channelRepository->find($id);
+
+        $existingDeleted = $channel?->payment_methods['deleted_keys'] ?? [];
+        $newDeleted = request()->input('payment_methods.deleted_keys', []);
+        $allDeleted = array_values(array_unique(array_merge($existingDeleted, $newDeleted)));
+
+        // Remove restored key from deleted_keys if requested
+        if (! empty($paymentMethods['restore_key'])) {
+            $allDeleted = array_values(array_diff($allDeleted, [$paymentMethods['restore_key']]));
+            unset($paymentMethods['restore_key']);
+        }
+
+        // Filter out deleted methods from methods array
+        if (! empty($allDeleted) && ! empty($paymentMethods['methods'])) {
+            foreach ($allDeleted as $delKey) {
+                unset($paymentMethods['methods'][$delKey]);
+            }
+        }
+        $paymentMethods['deleted_keys'] = $allDeleted;
+
+        // Filter out removed custom logos
+        if (! empty($paymentMethods['remove_custom_logos']) && ! empty($paymentMethods['custom_logos'])) {
+            $filteredLogos = [];
+            foreach ($paymentMethods['custom_logos'] as $cIdx => $cLogo) {
+                if (empty($paymentMethods['remove_custom_logos'][$cIdx])) {
+                    $filteredLogos[] = $cLogo;
+                } else {
+                    Storage::disk('public')->delete($cLogo['image'] ?? '');
+                }
+            }
+            $paymentMethods['custom_logos'] = $filteredLogos;
+            unset($paymentMethods['remove_custom_logos']);
+        }
+
+        if (request()->hasFile('custom_payment_logo_files')) {
+            $customLogos = $paymentMethods['custom_logos'] ?? [];
+            foreach (request()->file('custom_payment_logo_files') as $idx => $file) {
+                if ($file && $file->isValid()) {
+                    $path = $file->store('channel/'.$id.'/payments', 'public');
+                    $customLogos[] = [
+                        'title' => request()->input('custom_payment_logo_titles.'.$idx, 'وسيلة دفع'),
+                        'image' => $path,
+                    ];
+                }
+            }
+            $paymentMethods['custom_logos'] = $customLogos;
+        }
+        $data['payment_methods'] = $paymentMethods;
 
         $data = $this->setSEOContent($data, $locale);
 

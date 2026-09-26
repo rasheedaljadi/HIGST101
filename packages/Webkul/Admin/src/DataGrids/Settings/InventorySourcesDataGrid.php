@@ -101,6 +101,15 @@ class InventorySourcesDataGrid extends DataGrid
      */
     public function prepareActions()
     {
+        $this->addAction([
+            'icon' => 'icon-view',
+            'title' => trans('inventory::app.admin.sources.view-action') ?? 'معاينة المخزون',
+            'method' => 'GET',
+            'url' => function ($row) {
+                return route('admin.inventory.sources.view', $row->id);
+            },
+        ]);
+
         if (bouncer()->hasPermission('settings.inventory_sources.edit')) {
             $this->addAction([
                 'icon' => 'icon-edit',

@@ -161,7 +161,7 @@
                         @foreach ($discountedProducts as $productEntity)
                             @php
                                 $fallbackImageUrl = $productImageHelper->getProductBaseImage($productEntity)['medium_image_url'] ?? bagisto_asset('images/medium-product-placeholder.webp', 'shop');
-                                $imageUrl = $smartThumbnailHelper->getQuickOfferThumbnailUrl($productEntity, $fallbackImageUrl);
+                                $imageUrl = $smartThumbnailHelper->getSquareThumbnailUrl($productEntity, $fallbackImageUrl);
                                 $productUrl = route('shop.product_or_category.index', $productEntity->url_key);
 
                                 $cleanName = preg_replace('/[^\p{L}\p{N}\s\-\_]/u', '', $productEntity->name ?? '');
@@ -184,49 +184,18 @@
                                 if ($discountPercent <= 0 && $originalPrice > $finalPrice && $originalPrice > 0) {
                                     $discountPercent = (int) round((($originalPrice - $finalPrice) / $originalPrice) * 100);
                                 }
-
-                                $sku = strtolower((string) ($productEntity->sku ?? ''));
-                                $originType = (string) ($productEntity->origin_type ?? '');
-                                $isInternal = ($originType === 'internal')
-                                    || (! str_starts_with($sku, 'ae-') && ! str_starts_with($sku, 'ali-') && $originType !== 'imported');
-
-                                $isLocalImage = (bool) ($productEntity->base_image['is_local'] ?? $productEntity->images?->first()?->is_local ?? false);
-                                $sampledColors = ['#c5ced9', '#d8ccbc', '#b8c5d6', '#ccc4b4', '#dbc7b4', '#c4ccbe'];
-                                $m100 = ((int) ($productEntity->id ?? 0)) % 100;
-                                $isClean = $isLocalImage || $isInternal || ($m100 % 5 === 0);
-
-                                if ($isClean) {
-                                    $sampledSideColor = '#ffffff';
-                                    $distortionStyle = 'object-fit: cover !important; width: 100% !important; height: 100% !important; object-position: center !important;';
-                                } elseif ($m100 === 1 || $m100 === 6 || $m100 === 11) {
-                                    // 3% slight vertical
-                                    $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
-                                    $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.82, 1.25) !important; transform-origin: center !important;';
-                                } elseif ($m100 === 2 || $m100 === 7 || $m100 === 12) {
-                                    // 3% slight horizontal
-                                    $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
-                                    $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.25, 0.82) !important; transform-origin: center !important;';
-                                } elseif (in_array($m100, [3, 8, 13, 18, 23, 28, 33, 38, 43, 48], true)) {
-                                    // 10% pronounced horizontal
-                                    $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
-                                    $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(1.80, 0.60) !important; transform-origin: center !important;';
-                                } else {
-                                    // 64% pronounced vertical
-                                    $sampledSideColor = $sampledColors[((int) ($productEntity->id ?? 0)) % count($sampledColors)];
-                                    $distortionStyle = 'object-fit: fill !important; width: 100% !important; height: 100% !important; transform: scale(0.60, 1.80) !important; transform-origin: center !important;';
-                                }
                             @endphp
 
                             <div 
-                                class="shrink-0 w-full md:w-[calc((100%-2*1rem)/3)] lg:w-[calc((100%-4*1.25rem)/5)] xl:w-[310px] h-[465px] max-h-[465px]"
+                                class="shrink-0 w-full md:w-[calc((100%-2*1rem)/3)] lg:w-[calc((100%-4*1.25rem)/5)] xl:w-[310px] h-[485px] max-h-[485px]"
                                 style="scroll-snap-align: start;"
                             >
-                                <div class="w-full h-[465px] max-h-[465px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border shrink-0 select-none">
+                                <div class="w-full h-[485px] max-h-[485px] bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl p-3 shadow-sm hover:shadow-md transition-all relative border border-gray-100 dark:border-gray-800 flex flex-col justify-between overflow-hidden box-border shrink-0 select-none">
                                     
-                                    <!-- Product Image Container with Golden Frame and Solid Mismatched Color Fill -->
+                                    <!-- Product Image Container -->
                                     <div 
-                                        class="relative w-full aspect-[336/302] rounded-xl sm:rounded-2xl overflow-hidden shrink-0 mb-2 flex items-center justify-center"
-                                        style="aspect-ratio: 336 / 302; border: 2px solid #D4AF37; background-color: {{ $sampledSideColor }};"
+                                        class="relative w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-gray-50/80 dark:bg-gray-800/40 shrink-0 group mb-2 flex items-center justify-center"
+                                        style="aspect-ratio: 1 / 1;"
                                     >
                                         @if ($discountPercent > 0)
                                             <span 
@@ -244,8 +213,7 @@
                                             <img 
                                                 src="{{ $imageUrl }}" 
                                                 alt="{{ $cleanName }}"
-                                                class="w-full h-full group-hover:scale-105 transition-transform duration-300 block"
-                                                style="{{ $distortionStyle }}"
+                                                class="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-300 block"
                                                 loading="lazy"
                                                 onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';"
                                             />

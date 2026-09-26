@@ -23,6 +23,13 @@ class ProductRepository extends Repository
     protected $searchEngine = 'database';
 
     /**
+     * Cache except enabled methods.
+     *
+     * @var array
+     */
+    protected $cacheExcept = ['getAll', 'paginate'];
+
+    /**
      * Create a new repository instance.
      *
      * @return void

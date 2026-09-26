@@ -1,10 +1,31 @@
 <!-- Mini Cart Vue Component -->
+@php
+    $cart = \Webkul\Checkout\Facades\Cart::getCart();
+    $cartCount = $cart ? (core()->getConfigData('sales.checkout.my_cart.summary') == 'display_item_quantity' ? $cart->items_qty : $cart->items_count) : 0;
+@endphp
+
 <v-mini-cart>
-    <span
-        class="icon-cart cursor-pointer text-2xl"
+    <div
+        class="flex flex-col items-center justify-center cursor-pointer select-none group text-slate-700 hover:text-[#001A54] transition-colors"
         role="button"
         aria-label="@lang('shop::app.checkout.cart.mini-cart.shopping-cart')"
-    ></span>
+    >
+        <div class="relative inline-flex items-center justify-center">
+            <svg class="w-5 h-5 text-slate-700 group-hover:text-[#001A54] transition-colors" style="width: 22px; height: 22px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="presentation">
+                <circle cx="8" cy="21" r="1.5"></circle>
+                <circle cx="19" cy="21" r="1.5"></circle>
+                <path d="M2.5 2.5h3l2.4 11.8a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6l1.6-8.3H6.5"></path>
+            </svg>
+
+            <span class="absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 flex items-center justify-center rounded-full text-black text-[10px] font-bold leading-none shadow-sm ring-1 ring-white select-none pointer-events-none z-10 highest-yellow-badge" style="background-color: #F5B800 !important; color: #000000 !important;">
+                {{ $cartCount > 9 ? '9+' : $cartCount }}
+            </span>
+        </div>
+
+        <span class="text-[11px] font-semibold text-slate-600 group-hover:text-[#001A54] transition-colors max-lg:hidden mt-0.5">
+            سلة التسوق
+        </span>
+    </div>
 </v-mini-cart>
 
 @pushOnce('scripts')
@@ -20,31 +41,47 @@
                 <x-slot:toggle>
                     {!! view_render_event('bagisto.shop.checkout.mini-cart.drawer.toggle.before') !!}
 
-                    <span class="relative">
-                        <span
-                            class="icon-cart cursor-pointer text-2xl"
-                            role="button"
-                            aria-label="@lang('shop::app.checkout.cart.mini-cart.shopping-cart')"
-                            tabindex="0"
-                            @click="getCart"
-                        ></span>
+                    <div
+                        class="flex flex-col items-center justify-center cursor-pointer select-none group text-slate-700 hover:text-[#001A54] transition-colors"
+                        role="button"
+                        aria-label="@lang('shop::app.checkout.cart.mini-cart.shopping-cart')"
+                        tabindex="0"
+                        @click="getCart"
+                    >
+                        <div class="relative inline-flex items-center justify-center">
+                            <svg class="w-5 h-5 text-slate-700 group-hover:text-[#001A54] transition-colors" style="width: 22px; height: 22px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="presentation">
+                                <circle cx="8" cy="21" r="1.5"></circle>
+                                <circle cx="19" cy="21" r="1.5"></circle>
+                                <path d="M2.5 2.5h3l2.4 11.8a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6l1.6-8.3H6.5"></path>
+                            </svg>
 
-                        @if (core()->getConfigData('sales.checkout.my_cart.summary') == 'display_item_quantity')
                             <span
-                                class="absolute -top-4 rounded-[44px] bg-navyBlue px-2 py-1.5 text-xs font-semibold leading-[9px] text-white ltr:left-5 rtl:right-5 max-md:ltr:left-4 max-md:rtl:right-4"
+                                class="absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 flex items-center justify-center rounded-full text-black text-[10px] font-bold leading-none shadow-sm ring-1 ring-white select-none pointer-events-none z-10 highest-yellow-badge"
+                                style="background-color: #F5B800 !important; color: #000000 !important;"
                                 v-if="cart?.items_qty"
                             >
-                                @{{ cart.items_qty }}
+                                @{{ cart.items_qty > 9 ? '9+' : cart.items_qty }}
                             </span>
-                        @else
                             <span
-                                class="absolute -top-4 rounded-[44px] bg-navyBlue px-2 py-1.5 text-xs font-semibold leading-[9px] text-white ltr:left-5 rtl:right-5 max-md:px-2 max-md:py-1.5 max-md:ltr:left-4 max-md:rtl:right-4"
-                                v-if="cart?.items_count"
+                                class="absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 flex items-center justify-center rounded-full text-black text-[10px] font-bold leading-none shadow-sm ring-1 ring-white select-none pointer-events-none z-10 highest-yellow-badge"
+                                style="background-color: #F5B800 !important; color: #000000 !important;"
+                                v-else-if="cart?.items_count"
                             >
-                                @{{ cart.items_count }}
+                                @{{ cart.items_count > 9 ? '9+' : cart.items_count }}
                             </span>
-                        @endif
-                    </span>
+                            <span
+                                class="absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 flex items-center justify-center rounded-full text-black text-[10px] font-bold leading-none shadow-sm ring-1 ring-white select-none pointer-events-none z-10 highest-yellow-badge"
+                                style="background-color: #F5B800 !important; color: #000000 !important;"
+                                v-else
+                            >
+                                0
+                            </span>
+                        </div>
+
+                        <span class="text-[11px] font-semibold text-slate-600 group-hover:text-[#001A54] transition-colors max-lg:hidden mt-0.5">
+                            سلة التسوق
+                        </span>
+                    </div>
 
                     {!! view_render_event('bagisto.shop.checkout.mini-cart.drawer.toggle.after') !!}
                 </x-slot>
@@ -205,6 +242,7 @@
                                     class="max-h-9 max-w-[150px] gap-x-2.5 rounded-[54px] px-3.5 py-1.5 max-md:gap-x-2 max-md:px-1 max-md:py-0.5"
                                     name="quantity"
                                     ::value="item?.quantity"
+                                    ::max-value="item?.total_qty"
                                     @change="updateItem($event, item)"
                                 />
 
@@ -425,14 +463,21 @@
 
                     this.$axios.put('{{ route('shop.api.checkout.cart.update') }}', { qty })
                         .then(response => {
-                            if (response.data.message) {
+                            if (response.data.data) {
                                 this.cart = response.data.data;
-                            } else {
-                                this.$emitter.emit('add-flash', { type: 'warning', message: response.data.data.message });
                             }
 
                             this.isLoading = false;
-                        }).catch(error => this.isLoading = false);
+                        }).catch(error => {
+                            if (error.response?.data?.data) {
+                                this.cart = error.response.data.data;
+                            }
+
+                            let msg = error.response?.data?.message || '@lang('shop::app.checkout.cart.inventory-warning')';
+                            this.$emitter.emit('add-flash', { type: 'warning', message: msg });
+
+                            this.isLoading = false;
+                        });
                 },
 
                 removeItem(itemId) {

@@ -33,9 +33,40 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'external_platform_orders.payment_deadline_at',
                 'external_platform_orders.snapshots as raw_snapshots',
                 'external_platform_orders.created_at'
-            );
+            )
+            ->selectRaw("
+                (
+                    SELECT GROUP_CONCAT(DISTINCT COALESCE(orders.increment_id, orders.id) SEPARATOR ', ')
+                    FROM external_platform_order_items
+                    JOIN supplier_purchase_order_items ON external_platform_order_items.supplier_purchase_order_item_id = supplier_purchase_order_items.id
+                    JOIN procurement_demand_allocations ON supplier_purchase_order_items.id = procurement_demand_allocations.supplier_purchase_order_item_id
+                    JOIN procurement_demands ON procurement_demand_allocations.procurement_demand_id = procurement_demands.id
+                    JOIN orders ON procurement_demands.order_id = orders.id
+                    WHERE external_platform_order_items.external_platform_order_id = external_platform_orders.id
+                ) as customer_order_numbers
+            ")
+            ->selectRaw("
+                (
+                    SELECT GROUP_CONCAT(DISTINCT orders.id SEPARATOR ',')
+                    FROM external_platform_order_items
+                    JOIN supplier_purchase_order_items ON external_platform_order_items.supplier_purchase_order_item_id = supplier_purchase_order_items.id
+                    JOIN procurement_demand_allocations ON supplier_purchase_order_items.id = procurement_demand_allocations.supplier_purchase_order_item_id
+                    JOIN procurement_demands ON procurement_demand_allocations.procurement_demand_id = procurement_demands.id
+                    JOIN orders ON procurement_demands.order_id = orders.id
+                    WHERE external_platform_order_items.external_platform_order_id = external_platform_orders.id
+                ) as customer_order_ids
+            ");
 
         $this->addFilter('platform_order_id', 'external_platform_orders.id');
+        $this->addFilter('customer_order_numbers', DB::raw('(
+            SELECT GROUP_CONCAT(DISTINCT COALESCE(orders.increment_id, orders.id) SEPARATOR ", ")
+            FROM external_platform_order_items
+            JOIN supplier_purchase_order_items ON external_platform_order_items.supplier_purchase_order_item_id = supplier_purchase_order_items.id
+            JOIN procurement_demand_allocations ON supplier_purchase_order_items.id = procurement_demand_allocations.supplier_purchase_order_item_id
+            JOIN procurement_demands ON procurement_demand_allocations.procurement_demand_id = procurement_demands.id
+            JOIN orders ON procurement_demands.order_id = orders.id
+            WHERE external_platform_order_items.external_platform_order_id = external_platform_orders.id
+        )'));
         $this->addFilter('external_order_id', 'external_platform_orders.external_order_id');
         $this->addFilter('purchase_order_number', 'supplier_purchase_orders.purchase_order_number');
         $this->addFilter('supplier_store_name', 'supplier_purchase_orders.supplier_store_name');
@@ -77,6 +108,37 @@ class ExternalPlatformOrderDataGrid extends DataGrid
         ]);
 
         $this->addColumn([
+            'index' => 'customer_order_numbers',
+            'label' => trans('procurement::app.datagrid.customer-order-id') ?: 'رقم طلب العميل',
+            'type' => 'string',
+            'searchable' => true,
+            'sortable' => false,
+            'filterable' => true,
+            'closure' => function ($row) {
+                if (empty($row->customer_order_numbers)) {
+                    return '<span class="text-gray-400 font-mono">-</span>';
+                }
+
+                $numbers = explode(', ', (string) $row->customer_order_numbers);
+                $ids = ! empty($row->customer_order_ids) ? explode(',', (string) $row->customer_order_ids) : [];
+
+                $html = '<div class="flex flex-wrap gap-1 items-center">';
+                foreach ($numbers as $i => $num) {
+                    $orderId = $ids[$i] ?? null;
+                    if ($orderId && bouncer()->hasPermission('sales.orders.view')) {
+                        $url = route('admin.sales.orders.view', $orderId);
+                        $html .= "<a href=\"{$url}\" target=\"_blank\" class=\"inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono font-bold text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors\" title=\"عرض طلب العميل #{$num}\"><span class=\"text-[11px]\">🛒</span> #{$num}</a>";
+                    } else {
+                        $html .= "<span class=\"inline-flex items-center px-2 py-0.5 rounded font-mono font-bold text-xs bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700\">#{$num}</span>";
+                    }
+                }
+                $html .= '</div>';
+
+                return $html;
+            },
+        ]);
+
+        $this->addColumn([
             'index' => 'external_order_id',
             'label' => trans('procurement::app.datagrid.aliexpress-order-id'),
             'type' => 'string',
@@ -102,7 +164,16 @@ class ExternalPlatformOrderDataGrid extends DataGrid
             'searchable' => true,
             'sortable' => true,
             'filterable' => true,
-            'closure' => fn ($row) => $row->supplier_store_name ? "<span class=\"font-medium text-gray-800 dark:text-gray-200\">{$row->supplier_store_name}</span>" : '<span class="text-gray-400">-</span>',
+            'closure' => function ($row) {
+                $name = null;
+                if (! empty($row->raw_snapshots)) {
+                    $snap = is_array($row->raw_snapshots) ? $row->raw_snapshots : json_decode($row->raw_snapshots, true);
+                    $name = $snap['store_name'] ?? $snap['store_info']['store_name'] ?? null;
+                }
+                $name = $name ?: $row->supplier_store_name;
+
+                return $name ? "<span class=\"font-medium text-gray-800 dark:text-gray-200\">{$name}</span>" : '<span class="text-gray-400">-</span>';
+            },
         ]);
 
         $this->addColumn([
@@ -195,7 +266,20 @@ class ExternalPlatformOrderDataGrid extends DataGrid
                 'sortable' => true,
                 'filterable' => false,
                 'closure' => function ($row) {
-                    $val = $row->spo_items_total;
+                    $val = null;
+                    if (! empty($row->raw_snapshots)) {
+                        $snap = is_array($row->raw_snapshots) ? $row->raw_snapshots : json_decode($row->raw_snapshots, true);
+                        $val = $snap['order_amount'] ?? $snap['expected_total'] ?? null;
+                    }
+                    if ($val === null) {
+                        $itemsSum = DB::table('external_platform_order_items')
+                            ->where('external_platform_order_id', $row->platform_order_id)
+                            ->sum('actual_item_amount');
+                        if ($itemsSum > 0) {
+                            $val = $itemsSum;
+                        }
+                    }
+                    $val = $val ?? $row->spo_items_total;
                     if ($val !== null && (float) $val > 0) {
                         return '<span class="font-mono font-semibold text-gray-900 dark:text-gray-100">$'.number_format((float) $val, 2).'</span>';
                     }

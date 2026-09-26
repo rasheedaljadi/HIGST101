@@ -36,6 +36,11 @@ class CartItemResource extends JsonResource
             'product_url_key' => $this->product->url_key,
             'options' => $this->formatAdditionalAttributes(),
             'can_change_qty' => $this->product ? $this->product->getTypeInstance()->showQuantityBox() : false,
+            'total_qty' => $this->product ? (
+                $this->child
+                    ? (int) max($this->child->product->getTypeInstance()->totalQuantity(), $this->child->product->inventories()->sum('qty'))
+                    : (int) max($this->product->getTypeInstance()->totalQuantity(), $this->product->inventories()->sum('qty'))
+            ) : null,
         ];
     }
 

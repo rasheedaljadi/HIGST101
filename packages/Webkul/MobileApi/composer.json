@@ -1,0 +1,24 @@
+{
+    "name": "webkul/mobile-api",
+    "description": "Custom High-Performance Native GraphQL API for HIGEST Mobile App",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "HIGEST Engineering Team",
+            "email": "dev@higest.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Webkul\\MobileApi\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\MobileApi\\Providers\\MobileApiServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev"
+}

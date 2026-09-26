@@ -25,18 +25,21 @@ class OrderResource extends JsonResource
         $shippingInformation = [];
 
         if ($this->haveStockableItems()) {
-            $shippingInformation = [
-                'shipping_method' => $this->selected_shipping_rate->method,
-                'shipping_title' => $this->selected_shipping_rate->carrier_title.' - '.$this->selected_shipping_rate->method_title,
-                'shipping_description' => $this->selected_shipping_rate->method_description,
-                'shipping_amount' => $this->selected_shipping_rate->price,
-                'base_shipping_amount' => $this->selected_shipping_rate->base_price,
-                'shipping_amount_incl_tax' => $this->selected_shipping_rate->price_incl_tax,
-                'base_shipping_amount_incl_tax' => $this->selected_shipping_rate->base_price_incl_tax,
-                'shipping_discount_amount' => $this->selected_shipping_rate->discount_amount,
-                'base_shipping_discount_amount' => $this->selected_shipping_rate->base_discount_amount,
-                'shipping_address' => (new OrderAddressResource($this->shipping_address))->jsonSerialize(),
-            ];
+            $rate = $this->selected_shipping_rate ?? $this->shipping_rates->first();
+            if ($rate) {
+                $shippingInformation = [
+                    'shipping_method' => $rate->method,
+                    'shipping_title' => $rate->carrier_title.' - '.$rate->method_title,
+                    'shipping_description' => $rate->method_description,
+                    'shipping_amount' => $rate->price,
+                    'base_shipping_amount' => $rate->base_price,
+                    'shipping_amount_incl_tax' => $rate->price_incl_tax,
+                    'base_shipping_amount_incl_tax' => $rate->base_price_incl_tax,
+                    'shipping_discount_amount' => $rate->discount_amount,
+                    'base_shipping_discount_amount' => $rate->base_discount_amount,
+                    'shipping_address' => (new OrderAddressResource($this->shipping_address))->jsonSerialize(),
+                ];
+            }
         }
 
         return [
@@ -71,7 +74,7 @@ class OrderResource extends JsonResource
             'base_discount_amount' => $this->base_discount_amount,
             'billing_address' => (new OrderAddressResource($this->billing_address))->jsonSerialize(),
             $this->mergeWhen($this->haveStockableItems(), $shippingInformation),
-            'payment' => (new OrderPaymentResource($this->payment))->jsonSerialize(),
+            'payment' => $this->payment ? (new OrderPaymentResource($this->payment))->jsonSerialize() : ['method' => 'cashondelivery', 'method_title' => 'الدفع عند الاستلام'],
             'items' => OrderItemResource::collection($this->items)->jsonSerialize(),
         ];
     }

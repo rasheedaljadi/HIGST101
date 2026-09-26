@@ -738,10 +738,16 @@ abstract class AbstractType
      */
     public function getProductPrices()
     {
+        $priceIndex = $this->getPriceIndex();
+
+        $regularPrice = $priceIndex && (float) $priceIndex->regular_min_price > 0
+            ? (float) $priceIndex->regular_min_price
+            : (float) $this->product->price;
+
         return [
             'regular' => [
-                'price' => core()->convertPrice($this->product->price),
-                'formatted_price' => core()->currency($this->product->price),
+                'price' => core()->convertPrice($regularPrice),
+                'formatted_price' => core()->currency($regularPrice),
             ],
 
             'final' => [

@@ -74,14 +74,33 @@ class DeliveryPoint extends AbstractShipping
         $rule = $validator->getActiveRule($stateCode, ShippingMethodAdapter::CANONICAL_DELIVERY_POINT);
 
         $fee = (float) ($rule?->delivery_fee ?? 0.0);
+        $cartSubTotal = (float) ($cart?->base_sub_total ?? 0.0);
+        $freeThreshold = $rule?->free_delivery_threshold !== null ? (float) $rule->free_delivery_threshold : null;
+
+        $isFreeDelivery = false;
+        if ($freeThreshold !== null && $freeThreshold > 0 && $cartSubTotal >= $freeThreshold) {
+            $isFreeDelivery = true;
+            $fee = 0.0;
+        }
 
         $cartShippingRate = new CartShippingRate;
 
         $cartShippingRate->carrier = $this->getCode();
         $cartShippingRate->carrier_title = 'استلام من نقطة تسليم (Pickup Point)';
         $cartShippingRate->method = $this->getMethod();
-        $cartShippingRate->method_title = 'استلام من نقطة هايست المعتمدة';
-        $cartShippingRate->method_description = 'استلام الطلب شخصياً من نقطة التوزيع المحددة في المحافظة';
+
+        if ($isFreeDelivery) {
+            $cartShippingRate->method_title = 'استلام مجاني من نقطة التوزيع';
+            $cartShippingRate->method_description = '🎉 استلام مجاني لتجاوز سلتك الحد الأدنى ('.core()->currency($freeThreshold).')';
+        } else {
+            $cartShippingRate->method_title = 'استلام من نقطة هايست المعتمدة';
+            if ($freeThreshold !== null && $freeThreshold > 0) {
+                $cartShippingRate->method_description = 'استلام الطلب شخصياً (استلام مجاني للطلبات أكبر من '.core()->currency($freeThreshold).')';
+            } else {
+                $cartShippingRate->method_description = 'استلام الطلب شخصياً من نقطة التوزيع المحددة في المحافظة';
+            }
+        }
+
         $cartShippingRate->price = core()->convertPrice($fee);
         $cartShippingRate->base_price = $fee;
 

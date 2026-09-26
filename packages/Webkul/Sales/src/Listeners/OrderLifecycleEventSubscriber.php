@@ -3,6 +3,12 @@
 namespace Webkul\Sales\Listeners;
 
 use Illuminate\Events\Dispatcher;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
+use Webkul\Fulfillment\Models\InboundReceiptManifest;
+use Webkul\Fulfillment\Models\InventoryTransferManifest;
+use Webkul\Sales\Models\Order;
 use Webkul\Sales\Services\Lifecycle\OrderLifecycleProjector;
 
 class OrderLifecycleEventSubscriber
@@ -18,7 +24,7 @@ class OrderLifecycleEventSubscriber
     {
         if (is_numeric($order)) {
             $this->projector->project((int) $order);
-        } elseif (is_object($order) && isset($order->id)) {
+        } elseif ($order instanceof Order) {
             $this->projector->project($order);
         }
     }
@@ -33,9 +39,53 @@ class OrderLifecycleEventSubscriber
         } elseif (is_object($payload)) {
             if (isset($payload->order_id) && ! empty($payload->order_id)) {
                 $this->projector->project((int) $payload->order_id);
-            } elseif (isset($payload->id)) {
+            } elseif ($payload instanceof Order) {
                 $this->projector->project($payload);
+            } elseif ($payload instanceof InventoryTransferManifest || $payload instanceof InboundReceiptManifest) {
+                $this->handleManifestChange($payload);
             }
+        }
+    }
+
+    /**
+     * Project orders related to inventory transfer or receipt manifest.
+     */
+    protected function handleManifestChange(mixed $manifest): void
+    {
+        try {
+            $items = $manifest->items ?? collect();
+            if ($items->isEmpty() && method_exists($manifest, 'items')) {
+                $items = $manifest->items()->get();
+            }
+
+            if ($items->isEmpty()) {
+                return;
+            }
+
+            $orderItemIds = $items->pluck('order_item_id')->filter()->unique()->toArray();
+            $skus = $items->pluck('sku')->filter()->unique()->toArray();
+
+            if (empty($orderItemIds) && empty($skus)) {
+                return;
+            }
+
+            $query = DB::table('order_items');
+            $query->where(function ($q) use ($orderItemIds, $skus) {
+                if (! empty($orderItemIds)) {
+                    $q->whereIn('id', $orderItemIds);
+                }
+                if (! empty($skus)) {
+                    $q->orWhereIn('sku', $skus);
+                }
+            });
+
+            $orderIds = $query->distinct()->pluck('order_id');
+
+            foreach ($orderIds as $orderId) {
+                $this->projector->project((int) $orderId);
+            }
+        } catch (Throwable $e) {
+            Log::warning("OrderLifecycleEventSubscriber: Failed to project manifest change: {$e->getMessage()}");
         }
     }
 

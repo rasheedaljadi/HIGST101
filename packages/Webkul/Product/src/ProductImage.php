@@ -5,6 +5,7 @@ namespace Webkul\Product;
 use Illuminate\Support\Facades\Storage;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Webkul\Customer\Contracts\Wishlist;
+use Webkul\FlashDeal\Helpers\SmartThumbnailHelper;
 use Webkul\Product\Contracts\Product;
 use Webkul\Product\Repositories\ProductRepository;
 
@@ -36,7 +37,21 @@ class ProductImage
                 continue;
             }
 
-            $images[] = $this->getCachedImageUrls($image->path, (bool) ($image->is_local ?? false));
+            $imgUrls = $this->getCachedImageUrls($image->path, (bool) ($image->is_local ?? false));
+
+            if (class_exists(SmartThumbnailHelper::class)) {
+                try {
+                    $smartHelper = app(SmartThumbnailHelper::class);
+                    $smartUrl = $smartHelper->getSquareThumbnailUrl($product, $imgUrls['medium_image_url']);
+                    if ($smartUrl) {
+                        $imgUrls['medium_image_url'] = $smartUrl;
+                        $imgUrls['small_image_url'] = $smartUrl;
+                    }
+                } catch (\Throwable $e) {
+                }
+            }
+
+            $images[] = $imgUrls;
         }
 
         if (
@@ -94,9 +109,27 @@ class ProductImage
             return;
         }
 
-        return $galleryImages
+        $baseImage = $galleryImages
             ? $galleryImages[0]
             : $this->otherwiseLoadFromProduct($product);
+
+        if ($baseImage && class_exists(SmartThumbnailHelper::class)) {
+            try {
+                $smartHelper = app(SmartThumbnailHelper::class);
+                $originalUrl = $baseImage['medium_image_url'] ?? $baseImage['original_image_url'] ?? '';
+                if ($originalUrl) {
+                    $smartUrl = $smartHelper->getSquareThumbnailUrl($product, $originalUrl);
+                    if ($smartUrl) {
+                        $baseImage['medium_image_url'] = $smartUrl;
+                        $baseImage['small_image_url'] = $smartUrl;
+                        $baseImage['smart_image_url'] = $smartUrl;
+                    }
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        return $baseImage;
     }
 
     /**

@@ -65,6 +65,36 @@
                     <v-customer-notifications></v-customer-notifications>
                 @endauth
 
+                <!-- Wishlist -->
+                @if (core()->getConfigData('customer.settings.wishlist.wishlist_option'))
+                    <v-wishlist-header
+                        url="{{ route('shop.customers.account.wishlist.index') }}"
+                        :is-customer="{{ auth()->guard('customer')->check() ? 'true' : 'false' }}"
+                        :initial-count="{{ auth()->guard('customer')->check() ? auth()->guard('customer')->user()->wishlist_items->count() : 0 }}"
+                        title="@lang('shop::app.components.layouts.header.mobile.wishlist')"
+                    >
+                        <a
+                            href="{{ route('shop.customers.account.wishlist.index') }}"
+                            class="relative inline-flex items-center justify-center w-7 h-7 cursor-pointer text-zinc-800 hover:text-red-500 transition-colors"
+                            aria-label="@lang('shop::app.components.layouts.header.mobile.wishlist')"
+                            title="@lang('shop::app.components.layouts.header.mobile.wishlist')"
+                        >
+                            <span class="inline-block text-2xl cursor-pointer icon-heart hover:text-red-500 transition-colors" role="presentation"></span>
+
+                            @auth('customer')
+                                @php
+                                    $wCount = auth()->guard('customer')->user()->wishlist_items->count();
+                                @endphp
+                                @if ($wCount > 0)
+                                    <span class="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold leading-none shadow-sm ring-2 ring-white select-none pointer-events-none z-10">
+                                        {{ $wCount > 9 ? '9+' : $wCount }}
+                                    </span>
+                                @endif
+                            @endauth
+                        </a>
+                    </v-wishlist-header>
+                @endif
+
                 <!-- For Large screens -->
                 <div class="max-md:hidden">
                     <x-shop::dropdown position="bottom-{{ core()->getCurrentLocale()->direction === 'ltr' ? 'right' : 'left' }}">

@@ -1,5 +1,16 @@
-<p class="regular-price text-lg font-semibold text-gray-500 line-through"></p>
+@if (! empty($prices['final']))
+    <p
+        class="final-price font-medium text-zinc-500 line-through max-sm:leading-4"
+        aria-label="{{ $prices['regular']['formatted_price'] }}"
+    >
+        {{ $prices['regular']['formatted_price'] }}
+    </p>
 
-<p class="final-price font-semibold">
-    {{ $prices['regular']['formatted_price'] }}
-</p>
+    <p class="font-semibold max-sm:leading-4">
+        {{ $prices['final']['formatted_price'] }}
+    </p>
+@else
+    <p class="final-price font-semibold max-sm:leading-4">
+        {{ $prices['regular']['formatted_price'] }}
+    </p>
+@endif

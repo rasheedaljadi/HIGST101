@@ -178,34 +178,36 @@ class CatalogRuleProduct
      */
     public function getCatalogRuleProducts($product = null)
     {
-        $ruleProducts = $this->catalogRuleProductRepository->scopeQuery(function ($query) use ($product) {
-            $query = $query->distinct()
-                ->select('catalog_rule_products.*')
-                ->leftJoin('products', 'catalog_rule_products.product_id', '=', 'products.id')
-                ->orderBy('channel_id', 'asc')
-                ->orderBy('customer_group_id', 'asc')
-                ->orderBy('product_id', 'asc')
-                ->orderBy('sort_order', 'asc')
-                ->orderBy('catalog_rule_id', 'asc');
+        $ruleProducts = $this->catalogRuleProductRepository
+            ->skipCache(true)
+            ->scopeQuery(function ($query) use ($product) {
+                $query = $query->distinct()
+                    ->select('catalog_rule_products.*')
+                    ->leftJoin('products', 'catalog_rule_products.product_id', '=', 'products.id')
+                    ->orderBy('channel_id', 'asc')
+                    ->orderBy('customer_group_id', 'asc')
+                    ->orderBy('product_id', 'asc')
+                    ->orderBy('sort_order', 'asc')
+                    ->orderBy('catalog_rule_id', 'asc');
 
-            $query = $this->addAttributeToSelect('price', $query);
+                $query = $this->addAttributeToSelect('price', $query);
 
-            if (! $product) {
+                if (! $product) {
+                    return $query;
+                }
+
+                if (! $product->getTypeInstance()->priceRuleCanBeApplied()) {
+                    return $query;
+                }
+
+                if ($product->getTypeInstance()->isComposite()) {
+                    $query->whereIn('catalog_rule_products.product_id', $product->getTypeInstance()->getChildrenIds());
+                } else {
+                    $query->where('catalog_rule_products.product_id', $product->id);
+                }
+
                 return $query;
-            }
-
-            if (! $product->getTypeInstance()->priceRuleCanBeApplied()) {
-                return $query;
-            }
-
-            if ($product->getTypeInstance()->isComposite()) {
-                $query->whereIn('catalog_rule_products.product_id', $product->getTypeInstance()->getChildrenIds());
-            } else {
-                $query->where('catalog_rule_products.product_id', $product->id);
-            }
-
-            return $query;
-        })->get();
+            })->get();
 
         return $ruleProducts;
     }
