@@ -74,10 +74,16 @@ return [
         'sort' => 2,
     ],
     [
-        'key' => 'wallet.reporting.view',
+        'key' => 'wallet.reporting',
         'name' => 'تقارير المحفظة',
         'route' => 'admin.wallet.reports.index',
         'sort' => 5,
+    ],
+    [
+        'key' => 'wallet.reporting.view',
+        'name' => 'تقارير المحفظة',
+        'route' => 'admin.wallet.reports.index',
+        'sort' => 1,
     ],
     [
         'key' => 'wallet.promotions',
